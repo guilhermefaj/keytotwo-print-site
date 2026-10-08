@@ -1,5 +1,4 @@
-import { PendingPage } from '../root'
+import { LegalPage } from '../components/legal/LegalPage'
+import { legal } from '../content/legal'
 
-export default function Reembolsos() {
-  return <PendingPage title="Reembolsos">PENDENTE: política de reembolso aprovada. Prazos e condições não estão definidos neste protótipo.</PendingPage>
-}
+export default function Reembolsos() { return <LegalPage content={legal.reembolsos} /> }

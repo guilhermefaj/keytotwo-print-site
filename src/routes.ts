@@ -4,6 +4,7 @@ export default [
   index('routes/home.tsx'),
   route('preview/hero', 'routes/home.tsx', { id: 'preview-hero' }),
   route('entrar', 'routes/entrar.tsx'),
+  route('carrinho', 'routes/carrinho.tsx'),
   route('meus-jogos', 'routes/meus-jogos.tsx'),
   route('conta', 'routes/conta.tsx'),
   route('pedido/confirmacao', 'routes/pedido.confirmacao.tsx'),

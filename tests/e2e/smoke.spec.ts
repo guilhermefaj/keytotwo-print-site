@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// The 11 routes pre-rendered into build/client/<route>/index.html.
+// The 12 routes pre-rendered into build/client/<route>/index.html.
 const routes = [
   '/',
   '/preview/hero',
   '/entrar',
+  '/carrinho',
   '/meus-jogos',
   '/conta',
   '/pedido/confirmacao',

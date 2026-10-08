@@ -1,5 +1,4 @@
-import { PendingPage } from '../root'
+import { LegalPage } from '../components/legal/LegalPage'
+import { legal } from '../content/legal'
 
-export default function Privacidade() {
-  return <PendingPage title="Privacidade">PENDENTE: política de privacidade aprovada e informações sobre o tratamento de dados.</PendingPage>
-}
+export default function Privacidade() { return <LegalPage content={legal.privacidade} /> }

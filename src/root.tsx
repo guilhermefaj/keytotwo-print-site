@@ -1,18 +1,31 @@
-import type { ReactNode } from 'react'
-import { isRouteErrorResponse, Link, Links, Outlet, Scripts, ScrollRestoration, useRouteError } from 'react-router'
+import { useState, type ReactNode } from 'react'
+import { isRouteErrorResponse, Link, Links, Outlet, Scripts, ScrollRestoration, useLocation, useRouteError } from 'react-router'
+import { SiteHeader } from './components/layout/SiteHeader'
+import { SiteFooter } from './components/layout/SiteFooter'
+import { pageSeo, siteConfig } from './lib/seo'
 import '@fontsource/bricolage-grotesque/latin-700.css'
 import '@fontsource/dm-sans/latin-400.css'
 import '@fontsource/dm-sans/latin-600.css'
 import './styles.css'
 
 export function Layout({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation()
+  const seo = pageSeo(pathname)
   return (
     <html lang="pt-BR">
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        {/* I0 is a prototype. Keep private shells and all public pages unindexed. */}
-        <meta name="robots" content="noindex, nofollow" />
+        <title>{seo.title}</title>
+        <meta name="description" content={seo.description} />
+        <link rel="canonical" href={seo.canonical} />
+        <meta name="robots" content={seo.robots} />
+        <meta property="og:title" content={seo.title} />
+        <meta property="og:description" content={seo.description} />
+        <meta property="og:url" content={seo.canonical} />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="pt_BR" />
+        <meta property="og:site_name" content="KeyToTwo" />
         <meta name="theme-color" content="#ECFAF7" />
         <Links />
       </head>
@@ -26,15 +39,20 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function Root() {
-  return <Outlet />
+  const [menuOpen, setMenuOpen] = useState(false)
+  return <>
+    <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
+    {siteConfig.stage === 'test' && <p className="stage-banner">Ambiente de teste — sem compras reais.</p>}
+    <SiteHeader onMenuOpenChange={setMenuOpen} />
+    <Outlet context={{ menuOpen }} />
+    <SiteFooter />
+  </>
 }
 
 // Temporary shared I0 shell. Individual journeys/content arrive in later increments.
 export function PendingPage({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col items-start justify-center gap-6 px-5 py-12">
-      <title>{title} — KeyToTwo, protótipo</title>
-      <meta name="description" content={`${title}: página em preparação no protótipo KeyToTwo.`} />
+    <main id="conteudo" tabIndex={-1} className="mx-auto flex min-h-svh w-full max-w-3xl flex-col items-start justify-center gap-6 px-5 py-12">
       <p className="eyebrow">Protótipo visual</p>
       <h1 style={{ margin: 0, fontSize: 'clamp(2rem, 6vw, 3rem)', lineHeight: 1.12, letterSpacing: '-.03em' }}>{title}</h1>
       <p className="m-0 text-base leading-relaxed">{children}</p>
