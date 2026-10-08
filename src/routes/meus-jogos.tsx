@@ -22,7 +22,7 @@ export default function MeusJogos() {
     <DataStatus {...library} retry={library.reload} />
     {library.data && <>
       {library.data.pending.length > 0 && <section className="account-card"><h2>Aguardando confirmação</h2>{library.data.pending.map(order => <p key={order.ref}>Pedido <span className="break-anywhere">{order.ref}</span>: {order.products.map(product => product.name).join(', ')}. O pagamento ainda está pendente.</p>)}</section>}
-      {library.data.games.length === 0 ? <div className="account-card"><h2>Seus próximos jogos começam aqui</h2><p>Você ainda não tem jogos liberados.</p><a className="button button-primary" href="/#comprar">Escolher um encontro</a></div> : <ul className="library-grid">{library.data.games.map(game => {
+      {library.data.games.length === 0 ? <div className="account-card"><h2>Seus próximos jogos começam aqui</h2><p>Você ainda não tem jogos liberados.</p><a className="button button-primary" href="/#comprar">Escolher nosso encontro</a></div> : <ul className="library-grid">{library.data.games.map(game => {
         const pdf = game.files.find(file => file.kind === 'pdf')
         return <li className="account-card" key={game.code} id={`jogo-${game.code}`} tabIndex={-1}><h2>{game.name}</h2><p>Faz parte de: {game.products.map(product => product.name).join(', ')}.</p><p className="field-help">Adquirido em {dateLabel(game.acquired_at)}.</p><p className="file-meta">PDF{pdf && fileSize(pdf.size_bytes) && ` · ${fileSize(pdf.size_bytes)}`}</p><DownloadButton fileId={pdf?.id} gameCode={game.code} onRefresh={library.reload} /></li>
       })}</ul>}

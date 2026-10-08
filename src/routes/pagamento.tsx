@@ -55,6 +55,6 @@ export default function Pagamento() {
   const { cart } = useShop()
   const { session } = useAuth()
   return <main id="conteudo" tabIndex={-1} className="account-page payment-page content-width"><Link className="inline-link" to="/carrinho">← Voltar ao carrinho</Link><p className="eyebrow">Seu encontro, quase pronto</p><h1>Pagamento</h1><DataStatus {...cart} retry={cart.reload} />
-    {cart.data && (cart.data.items.length ? <Payment key={`${session?.user.id}:${cart.data.version}`} cart={cart.data} refresh={cart.reload} /> : <div className="cart-empty"><h2>Seu carrinho está vazio</h2><a className="button button-primary" href="/#comprar">Escolher um encontro</a></div>)}
+    {cart.data && (cart.data.items.length ? <Payment key={`${session?.user.id}:${cart.data.version}`} cart={cart.data} refresh={cart.reload} /> : <div className="cart-empty"><h2>Seu carrinho está vazio</h2><a className="button button-primary" href="/#comprar">Escolher nosso encontro</a></div>)}
   </main>
 }

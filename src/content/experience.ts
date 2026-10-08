@@ -4,11 +4,11 @@ export const experience = {
   headline: ['A rotina pode esperar.', 'Vocês têm um encontro.'],
   description: 'Jogos para imprimir, puxar uma cadeira e descobrir o quanto vocês se divertem juntos.',
   benefits: ['Uma pausa para vocês', 'Diversão fora da tela', 'Para imprimir e jogar'],
-  cta: 'Escolher nosso próximo encontro',
+  cta: 'Escolher nosso encontro',
   steps: [
     { title: 'Escolham.', text: 'Levem a ideia para o carrinho. Entrem na conta para seguir com a compra.' },
     { title: 'Imprimam.', text: 'Depois da compra, os arquivos ficam em Meus jogos e chegam por e-mail.' },
-    { title: 'Divirtam-se.', text: 'Preparem a mesa, guardem os celulares e escolham quem começa.' },
+    { title: 'Divirtam-se.', text: 'Preparem os materiais e escolham quem começa.' },
   ],
   pillars: [
     { icon: 'connection', title: 'A curiosidade é mútua.', text: 'Um convite para conversar, descobrir e se surpreender com quem está do outro lado da mesa.' },
