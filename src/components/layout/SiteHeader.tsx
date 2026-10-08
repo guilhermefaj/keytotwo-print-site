@@ -8,7 +8,8 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTri
 
 export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boolean) => void }) {
   const { session } = useAuth()
-  const { cart } = useShop()
+  const { cart, freeGame } = useShop()
+  const visibleNavigation = freeGame.data?.available ? [...navigation, { label: 'Jogo gratuito', href: '/jogo-gratuito' }] : navigation
   const count = cart.data?.items.length ?? 0
   const cartLabel = cart.error ? 'Carrinho, contagem indisponível' : cart.loading ? 'Carrinho, carregando itens' : `Carrinho, ${count} ${count === 1 ? 'item' : 'itens'}`
   const accountHref = session ? '/conta' : '/entrar'
@@ -24,7 +25,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
       <img src="/media/hero/keytotwo-logo.webp" alt="KeyToTwo" width="420" height="97" fetchPriority="high" />
     </Link>
     <nav className="desktop-nav flex items-center gap-6" aria-label="Navegação principal">
-      {navigation.map(item => <a className="text-button" key={item.href} href={item.href}>{item.label}</a>)}
+      {visibleNavigation.map(item => <a className="text-button" key={item.href} href={item.href}>{item.label}</a>)}
     </nav>
     <div className="desktop-action flex items-center gap-5">
       <Link className="text-button" to={accountHref}>{accountLabel}</Link>
@@ -51,7 +52,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
           <SheetTitle className="sheet-title">Vamos conhecer?</SheetTitle>
           <SheetDescription className="sheet-description">Jogos para imprimir. Uma ideia para vocês dois.</SheetDescription>
           <nav className="sheet-nav flex flex-col gap-4" aria-label="Navegação mobile">
-            {[...navigation, { label: 'Dúvidas', href: '/#duvidas' }, { label: 'Escolher um encontro', href: '/#comprar' }].map(item =>
+            {[...visibleNavigation, { label: 'Dúvidas', href: '/#duvidas' }, { label: 'Escolher um encontro', href: '/#comprar' }].map(item =>
               <SheetClose asChild key={item.href}><a className={item.label === 'Escolher um encontro' ? 'button button-primary' : 'text-button'} href={item.href}
                 onClick={() => { anchorDestination.current = item.href.split('#')[1] }}>{item.label}<span aria-hidden="true">→</span></a></SheetClose>,
             )}

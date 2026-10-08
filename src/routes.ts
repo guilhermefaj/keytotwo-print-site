@@ -12,6 +12,7 @@ export default [
     route('pedido/confirmacao', 'routes/pedido.confirmacao.tsx'),
   ]),
   route('ajuda', 'routes/ajuda.tsx'),
+  route('jogo-gratuito', 'routes/jogo-gratuito.tsx'),
   route('termos', 'routes/termos.tsx'),
   route('privacidade', 'routes/privacidade.tsx'),
   route('reembolsos', 'routes/reembolsos.tsx'),

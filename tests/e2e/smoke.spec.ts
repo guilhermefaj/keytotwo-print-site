@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// The 13 routes pre-rendered into build/client/<route>/index.html.
+// The 14 routes pre-rendered into build/client/<route>/index.html.
 const routes = [
   '/',
   '/preview/hero',
@@ -9,6 +9,7 @@ const routes = [
   '/meus-jogos',
   '/conta',
   '/pedido/confirmacao',
+  '/jogo-gratuito',
   '/ajuda',
   '/termos',
   '/privacidade',

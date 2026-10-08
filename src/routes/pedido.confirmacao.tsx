@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth-context'
 import { checkoutMock, type OrderStatus } from '../lib/checkout'
 import { useShop } from '../lib/shop-context'
 import { supabase } from '../lib/supabase'
+import { deliveryMock } from '../lib/downloads'
 
 const copy = {
   paid: { title: 'O próximo encontro é de vocês!', text: 'Pagamento confirmado. Seus jogos estão em Meus jogos e também foram enviados para o seu e-mail.', cta: 'Ir para Meus jogos', to: '/meus-jogos' },
@@ -59,7 +60,7 @@ function Status({ sessionId }: { sessionId: string }) {
   return <main id="conteudo" tabIndex={-1} className="account-page confirmation-page content-width"><div className="confirmation-card">
     <p className="eyebrow">Seu pedido</p><h1>{content?.title || 'Conferindo seu pagamento'}</h1>
     {demo && <p className="checkout-demo"><strong>Demonstração (mock).</strong> Esta confirmação é simulada. Nenhuma compra ou liberação foi feita.</p>}
-    {content && <p>{demo ? 'Assim será a confirmação quando o pagamento estiver conectado.' : content.text}</p>}
+    {content && <p>{demo ? 'Assim será a confirmação quando o pagamento estiver conectado.' : state === 'paid' && deliveryMock ? 'Pagamento confirmado. Seus jogos estão em Meus jogos, na sua conta.' : content.text}</p>}
     {state === 'paid' && !demo && deliveryMock && <p className="checkout-demo">Prévia da entrega (mock): o download e o envio por e-mail ainda não estão conectados.</p>}
     {checking && <p role="status">Consultando o status do pedido…</p>}
     <p role="alert" className="form-error">{error}</p>

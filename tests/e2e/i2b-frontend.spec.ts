@@ -170,7 +170,7 @@ test('seed account has library by game and orders; full ownership prevents addin
   expect(library.games.length).toBeGreaterThan(0)
   expect(new Set(library.games.map((game: { code: string }) => game.code)).size).toBe(library.games.length)
   await expect(page.locator('.library-grid > li')).toHaveCount(library.games.length)
-  await expect(page.getByRole('button', { name: /baixar|download/i })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(library.games.length)
   await noOverflow(page)
   const accountResponse = page.waitForResponse(response => response.url().endsWith('/api/account') && response.status() === 200)
   await page.goto('/conta')
