@@ -1,6 +1,6 @@
 // Sources: Site — Estrutura e taxonomia; Site — Direção visual (draft copy).
 export const navigation = [
-  { label: 'Os 5 jogos', href: '/#jogos' },
+  { label: 'A experiência', href: '/#experiencia' },
   { label: 'Como funciona', href: '/#como-funciona' },
 ] as const
 
@@ -12,7 +12,7 @@ export const site = {
 
 // Only these routes may enter the sitemap in live. Private/preview shells never do.
 export const publicPages = {
-  '/': { title: 'Jogos para casais, para imprimir — KeyToTwo', description: 'Conheça o pacote de 5 jogos para imprimir da KeyToTwo: composição, preparação, condições e dúvidas para jogar a dois em casa.' },
+  '/': { title: 'Jogos para casais, para imprimir — KeyToTwo', description: 'Saiam do automático com jogos para imprimir e jogar a dois. Uma ideia da KeyToTwo para conversar, rir e fazer a noite acontecer.' },
   '/ajuda': { title: 'Ajuda com jogos, impressão e acesso — KeyToTwo', description: 'Encontre orientações sobre os jogos para imprimir, materiais, acesso às compras e atendimento da KeyToTwo.' },
   '/termos': { title: 'Termos de uso — KeyToTwo', description: 'Consulte o estado dos termos de uso da KeyToTwo, incluindo licença dos jogos, condições de acesso e validações pendentes.' },
   '/privacidade': { title: 'Privacidade e dados pessoais — KeyToTwo', description: 'Veja o estado da política de privacidade da KeyToTwo e as informações sobre dados pessoais que aguardam validação.' },

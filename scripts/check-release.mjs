@@ -54,6 +54,15 @@ async function check(root, built) {
     if (offer?.priceApproved !== true) errors.push(`Preço não aprovado em products[${index}]`)
     if (typeof offer?.price !== 'string' || !offer.price.trim()) errors.push(`Preço ausente em products[${index}]`)
   }
+  const social = modules['experience.ts']?.experience?.social
+  if (social) {
+    if (!Number.isFinite(social.rating) || social.rating <= 0 || social.rating > 5) errors.push('Placeholder: nota da prova social')
+    if (!Number.isInteger(social.reviewCount) || social.reviewCount < 1) errors.push('Placeholder: contagem da prova social')
+    if (!Array.isArray(social.testimonials) || !social.testimonials.length) errors.push('Placeholder: relatos ausentes')
+    for (const [index, item] of (social.testimonials || []).entries()) {
+      if (!item.quote?.trim() || !item.author?.trim()) errors.push(`Placeholder: relato ${index + 1}`)
+    }
+  }
 
   if (built) {
     const pages = modules['site.ts']?.publicPages
@@ -87,8 +96,10 @@ function selfTest() {
       ['marcador no HTML', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>PENDENTE: fixture</h1>', 1],
       ['preview com pendências', 'preview', 'pending("fixture")', false, '', '<h1>PENDENTE</h1>', 0],
       ['test com pendências', 'test', 'pending("fixture")', false, '', '<h1>PENDENTE</h1>', 0],
+      ['prova social incompleta', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1],
     ]
     for (const [name, stage, copy, approved, price, html, status] of cases) {
+      writeFileSync(path.join(root, 'src/content/experience.ts'), `export const experience = { social: ${name === 'prova social incompleta' ? '{rating:null,reviewCount:null,testimonials:[{quote:null,author:null}]}' : '{rating:4,reviewCount:1,testimonials:[{quote:"FIXTURE de teste",author:"FIXTURE"}]}' } }`)
       writeFileSync(path.join(root, 'src/content/products.ts'), `import { pending } from '../lib/pending'\nexport const products = [{ title: ${copy}, offer: {priceApproved: ${approved}, price: ${JSON.stringify(price)}} }]`)
       writeFileSync(path.join(root, 'build/client/index.html'), html)
       const result = spawnSync(process.execPath, [script, '--root', root, '--built'], {

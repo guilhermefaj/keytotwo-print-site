@@ -1,30 +1,25 @@
 import { useOutletContext } from 'react-router'
 import { HeroScene } from '../components/HeroScene'
-import { GamesSection } from '../components/sections/GamesSection'
 import { HowItWorks } from '../components/sections/HowItWorks'
 import { OfferSection } from '../components/sections/OfferSection'
 import { FaqSection } from '../components/sections/FaqSection'
 import { ClosingCta } from '../components/sections/ClosingCta'
-import { site } from '../content/site'
-import { siteConfig } from '../lib/seo'
+import { ExperienceSections } from '../components/sections/ExperienceSections'
+import { experience } from '../content/experience'
 
 export default function Home() {
   const { menuOpen } = useOutletContext<{ menuOpen: boolean }>()
   return <main id="conteudo" tabIndex={-1}>
     <div className="hero">
       <section className="hero-copy text-center" aria-labelledby="hero-title">
-        <p className="eyebrow">Jogos para casais · para imprimir</p>
-        <h1 id="hero-title">A próxima fase <span>é de vocês dois.</span></h1>
-        <p className="hero-description">{site.heroDescription}</p>
-        <div className="hero-actions flex items-center justify-center gap-6">
-          <a className="button button-primary hero-cta" href="/#comprar">Ver pacote <span aria-hidden="true">→</span></a>
-          <a className="text-button secondary-action" href="/#jogos">Conhecer os jogos</a>
-        </div>
-        <p className="hero-note">Arquivos digitais. A brincadeira acontece fora da tela.</p>
+        <p className="eyebrow">KeyToTwo · jogos para casais</p>
+        <h1 id="hero-title">{experience.headline[0]}{' '}<span>{experience.headline[1]}</span></h1>
+        <p className="hero-description">{experience.description}</p>
+        <ul className="hero-benefits">{experience.benefits.map(benefit => <li key={benefit}><svg aria-hidden="true" viewBox="0 0 20 20" width="20" height="20"><path d="m4 10 4 4 8-8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>{benefit}</li>)}</ul>
+        <div className="hero-actions flex items-center justify-center"><a className="button button-primary hero-cta" href="/#comprar">{experience.cta}<span aria-hidden="true">↗</span></a></div>
       </section>
-      {siteConfig.stage !== 'live' && <div className="prototype-note"><span>{siteConfig.stage === 'test' ? 'Ambiente de teste' : 'Protótipo visual'}</span><p>Pacote em preparação. Compra ainda indisponível.</p></div>}
       <HeroScene obscured={menuOpen} />
     </div>
-    <GamesSection /><HowItWorks /><OfferSection /><FaqSection /><ClosingCta />
+    <HowItWorks /><ExperienceSections /><OfferSection /><FaqSection /><ClosingCta />
   </main>
 }
