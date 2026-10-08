@@ -3,6 +3,8 @@ import { errorResponse, HttpError, json, toErrorResponse } from '../_shared/http
 import { getAccount, markPrompt, putMarketing } from './routes/account.ts'
 import { addCartItem, getCart, removeCartItem } from './routes/cart.ts'
 import { catalog } from './routes/catalog.ts'
+import { checkout } from './routes/checkout.ts'
+import { orderStatus } from './routes/order-status.ts'
 import { library } from './routes/library.ts'
 
 type Params = Record<string, string>
@@ -36,6 +38,8 @@ const routes: Route[] = [
   route('/account/marketing', { PUT: putMarketing }),
   route('/account/marketing/prompt', { POST: markPrompt }),
   route('/library', { GET: library }),
+  route('/checkout', { POST: checkout }),
+  route('/order-status', { GET: orderStatus }),
 ]
 
 // Local e na nuvem o caminho chega como /api/<rota>; aceita também o prefixo /functions/v1.

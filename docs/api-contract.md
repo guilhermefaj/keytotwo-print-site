@@ -4,7 +4,7 @@
 | --- | --- |
 | Versão | 0.3, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11. |
 | Dono | Ferrolho (Backend sênior). Banco, permissões e RPCs: `docs/data-contract.md` v0.3 (Lastro). |
-| Estado | I2b: `/health`, `/catalog`, `/cart`, `/cart/items`, `/account`, `/account/marketing` e `/library` implementadas (`supabase/functions/api`), com testes de contrato e de integração em `supabase/functions/tests`. Checkout, webhook, entrega e e-mails entram no I3, I4 e I5. |
+| Estado | I3: além das rotas do I2b, `POST /checkout`, `GET /order-status` e a função `stripe-webhook` implementadas (Stripe em modo de teste), com testes de contrato e de integração em `supabase/functions/tests`. Passos restantes da Stripe: `STRIPE_INTEGRATION_TODO.md`. Entrega e e-mails entram no I4 e I5. |
 | Fontes | Nota "Plano do site P2" (ajustes do orquestrador, seções 4 e 5) e decisões do responsável registradas nas notas P1 e P2. |
 
 **Alinhamento:** conferido com `docs/data-contract.md` v0.3.1 (21 RPCs), em revisão cruzada com o Lastro. **Marcador:** **[D#]** indica decisão pendente do responsável (nota P2, seção 7).
@@ -143,7 +143,7 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `GET /cart` · `POST /cart/items` · `DELETE /cart/items/{code}` | Sessão | I2b | Implementada |
 | `GET /account` · `PUT /account/marketing` · `POST /account/marketing/prompt` | Sessão | I2b | Implementada |
 | `GET /library` | Sessão | I2b | Implementada |
-| `POST /checkout` · `GET /order-status` | Sessão | I3 | Planejada |
+| `POST /checkout` · `GET /order-status` | Sessão | I3 | Implementada |
 | `POST /download-url` | Sessão | I4 | Planejada |
 | `GET /d/{token}` | Token HMAC | I4 | Planejada |
 | `GET /free-game` · `POST /free-download` | Pública **[D12]** | I4 | Planejada |
@@ -237,7 +237,10 @@ Um carrinho por usuário, guardado no banco (vale entre aparelhos). Não há car
       "created_at": "2026-10-08T12:00:00Z",
       "paid_at": "2026-10-08T12:01:00Z",
       "status": "paid",
+      "amount_subtotal": 0,
+      "amount_discount": 0,
       "amount_total": 0,
+      "promotion_code": null,
       "currency": "brl",
       "items": [{ "code": "P001", "name": "<nome>", "unit_amount": 0, "currency": "brl" }]
     }
@@ -324,7 +327,8 @@ O aceite dos termos (sem reembolso) é colhido **na nossa página**, numa caixa 
    | `client_reference_id` | `order_id` | Nossa arquitetura |
    | `customer` | `stripe_customer_id` | Nossa arquitetura |
    | `metadata` | `{ order_id, terms_version }` | Nossa arquitetura |
-   | `payment_intent_data.metadata` | `{ order_id }`, para achar o pedido nas contestações (compatibilidade com o modo `form` a confirmar no I3; o recurso é buscar a sessão pelo `payment_intent`) | Nossa arquitetura |
+   | `allow_promotion_codes` | `true`: o cliente digita o cupom no formulário | Nossa decisão (cupons) |
+   | `payment_intent_data.metadata` | `{ order_id }`, para achar o pedido nas contestações; se faltar, a rota busca a sessão pelo `payment_intent` | Nossa arquitetura |
    | `locale` | `'pt-BR'` | Nossa arquitetura |
    | `return_url` | `SITE_URL/pedido/confirmacao?session_id={CHECKOUT_SESSION_ID}` | Nossa arquitetura |
 
@@ -341,10 +345,19 @@ O aceite dos termos (sem reembolso) é colhido **na nossa página**, numa caixa 
 
 Erros: `400 INVALID_REQUEST`, `400 TERMS_NOT_ACCEPTED`, `409 TERMS_CHANGED`, os da tabela do passo 1, `401`, `403 EMAIL_NOT_CONFIRMED` e `502 PAYMENT_PROVIDER_ERROR`.
 
+**Verificado na API de teste (2026-10-08):** `ui_mode: 'form'` com os parâmetros do Studio, `allow_promotion_codes: true` e `payment_intent_data.metadata` criam a sessão juntos, com `client_secret` e validade de 24 h.
+
+**Cupons:**
+
+- O cliente aplica o código no formulário embutido (`checkout.applyPromotionCode` e `checkout.removePromotionCode`), e o total se atualiza antes de confirmar. Os cupons são criados pelo responsável na Stripe (Coupon e Promotion Code).
+- O valor que vale é sempre o cobrado pela Stripe. Na liberação, o pedido grava `amount_subtotal` (preço cheio), `amount_discount` (`total_details.amount_discount`), `amount_total` e o texto do código promocional. Os itens guardam o preço unitário cheio.
+- `/account` mostra esses campos por pedido. O site não exibe preço riscado fictício.
+- `payment_status = no_payment_required` (cupom de 100%) só é aceito pelo banco com total 0 e desconto maior que zero.
+
 ### 6.5.1 Stripe: versão da API, SDK e risco do preview
 
 - **Cliente no servidor:** `new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia; custom_checkout_payment_form_preview=v1' })`.
-- **SDK fixo:** `npm:stripe@<versão exata>` no `supabase/functions/deno.json`, escolhida no I3 e registrada no `STRIPE_INTEGRATION_TODO.md`. Nunca faixa de versão.
+- **SDK fixo:** `npm:stripe@22.0.2` no `supabase/functions/deno.json`, cuja API padrão é a `2026-03-25.dahlia` (registrado no `STRIPE_INTEGRATION_TODO.md`). Nunca faixa de versão. Cliente HTTP por `fetch`; criptografia do webhook pelo Web Crypto.
 - **Regra do `ui_mode`:** `'form'` se o SDK `stripe` for ≥ 21.0.0; `'custom'` se for menor. A regra fica numa constante ao lado da versão fixada.
 - **Webhook:** o endpoint de teste é criado com a versão base `2026-03-25.dahlia`, para o formato dos eventos bater com o SDK. Se o sufixo de preview vale para endpoint, fica a confirmar no I3. A assinatura é verificada com `constructEventAsync` e o provedor de criptografia do Web Crypto (Deno).
 - **Risco:** `custom_checkout_payment_form_preview=v1` é API em **preview (beta)**. Pode mudar ou sair sem a garantia de compatibilidade das versões estáveis, e pode depender de a conta estar no programa. Mitigações:
@@ -496,17 +509,17 @@ Todo e-mail do app sai pela API v3 da Brevo, com templates da Brevo: o responsá
 
 ## 9. `stripe-webhook`
 
-1. Confere a assinatura no corpo bruto. Se for inválida, responde `400` sem tocar no banco.
+1. Confere a assinatura no corpo bruto. Se for inválida, responde `400 INVALID_SIGNATURE` sem tocar no banco. Método diferente de `POST` responde `405`.
 2. Acha o pedido:
    - eventos `checkout.session.*`: pelo `client_reference_id`;
    - `charge.*` e `charge.dispute.*`: pelo `metadata.order_id` do PaymentIntent, com recurso para a sessão do `payment_intent`.
    - Sem pedido nosso: `200` com log, sem RPC.
 3. Faz uma única RPC. O evento é gravado na mesma transação do efeito.
-4. Responde e, se houver `outbox_id` a enviar, despacha a entrega em segundo plano.
+4. Responde. Se `fulfill_order` devolver `send_delivery`, a entrega fica enfileirada em `email_outbox`; o despacho em segundo plano entra no I4 (`email-dispatch`).
 
 | Evento | RPC |
 | --- | --- |
-| `checkout.session.completed`, `payment_status = paid` | `fulfill_order` com itens (preço, quantidade, valor e moeda das `line_items`), Customer e intent. O aceite dos termos já está no pedido desde o checkout; `fulfill_order` não o recebe |
+| `checkout.session.completed`, `payment_status = paid` | `fulfill_order` com a sessão relida na Stripe (código promocional expandido): subtotal, desconto, total, moeda, código promocional, itens (preço, quantidade, valor unitário cheio e moeda), Customer, intent, `p_stripe_event_id` e `p_event_type`. O aceite dos termos já está no pedido desde o checkout |
 | `checkout.session.completed`, `unpaid` | `set_order_status('pending_payment')` |
 | `checkout.session.async_payment_succeeded` | `fulfill_order` |
 | `checkout.session.async_payment_failed` | `set_order_status('failed')` |

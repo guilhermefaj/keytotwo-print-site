@@ -1,4 +1,4 @@
--- 08_b2_metadata: metadados do B2 sem URL (docs/data-contract.md v0.3.2, seção 7). A chave do B2 nunca sai do banco.
+-- 08_b2_metadata: metadados do B2 sem URL (docs/data-contract.md v0.3.3, seção 7). A chave do B2 nunca sai do banco.
 -- Roda com `supabase test db` (pgTAP). Dados de teste só existem dentro da transação (rollback no fim).
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -76,6 +76,8 @@ begin
   update public.orders o set
      status = p_to,
      amount_total = case when v_money then 0 else o.amount_total end,
+     amount_subtotal = case when v_money then 0 else o.amount_subtotal end,
+     amount_discount = case when v_money then 0 else o.amount_discount end,
      currency = case when v_money then 'brl' else o.currency end,
      paid_at = case when v_paid then coalesce(o.paid_at, now()) else o.paid_at end,
      stripe_payment_intent_id = case when v_paid then coalesce(o.stripe_payment_intent_id, 'pi_PGTAP_' || replace(o.id::text, '-', '')) else o.stripe_payment_intent_id end,

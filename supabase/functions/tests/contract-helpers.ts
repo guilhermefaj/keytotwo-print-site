@@ -7,6 +7,11 @@ Deno.env.set('SUPABASE_URL', SUPABASE_URL)
 Deno.env.set('SUPABASE_PUBLISHABLE_KEYS', JSON.stringify({ default: 'chave-publica-de-teste' }))
 Deno.env.set('SUPABASE_SECRET_KEYS', JSON.stringify({ default: SECRET_KEY }))
 Deno.env.set('STRIPE_SECRET_KEY', 'stripe-chave-de-teste')
+export const WEBHOOK_SECRET = 'segredo-webhook-de-teste'
+Deno.env.set('STRIPE_WEBHOOK_SECRET', WEBHOOK_SECRET)
+Deno.env.set('SITE_URL', 'http://127.0.0.1:5176')
+export const TERMS_VERSION = 'termos-teste-1'
+Deno.env.set('TERMS_VERSION', TERMS_VERSION)
 Deno.env.set('ALLOWED_ORIGINS', 'http://127.0.0.1:5173')
 
 const KID = 'chave-teste'
@@ -52,6 +57,22 @@ export function onPrice(reply: (id: string) => Reply) {
   priceReply = reply
 }
 
+// Chamadas à API da Stripe (fora de /v1/prices): método, caminho, parâmetros (form ou query) e chave de idempotência.
+export interface StripeCall {
+  method: string
+  path: string
+  params: URLSearchParams
+  idempotencyKey: string | null
+}
+
+export const stripeCalls: StripeCall[] = []
+let stripeReply: (call: StripeCall) => Reply = () => ({ status: 404, body: { error: { type: 'invalid_request_error', code: 'resource_missing' } } })
+
+export function onStripe(reply: (call: StripeCall) => Reply) {
+  stripeCalls.length = 0
+  stripeReply = reply
+}
+
 const respond = ({ status, body }: Reply) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
@@ -69,6 +90,14 @@ globalThis.fetch = (input: string | URL | Request, init?: RequestInit): Promise<
   }
   if (url.origin === 'https://api.stripe.com' && url.pathname.startsWith('/v1/prices/')) {
     return Promise.resolve(respond(priceReply(decodeURIComponent(url.pathname.slice('/v1/prices/'.length)))))
+  }
+  if (url.origin === 'https://api.stripe.com') {
+    const headers = new Headers(init?.headers)
+    const method = (init?.method ?? 'GET').toUpperCase()
+    const params = method === 'GET' ? url.searchParams : new URLSearchParams(String(init?.body ?? ''))
+    const call = { method, path: url.pathname, params, idempotencyKey: headers.get('Idempotency-Key') }
+    stripeCalls.push(call)
+    return Promise.resolve(respond(stripeReply(call)))
   }
   return Promise.reject(new Error(`fetch não simulado: ${url.origin}${url.pathname}`))
 }

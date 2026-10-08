@@ -1,4 +1,4 @@
--- 07_library_status: get_library por jogo (docs/data-contract.md v0.3.2, seção 6.6). get_order_status chega no I3.
+-- 07_library_status: get_library por jogo e get_order_status (docs/data-contract.md v0.3.3, seção 6.6).
 -- Roda com `supabase test db` (pgTAP). Dados de teste só existem dentro da transação (rollback no fim).
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -76,6 +76,8 @@ begin
   update public.orders o set
      status = p_to,
      amount_total = case when v_money then 0 else o.amount_total end,
+     amount_subtotal = case when v_money then 0 else o.amount_subtotal end,
+     amount_discount = case when v_money then 0 else o.amount_discount end,
      currency = case when v_money then 'brl' else o.currency end,
      paid_at = case when v_paid then coalesce(o.paid_at, now()) else o.paid_at end,
      stripe_payment_intent_id = case when v_paid then coalesce(o.stripe_payment_intent_id, 'pi_PGTAP_' || replace(o.id::text, '-', '')) else o.stripe_payment_intent_id end,
@@ -202,6 +204,29 @@ select pg_temp.expect('get_library: usuário não confirmado', format($q$select 
 select pg_temp.expect('get_library: usuário inexistente', $q$select public.get_library(gen_random_uuid())$q$, 'KT009');
 select pg_temp.expect('get_library: p_user_id nulo', $q$select public.get_library(null)$q$, 'KT001');
 select pg_temp.expect_as('service_role executa get_library', 'service_role', format($q$select public.get_library(%L)$q$, pg_temp.uid('la')), 'OK');
+
+-- ===== get_order_status (T72) ======================================================================
+select pg_temp.assert('get_order_status: o dono vê estado, itens e relation owner',
+  (select outcome = 'ok' and status = 'paid' and relation = 'owner' and items = '[{"code": "PK1", "name": "Produto PK1 [TESTE]"}]'::jsonb
+   from public.get_order_status((select id from public.orders where stripe_checkout_session_id = 'cs_test_PGTAP_LA1'), pg_temp.uid('la'))));
+select pg_temp.assert('get_order_status: pedido em processamento traz os itens por position',
+  (select outcome = 'ok' and status = 'pending_payment' and relation = 'owner' and jsonb_array_length(items) = 2 and items->0->>'code' = 'PK1'
+   from public.get_order_status((select id from public.orders where stripe_checkout_session_id = 'cs_test_PGTAP_LD2'), pg_temp.uid('ld'))));
+select pg_temp.assert('get_order_status: outra conta vê só o estado (relation other), sem itens',
+  (select outcome = 'ok' and status = 'paid' and relation = 'other' and items is null
+   from public.get_order_status((select id from public.orders where stripe_checkout_session_id = 'cs_test_PGTAP_LA1'), pg_temp.uid('lb'))));
+select pg_temp.assert('get_order_status: pedido inexistente = not_found com os campos nulos',
+  (select outcome = 'not_found' and status is null and items is null and relation is null from public.get_order_status(gen_random_uuid(), pg_temp.uid('la'))));
+select pg_temp.assert('get_order_status: só devolve outcome, status, items e relation',
+  (select p.proargnames[3:] = array['outcome', 'status', 'items', 'relation'] from pg_proc p where p.proname = 'get_order_status' and p.pronamespace = 'public'::regnamespace));
+select pg_temp.assert('get_order_status: sem e-mail, valores, ids de usuário nem da Stripe',
+  (select to_jsonb(r)::text !~ '(@|amount|user_id|cs_test|pi_|cus_|pgtap)' from public.get_order_status((select id from public.orders where stripe_checkout_session_id = 'cs_test_PGTAP_LA1'), pg_temp.uid('lb')) r));
+select pg_temp.expect('get_order_status: usuário não confirmado', format($q$select * from public.get_order_status(gen_random_uuid(), %L)$q$, pg_temp.uid('le')), 'KT009');
+select pg_temp.expect('get_order_status: usuário inexistente', $q$select * from public.get_order_status(gen_random_uuid(), gen_random_uuid())$q$, 'KT009');
+select pg_temp.expect('get_order_status: pedido nulo', format($q$select * from public.get_order_status(null, %L)$q$, pg_temp.uid('la')), 'KT001');
+select pg_temp.expect('get_order_status: usuário nulo', $q$select * from public.get_order_status(gen_random_uuid(), null)$q$, 'KT001');
+select pg_temp.expect_as('service_role executa get_order_status', 'service_role', format($q$select * from public.get_order_status(gen_random_uuid(), %L)$q$, pg_temp.uid('la')), 'OK');
+select pg_temp.expect_as('authenticated não executa get_order_status', 'authenticated', format($q$select * from public.get_order_status(gen_random_uuid(), %L)$q$, pg_temp.uid('la')), '42501');
 
 select * from finish();
 rollback;

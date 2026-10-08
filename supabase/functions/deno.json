@@ -1,6 +1,7 @@
 {
   "imports": {
     "@supabase/auth-js": "npm:@supabase/auth-js@2.117.2",
+    "stripe": "npm:stripe@22.0.2",
     "@std/assert": "jsr:@std/assert@1.0.19"
   },
   "compilerOptions": {

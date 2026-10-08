@@ -76,6 +76,8 @@ begin
   update public.orders o set
      status = p_to,
      amount_total = case when v_money then 0 else o.amount_total end,
+     amount_subtotal = case when v_money then 0 else o.amount_subtotal end,
+     amount_discount = case when v_money then 0 else o.amount_discount end,
      currency = case when v_money then 'brl' else o.currency end,
      paid_at = case when v_paid then coalesce(o.paid_at, now()) else o.paid_at end,
      stripe_payment_intent_id = case when v_paid then coalesce(o.stripe_payment_intent_id, 'pi_PGTAP_' || replace(o.id::text, '-', '')) else o.stripe_payment_intent_id end,
@@ -122,7 +124,7 @@ begin
   end loop;
 end $$;
 
--- cliente da Stripe, marketing_allowed, get_account e convite de marketing (docs/data-contract.md v0.3.2, D-18, D-19, D-22, seções 2.4 e 6.6/6.7).
+-- cliente da Stripe, marketing_allowed, get_account e convite de marketing (docs/data-contract.md v0.3.3, D-18, D-19, D-22, seções 2.4 e 6.6/6.7).
 
 do $fx$
 declare v_pk bigint; v_s1 bigint; v_s2 bigint; u uuid; o uuid;

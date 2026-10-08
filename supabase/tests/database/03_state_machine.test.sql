@@ -76,6 +76,8 @@ begin
   update public.orders o set
      status = p_to,
      amount_total = case when v_money then 0 else o.amount_total end,
+     amount_subtotal = case when v_money then 0 else o.amount_subtotal end,
+     amount_discount = case when v_money then 0 else o.amount_discount end,
      currency = case when v_money then 'brl' else o.currency end,
      paid_at = case when v_paid then coalesce(o.paid_at, now()) else o.paid_at end,
      stripe_payment_intent_id = case when v_paid then coalesce(o.stripe_payment_intent_id, 'pi_PGTAP_' || replace(o.id::text, '-', '')) else o.stripe_payment_intent_id end,
@@ -122,7 +124,7 @@ begin
   end loop;
 end $$;
 
--- e exclusão de usuário (docs/data-contract.md v0.3.2, seções 3 e 4).
+-- e exclusão de usuário (docs/data-contract.md v0.3.3, seções 3 e 4).
 
 do $fx$
 declare v_pk bigint; v_s1 bigint; v_s2 bigint; u1 uuid; u2 uuid; o1 uuid; o2 uuid;
@@ -152,6 +154,12 @@ select pg_temp.expect('orders: o dono não muda', format($q$update public.orders
 select pg_temp.expect('orders: o dono muda só com o GUC de atendimento', format($q$select set_config('keytotwo.allow_reassign','on',true); with o as (select pg_temp.mk_order(%L,'open',array[(select id from public.products where code='SG1')],'GUC1') as id) update public.orders x set user_id = %L from o where x.id = o.id; select set_config('keytotwo.allow_reassign','off',true)$q$, pg_temp.uid('u2'), pg_temp.uid('u1')), 'OK');
 select pg_temp.expect('orders: sessão gravada não muda', $q$update public.orders set stripe_checkout_session_id = 'cs_test_PGTAP_OUTRA' where stripe_checkout_session_id='cs_test_PGTAP_FX1'$q$, 'KT010');
 select pg_temp.expect('orders: intent gravado não muda', $q$update public.orders set stripe_payment_intent_id = 'pi_PGTAP_OUTRO' where stripe_checkout_session_id='cs_test_PGTAP_FX1'$q$, 'KT010');
+select pg_temp.expect('orders: amount_total gravado não muda', $q$update public.orders set amount_total = 5, amount_subtotal = 5 where stripe_checkout_session_id='cs_test_PGTAP_FX1'$q$, 'KT010');
+select pg_temp.expect('orders: amount_subtotal gravado não muda', $q$update public.orders set amount_subtotal = 5, amount_total = 5 where stripe_checkout_session_id='cs_test_PGTAP_FX1'$q$, 'KT010');
+select pg_temp.expect('orders: moeda gravada não muda', $q$update public.orders set currency = 'usd' where stripe_checkout_session_id='cs_test_PGTAP_FX1'$q$, 'KT010');
+select pg_temp.expect('orders: código promocional nulo pode ser preenchido uma vez', $q$update public.orders set promotion_code = 'TESTE10' where stripe_checkout_session_id='cs_test_PGTAP_FX1'$q$, 'OK');
+select pg_temp.expect('orders: código promocional gravado não muda', $q$update public.orders set promotion_code = 'OUTRO' where stripe_checkout_session_id='cs_test_PGTAP_FX1'$q$, 'KT010');
+select pg_temp.expect('orders: gravar o mesmo valor de novo passa', $q$update public.orders set amount_total = amount_total, currency = currency where stripe_checkout_session_id='cs_test_PGTAP_FX1'$q$, 'OK');
 select pg_temp.expect('order_items: não insere em pedido pago', $q$insert into public.order_items (order_id,product_id,position,stripe_price_id) select o.id, p.id, 9, p.stripe_price_id from public.orders o, public.products p where o.stripe_checkout_session_id='cs_test_PGTAP_FX1' and p.code='SG2'$q$, 'KT010');
 select pg_temp.expect('order_items: não apaga de pedido pago', $q$delete from public.order_items where order_id = (select id from public.orders where stripe_checkout_session_id='cs_test_PGTAP_FX1')$q$, 'KT010');
 select pg_temp.expect('order_items: Price imutável', $q$update public.order_items set stripe_price_id = 'price_OUTRO' where order_id = (select id from public.orders where stripe_checkout_session_id='cs_test_PGTAP_FX1')$q$, 'KT010');
@@ -289,8 +297,10 @@ begin
       v_state := 'OK';
       begin
         update public.orders set status = t,
-          amount_total = case when t in ('pending_payment','paid','disputed','dispute_lost','refunded') then 0 end,
-          currency     = case when t in ('pending_payment','paid','disputed','dispute_lost','refunded') then 'brl' end,
+          amount_total    = case when t in ('pending_payment','paid','disputed','dispute_lost','refunded') then coalesce(amount_total, 0) else amount_total end,
+          amount_subtotal = case when t in ('pending_payment','paid','disputed','dispute_lost','refunded') then coalesce(amount_subtotal, 0) else amount_subtotal end,
+          amount_discount = case when t in ('pending_payment','paid','disputed','dispute_lost','refunded') then coalesce(amount_discount, 0) else amount_discount end,
+          currency        = case when t in ('pending_payment','paid','disputed','dispute_lost','refunded') then coalesce(currency, 'brl') else currency end,
           paid_at      = case when t in ('paid','disputed','dispute_lost','refunded') then coalesce(paid_at, now()) end,
           refunded_at  = case when t = 'refunded' then now() end
         where id = v_order;
