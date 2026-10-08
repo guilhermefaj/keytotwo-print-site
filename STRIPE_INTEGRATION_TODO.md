@@ -1,6 +1,6 @@
 # Integração Stripe — o que falta e como operar
 
-Fonte única dos passos restantes da integração com a Stripe (nota "Stripe Checkout Studio", item 10). Estado em 2026-10-08, fim do I3: checkout com formulário embutido, confirmação e webhook implementados e testados localmente, **em modo de teste**. Nada foi publicado no Supabase remoto.
+Fonte única dos passos restantes da integração com a Stripe (nota "Stripe Checkout Studio", item 10). Estado em 2026-10-08: checkout com formulário embutido, confirmação e webhook implementados e testados localmente, **em modo de teste**; o I3-V validou o pagamento real de teste de ponta a ponta, menos o formulário no navegador (seção 5.1). Nada foi publicado no Supabase remoto.
 
 Contrato das rotas: `docs/api-contract.md` (seções 6.5, 6.6 e 9). Código: `supabase/functions/api/routes/{checkout,order-status}.ts`, `supabase/functions/_shared/{stripe,fulfillment}.ts` e `supabase/functions/stripe-webhook/`.
 
@@ -59,7 +59,11 @@ Nunca cole valores neste arquivo. Os valores ficam em `D:/Maestri/keytotwo-print
 
 1. `supabase/functions/.env` com `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_P001`, `TERMS_VERSION`, `SITE_URL` e `ALLOWED_ORIGINS`, copiados do modelo de segredos sem exibir valores.
 2. `products.stripe_price_id` do P001 no banco local igual ao Price de teste: depois de cada `db reset`, rode `node supabase/local/aplicar-price-teste.mjs` (passo do Lastro; lê `STRIPE_PRICE_ID_P001` do `.env` local). Sem ele, `POST /checkout` responde 502 ("No such price").
-3. Webhook local sem Stripe CLI: os testes assinam eventos com `generateTestHeaderStringAsync` e o mesmo segredo da função. Alternativa opcional: `stripe listen --forward-to http://127.0.0.1:54321/functions/v1/stripe-webhook`, trocando `STRIPE_WEBHOOK_SECRET` pelo segredo que o `listen` imprime.
+3. Webhook local sem Stripe CLI: os testes assinam eventos com `generateTestHeaderStringAsync` e o mesmo segredo da função.
+4. Webhook real local (usado no I3-V): Stripe CLI (v1.51.1, fora do repositório) com a chave de teste em `STRIPE_API_KEY` e `STRIPE_CLI_TELEMETRY_OPTOUT=1`:
+   - `stripe listen --print-secret` → o `whsec_` vai para `STRIPE_WEBHOOK_SECRET` do `.env` local (com backup do `.env`, sem exibir), e o `functions serve` é reiniciado;
+   - `stripe listen --forward-to http://127.0.0.1:54321/functions/v1/stripe-webhook --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,charge.dispute.created,charge.dispute.closed,charge.refunded`;
+   - no fim, restaure o `.env` do backup e reinicie o `functions serve`.
 
 **Projeto de teste no Supabase (pendente; exige autorização de escrita remota):**
 
@@ -98,6 +102,22 @@ Nunca cole valores neste arquivo. Os valores ficam em `D:/Maestri/keytotwo-print
 
 Confira os números atuais em https://docs.stripe.com/testing.
 
+### 5.1 Validação real de teste sem o navegador (I3-V, 2026-10-08)
+
+Tudo pelo runtime local servido, com a Stripe de **teste** real: usuário criado por OTP (Mailpit) → carrinho com o P001 → `POST /checkout` com o aceite → confirmação pela API, como a fixture `checkout.session.completed` da Stripe CLI → webhook real pelo `stripe listen`.
+
+- **Confirmação sem Stripe.js:** `GET /v1/payment_pages/{cs}` com a chave secreta (devido em `total_summary.due`) e `POST /v1/payment_pages/{cs}/confirm` com `payment_method` e `expected_amount`. O `confirm` recusa os atalhos `pm_card_*` ("No such PaymentMethod"): o PaymentMethod é criado antes de `tok_visa` (cartão 4242) ou `tok_chargeDeclined` (4000…0002), como na fixture.
+- **Cupom no servidor:** `POST /v1/payment_pages/{cs}` com `promotion_code=TESTE10` aplica o código na sessão aberta (o mesmo que o `applyPromotionCode` do formulário).
+
+| Cenário | Resultado |
+| --- | --- |
+| Aprovado com TESTE10 | Sessão `cs_test_b14g0VxOvVQYROkC7Xz4ZOKtMm7fa6cRZKp71u1hTw00dFHGoH8dEThLaH` (PI `pi_3UOOFEEtA6WNSLpd10Op1bTp`): devido 1990 → 1791 com o cupom; `confirm` 200 `complete`/`paid`; `checkout.session.completed` `evt_1UOOFGEtA6WNSLpd26zK70km` recebido, função respondeu 200. Pedido `9162C367` `paid`, subtotal 1990, desconto 199, total 1791, cupom `TESTE10`; 5 direitos ativos; carrinho vazio; e-mail "Seus jogos chegaram (pedido 9162C367)" no Mailpit; `GET /order-status` `paid`/`open_library`; `POST /download-url` → PDF TESTE-J01 do B2 (200, `application/pdf`, `attachment`) |
+| Recusado | Sessão `cs_test_b1tmgYTbqP9PCJxc6r21EfATfyDWTkeuLZN8JLD6kYx4OLGtz4NOavQ5Nw` (PI `pi_3UOOFcEtA6WNSLpd06P4kGnN`): `confirm` 402 `card_declined`/`generic_decline`; pedido não pago, nenhum direito, carrinho mantido, `GET /order-status` `failed`. Ao expirar a sessão, `checkout.session.expired` `evt_1UOOFhEtA6WNSLpdvUBeWafn` recebido (200) e o pedido ficou `expired` |
+
+Observação: o `stripe listen` encaminha os eventos na versão padrão da conta (`2026-08-26.dahlia`); a função tratou os dois tipos sem diferença. O endpoint do Dashboard deve continuar com `2026-03-25.dahlia` (seção 3).
+
+**Falta validar só o formulário no navegador** (`initCheckoutFormSdk`/`createForm`, cupom pelo campo, `actions.confirm` e o retorno a `/pedido/confirmacao`). Ele exige `VITE_STRIPE_PUBLISHABLE_KEY` da **mesma conta** da `STRIPE_SECRET_KEY`: a pk atual do modelo é de outra conta, e o `payment_pages/{id}/init` responde 404 "No such checkout.session".
+
 **Testes automatizados** (`supabase/functions/tests`):
 
 - **Contrato:** `checkout-webhook.test.ts`, sem rede.
@@ -106,7 +126,9 @@ Confira os números atuais em https://docs.stripe.com/testing.
 
 ## 6. Próximos passos
 
-- [ ] I4: despacho do e-mail de entrega (`send_delivery` do `fulfill_order`; hoje só fica enfileirado).
+- [x] I4: despacho do e-mail de entrega (`send_delivery` do `fulfill_order`, em segundo plano).
+- [x] I3-V: pagamento real de teste aprovado (com cupom) e recusado, com webhook real (seção 5.1).
+- [ ] Responsável: trocar `VITE_STRIPE_PUBLISHABLE_KEY` pela `pk_test_` da mesma conta da `STRIPE_SECRET_KEY` e validar o formulário no navegador (4242 e TESTE10).
 - [ ] Endpoint de teste no Dashboard e segredos no projeto remoto (seção 3), com autorização.
 - [ ] Confirmar se o sufixo de preview vale para a versão do endpoint de webhook.
 - [ ] CSP do site (Costura): `docs/api-contract.md` 6.5.2.
