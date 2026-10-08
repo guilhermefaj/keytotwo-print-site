@@ -25,7 +25,6 @@ export function MarketingPreference({ marketing, source = 'account', onSaved, on
   return <form className="marketing-form" onSubmit={save} aria-busy={busy}>
     <label className="checkbox-label"><input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)} disabled={busy || !allowed} /><span>{marketingConsent.label}</span></label>
     <p className="field-help">{marketingConsent.detail} <Link className="inline-link" to="/privacidade">Privacidade</Link></p>
-    {!marketingConsent.approved && <p className="pending-copy">{marketingConsent.pending}</p>}
     <div className="form-actions"><button className="button button-primary" disabled={busy || !allowed || (source === 'signup_prompt' && !checked)}>{source === 'signup_prompt' ? 'Salvar minha escolha' : 'Salvar preferência'}</button>{onDismiss && <button type="button" className="text-button" onClick={dismiss} disabled={busy}>Agora não</button>}</div>
     <p className="form-error" role="alert">{error}</p><p role="status">{message}</p>
   </form>

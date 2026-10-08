@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto'
 import { verifyTabVisibility } from './verify-tab-visibility.mjs'
 
 // Artifacts default outside the repository. Point HERO_URL at dev or production preview.
-const url = process.env.HERO_URL ?? 'http://127.0.0.1:4175/'
+const url = process.env.HERO_URL ?? 'http://127.0.0.1:4174/'
 const output = path.resolve(process.env.HERO_QA_DIR ?? path.join(os.tmpdir(), 'keytotwo-hero-qa'))
 const walkAssets = JSON.parse(await readFile(new URL('../docs/kito-walk-assets.json', import.meta.url), 'utf8'))
 const walkSource = JSON.parse(await readFile(new URL('../docs/kito-walk-source-manifest.json', import.meta.url), 'utf8'))
@@ -24,7 +24,7 @@ async function layoutCheck(page) {
     const sprite = document.querySelector('.kito-track').getBoundingClientRect()
     const floor = document.querySelector('.ground').getBoundingClientRect()
     const pixelScale = sprite.width / 384
-    const note = (document.querySelector('.prototype-note') ?? document.querySelector('.hero-note')).getBoundingClientRect()
+    const note = document.querySelector('.hero-copy').getBoundingClientRect()
     const clipped = [...document.querySelectorAll('h1,h2,p,button,a,li')].filter(el => {
       if (!el.checkVisibility() || el.classList.contains('skip-link')) return false
       const r = el.getBoundingClientRect()
@@ -57,19 +57,20 @@ async function doubleText(page) {
 try {
   // Framework foundation: HTML exists before JS; direct route loads hydrate cleanly.
   const staticRoutes = [
-    ['/', 'A próxima fase é de vocês dois.'],
-    ['/preview/hero', 'A próxima fase é de vocês dois.'],
+    ['/', 'A rotina pode esperar. Vocês têm um encontro.'],
+    ['/preview/hero', 'A rotina pode esperar. Vocês têm um encontro.'],
     ['/entrar', 'Entrar'], ['/carrinho', 'Carrinho'], ['/meus-jogos', 'Meus jogos'], ['/conta', 'Conta'],
     ['/pedido/confirmacao', 'Confirmação do pedido'], ['/ajuda', 'Ajuda'],
     ['/termos', 'Termos de uso'], ['/privacidade', 'Privacidade'],
     ['/reembolsos', 'Reembolsos'], ['/404', 'Página não encontrada'],
   ]
+  const protectedRoutes = ['/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao']
   for (const [routePath, title] of staticRoutes) {
     const file = new URL(`../build/client${routePath === '/' ? '' : routePath}/index.html`, import.meta.url)
     const html = await readFile(file, 'utf8')
     expect(html).toMatch(/<meta name="robots" content="noindex, nofollow"/)
     expect(html).toContain('<h1')
-    if (routePath === '/') expect(html).toContain('A próxima fase <span>é de vocês dois.</span>')
+    if (routePath === '/') expect(html).toContain('A rotina pode esperar.')
     for (const width of [320, 390, 1440]) {
       const routePage = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: 'reduce' })
       routePage.on('pageerror', error => report.runtimeErrors.push(`${routePath}: ${error.message}`))
@@ -78,16 +79,15 @@ try {
       expect(response.status()).toBe(200)
       const servedHtml = await response.text()
       const servedHeading = servedHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '')
-      expect(servedHeading).toBe(title)
-      await expect(routePage.locator('h1')).toHaveText(title)
+      expect(servedHeading).toBe(protectedRoutes.includes(routePath) ? 'Verificando acesso' : title)
+      await expect(routePage.locator('h1')).toHaveText(protectedRoutes.includes(routePath) ? 'Entrar' : title)
       await routePage.evaluate(() => document.fonts.ready)
       await expect(routePage.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow')
       expect(await routePage.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
       if (routePath !== '/' && routePath !== '/preview/hero') {
-        await expect(routePage.locator('main')).toContainText('PENDENTE:')
         // Link navigation proves that the pre-rendered shell hydrated.
         await routePage.locator('.site-header .brand').click()
-        await expect(routePage.locator('h1')).toHaveText('A próxima fase é de vocês dois.')
+        await expect(routePage.locator('h1')).toHaveText('A rotina pode esperar. Vocês têm um encontro.')
         await expect(routePage.locator('.hero-scene-region')).toHaveAttribute('data-user-paused', 'true')
       } else {
         await expect(routePage.locator('.hero-scene-region')).toHaveAttribute('data-in-view', 'true')
@@ -105,7 +105,7 @@ try {
     page.on('console', message => { if (message.type() === 'error') report.consoleErrors.push(message.text()) })
     await page.goto(url)
     await page.evaluate(() => document.fonts.ready)
-    await expect(page.locator('h1')).toHaveText('A próxima fase é de vocês dois.')
+    await expect(page.locator('h1')).toHaveText('A rotina pode esperar. Vocês têm um encontro.')
     await expect(page.locator('a[href="#"]')).toHaveCount(0)
     await page.screenshot({ path: path.join(output, `hero-${width}x${height}.png`), fullPage: true })
     report.viewports.push({ width, height, textZoom: '100%', ...await layoutCheck(page) })
@@ -127,6 +127,7 @@ try {
   await expect(page.locator('.mobile-sign-in')).toBeFocused()
   await page.keyboard.press('Tab')
   const menu = page.getByRole('button', { name: 'Abrir menu' })
+  if (await page.locator('.cart-trigger').isVisible()) await page.keyboard.press('Tab')
   await expect(menu).toBeFocused()
   const ring = await menu.evaluate(el => ({ width: getComputedStyle(el).outlineWidth, color: getComputedStyle(el).outlineColor }))
   expect(ring.width).toBe('3px')
@@ -142,7 +143,7 @@ try {
   await expect(menu).toBeFocused()
   report.keyboard.push('Tab through skip link, logo, Entrar, mobile menu; Enter opens; focus trapped; Escape closes and restores trigger; focus outline 3px.')
 
-  for (const [name, target] of [['Os 5 jogos', 'jogos'], ['Ver pacote', 'comprar']]) {
+  for (const [name, target] of [['A experiência', 'experiencia'], ['Escolher um encontro', 'comprar']]) {
     await menu.focus()
     await page.keyboard.press('Enter')
     // Focus the item via actual Tab traversal, then activate via Enter.
@@ -158,20 +159,20 @@ try {
     await axe(page, `section ${name}`)
     await page.screenshot({ path: path.join(output, `section-${target}-mobile.png`), fullPage: true })
   }
-  report.keyboard.push('Mobile menu links close the sheet and focus the real games/offer heading at the matching URL fragment.')
+  report.keyboard.push('Mobile menu links close the sheet and focus the real experience/offer heading at the matching URL fragment.')
 
   const primary = page.locator('.hero-cta')
   await primary.focus()
   await page.keyboard.press('Enter')
   expect(new URL(page.url()).hash).toBe('#comprar')
   await expect(page.locator('#comprar')).toBeInViewport()
-  const secondary = page.locator('.secondary-action')
+  const secondary = page.locator('.experience-copy .button')
   await secondary.focus()
   await page.keyboard.press('Enter')
-  expect(new URL(page.url()).hash).toBe('#jogos')
-  await expect(page.locator('#jogos')).toBeInViewport()
+  expect(new URL(page.url()).hash).toBe('#comprar')
+  await expect(page.locator('#comprar')).toBeInViewport()
   await expect(page.locator('dialog')).toHaveCount(0)
-  report.keyboard.push('Hero CTA links activate with Enter and scroll to the matching offer/games section; no demonstration panels remain.')
+  report.keyboard.push('Hero and experience CTAs activate with Enter and reach the offer; no demonstration panels remain.')
 
   // Measure computed colors for each button family across actual normal/hover/active/focus states.
   function contrast(foreground, background) {
@@ -263,7 +264,7 @@ try {
     expect(initial.x + initial.width).toBeLessThan(width)
     expect(await button.evaluate(el => !!el.closest('[aria-hidden="true"]'))).toBe(false)
     // Reach pause through the keyboard from the last hero CTA.
-    await motionPage.locator('.secondary-action').focus()
+    await motionPage.locator('.hero-cta').focus()
     await motionPage.keyboard.press('Tab')
     await expect(button).toBeFocused()
     expect(await button.evaluate(el => getComputedStyle(el).outlineWidth)).toBe('3px')

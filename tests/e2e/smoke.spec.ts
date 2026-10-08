@@ -82,7 +82,7 @@ for (const route of routes) {
 
 test('H1 da hero em /', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('h1#hero-title')).toContainText('A próxima fase')
-  await expect(page.locator('h1#hero-title')).toContainText('é de vocês dois.')
+  await expect(page.locator('h1#hero-title')).toContainText('A rotina pode esperar.')
+  await expect(page.locator('h1#hero-title')).toContainText('Vocês têm um encontro.')
   await expect(page.locator('h1')).toHaveCount(1)
 })

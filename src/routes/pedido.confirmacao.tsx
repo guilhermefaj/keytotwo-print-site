@@ -1,5 +1,5 @@
 import { PendingPage } from '../root'
 
 export default function ConfirmacaoPedido() {
-  return <PendingPage title="Confirmação do pedido">PENDENTE: consulta ao estado do pedido. Este protótipo não confirma pagamento nem libera acesso.</PendingPage>
+  return <PendingPage title="Confirmação do pedido">O acompanhamento de pedidos estará disponível em breve. Nenhum pagamento é feito neste ambiente.</PendingPage>
 }
