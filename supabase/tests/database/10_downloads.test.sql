@@ -146,7 +146,12 @@ begin
   return v_id;
 end $$;
 create function pg_temp.fid(p_filename text) returns uuid language sql as $$ select id from public.files where filename = p_filename $$;
-create function pg_temp.events() returns bigint language sql as $$ select count(*) from public.download_events $$;
+-- eventos de download SÓ dos arquivos que este teste cria (a stack pode ter download_events de outros dados)
+create function pg_temp.events() returns bigint language sql as $$
+  select count(*) from public.download_events d
+   where d.file_id in (select f.id from public.files f
+                        where f.filename like 'GM-PK1-%' or f.filename like 'GM-SG1-%' or f.filename like 'FG-1-%' or f.filename = 'PK1-v1.0.zip')
+$$;
 create temp table fx (k text primary key, v text);
 create function pg_temp.fxv(p_k text) returns text language sql as $$ select v from pg_temp.fx where k = p_k $$;
 
@@ -184,7 +189,9 @@ begin
   update public.files set status = 'retired' where filename = 'GM-PK1-3-v1.0.pdf';
   -- ZIP do pacote PK1, publicado
   perform pg_temp.mk_file('PK1', '1.0', 'published', 'zip', 'paid', true);
-  -- jogo gratuito: tudo em rascunho
+  -- jogo gratuito: tudo em rascunho. Um grátis publicado que a stack já tenha (no máximo um, I-8) sai do ar só dentro desta transação.
+  update public.files set status = 'retired' where access = 'free' and status = 'published';
+  update public.games set status = 'draft' where access = 'free' and status = 'published';
   insert into public.games (code, slug, name, access, status) values ('FG-1', 'fg-1', 'Jogo gratuito [TESTE]', 'free', 'draft');
   perform pg_temp.mk_file('FG-1', '0.1', 'draft', 'pdf', 'free');
 end $fx$;
@@ -196,7 +203,7 @@ select pg_temp.assert('download: o dono recebe ok, com bucket, chave, nome, tipo
    from public.resolve_download(pg_temp.uid('da'), pg_temp.fid('GM-PK1-2-v1.0.pdf'))));
 select pg_temp.assert('download: ok grava download_events (pago, com o usuário e o arquivo)',
   (select count(*) = 1 and bool_and(kind = 'paid' and user_id = pg_temp.uid('da') and file_id = pg_temp.fid('GM-PK1-2-v1.0.pdf') and created_at >= now() - interval '1 minute')
-   from public.download_events));
+   from public.download_events where file_id = pg_temp.fid('GM-PK1-2-v1.0.pdf')));
 do $c$ begin perform * from public.resolve_download(pg_temp.uid('da'), pg_temp.fid('GM-PK1-2-v1.0.pdf')); end $c$;
 select pg_temp.assert('download: cada download fica registrado (2 eventos)', pg_temp.events() = 2);
 
@@ -272,7 +279,7 @@ select pg_temp.assert('entrega: o clique de agora grava download_events pago com
   (select outcome = 'ok' from public.resolve_delivery(pg_temp.fxv('ent_da')::uuid, pg_temp.fxv('g_pk1-1')::bigint)));
 select pg_temp.assert('entrega: ... exatamente 1 evento a mais, do dono do direito e do arquivo vigente',
   pg_temp.events() = pg_temp.fxv('ev_deliv')::bigint + 1
-  and (select kind = 'paid' and user_id = pg_temp.uid('da') and file_id = pg_temp.fid('GM-PK1-1-v1.1.pdf') from public.download_events order by id desc limit 1));
+  and (select kind = 'paid' and user_id = pg_temp.uid('da') and file_id = pg_temp.fid('GM-PK1-1-v1.1.pdf') from public.download_events where file_id = pg_temp.fid('GM-PK1-1-v1.1.pdf') and user_id = pg_temp.uid('da') order by id desc limit 1));
 select pg_temp.assert('entrega: jogo fora da fotografia do direito = not_found, sem localização',
   (select outcome = 'not_found' and object_key is null and bucket is null from public.resolve_delivery(pg_temp.fxv('ent_da')::uuid, pg_temp.fxv('g_sg1-1')::bigint)));
 select pg_temp.assert('entrega: direito inexistente = not_found', (select outcome = 'not_found' from public.resolve_delivery(gen_random_uuid(), pg_temp.fxv('g_pk1-1')::bigint)));
@@ -315,7 +322,7 @@ select pg_temp.assert('grátis: o evento é free, SEM usuário (e sem e-mail, IP
   (select count(*) = 1 and bool_and(kind = 'free' and user_id is null) from public.download_events where kind = 'free' and file_id = pg_temp.fid('FG-1-v0.1.pdf')));
 select pg_temp.assert('grátis: arquivo PAGO pelo id = not_found, sem localização', (select outcome = 'not_found' and object_key is null from public.resolve_free_download(pg_temp.fid('GM-PK1-2-v1.0.pdf'))));
 select pg_temp.assert('grátis: id inexistente = not_found', (select outcome = 'not_found' from public.resolve_free_download(gen_random_uuid())));
-select pg_temp.assert('grátis: as recusas não gravam evento', (select count(*) = 1 from public.download_events where kind = 'free'));
+select pg_temp.assert('grátis: as recusas não gravam evento', (select count(*) = 1 from public.download_events where kind = 'free' and file_id = pg_temp.fid('FG-1-v0.1.pdf')));
 select pg_temp.expect('grátis: id nulo', $q$select * from public.resolve_free_download(null)$q$, 'KT001');
 select pg_temp.expect_as('grátis: service_role executa', 'service_role', $q$select public.get_free_game()$q$, 'OK');
 select pg_temp.expect_as('grátis: anon não executa get_free_game', 'anon', $q$select public.get_free_game()$q$, '42501');

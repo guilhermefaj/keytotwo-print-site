@@ -377,11 +377,11 @@ begin
   insert into fz select 'n1', private.enqueue_followups(now() + interval '2 hours 59 minutes')::text;
 end $c$;
 select pg_temp.assert('lembrete: carrinho que acabou de mudar não é lembrado (p_now = agora, nem 2 h 59 min depois)', (select v = '0' from fz where k = 'n0') and (select v = '0' from fz where k = 'n1')
-  and (select count(*) = 0 from public.email_outbox where dedupe_key like 'cart_reminder:%'));
+  and (select count(*) = 0 from public.email_outbox where dedupe_key like 'cart_reminder:%' and to_email like '%@pgtap.test'));
 do $c$ begin insert into fz select 'n2', private.enqueue_followups(now() + interval '3 hours')::text; end $c$;
 select pg_temp.assert('lembrete: 3 h depois da última mudança (limite inclusivo), enfileira o elegível e o que tem item vendável (cr1 e cr7); devolve a contagem',
   (select v = '2' from fz where k = 'n2') and pg_temp.outbox('cr1', 'cart_reminder') = 1 and pg_temp.outbox('cr7', 'cart_reminder') = 1
-  and (select count(*) = 2 from public.email_outbox where dedupe_key like 'cart_reminder:%'));
+  and (select count(*) = 2 from public.email_outbox where dedupe_key like 'cart_reminder:%' and to_email like '%@pgtap.test'));
 select pg_temp.assert('lembrete: não enfileira sem opt-in, com bounce, com descadastro depois do opt-in, e-mail não confirmado, carrinho vazio, jogos já possuídos nem com pagamento em curso',
   pg_temp.outbox('cr2', 'cart_reminder') = 0 and pg_temp.outbox('cr3', 'cart_reminder') = 0 and pg_temp.outbox('cr4', 'cart_reminder') = 0 and pg_temp.outbox('cr5', 'cart_reminder') = 0
   and pg_temp.outbox('cr6', 'cart_reminder') = 0 and pg_temp.outbox('cr8', 'cart_reminder') = 0 and pg_temp.outbox('cr9', 'cart_reminder') = 0);
@@ -392,7 +392,7 @@ select pg_temp.assert('lembrete: linha de marketing queued, com o e-mail da cont
 select pg_temp.assert('lembrete: o item fora do ar não entra no payload (cr7 só com o FP1)', (select payload->'items' = '[{"code": "FP1", "name": "Produto FP1 [TESTE]"}]'::jsonb
   from public.email_outbox where user_id = pg_temp.uid('cr7') and kind = 'cart_reminder'));
 do $c$ begin insert into fz select 'n3', private.enqueue_followups(now() + interval '3 hours')::text; end $c$;
-select pg_temp.assert('lembrete: rodar de novo não duplica (devolve 0): um por version', (select v = '0' from fz where k = 'n3') and (select count(*) = 2 from public.email_outbox where dedupe_key like 'cart_reminder:%'));
+select pg_temp.assert('lembrete: rodar de novo não duplica (devolve 0): um por version', (select v = '0' from fz where k = 'n3') and (select count(*) = 2 from public.email_outbox where dedupe_key like 'cart_reminder:%' and to_email like '%@pgtap.test'));
 do $c$ begin
   perform public.cart_add(pg_temp.uid('cr1'), 'FP3');     -- o carrinho mudou: version 2
   insert into fz select 'n4', private.enqueue_followups(now() + interval '3 hours')::text;
@@ -442,7 +442,7 @@ begin
 end $c$;
 select pg_temp.assert('pós-compra: antes de D+3 e a partir de D+14 (exclusive) não enfileira nada; em D+3 (inclusivo) saem os elegíveis e a contagem devolvida é a das linhas criadas',
   (select v = '0' from fz where k = 'q0') and (select v = '0' from fz where k = 'q1')
-  and (select v::int = (select count(*) from public.email_outbox where dedupe_key like 'post_purchase:%') from fz where k = 'q2')
+  and (select v::int = (select count(*) from public.email_outbox where dedupe_key like 'post_purchase:%' and to_email like '%@pgtap.test') from fz where k = 'q2')
   and pg_temp.outbox('pp1', 'post_purchase') = 2 and pg_temp.outbox('cr8', 'post_purchase') = 1 and pg_temp.outbox('cp1', 'post_purchase') = 1);
 select pg_temp.assert('pós-compra: um por pedido, com a ordem, o e-mail da conta, agendado para agora e dedupe post_purchase:{pedido}',
   (select count(*) = 2 and bool_and(category = 'marketing' and status = 'queued' and to_email = 'pp1@pgtap.test' and scheduled_at = now() and user_id = pg_temp.uid('pp1')
@@ -455,12 +455,12 @@ select pg_temp.assert('pós-compra: payload com a referência do pedido e um jog
 select pg_temp.assert('pós-compra: não enfileira sem opt-in, com queixa, pedido reembolsado, direito revogado, pedido contestado nem pedido não pago',
   (select count(*) = 0 from public.email_outbox where kind = 'post_purchase' and user_id in (pg_temp.uid('pp2'), pg_temp.uid('pp3'), pg_temp.uid('pp4'), pg_temp.uid('pp5'), pg_temp.uid('pp6'), pg_temp.uid('pp7'))));
 do $c$ begin
-  insert into fz select 'pp_total', count(*)::text from public.email_outbox where dedupe_key like 'post_purchase:%';
+  insert into fz select 'pp_total', count(*)::text from public.email_outbox where dedupe_key like 'post_purchase:%' and to_email like '%@pgtap.test';
   insert into fz select 'q3', private.enqueue_followups(now() + interval '3 days')::text;
   insert into fz select 'q4', private.enqueue_followups(now() + interval '13 days')::text;
 end $c$;
 select pg_temp.assert('pós-compra: rodar de novo não duplica (D+3 e D+13 devolvem 0)', (select v = '0' from fz where k = 'q3') and (select v = '0' from fz where k = 'q4')
-  and (select count(*) from public.email_outbox where dedupe_key like 'post_purchase:%') = pg_temp.fxv('pp_total')::bigint);
+  and (select count(*) from public.email_outbox where dedupe_key like 'post_purchase:%' and to_email like '%@pgtap.test') = pg_temp.fxv('pp_total')::bigint);
 
 -- do enfileirar ao enviar: o claim refaz as checagens
 do $c$

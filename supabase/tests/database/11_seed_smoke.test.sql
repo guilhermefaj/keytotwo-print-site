@@ -196,7 +196,7 @@ select pg_temp.assert('as 2 entregas do seed (pedidos pagos de A e de B) estão 
   (select count(*) = 2 and bool_and(category = 'transactional' and payload::text !~ '(token|https?:)') from public.email_outbox where kind = 'delivery' and user_id in (select id from seed_users)));
 select pg_temp.assert('payload da entrega: ref, produtos e um jogo por direito (entitlement_id e game_id)',
   (select jsonb_array_length(payload->'games') = 5 and (payload->'games'->0 ?& array['entitlement_id','game_id','code','name']) and payload->>'order_ref' ~ '^[0-9A-F]{8}$'
-   from public.email_outbox o join public.orders ord on ord.id = o.order_id where ord.stripe_checkout_session_id = 'cs_test_TESTE_O1'));
+   from public.email_outbox o join public.orders ord on ord.id = o.order_id where o.kind = 'delivery' and ord.stripe_checkout_session_id = 'cs_test_TESTE_O1'));
 
 -- ===== I3: checkout e liberação sobre o seed (rollback no fim: o seed não muda) =====================
 do $c$
@@ -245,6 +245,7 @@ declare
   v_game3 bigint := (select id from public.games where code = 'TESTE-J03');
 begin
   if not exists (select 1 from pg_tables where tablename = 'smoke4') then create temp table smoke4 (k text, j jsonb); end if;
+  insert into smoke4 select 'ev0', to_jsonb(coalesce((select max(id) from public.download_events), 0));   -- só o que vier depois disto é do smoke
   insert into smoke4 select 'dl_a', to_jsonb(r) from public.resolve_download(v_a, v_f1) r;
   insert into smoke4 select 'dl_b3', to_jsonb(r) from public.resolve_download(v_b, v_f3) r;   -- B comprou o P001 no smoke do I3, logo acima
   insert into smoke4 select 'dl_e1', to_jsonb(r) from public.resolve_download(v_e, v_f1) r;   -- E só tem direitos revogados
@@ -259,7 +260,7 @@ select pg_temp.assert('seed I4: B, que acabou de comprar o P001, baixa o jogo 3;
   and (select j->>'outcome' = 'not_entitled' and j->'object_key' = 'null'::jsonb from smoke4 where k = 'dl_e1'));
 select pg_temp.assert('seed I4: a entrega do pedido de A serve o jogo 3 pela versão vigente', (select j->>'outcome' = 'ok' and j->>'object_key' = 'paid/TESTE-J03/1.0/TESTE-J03-v1.0.pdf' from smoke4 where k = 'del'));
 select pg_temp.assert('seed I4: sem jogo gratuito publicado, available = false', (select j = '{"available": false}'::jsonb from smoke4 where k = 'free'));
-select pg_temp.assert('seed I4: os downloads gravaram eventos pagos, sem IP', (select count(*) = 3 and bool_and(kind = 'paid') from public.download_events where user_id in (select id from seed_users)));
+select pg_temp.assert('seed I4: os downloads gravaram eventos pagos, sem IP', (select count(*) = 3 and bool_and(kind = 'paid') from public.download_events where user_id in (select id from seed_users) and id > (select (j #>> '{}')::bigint from smoke4 where k = 'ev0')));
 do $c$
 begin
   insert into smoke4 select 'claim', to_jsonb(r) from public.claim_email_batch(5, (select (j->>'outbox_id')::uuid from smoke where k = 'ful')) r;
