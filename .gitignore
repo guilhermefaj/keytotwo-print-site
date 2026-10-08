@@ -155,3 +155,11 @@ vite.config.ts.timestamp-*
 
 # Maestri (configuração local de agentes)
 .maestri/
+
+# React Router (saídas geradas)
+build/
+.react-router/
+
+# Supabase CLI (estado local)
+supabase/.temp/
+supabase/.branches/
