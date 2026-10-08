@@ -29,7 +29,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
     <div className="desktop-action flex items-center gap-5">
       <Link className="text-button" to={accountHref}>{accountLabel}</Link>
       {siteConfig.showCartAccess && <Link className="text-button" to="/carrinho" aria-label={cartLabel}>Carrinho <span aria-hidden="true">({cart.loading || cart.error ? '…' : count})</span></Link>}
-      <a className="button button-primary" href="/#comprar">Ver pacote <span aria-hidden="true">→</span></a>
+      <a className="button button-primary" href="/#comprar">Escolher um encontro <span aria-hidden="true">→</span></a>
     </div>
     <div className="mobile-navigation">
       <Link className="mobile-sign-in" to={accountHref}>{accountLabel}</Link>
@@ -51,8 +51,8 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
           <SheetTitle className="sheet-title">Vamos conhecer?</SheetTitle>
           <SheetDescription className="sheet-description">Jogos para imprimir. Uma ideia para vocês dois.</SheetDescription>
           <nav className="sheet-nav flex flex-col gap-4" aria-label="Navegação mobile">
-            {[...navigation, { label: 'Dúvidas', href: '/#duvidas' }, { label: 'Ver pacote', href: '/#comprar' }].map(item =>
-              <SheetClose asChild key={item.href}><a className={item.label === 'Ver pacote' ? 'button button-primary' : 'text-button'} href={item.href}
+            {[...navigation, { label: 'Dúvidas', href: '/#duvidas' }, { label: 'Escolher um encontro', href: '/#comprar' }].map(item =>
+              <SheetClose asChild key={item.href}><a className={item.label === 'Escolher um encontro' ? 'button button-primary' : 'text-button'} href={item.href}
                 onClick={() => { anchorDestination.current = item.href.split('#')[1] }}>{item.label}<span aria-hidden="true">→</span></a></SheetClose>,
             )}
             <SheetClose asChild><Link className="text-button" to={accountHref}>{accountLabel}</Link></SheetClose>

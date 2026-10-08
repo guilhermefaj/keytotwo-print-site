@@ -57,7 +57,7 @@ export default function Root() {
 export function PendingPage({ title, children }: { title: string; children: ReactNode }) {
   return (
     <main id="conteudo" tabIndex={-1} className="mx-auto flex min-h-svh w-full max-w-3xl flex-col items-start justify-center gap-6 px-5 py-12">
-      <p className="eyebrow">Protótipo visual</p>
+      <p className="eyebrow">KeyToTwo</p>
       <h1 style={{ margin: 0, fontSize: 'clamp(2rem, 6vw, 3rem)', lineHeight: 1.12, letterSpacing: '-.03em' }}>{title}</h1>
       <p className="m-0 text-base leading-relaxed">{children}</p>
       <Link to="/" className="button button-primary">Voltar ao início</Link>
@@ -66,7 +66,7 @@ export function PendingPage({ title, children }: { title: string; children: Reac
 }
 
 export function HydrateFallback() {
-  return <PendingPage title="Carregando">Carregando o protótipo.</PendingPage>
+  return <PendingPage title="Carregando">Preparando seu próximo encontro.</PendingPage>
 }
 
 export function ErrorBoundary() {
