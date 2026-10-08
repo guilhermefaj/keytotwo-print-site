@@ -35,7 +35,7 @@ declare global { interface Window { Stripe?: StripeFactory } }
 // everything else (colors, spacing, borders) stays as configured in Studio.
 export const studioAppearance = {
   theme: 'stripe', labels: 'auto', inputs: 'spaced',
-  variables: { borderRadius: '4px', colorBackground: '#ffffff', colorDanger: '#df1b41', colorPrimary: '#0570de', colorSuccess: '#00c853', colorText: '#30313d', fontFamily: "'DM Sans', system-ui, 'Segoe UI', Roboto, sans-serif", fontSizeBase: '16px', spacingUnit: '4px' },
+  variables: { borderRadius: '4px', colorBackground: '#ffffff', colorDanger: '#df1b41', colorPrimary: '#006970', colorSuccess: '#00c853', colorText: '#30313d', fontFamily: "'DM Sans', system-ui, 'Segoe UI', Roboto, sans-serif", fontSizeBase: '16px', spacingUnit: '4px' },
 } as const
 
 // Custom fonts for the embedded form: top-level SDK option (not part of appearance).
