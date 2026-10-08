@@ -1,0 +1,178 @@
+[
+  {
+    "source": "keytotwo_logo.png",
+    "sourceBytes": 953418,
+    "sourceSha256": "355d51c870588bcfc85522795da8b67f0b50dd4ce4607c92280cf62ee179486d",
+    "crop": null,
+    "alphaBounds": {
+      "left": 38,
+      "top": 842,
+      "width": 2085,
+      "height": 482
+    },
+    "horizontalFlip": false,
+    "output": "keytotwo-logo.webp",
+    "width": 420,
+    "height": 97,
+    "bytes": 40044
+  },
+  {
+    "source": "nuvens_2.png",
+    "sourceBytes": 560255,
+    "sourceSha256": "0cce743c2910fd2b52aef5f9f9810233876ce4d693575a9cdabb845656e106cc",
+    "crop": {
+      "left": 0,
+      "top": 0,
+      "width": 850,
+      "height": 400
+    },
+    "alphaBounds": {
+      "left": 66,
+      "top": 73,
+      "width": 731,
+      "height": 306
+    },
+    "horizontalFlip": false,
+    "output": "cloud-a.webp",
+    "width": 280,
+    "height": 117,
+    "bytes": 21996
+  },
+  {
+    "source": "nuvens_2.png",
+    "sourceBytes": 560255,
+    "sourceSha256": "0cce743c2910fd2b52aef5f9f9810233876ce4d693575a9cdabb845656e106cc",
+    "crop": {
+      "left": 850,
+      "top": 270,
+      "width": 540,
+      "height": 235
+    },
+    "alphaBounds": {
+      "left": 27,
+      "top": 19,
+      "width": 460,
+      "height": 195
+    },
+    "horizontalFlip": false,
+    "output": "cloud-b.webp",
+    "width": 208,
+    "height": 88,
+    "bytes": 14480
+  },
+  {
+    "source": "paisagem_direita.png",
+    "sourceBytes": 723643,
+    "sourceSha256": "5e925ac50b4f1f30cb6dbb0e5c4a0f05ed3523497ddf1e2ed9979535e01ed676",
+    "crop": null,
+    "alphaBounds": {
+      "left": 12,
+      "top": 225,
+      "width": 1660,
+      "height": 688
+    },
+    "horizontalFlip": false,
+    "output": "foliage-right.webp",
+    "width": 720,
+    "height": 298,
+    "bytes": 134618
+  },
+  {
+    "source": "paisagem_direita.png",
+    "sourceBytes": 723643,
+    "sourceSha256": "5e925ac50b4f1f30cb6dbb0e5c4a0f05ed3523497ddf1e2ed9979535e01ed676",
+    "crop": {
+      "left": 0,
+      "top": 590,
+      "width": 900,
+      "height": 324
+    },
+    "alphaBounds": {
+      "left": 12,
+      "top": 29,
+      "width": 888,
+      "height": 294
+    },
+    "horizontalFlip": true,
+    "output": "foliage-left.webp",
+    "width": 360,
+    "height": 119,
+    "bytes": 40694
+  },
+  {
+    "source": "kito_walking_right_step01.png … step04.png",
+    "output": "kito-walk-2x.webp",
+    "width": 512,
+    "height": 128,
+    "bytes": 13322,
+    "scale": 2,
+    "sources": [
+      {
+        "source": "kito_walking_right_step01.png",
+        "width": 1254,
+        "height": 1254,
+        "sourceBytes": 742824,
+        "sourceSha256": "8f4ff15f23801c1ca82de676cbce01b823b5749f1f8a62322d85a816a99741bf"
+      },
+      {
+        "source": "kito_walking_right_step02.png",
+        "width": 1254,
+        "height": 1254,
+        "sourceBytes": 747061,
+        "sourceSha256": "7523cc2f7b8bc453c2975b2cfc9be02b4871963610ada97d2e63f98199e55d1c"
+      },
+      {
+        "source": "kito_walking_right_step03.png",
+        "width": 1254,
+        "height": 1254,
+        "sourceBytes": 732143,
+        "sourceSha256": "aaf48ef989d61133f2342ea260ad464b4a002f14252c9af821063c2ea900b43a"
+      },
+      {
+        "source": "kito_walking_right_step04.png",
+        "width": 1254,
+        "height": 1254,
+        "sourceBytes": 740464,
+        "sourceSha256": "70e7462ab067d6a3757b6841718ad72030be159ba2c9ef5123f316ca509de2a5"
+      }
+    ]
+  },
+  {
+    "source": "kito_walking_right_step01.png … step04.png",
+    "output": "kito-walk-3x.webp",
+    "width": 768,
+    "height": 192,
+    "bytes": 15078,
+    "scale": 3,
+    "sources": [
+      {
+        "source": "kito_walking_right_step01.png",
+        "width": 1254,
+        "height": 1254,
+        "sourceBytes": 742824,
+        "sourceSha256": "8f4ff15f23801c1ca82de676cbce01b823b5749f1f8a62322d85a816a99741bf"
+      },
+      {
+        "source": "kito_walking_right_step02.png",
+        "width": 1254,
+        "height": 1254,
+        "sourceBytes": 747061,
+        "sourceSha256": "7523cc2f7b8bc453c2975b2cfc9be02b4871963610ada97d2e63f98199e55d1c"
+      },
+      {
+        "source": "kito_walking_right_step03.png",
+        "width": 1254,
+        "height": 1254,
+        "sourceBytes": 732143,
+        "sourceSha256": "aaf48ef989d61133f2342ea260ad464b4a002f14252c9af821063c2ea900b43a"
+      },
+      {
+        "source": "kito_walking_right_step04.png",
+        "width": 1254,
+        "height": 1254,
+        "sourceBytes": 740464,
+        "sourceSha256": "70e7462ab067d6a3757b6841718ad72030be159ba2c9ef5123f316ca509de2a5"
+      }
+    ]
+  }
+]

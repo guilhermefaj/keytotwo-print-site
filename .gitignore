@@ -22,6 +22,11 @@ lib-cov
 coverage
 *.lcov
 
+# Playwright (artefatos de teste)
+test-results/
+playwright-report/
+playwright/.cache/
+
 # nyc test coverage
 .nyc_output
 

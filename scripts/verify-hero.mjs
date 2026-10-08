@@ -1,0 +1,331 @@
+import { chromium, expect } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import path from 'node:path'
+import os from 'node:os'
+import { verifyTabVisibility } from './verify-tab-visibility.mjs'
+
+// Artifacts default outside the repository. Point HERO_URL at dev or production preview.
+const url = process.env.HERO_URL ?? 'http://127.0.0.1:5173/preview/hero'
+const output = path.resolve(process.env.HERO_QA_DIR ?? path.join(os.tmpdir(), 'keytotwo-hero-qa'))
+const walkAssets = JSON.parse(await readFile(new URL('../docs/kito-walk-assets.json', import.meta.url), 'utf8'))
+await mkdir(output, { recursive: true })
+const browser = await chromium.launch()
+const report = { url, output, browser: browser.version(), viewports: [], accessibility: [], keyboard: [], contrast: [], motion: [], media: [], runtimeErrors: [] }
+report.artRevision = { revision: walkAssets.revision, sources: walkAssets.sources, motion: walkAssets.motion }
+
+async function layoutCheck(page) {
+  const result = await page.evaluate(() => {
+    const root = document.documentElement
+    const scene = document.querySelector('.hero-scene').getBoundingClientRect()
+    const sprite = document.querySelector('.kito-track').getBoundingClientRect()
+    const floor = document.querySelector('.ground').getBoundingClientRect()
+    const pixelScale = sprite.width / 64
+    const note = document.querySelector('.prototype-note').getBoundingClientRect()
+    const clipped = [...document.querySelectorAll('h1,h2,p,button,a,li')].filter(el => {
+      if (!el.checkVisibility() || el.classList.contains('skip-link')) return false
+      const r = el.getBoundingClientRect()
+      const clipsY = ['hidden', 'clip'].includes(getComputedStyle(el).overflowY)
+      return r.left < -1 || r.right > innerWidth + 1 || el.scrollWidth > el.clientWidth + 2 || (clipsY && el.scrollHeight > el.clientHeight + 2)
+    }).map(el => ({ tag: el.tagName, text: el.textContent, width: el.clientWidth, scroll: el.scrollWidth }))
+    return { viewportWidth: innerWidth, documentWidth: root.scrollWidth, documentHeight: root.scrollHeight, sceneClearance: scene.top - note.bottom, spriteTopClearance: sprite.top + 6 * pixelScale - scene.top, footGroundDelta: sprite.top + 58 * pixelScale - floor.top, clipped }
+  })
+  expect(result.documentWidth).toBeLessThanOrEqual(result.viewportWidth)
+  expect(result.clipped).toEqual([])
+  expect(result.sceneClearance).toBeGreaterThanOrEqual(20)
+  expect(result.spriteTopClearance).toBeGreaterThanOrEqual(0)
+  expect(Math.abs(result.footGroundDelta)).toBeLessThanOrEqual(0.1)
+  return result
+}
+
+async function axe(page, label) {
+  const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
+  report.accessibility.push({ label, violations: result.violations })
+  expect(result.violations).toEqual([])
+}
+
+async function doubleText(page) {
+  await page.evaluate(() => {
+    const sizes = [...document.querySelectorAll('body *')].map(el => [el, parseFloat(getComputedStyle(el).fontSize)])
+    for (const [el, size] of sizes) el.style.fontSize = `${size * 2}px`
+  })
+}
+
+try {
+  for (const [width, height] of [[320, 800], [390, 844], [768, 1024], [1280, 720], [1440, 900]]) {
+    const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' })
+    const page = await context.newPage()
+    page.on('pageerror', error => report.runtimeErrors.push(error.message))
+    await page.goto(url)
+    await page.evaluate(() => document.fonts.ready)
+    await expect(page.locator('h1')).toHaveText('A próxima fase é de vocês dois.')
+    await expect(page.locator('a[href="#"]')).toHaveCount(0)
+    await page.screenshot({ path: path.join(output, `hero-${width}x${height}.png`), fullPage: true })
+    report.viewports.push({ width, height, textZoom: '100%', ...await layoutCheck(page) })
+    await axe(page, `${width}x${height}`)
+    await doubleText(page)
+    await page.screenshot({ path: path.join(output, `hero-${width}x${height}-text200.png`), fullPage: true })
+    report.viewports.push({ width, height, textZoom: '200% computed font scaling (text only)', ...await layoutCheck(page) })
+    await context.close()
+  }
+
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+  const page = await context.newPage()
+  await page.goto(url)
+  await page.keyboard.press('Tab')
+  await expect(page.getByText('Pular para o conteúdo')).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('link', { name: 'KeyToTwo — início do protótipo' })).toBeFocused()
+  await page.keyboard.press('Tab')
+  const menu = page.getByRole('button', { name: 'Abrir menu' })
+  await expect(menu).toBeFocused()
+  const ring = await menu.evaluate(el => ({ width: getComputedStyle(el).outlineWidth, color: getComputedStyle(el).outlineColor }))
+  expect(ring.width).toBe('3px')
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('dialog', { name: 'Vamos conhecer?' })).toBeVisible()
+  for (let i = 0; i < 8; i++) {
+    await page.keyboard.press('Tab')
+    expect(await page.evaluate(() => Boolean(document.activeElement.closest('[role="dialog"]')))).toBe(true)
+  }
+  await axe(page, 'mobile menu open')
+  await page.screenshot({ path: path.join(output, 'menu-mobile.png'), fullPage: true })
+  await page.keyboard.press('Escape')
+  await expect(menu).toBeFocused()
+  report.keyboard.push('Tab through skip link, logo, mobile menu; Enter opens; focus trapped; Escape closes and restores trigger; focus outline 3px.')
+
+  for (const [name, title] of [['Os 5 jogos', 'Os jogos estão tomando forma.'], ['Ver pacote', 'Uma noite a dois começa por aqui.']]) {
+    await page.keyboard.press('Enter')
+    // Focus the item via actual Tab traversal, then activate via Enter.
+    for (let i = 0; i < 8; i++) {
+      if (await page.getByRole('dialog').getByRole('button', { name, exact: true }).evaluate(el => el === document.activeElement)) break
+      await page.keyboard.press('Tab')
+    }
+    await expect(page.getByRole('dialog').getByRole('button', { name, exact: true })).toBeFocused()
+    await page.keyboard.press('Enter')
+    await expect(page.getByRole('dialog', { name: title })).toBeVisible()
+    await expect(page.getByRole('heading', { name: title })).toBeFocused()
+    await axe(page, `preview ${name}`)
+    await page.screenshot({ path: path.join(output, `panel-${name === 'Os 5 jogos' ? 'games' : 'package'}-mobile.png`), fullPage: true })
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeFocused()
+  }
+  report.keyboard.push('Both mobile menu destinations open a native modal with initial title focus; Escape restores menu trigger.')
+
+  const primary = page.locator('.hero-cta')
+  await primary.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.locator('dialog')).toBeVisible()
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('button', { name: 'Voltar à hero', exact: true })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(primary).toBeFocused()
+  const secondary = page.locator('.secondary-action')
+  await secondary.focus()
+  await page.keyboard.press('Space')
+  await expect(page.getByRole('dialog', { name: 'Os jogos estão tomando forma.' })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(secondary).toBeFocused()
+  report.keyboard.push('Hero CTAs support Enter/Space; modal close button and Escape restore the originating CTA.')
+
+  // Measure computed colors for each button family across actual normal/hover/active/focus states.
+  function contrast(foreground, background) {
+    const luminance = color => {
+      const rgb = color.match(/[\d.]+/g).slice(0, 3).map(Number).map(v => v / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4)
+      return rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722
+    }
+    const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a)
+    return (values[0] + .05) / (values[1] + .05)
+  }
+  async function sample(locator, family, state) {
+    const colors = await locator.evaluate(el => {
+      const css = getComputedStyle(el)
+      let current = el
+      let background = css.backgroundColor
+      while (background === 'rgba(0, 0, 0, 0)' && current.parentElement) {
+        current = current.parentElement
+        background = getComputedStyle(current).backgroundColor
+      }
+      return { foreground: css.color, background, outline: css.outlineColor, outlineWidth: css.outlineWidth }
+    })
+    const ratio = contrast(colors.foreground, colors.background)
+    report.contrast.push({ family, state, ...colors, ratio: Number(ratio.toFixed(2)) })
+    expect(ratio).toBeGreaterThanOrEqual(4.5)
+  }
+  for (const [family, locator] of [['primary', primary], ['secondary', secondary], ['icon', menu], ['motion', page.locator('.motion-button')], ['text-on-white', page.locator('.desktop-nav .text-button')]]) {
+    if (family === 'text-on-white') await page.setViewportSize({ width: 1280, height: 720 })
+    await page.mouse.move(0, 0)
+    await locator.evaluate(el => el.blur())
+    await sample(locator, family, 'normal')
+    await locator.hover()
+    await sample(locator, family, 'hover')
+    await page.mouse.down()
+    await sample(locator, family, 'active')
+    await page.mouse.move(0, 0)
+    await page.mouse.up()
+    await page.keyboard.press('Tab')
+    await locator.focus()
+    await sample(locator, family, 'focus')
+  }
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 })
+    for (const surface of ['menu', 'games', 'package']) {
+      await page.goto(url)
+      if (surface === 'menu') await menu.click()
+      else await page.locator(surface === 'games' ? '.secondary-action' : '.hero-cta').click()
+      await doubleText(page)
+      const modal = page.getByRole('dialog')
+      expect(await modal.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+      const lastButton = modal.getByRole('button').last()
+      await lastButton.focus()
+      await lastButton.scrollIntoViewIfNeeded()
+      const finalControl = await lastButton.evaluate(el => {
+        const box = el.getBoundingClientRect()
+        return { top: box.top, bottom: box.bottom, left: box.left, right: box.right, viewportHeight: innerHeight, viewportWidth: innerWidth }
+      })
+      expect(finalControl.top, JSON.stringify({ width, surface, finalControl })).toBeGreaterThanOrEqual(-1)
+      expect(finalControl.bottom, JSON.stringify({ width, surface, finalControl })).toBeLessThanOrEqual(finalControl.viewportHeight + 1)
+      expect(finalControl.left).toBeGreaterThanOrEqual(-1)
+      expect(finalControl.right).toBeLessThanOrEqual(finalControl.viewportWidth + 1)
+      await modal.evaluate(el => el.scrollTop = 0)
+      await page.screenshot({ path: path.join(output, `${surface}-${width}-text200.png`), fullPage: true })
+      report.keyboard.push(`${surface} at ${width}px / text 200%: no horizontal overflow; final control reachable and fully visible after scrolling.`)
+    }
+  }
+  await page.close()
+
+  const snapshot = page => page.evaluate(() => [...document.querySelectorAll('.kito-track,.kito-frames')].map(el => ({
+    time: el.getAnimations()[0].currentTime, state: el.getAnimations()[0].playState,
+    transform: getComputedStyle(el).transform, frame: getComputedStyle(el).backgroundPositionX,
+  })))
+  async function assertStill(page) {
+    await page.waitForTimeout(100)
+    const before = await snapshot(page)
+    await page.waitForTimeout(400)
+    expect(await snapshot(page)).toEqual(before)
+    expect(before.map(a => a.state)).toEqual(['paused', 'paused'])
+    return before
+  }
+  for (const [width, height, speed, cell] of [[1440, 900, walkAssets.motion.desktopPixelsPerSecond, 192], [390, 844, walkAssets.motion.mobilePixelsPerSecond, 128]]) {
+    const motionPage = await browser.newPage({ viewport: { width, height }, reducedMotion: 'no-preference' })
+    await motionPage.goto(url)
+    const region = motionPage.locator('.hero-scene-region')
+    const button = motionPage.locator('.motion-button')
+    await expect(region).toHaveAttribute('data-running', 'true')
+    expect(await motionPage.locator('.kito-frames').evaluate(el => el.getAnimations()[0].effect.getTiming().duration)).toBe(walkAssets.motion.cycleSeconds * 1000)
+    const initial = await motionPage.locator('.kito-track').boundingBox()
+    expect(initial.x).toBeGreaterThan(0)
+    expect(initial.x + initial.width).toBeLessThan(width)
+    expect(await button.evaluate(el => !!el.closest('[aria-hidden="true"]'))).toBe(false)
+    // Reach pause through the keyboard from the last hero CTA.
+    await motionPage.locator('.secondary-action').focus()
+    await motionPage.keyboard.press('Tab')
+    await expect(button).toBeFocused()
+    expect(await button.evaluate(el => getComputedStyle(el).outlineWidth)).toBe('3px')
+    await motionPage.keyboard.press('Enter')
+    await expect(button).toHaveText('Retomar animação')
+    await assertStill(motionPage)
+    await motionPage.keyboard.press('Space')
+    await expect(button).toHaveText('Pausar animação')
+    await expect(region).toHaveAttribute('data-running', 'true')
+    const before = await snapshot(motionPage)
+    await motionPage.waitForTimeout(350)
+    expect((await snapshot(motionPage))[0].time).toBeGreaterThan(before[0].time + 200)
+    report.keyboard.push(`${width}px: Tab reaches pause, 3px focus ring, Enter pauses both CSS animations, Space resumes both.`)
+    // Observe a complete real-time travel period, with no clock fast-forward.
+    const loop = await motionPage.evaluate(async () => {
+      const track = document.querySelector('.kito-track')
+      const frames = document.querySelector('.kito-frames')
+      const duration = track.getAnimations()[0].effect.getTiming().duration
+      const samples = [], seenFrames = new Set()
+      const start = performance.now()
+      await new Promise(resolve => {
+        const sample = () => {
+          const rect = track.getBoundingClientRect()
+          const time = performance.now() - start
+          samples.push({ time, x: rect.x, right: rect.right })
+          seenFrames.add(getComputedStyle(frames).backgroundPositionX)
+          if (time >= duration + 200) resolve()
+          else requestAnimationFrame(sample)
+        }
+        sample()
+      })
+      const wraps = samples.slice(1).flatMap((point, i) => point.x < samples[i].x - 10 ? [{ before: samples[i], after: point }] : [])
+      const forward = samples.slice(1).map((point, i) => ({ dx: point.x - samples[i].x, dt: point.time - samples[i].time })).filter(p => p.dx >= 0)
+      return { duration, elapsed: samples.at(-1).time, sampleCount: samples.length, wraps, frames: [...seenFrames], measuredSpeed: forward.reduce((n, p) => n + p.dx, 0) / forward.reduce((n, p) => n + p.dt, 0) * 1000 }
+    })
+    expect(loop.elapsed).toBeGreaterThanOrEqual(loop.duration)
+    expect(loop.wraps.length).toBeGreaterThanOrEqual(1)
+    for (const wrap of loop.wraps) {
+      expect(wrap.before.x).toBeGreaterThan(width - 4)
+      expect(wrap.after.right).toBeLessThan(4)
+    }
+    expect(loop.measuredSpeed).toBeCloseTo(speed, 0)
+    expect(loop.frames.map(Number.parseFloat).sort((a, b) => b - a)).toEqual([0, -cell, -cell * 2, -cell * 3])
+    // Real scrolling hides the stage; no IntersectionObserver mocking.
+    await doubleText(motionPage)
+    await motionPage.evaluate(() => scrollTo(0, 0))
+    await expect(region).toHaveAttribute('data-in-view', 'false')
+    await assertStill(motionPage)
+    await motionPage.locator('.hero-scene').scrollIntoViewIfNeeded()
+    await expect(region).toHaveAttribute('data-running', 'true')
+    await button.click()
+    await motionPage.evaluate(() => scrollTo(0, 0))
+    await expect(region).toHaveAttribute('data-in-view', 'false')
+    await motionPage.locator('.hero-scene').scrollIntoViewIfNeeded()
+    await expect(region).toHaveAttribute('data-in-view', 'true')
+    await expect(region).toHaveAttribute('data-user-paused', 'true')
+    await assertStill(motionPage)
+    report.motion.push({ width, initial, expectedSpeed: speed, loop, offscreen: 'pause/resume verified; manual pause preserved' })
+    await motionPage.close()
+  }
+  const reduced = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' })
+  await reduced.goto(url)
+  await expect(reduced.locator('.hero-scene-region')).toHaveAttribute('data-user-paused', 'true')
+  const reducedBefore = await assertStill(reduced)
+  const reducedImage = await reduced.locator('.kito-frames').evaluate(el => getComputedStyle(el).backgroundImage)
+  expect(reducedImage).toContain('kito-walk-2x.webp')
+  expect(reducedBefore[1].frame).toBe('0px')
+  await reduced.locator('.motion-button').focus()
+  await reduced.keyboard.press('Enter')
+  await expect(reduced.locator('.hero-scene-region')).toHaveAttribute('data-running', 'true')
+  await reduced.waitForTimeout(300)
+  expect((await snapshot(reduced))[0].time).toBeGreaterThan(150)
+  await reduced.emulateMedia({ reducedMotion: 'no-preference' })
+  // MediaQueryList changes are delivered asynchronously; do not coalesce two
+  // opposite OS preference changes into a single animation frame.
+  await reduced.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+  await reduced.emulateMedia({ reducedMotion: 'reduce' })
+  await expect(reduced.locator('.hero-scene-region')).toHaveAttribute('data-user-paused', 'true')
+  await assertStill(reduced)
+  report.motion.push({ reducedMotion: 'starts paused on sheet frame 01; explicit Enter enables; re-entering reduce pauses again', image: reducedImage })
+  await reduced.close()
+  report.nativeTabVisibility = await verifyTabVisibility(url)
+
+  for (const [width, height] of [[1440, 900], [390, 844]]) {
+    const mediaPage = await browser.newPage({ viewport: { width, height } })
+    await mediaPage.goto(url)
+    await mediaPage.evaluate(() => document.fonts.ready)
+    await mediaPage.waitForLoadState('networkidle')
+    const resources = await mediaPage.evaluate(() => performance.getEntriesByType('resource')
+      .filter(entry => /\.(webp|woff2?)(\?|$)/.test(entry.name))
+      .map(entry => ({ name: new URL(entry.name).pathname, encodedBytes: entry.encodedBodySize, transferBytes: entry.transferSize })))
+    const bodyBytes = resources.reduce((sum, entry) => sum + entry.encodedBytes, 0)
+    const transferBytes = resources.reduce((sum, entry) => sum + entry.transferBytes, 0)
+    expect(transferBytes).toBeLessThan(500_000)
+    expect(resources.filter(r => r.name.includes('kito-walk-'))).toHaveLength(1)
+    expect(resources.some(r => /kito-static|walking_left/.test(r.name))).toBe(false)
+    report.media.push({ width, bodyBytes, transferBytes, resources })
+    await mediaPage.close()
+  }
+  expect(report.runtimeErrors).toEqual([])
+  report.status = 'PASS'
+} catch (error) {
+  report.status = 'FAIL'
+  report.error = error.stack
+  process.exitCode = 1
+} finally {
+  await writeFile(path.join(output, 'report.json'), JSON.stringify(report, null, 2) + '\n')
+  console.log(JSON.stringify(report, null, 2))
+  await browser.close()
+}
