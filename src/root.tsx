@@ -47,7 +47,7 @@ export default function Root() {
   const { pathname } = useLocation()
   return <AuthProvider><ShopProvider>
     <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
-    {siteConfig.stage === 'test' && <p className="stage-banner">Ambiente de teste — sem cobranças reais.</p>}
+    {siteConfig.stage === 'test' && <aside aria-label="Aviso de ambiente"><p className="stage-banner">Ambiente de teste — sem cobranças reais.</p></aside>}
     <SiteHeader onMenuOpenChange={setMenuOpen} />
     <Outlet context={{ menuOpen }} />
     {pathname !== '/email/preferencias' && <ConsentInvite />}
