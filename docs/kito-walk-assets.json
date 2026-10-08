@@ -1,0 +1,266 @@
+{
+  "revision": "2 (2026-10-08 09:33)",
+  "method": "center of 20px cells; shared original origin; binary alpha threshold 128; nearest integer upscale; lossless WebP",
+  "sequence": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "motion": {
+    "fps": 8,
+    "cycleSeconds": 0.5,
+    "stanceIntervalSeconds": 0.25,
+    "meanStanceDelta": 2.833333333333332,
+    "nativePixelsPerSecond": 11.333333,
+    "desktopPixelsPerSecond": 34,
+    "mobilePixelsPerSecond": 22.666667
+  },
+  "stanceDeltas": [
+    1,
+    4.666666666666664
+  ],
+  "measurements": [
+    {
+      "step": 1,
+      "sourceTop": 112,
+      "sourceBottom": 1157,
+      "eye": {
+        "x": 777.9101271712159,
+        "y": 442.00209367245657
+      },
+      "nativeTop": 6,
+      "nativeBottom": 57,
+      "nearGroundX": 21,
+      "leftFootX": 19.19607843137255,
+      "rightFootX": 46.29032258064516,
+      "flatSole": {
+        "x": 21,
+        "y": 56
+      },
+      "nativeTranslation": [
+        0,
+        0
+      ]
+    },
+    {
+      "step": 2,
+      "sourceTop": 111,
+      "sourceBottom": 1168,
+      "eye": {
+        "x": 777.860162856248,
+        "y": 442.32743501409334
+      },
+      "nativeTop": 6,
+      "nativeBottom": 57,
+      "nearGroundX": 44,
+      "leftFootX": 16.225806451612904,
+      "rightFootX": 43.75471698113208,
+      "flatSole": {
+        "x": 44,
+        "y": 57
+      },
+      "nativeTranslation": [
+        0,
+        0
+      ]
+    },
+    {
+      "step": 3,
+      "sourceTop": 113,
+      "sourceBottom": 1155,
+      "eye": {
+        "x": 777.8458734098666,
+        "y": 441.87930499534593
+      },
+      "nativeTop": 6,
+      "nativeBottom": 57,
+      "nearGroundX": 19.714285714285715,
+      "leftFootX": 18.761194029850746,
+      "rightFootX": 47,
+      "flatSole": {
+        "x": 20,
+        "y": 57
+      },
+      "nativeTranslation": [
+        0,
+        0
+      ]
+    },
+    {
+      "step": 4,
+      "sourceTop": 112,
+      "sourceBottom": 1159,
+      "eye": {
+        "x": 777.4597247990105,
+        "y": 442.0468460111317
+      },
+      "nativeTop": 6,
+      "nativeBottom": 57,
+      "nearGroundX": 33.714285714285715,
+      "leftFootX": 28.2,
+      "rightFootX": 42.78431372549019,
+      "flatSole": {
+        "x": 39.333333333333336,
+        "y": 56
+      },
+      "nativeTranslation": [
+        0,
+        0
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "source": "kito_walking_right_step01.png",
+      "width": 1254,
+      "height": 1254,
+      "sourceBytes": 742824,
+      "sourceSha256": "8f4ff15f23801c1ca82de676cbce01b823b5749f1f8a62322d85a816a99741bf"
+    },
+    {
+      "source": "kito_walking_right_step02.png",
+      "width": 1254,
+      "height": 1254,
+      "sourceBytes": 747061,
+      "sourceSha256": "7523cc2f7b8bc453c2975b2cfc9be02b4871963610ada97d2e63f98199e55d1c"
+    },
+    {
+      "source": "kito_walking_right_step03.png",
+      "width": 1254,
+      "height": 1254,
+      "sourceBytes": 732143,
+      "sourceSha256": "aaf48ef989d61133f2342ea260ad464b4a002f14252c9af821063c2ea900b43a"
+    },
+    {
+      "source": "kito_walking_right_step04.png",
+      "width": 1254,
+      "height": 1254,
+      "sourceBytes": 740464,
+      "sourceSha256": "70e7462ab067d6a3757b6841718ad72030be159ba2c9ef5123f316ca509de2a5"
+    }
+  ],
+  "assets": [
+    {
+      "source": "kito_walking_right_step01.png … step04.png",
+      "output": "kito-walk-2x.webp",
+      "width": 512,
+      "height": 128,
+      "bytes": 13322,
+      "scale": 2,
+      "sources": [
+        {
+          "source": "kito_walking_right_step01.png",
+          "width": 1254,
+          "height": 1254,
+          "sourceBytes": 742824,
+          "sourceSha256": "8f4ff15f23801c1ca82de676cbce01b823b5749f1f8a62322d85a816a99741bf"
+        },
+        {
+          "source": "kito_walking_right_step02.png",
+          "width": 1254,
+          "height": 1254,
+          "sourceBytes": 747061,
+          "sourceSha256": "7523cc2f7b8bc453c2975b2cfc9be02b4871963610ada97d2e63f98199e55d1c"
+        },
+        {
+          "source": "kito_walking_right_step03.png",
+          "width": 1254,
+          "height": 1254,
+          "sourceBytes": 732143,
+          "sourceSha256": "aaf48ef989d61133f2342ea260ad464b4a002f14252c9af821063c2ea900b43a"
+        },
+        {
+          "source": "kito_walking_right_step04.png",
+          "width": 1254,
+          "height": 1254,
+          "sourceBytes": 740464,
+          "sourceSha256": "70e7462ab067d6a3757b6841718ad72030be159ba2c9ef5123f316ca509de2a5"
+        }
+      ]
+    },
+    {
+      "source": "kito_walking_right_step01.png … step04.png",
+      "output": "kito-walk-3x.webp",
+      "width": 768,
+      "height": 192,
+      "bytes": 15078,
+      "scale": 3,
+      "sources": [
+        {
+          "source": "kito_walking_right_step01.png",
+          "width": 1254,
+          "height": 1254,
+          "sourceBytes": 742824,
+          "sourceSha256": "8f4ff15f23801c1ca82de676cbce01b823b5749f1f8a62322d85a816a99741bf"
+        },
+        {
+          "source": "kito_walking_right_step02.png",
+          "width": 1254,
+          "height": 1254,
+          "sourceBytes": 747061,
+          "sourceSha256": "7523cc2f7b8bc453c2975b2cfc9be02b4871963610ada97d2e63f98199e55d1c"
+        },
+        {
+          "source": "kito_walking_right_step03.png",
+          "width": 1254,
+          "height": 1254,
+          "sourceBytes": 732143,
+          "sourceSha256": "aaf48ef989d61133f2342ea260ad464b4a002f14252c9af821063c2ea900b43a"
+        },
+        {
+          "source": "kito_walking_right_step04.png",
+          "width": 1254,
+          "height": 1254,
+          "sourceBytes": 740464,
+          "sourceSha256": "70e7462ab067d6a3757b6841718ad72030be159ba2c9ef5123f316ca509de2a5"
+        }
+      ]
+    }
+  ],
+  "reviews": [
+    {
+      "output": "step01-3x.png",
+      "width": 192,
+      "height": 192,
+      "pages": 1,
+      "bytes": 5174
+    },
+    {
+      "output": "step02-3x.png",
+      "width": 192,
+      "height": 192,
+      "pages": 1,
+      "bytes": 5289
+    },
+    {
+      "output": "step03-3x.png",
+      "width": 192,
+      "height": 192,
+      "pages": 1,
+      "bytes": 5217
+    },
+    {
+      "output": "step04-3x.png",
+      "width": 192,
+      "height": 192,
+      "pages": 1,
+      "bytes": 5005
+    },
+    {
+      "output": "official-walk-preview.webp",
+      "width": 192,
+      "height": 192,
+      "pages": 4,
+      "bytes": 15746
+    },
+    {
+      "output": "official-contact-sheet.png",
+      "width": 768,
+      "height": 224,
+      "pages": 1,
+      "bytes": 24467
+    }
+  ],
+  "eyeSpreadNativePixels": 0.03176801892591107
+}
