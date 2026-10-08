@@ -3,6 +3,9 @@ import { isRouteErrorResponse, Link, Links, Outlet, Scripts, ScrollRestoration, 
 import { SiteHeader } from './components/layout/SiteHeader'
 import { SiteFooter } from './components/layout/SiteFooter'
 import { pageSeo, siteConfig } from './lib/seo'
+import { AuthProvider } from './components/auth/AuthProvider'
+import { ShopProvider } from './components/account/ShopProvider'
+import { ConsentInvite } from './components/account/ConsentInvite'
 import '@fontsource/bricolage-grotesque/latin-700.css'
 import '@fontsource/dm-sans/latin-400.css'
 import '@fontsource/dm-sans/latin-600.css'
@@ -40,13 +43,14 @@ export function Layout({ children }: { children: ReactNode }) {
 
 export default function Root() {
   const [menuOpen, setMenuOpen] = useState(false)
-  return <>
+  return <AuthProvider><ShopProvider>
     <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
-    {siteConfig.stage === 'test' && <p className="stage-banner">Ambiente de teste — sem compras reais.</p>}
+    {siteConfig.stage === 'test' && <p className="stage-banner">Ambiente de teste — compras desativadas.</p>}
     <SiteHeader onMenuOpenChange={setMenuOpen} />
     <Outlet context={{ menuOpen }} />
+    <ConsentInvite />
     <SiteFooter />
-  </>
+  </ShopProvider></AuthProvider>
 }
 
 // Temporary shared I0 shell. Individual journeys/content arrive in later increments.

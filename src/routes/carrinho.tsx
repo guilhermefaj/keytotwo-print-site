@@ -1,21 +1,54 @@
-import { Link } from 'react-router'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router'
+import { AccountNav, DataStatus } from '../components/account/AccountUi'
 import { offer } from '../content/offer'
-
-type CartItem = { id: string; name: string; quantity: number; priceLabel: string }
-// Structural view only. No storage, payment request, inventory or invented items.
-const items: CartItem[] = []
+import { apiErrorMessage, money } from '../lib/api'
+import { useShop } from '../lib/shop-context'
 
 export default function Carrinho() {
-  return <main id="conteudo" tabIndex={-1} className="cart-page content-width">
-    <p className="eyebrow">Sua escolha</p><h1>Carrinho</h1>
-    <p className="legal-pending">PENDENTE: carrinho funcional e finalização da compra. Esta página apresenta a estrutura; ainda não é possível adicionar ou comprar itens.</p>
-    <div className="cart-layout"><section aria-labelledby="cart-items-title"><h2 id="cart-items-title">Itens do carrinho <span className="cart-total">({items.length})</span></h2>
-      {items.length === 0 ? <div className="cart-empty"><h3>Seu carrinho está vazio</h3><p>Conheça o pacote de jogos para imprimir e confira o que já está definido.</p><a className="button button-primary" href="/#comprar">Ver pacote</a></div> :
-        <ul className="cart-items">{items.map(item => <li key={item.id}><h3>{item.name}</h3><p>Quantidade: {item.quantity}</p><p>{item.priceLabel}</p></li>)}</ul>}
-    </section><aside className="cart-summary" aria-labelledby="cart-summary-title"><h2 id="cart-summary-title">Finalizar a compra</h2><p>A compra é somente para usuários cadastrados. Crie uma conta ou entre para continuar.</p><p>PENDENTE: preços, total do pedido e integração do pagamento no Stripe.</p>
+  const { cart, add, remove, busy } = useShop()
+  const [params, setParams] = useSearchParams()
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+  const attempted = useRef('')
+  const pending = params.get('add')
+  const items = cart.data?.items
+  async function addPending(code: string) {
+    setError('')
+    try {
+      await add(code)
+      setMessage('Produto adicionado ao carrinho.')
+      setParams(previous => { const next = new URLSearchParams(previous); next.delete('add'); return next }, { replace: true })
+    } catch (cause) { setError(apiErrorMessage(cause)) }
+  }
+  useEffect(() => {
+    if (pending && /^[A-Z0-9_-]{1,40}$/.test(pending) && attempted.current !== pending) {
+      attempted.current = pending
+      void addPending(pending)
+    }
+    // The URL is an intent consumed once. Mutations are idempotent on the server.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending])
+  async function removeItem(code: string) {
+    setError(''); setMessage('')
+    try { await remove(code); setMessage('Produto removido do carrinho.') }
+    catch (cause) { setError(apiErrorMessage(cause)) }
+  }
+  return <main id="conteudo" tabIndex={-1} className="cart-page content-width"><AccountNav />
+    <p className="eyebrow">Sua escolha</p><h1>Carrinho</h1><p>Seu carrinho fica salvo na sua conta. Cada produto pode ser adicionado uma vez.</p>
+    <p className="form-message" role="status">{message}</p><p className="form-error" role="alert">{error}</p>
+    {error && pending && <button className="button button-secondary" disabled={busy} onClick={() => addPending(pending)}>Tentar adicionar novamente</button>}
+    <div className="cart-layout"><section aria-labelledby="cart-items-title"><h2 id="cart-items-title">Itens do carrinho {items && <span className="cart-total">({items.length})</span>}</h2>
+      <DataStatus {...cart} retry={cart.reload} />
+      {items && (items.length === 0 ? <div className="cart-empty"><h3>Seu carrinho está vazio</h3><p>Conheça o pacote de jogos para imprimir.</p><a className="button button-primary" href="/#comprar">Ver pacote</a></div> : <ul className="cart-items">{items.map(item => <li key={item.code} data-cart-product={item.code}><h3>{item.name}</h3><p>Quantidade: 1</p><p>{item.price ? money(item.price.unit_amount, item.price.currency) : 'Preço indisponível'}</p><ul>{item.games.map(game => <li key={game.code}>{game.name}</li>)}</ul>
+        {item.status === 'unavailable' && <p className="form-error">Este produto não está disponível para compra.</p>}
+        {item.status === 'already_owned' && <p>Você já tem todos os jogos deste produto. <Link className="inline-link" to="/meus-jogos">Ver Meus jogos</Link></p>}
+        {(item.owned_games.length > 0 || item.shared_with.length > 0) && item.status !== 'already_owned' && <p>Há jogos que você já tem ou que também estão em outro item do carrinho. Confira a composição antes de comprar; o valor não é reduzido.</p>}
+        <button className="text-button" disabled={busy} onClick={() => removeItem(item.code)} aria-label={`Remover ${item.name}`}>Remover</button></li>)}</ul>)}
+    </section><aside className="cart-summary" aria-labelledby="cart-summary-title"><h2 id="cart-summary-title">Resumo</h2><p className="cart-subtotal">Subtotal <strong>{cart.data?.subtotal ? money(cart.data.subtotal.amount, cart.data.subtotal.currency) : 'Indisponível'}</strong></p>
+      {cart.data?.warnings.some(warning => warning.code === 'PRICE_UNAVAILABLE') && <p>Um ou mais preços estão indisponíveis. A compra não pode ser finalizada.</p>}
       <div className="refund-notice"><p><strong>{offer.refund}</strong></p><p className="pending-copy">{offer.legalReview}</p></div>
-      <Link className="button button-primary" to="/entrar?next=%2Fcarrinho" aria-describedby="checkout-login">Finalizar compra</Link><p id="checkout-login" className="pending-copy">Você será levado à página Entrar. Cadastro e pagamento ainda não estão disponíveis.</p>
-      <Link className="inline-link" to="/reembolsos">Ler a política de reembolsos</Link>
+      <button className="button button-primary" disabled aria-describedby="checkout-pending">Finalizar compra</button><p id="checkout-pending" className="pending-copy">PENDENTE: o checkout será habilitado no incremento I3. Nenhum pagamento é feito neste ambiente.</p><Link className="inline-link" to="/reembolsos">Ler a política de reembolsos</Link>
     </aside></div>
   </main>
 }
