@@ -1,3 +1,4 @@
+import { productName } from '../content/products'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { api } from '../lib/api'
@@ -64,7 +65,7 @@ function Status({ sessionId }: { sessionId: string }) {
     {state === 'paid' && !demo && deliveryMock && <p className="checkout-demo">Prévia da entrega (mock): o download e o envio por e-mail ainda não estão conectados.</p>}
     {checking && <p role="status">Consultando o status do pedido…</p>}
     <p role="alert" className="form-error">{error}</p>
-    {state === 'paid' && !demo && Boolean(result?.items?.length) && <ul className="confirmation-items">{result!.items!.map(item => <li key={item.code}>{item.name}</li>)}</ul>}
+    {state === 'paid' && !demo && Boolean(result?.items?.length) && <ul className="confirmation-items">{result!.items!.map(item => <li key={item.code}>{productName(item.code, item.name)}</li>)}</ul>}
     <div className="form-actions">{content && (state === 'other_account' ? <button className="button button-primary" disabled={signingOut} onClick={switchAccount}>{content.cta}</button> : <Link className="button button-primary" to={content.to}>{content.cta}</Link>)}
       {(error || state === 'processing' || state === 'pending_payment') && <button className="button button-secondary" disabled={checking} onClick={() => { setChecking(true); setError(''); setRevision(value => value + 1) }}>Atualizar status</button>}
       <Link className="inline-link" to="/ajuda">Preciso de ajuda</Link>

@@ -1,10 +1,11 @@
+import { MobilePurchaseBar } from '../components/sections/MobilePurchaseBar'
 import { useOutletContext } from 'react-router'
 import { HeroScene } from '../components/HeroScene'
 import { HowItWorks } from '../components/sections/HowItWorks'
 import { OfferSection } from '../components/sections/OfferSection'
 import { FaqSection } from '../components/sections/FaqSection'
 import { ClosingCta } from '../components/sections/ClosingCta'
-import { ExperienceSections } from '../components/sections/ExperienceSections'
+import { ExperienceSections, ProductExperience } from '../components/sections/ExperienceSections'
 import { experience } from '../content/experience'
 
 export default function Home() {
@@ -20,6 +21,6 @@ export default function Home() {
       </section>
       <HeroScene obscured={menuOpen} />
     </div>
-    <HowItWorks /><ExperienceSections /><OfferSection /><FaqSection /><ClosingCta />
+    <ProductExperience /><HowItWorks /><ExperienceSections /><OfferSection /><FaqSection /><ClosingCta /><MobilePurchaseBar menuOpen={menuOpen} />
   </main>
 }

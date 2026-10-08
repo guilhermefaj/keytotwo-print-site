@@ -180,5 +180,5 @@ test('seed account has library by game and orders; full ownership prevents addin
   await noOverflow(page)
   await page.goto('/')
   await page.getByRole('button', { name: 'Adicionar ao carrinho', exact: true }).click()
-  await expect(page.locator('.offer-cart-action [role="alert"]')).toContainText('Você já tem todos os jogos')
+  await expect(page.locator('.offer-section .offer-cart-action [role="alert"]')).toContainText('Você já tem todos os jogos')
 })

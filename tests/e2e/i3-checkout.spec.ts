@@ -46,11 +46,9 @@ test('explicit mock: acceptance, coupon and simulated confirmation without a che
   page.on('request', request => { if (request.url().endsWith('/api/checkout') || request.url().includes('js.stripe.com')) calls++ })
   await start(page)
   test.skip(await page.getByText('Demonstração: o pagamento real ainda não está conectado neste ambiente.').count() === 0, 'Only applies to mock builds')
-  await expect(page.getByRole('button', { name: 'Continuar para pagamento' })).toBeDisabled()
+  await expect(page.locator('#checkout-form')).toHaveCount(0)
   await page.getByRole('checkbox', { name: /Aceito os/ }).check()
-  await page.getByRole('button', { name: 'Continuar para pagamento' }).click()
   await expect(page.getByText('Demonstração de pagamento (mock).', { exact: true })).toBeVisible()
-  await page.getByText('Tenho um cupom', { exact: true }).click()
   await page.getByLabel('Código do cupom').fill('TESTE10')
   await page.getByRole('button', { name: 'Aplicar cupom' }).click()
   await expect(page.locator('.payment-total')).toContainText('17,91')
@@ -63,14 +61,12 @@ test('acceptance gates API and form; coupon invalid/apply/remove; confirmation',
   let calls = 0
   page.on('request', request => { if (request.url().endsWith('/api/checkout')) { calls++; expect(request.postDataJSON()).toEqual({ cart_version: 3, terms_accepted: true, terms_version: 'rascunho-2026-10-08' }) } })
   await stripeMode(page)
-  await expect(page.getByRole('button', { name: 'Continuar para pagamento' })).toBeDisabled()
+  await expect(page.locator('#checkout-form')).toHaveCount(0)
   expect(calls).toBe(0)
   await expect(page.locator('#checkout-form')).toHaveCount(0)
   await page.getByRole('checkbox', { name: /Aceito os/ }).check()
-  await page.getByRole('button', { name: 'Continuar para pagamento' }).click()
   await expect(page.getByRole('button', { name: 'Pagar (simulação de teste)' })).toBeVisible()
   expect(calls).toBe(1)
-  await page.getByText('Tenho um cupom', { exact: true }).click()
   await page.getByLabel('Código do cupom').fill('INVALIDO')
   await page.getByRole('button', { name: 'Aplicar cupom' }).click()
   await expect(page.getByRole('alert')).toContainText('Esse cupom não pôde ser aplicado')
@@ -82,7 +78,6 @@ test('acceptance gates API and form; coupon invalid/apply/remove; confirmation',
   await page.getByRole('checkbox', { name: /Aceito os/ }).uncheck()
   await expect(page.locator('#checkout-form')).toHaveCount(0)
   await page.getByRole('checkbox', { name: /Aceito os/ }).check()
-  await page.getByRole('button', { name: 'Continuar para pagamento' }).click()
   await page.getByRole('button', { name: 'Pagar (simulação de teste)' }).click()
   await expect(page.getByRole('heading', { name: 'O próximo encontro é de vocês!' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Ir para Meus jogos', exact: true })).toHaveAttribute('href', '/meus-jogos')
@@ -93,7 +88,6 @@ for (const [code, message] of [['CART_CHANGED', 'Seu carrinho mudou'], ['TERMS_C
     await page.route('**/api/checkout', route => route.fulfill({ status: 409, json: { error: { code } } }))
     await stripeMode(page)
     await page.getByRole('checkbox', { name: /Aceito os/ }).check()
-    await page.getByRole('button', { name: 'Continuar para pagamento' }).click()
     await expect(page.getByRole('alert')).toContainText(message)
     await expect(page.getByRole('checkbox', { name: /Aceito os/ })).not.toBeChecked()
     await expect(page.locator('#checkout-form')).toHaveCount(0)
@@ -126,7 +120,6 @@ test('processing polls with backoff, then shows paid', async ({ page }) => {
 test('payment is responsive at 320, 390, 768, 1280 and 1440 with double text', async ({ page }) => {
   await start(page)
   await page.getByRole('checkbox', { name: /Aceito os/ }).check()
-  await page.getByRole('button', { name: 'Continuar para pagamento' }).click()
   for (const width of [320, 390, 768, 1280, 1440]) {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 900 })
     for (const size of ['16px', '32px']) {
@@ -141,4 +134,23 @@ test('cart without price cannot finalize; preview mock is explicit when enabled'
   await page.goto('/carrinho')
   test.skip(page.url().includes('/entrar'), 'Requires configured stage=test build')
   await expect(page.getByRole('button', { name: 'Finalizar compra' })).toBeDisabled()
+})
+
+test('unchecking terms cancels an in-flight checkout; accepting again creates a fresh form', async ({ page }) => {
+  let calls = 0
+  await page.route('**/api/checkout', async route => {
+    calls++
+    await new Promise(resolve => setTimeout(resolve, 450))
+    await route.fulfill({ json: { client_secret: 'synthetic-only-no-stripe-secret' } }).catch(() => {})
+  })
+  await stripeMode(page)
+  const terms = page.getByRole('checkbox', { name: /Aceito os/ })
+  await terms.check()
+  await expect.poll(() => calls).toBe(1)
+  await terms.uncheck()
+  await page.waitForTimeout(500)
+  await expect(page.locator('#checkout-form')).toHaveCount(0)
+  await terms.check()
+  await expect(page.getByRole('button', { name: 'Pagar (simulação de teste)' })).toBeVisible()
+  expect(calls).toBe(2)
 })

@@ -1,11 +1,11 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
-import { products, type Product } from '../../content/products'
+﻿import { Link } from 'react-router'
+import { products, packageContents, type Product } from '../../content/products'
 import { siteConfig } from '../../lib/seo'
-import { useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
-import { apiErrorMessage, money } from '../../lib/api'
-import { authConfigured, loginDestination } from '../../lib/supabase'
+import { money } from '../../lib/api'
+import { ProductPreview } from './ProductPreview'
+import { ProductPurchaseAction } from './ProductPurchaseAction'
+import { TrustLine } from '../checkout/TrustLine'
 
 export function OfferSection() {
   return <section className="page-section offer-section" aria-labelledby="comprar"><div className="content-width">
@@ -15,28 +15,17 @@ export function OfferSection() {
 }
 
 function ProductOffer({ product }: { product: Product }) {
-  const { offer } = product
-  const { session, ready } = useAuth()
-  const { catalog, add, busy } = useShop()
-  const navigate = useNavigate()
-  const [error, setError] = useState('')
-  const listed = catalog.data?.products.find(item => item.code === product.code)
-  async function addProduct() {
-    if (!session) { navigate(loginDestination('/carrinho', product.code)); return }
-    setError('')
-    try { await add(product.code); navigate('/carrinho') }
-    catch (cause) { setError(apiErrorMessage(cause)) }
-  }
+  const { catalog } = useShop()
+  const price = siteConfig.stage === 'preview' ? null : catalog.data?.products.find(item => item.code === product.code)?.price
   return <article className="offer-layout" aria-labelledby={`product-${product.code}`} data-product-code={product.code}>
-    <div className="offer-invitation"><p className="eyebrow">Para imprimir · para vocês</p><h3 className="product-title" id={`product-${product.code}`}>Uma boa ideia<br />para jogar juntos.</h3><p>Escolham um cantinho, preparem os materiais e deixem a brincadeira conduzir o encontro.</p><span className="offer-format">Arquivos digitais para imprimir</span></div>
-    <div className="offer-summary"><h4>Seu próximo plano a dois</h4><p className="offer-price">{listed?.price ? money(listed.price.unit_amount, listed.price.currency) : 'Preço em breve'}</p><p className="offer-delivery">Na sua conta e por e-mail.<br />Acesso sem prazo de expiração.</p>
-      <div className="refund-notice"><p><span>{offer.refund}</span> <Link to="/reembolsos">Ver política</Link></p></div>
-      {siteConfig.showCartAccess ? <div className="offer-cart-action"><button className="button button-primary" disabled={!authConfigured || !ready || busy || !listed} onClick={addProduct}><span>{busy ? 'Adicionando…' : 'Adicionar ao carrinho'}</span><span aria-hidden="true">↗</span></button>
-        {!authConfigured && <p>O acesso à conta estará disponível em breve.</p>}
-        {catalog.loading && <p role="status">Consultando disponibilidade…</p>}
-        {catalog.error && <><p role="alert">{catalog.error}</p><button className="text-button" onClick={catalog.reload}>Consultar novamente</button></>}
-        {catalog.data && !listed && <p>Esta experiência estará disponível em breve.</p>}
-        <p className="form-error" role="alert">{error}</p>{!session && authConfigured && <p className="field-help">Vamos guardar sua escolha. Entre ou crie uma conta para continuar.</p>}</div> : <p className="offer-coming">Estamos preparando este encontro. Compra disponível em breve.</p>}
+    <div className="offer-invitation"><p className="eyebrow">Para imprimir · para vocês</p><h3 className="product-title" id={`product-${product.code}`}>{product.title}</h3><ProductPreview compact /></div>
+    <div className="offer-summary"><h4>5 jogos. Muitas próximas rodadas.</h4><ul className="package-contents">{packageContents.map(item => <li key={item}>{item}</li>)}</ul>
+      <p className="offer-price">{price ? money(price.unit_amount, price.currency) : siteConfig.stage === 'preview' ? 'Preço em breve' : catalog.loading ? 'Consultando preço…' : 'Preço indisponível'}</p>
+      {price && siteConfig.stage === 'test' && <p className="test-price-label">Valor de teste</p>}
+      <p className="offer-delivery">Download após a confirmação da compra.<br />Acesso sem prazo de expiração.</p>
+      <TrustLine />
+      <div className="refund-notice"><p><span>{product.offer.refund}</span> <Link to="/reembolsos">Ver política</Link></p></div>
+      {siteConfig.showCartAccess ? <ProductPurchaseAction code={product.code} /> : <p className="offer-coming">Estamos preparando este encontro. Compra disponível em breve.</p>}
     </div>
   </article>
 }

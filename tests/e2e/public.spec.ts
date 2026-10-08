@@ -109,7 +109,7 @@ test.describe('conteúdo', () => {
     await expect(page.locator('[data-product-code]')).toHaveCount(1)
     await expect(page.locator('[data-product-code]')).toHaveAttribute('data-product-code', 'P001')
     await expect(page.locator('.games-section')).toHaveCount(0)
-    expect(await visibleText(page)).not.toMatch(/PENDENTE|Rabisque e Adivinhe|Hora dos Artistas|Boardgame/)
+    expect(await visibleText(page)).not.toMatch(/PENDENTE|Hora dos Artistas|Boardgame/)
     const offer = page.locator('section.offer-section')
     await expect(offer.locator('.offer-price')).not.toBeEmpty()
     expect((await visibleText(page)).match(/\bP\d{3}\b/g) ?? [], 'códigos de produto além de P001').toEqual([])
@@ -233,7 +233,7 @@ test('home: matriz responsiva, texto 200%, cena preservada e capturas', async ({
     await page.evaluate(() => document.fonts.ready)
     const scene = page.locator('.hero-scene-region')
     await expect(scene).toHaveAttribute('data-running', 'false')
-    expect(await page.locator('.kito-frames').evaluate(el => getComputedStyle(el).backgroundImage)).toContain('kito-walk-v31-right-atlas.png')
+    expect(await page.locator('.kito-frames').evaluate(el => getComputedStyle(el).backgroundImage)).toContain('kito-walk-v31-right-atlas.webp')
     for (const zoom of [100, 200]) {
       if (zoom === 200) await page.evaluate(() => {
         const sizes = [...document.querySelectorAll<HTMLElement>('body *')].map(el => [el, parseFloat(getComputedStyle(el).fontSize)] as const)
