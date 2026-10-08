@@ -39,12 +39,18 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
     const resize = new ResizeObserver(() => {
       if (!stage.current || !region.current) return
       const mobile = window.matchMedia('(max-width: 767px)').matches
-      const cell = mobile ? 128 : 192
-      const speed = mobile ? kitoMotion.mobilePixelsPerSecond : kitoMotion.desktopPixelsPerSecond
-      const duration = (stage.current.clientWidth + cell) / speed
-      region.current.style.setProperty('--travel-distance', `${stage.current.clientWidth + cell}px`)
+      const cell = mobile ? kitoMotion.mobileCanvas : kitoMotion.desktopCanvas
+      const stepDistance = cell * kitoMotion.sourceDistancePerCycle / kitoMotion.sourceCanvas / kitoMotion.frames
+      // Each 100 ms tick advances both the pose and the world position. Include
+      // one fully offscreen pose before wrapping; never wrap a visible canvas.
+      const ticks = Math.floor((stage.current.clientWidth + cell) / stepDistance) + 2
+      const duration = ticks / kitoMotion.fps
+      // Whole cycles put the initial visible, centered character on frame 01.
+      const initialTick = Math.round((stage.current.clientWidth + cell) / 2 / stepDistance / kitoMotion.frames) * kitoMotion.frames
+      region.current.style.setProperty('--travel-distance', `${ticks * stepDistance}px`)
       region.current.style.setProperty('--travel-duration', `${duration}s`)
-      region.current.style.setProperty('--travel-delay', `${-duration / 2}s`)
+      region.current.style.setProperty('--travel-ticks', String(ticks))
+      region.current.style.setProperty('--motion-delay', `${-initialTick / kitoMotion.fps}s`)
       region.current.style.setProperty('--walk-cycle-duration', `${kitoMotion.cycleSeconds}s`)
       setReady(true)
     })
