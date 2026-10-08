@@ -1,11 +1,28 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { kitoMotion } from '../kito-motion'
+
+function subscribeMotionPreference(onChange: () => void) {
+  const query = window.matchMedia('(prefers-reduced-motion: reduce)')
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
+}
+function subscribeVisibility(onChange: () => void) {
+  document.addEventListener('visibilitychange', onChange)
+  return () => document.removeEventListener('visibilitychange', onChange)
+}
+const motionSnapshot = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const visibilitySnapshot = () => document.visibilityState === 'visible'
+// Server and first hydration render agree: paused until browser preferences load.
+const serverMotionSnapshot = () => true
+const serverVisibilitySnapshot = () => false
 
 export function HeroScene({ obscured = false }: { obscured?: boolean }) {
   const region = useRef<HTMLDivElement>(null)
   const stage = useRef<HTMLDivElement>(null)
-  const [userPaused, setUserPaused] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
-  const [visible, setVisible] = useState(() => document.visibilityState === 'visible')
+  const reducedMotion = useSyncExternalStore(subscribeMotionPreference, motionSnapshot, serverMotionSnapshot)
+  const visible = useSyncExternalStore(subscribeVisibility, visibilitySnapshot, serverVisibilitySnapshot)
+  const [manualPause, setManualPause] = useState<boolean | null>(null)
+  const userPaused = manualPause ?? reducedMotion
   const [inView, setInView] = useState(false)
   const [ready, setReady] = useState(false)
 
@@ -14,11 +31,9 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
     const preferenceChanged = () => {
       // Entering reduced-motion requires a fresh explicit opt-in.
       // Leaving it never overrides a manual pause.
-      if (motionPreference.matches) setUserPaused(true)
+      if (motionPreference.matches) setManualPause(true)
     }
-    const visibilityChanged = () => setVisible(document.visibilityState === 'visible')
     motionPreference.addEventListener('change', preferenceChanged)
-    document.addEventListener('visibilitychange', visibilityChanged)
     const intersection = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0 })
     if (stage.current) intersection.observe(stage.current)
     const resize = new ResizeObserver(() => {
@@ -36,7 +51,6 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
     if (stage.current) resize.observe(stage.current)
     return () => {
       motionPreference.removeEventListener('change', preferenceChanged)
-      document.removeEventListener('visibilitychange', visibilityChanged)
       intersection.disconnect()
       resize.disconnect()
     }
@@ -47,7 +61,7 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
     <div ref={region} className="hero-scene-region" data-running={running} data-user-paused={userPaused}
       data-visible={visible} data-in-view={inView}>
       <div className="motion-controls">
-        <button type="button" className="motion-button" aria-controls="kito-scene" onClick={() => setUserPaused(paused => !paused)}>
+        <button type="button" className="motion-button" aria-controls="kito-scene" onClick={() => setManualPause(!userPaused)}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
             {userPaused ? <path d="M3 1.5 12 7l-9 5.5Z" /> : <path d="M3 2h3v10H3zm5 0h3v10H8z" />}
           </svg>
@@ -62,7 +76,7 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
         </svg>
         <img className="landscape landscape-left" src="/media/hero/foliage-left.webp" width="360" height="119" alt="" />
         <img className="landscape landscape-right" src="/media/hero/foliage-right.webp" width="720" height="298" alt="" />
-        <div className="kito-track"><div className="kito-frames" /></div>
+        <div className="kito-track" style={ready ? undefined : { left: 'calc(50% - var(--sprite-size) / 2)', animationDelay: '0s' }}><div className="kito-frames" /></div>
         <div className="ground"><div className="ground-grass" /><div className="ground-soil" /></div>
       </div>
     </div>

@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react'
-import { HeroScene } from './components/HeroScene'
-import { PreviewPanel, type PreviewDestination } from './components/PreviewPanel'
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from './components/ui/sheet'
+import { Link } from 'react-router'
+import { HeroScene } from '../components/HeroScene'
+import { PreviewPanel, type PreviewDestination } from '../components/PreviewPanel'
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '../components/ui/sheet'
 
 function Arrow() {
   return <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10h13m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
 }
 
-export function App() {
+export default function Home() {
   const [destination, setDestination] = useState<PreviewDestination | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const pendingMenuDestination = useRef<PreviewDestination | null>(null)
@@ -29,12 +30,14 @@ export function App() {
 
   return (
     <>
+      <title>KeyToTwo — Hero em protótipo</title>
+      <meta name="description" content="Protótipo visual da KeyToTwo: jogos para casais imprimirem e jogarem juntos em casa." />
       <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
       <main className="hero" id="conteudo" tabIndex={-1}>
         <header className="site-header flex items-center justify-between gap-4">
-          <a className="brand" href="/preview/hero" aria-label="KeyToTwo — início do protótipo">
+          <Link className="brand" to="/" aria-label="KeyToTwo — início do protótipo">
             <img src="/media/hero/keytotwo-logo.webp" alt="KeyToTwo" width="420" height="97" fetchPriority="high" />
-          </a>
+          </Link>
           <nav className="desktop-nav flex items-center gap-8" aria-label="Navegação do protótipo">
             <button className="text-button" onClick={() => showPanel('games')}>Os 5 jogos</button>
           </nav>

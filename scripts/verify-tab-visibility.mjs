@@ -56,7 +56,7 @@ export async function verifyTabVisibility(url) {
     const state = () => evaluate(`({ visibility: document.visibilityState,
       ...document.querySelector('.hero-scene-region')?.dataset,
       animations: [...document.querySelectorAll('.kito-track,.kito-frames')].map(el => ({
-        time: el.getAnimations()[0].currentTime, state: el.getAnimations()[0].playState
+        time: el.getAnimations()[0]?.currentTime ?? null, state: el.getAnimations()[0]?.playState ?? 'pending'
       })) })`)
     async function waitState(check) {
       for (let attempt = 0; attempt < 100; attempt++) {
@@ -66,7 +66,9 @@ export async function verifyTabVisibility(url) {
       }
       throw new Error('Native tab visibility did not reach expected state')
     }
-    await waitState(value => value.running === 'true' && value.visibility === 'visible')
+    // A pre-rendered DOM may exist before its stylesheet/hydration is ready.
+    await waitState(value => value.running === 'true' && value.visibility === 'visible'
+      && value.animations.length === 2 && value.animations.every(animation => animation.state === 'running'))
     const other = await send('Target.createTarget', { url: 'about:blank' })
     await send('Target.activateTarget', { targetId: other.targetId })
     await waitState(value => value.visibility === 'hidden' && value.running === 'false')
