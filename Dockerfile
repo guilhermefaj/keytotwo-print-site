@@ -5,10 +5,16 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY react-router.config.ts vite.config.ts tsconfig.json ./
+COPY react-router.config.ts vite.config.ts tsconfig.json site.config.json ./
+COPY scripts/seo-files.mjs scripts/check-release.mjs ./scripts/
 COPY src/ ./src/
 COPY public/ ./public/
-RUN npm run build
+# Public build-time settings only; omitted values use site.config.json.
+ARG VITE_SITE_STAGE
+ARG VITE_SITE_URL
+RUN node scripts/check-release.mjs \
+    && npm run build \
+    && node scripts/check-release.mjs --built
 
 FROM nginx:stable-alpine AS runtime
 COPY nginx.conf /etc/nginx/conf.d/default.conf

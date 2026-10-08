@@ -55,7 +55,7 @@ h1 span { display: block; color: var(--color-deep-teal); }
 .prototype-note { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 0 20px; margin: 24px 0 0; font-size: .75rem; line-height: 1.5; color: #345b5d; }
 .prototype-note span { padding: 3px 7px; border: 1px solid #aacdca; border-radius: 4px; font-weight: 600; }
 .prototype-note p { margin: 0; }
-.hero-scene-region { --floor-height: 48px; --sprite-size: 192px; --sheet-width: 768px; --foot-padding: 18px; position: relative; display: flex; flex-direction: column; flex: 1 0 260px; min-height: 260px; margin-top: 8px; }
+.hero-scene-region { --floor-height: 48px; --sprite-size: 192px; --foot-padding: calc(var(--sprite-size) * 94 / 1254); position: relative; display: flex; flex-direction: column; flex: 1 0 260px; min-height: 260px; margin-top: 8px; }
 .motion-controls { width: calc(100% - 40px); max-width: 1200px; margin: 0 auto; display: flex; justify-content: flex-end; }
 .motion-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 48px; padding: 10px 12px; border: 1px solid transparent; border-radius: 8px; color: #123a3d; background: #ecfaf7; font-size: .75rem; line-height: 1.5; max-width: 100%; }
 .motion-button svg { flex-shrink: 0; }
@@ -69,11 +69,25 @@ h1 span { display: block; color: var(--color-deep-teal); }
 .distant-land { position: absolute; width: 100%; height: 76px; bottom: var(--floor-height); }
 .landscape-right { width: 440px; height: auto; right: -28px; bottom: calc(var(--floor-height) - 20px); }
 .landscape-left { width: 320px; height: auto; left: -22px; bottom: calc(var(--floor-height) - 12px); }
-.kito-track { position: absolute; width: var(--sprite-size); height: var(--sprite-size); left: calc(-1 * var(--sprite-size)); bottom: calc(var(--floor-height) - var(--foot-padding)); z-index: 2; animation: kito-travel var(--travel-duration, 30s) linear infinite; animation-delay: var(--travel-delay, -15s); animation-play-state: paused; }
-.kito-frames { width: var(--sprite-size); height: var(--sprite-size); background: url('/media/hero/kito-walk-3x.webp') 0 0 / var(--sheet-width) var(--sprite-size) no-repeat; image-rendering: pixelated; animation: kito-steps var(--walk-cycle-duration, .5s) steps(4, end) infinite; animation-play-state: paused; }
+.kito-track { position: absolute; width: var(--sprite-size); height: var(--sprite-size); left: calc(-1 * var(--sprite-size)); bottom: calc(var(--floor-height) - var(--foot-padding)); z-index: 2; animation: kito-travel var(--travel-duration, 30s) steps(var(--travel-ticks, 300), end) infinite; animation-delay: var(--motion-delay, 0s); animation-play-state: paused; }
+.kito-frames { width: var(--sprite-size); height: var(--sprite-size); background: url('/media/hero/kito-walk-v31-right-atlas.png') 0 0 / calc(var(--sprite-size) * 6) calc(var(--sprite-size) * 2) no-repeat; image-rendering: pixelated; animation: kito-steps var(--walk-cycle-duration, 1.2s) steps(1, end) infinite; animation-delay: var(--motion-delay, 0s); animation-play-state: paused; }
 .hero-scene-region[data-running='true'] .kito-track, .hero-scene-region[data-running='true'] .kito-frames { animation-play-state: running; }
 @keyframes kito-travel { from { transform: translateX(0); } to { transform: translateX(var(--travel-distance, 1500px)); } }
-@keyframes kito-steps { to { background-position-x: calc(-1 * var(--sheet-width)); } }
+/* Twelve equal holds, row-major 6×2. Frame 01 is not appended to the cycle. */
+@keyframes kito-steps {
+  0%, 100% { background-position: 0 0; }
+  8.3333333333% { background-position: calc(-1 * var(--sprite-size)) 0; }
+  16.6666666667% { background-position: calc(-2 * var(--sprite-size)) 0; }
+  25% { background-position: calc(-3 * var(--sprite-size)) 0; }
+  33.3333333333% { background-position: calc(-4 * var(--sprite-size)) 0; }
+  41.6666666667% { background-position: calc(-5 * var(--sprite-size)) 0; }
+  50% { background-position: 0 calc(-1 * var(--sprite-size)); }
+  58.3333333333% { background-position: calc(-1 * var(--sprite-size)) calc(-1 * var(--sprite-size)); }
+  66.6666666667% { background-position: calc(-2 * var(--sprite-size)) calc(-1 * var(--sprite-size)); }
+  75% { background-position: calc(-3 * var(--sprite-size)) calc(-1 * var(--sprite-size)); }
+  83.3333333333% { background-position: calc(-4 * var(--sprite-size)) calc(-1 * var(--sprite-size)); }
+  91.6666666667% { background-position: calc(-5 * var(--sprite-size)) calc(-1 * var(--sprite-size)); }
+}
 .ground { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-height); background: #684839; }
 .ground-grass { position: absolute; top: 0; width: 100%; height: 14px; background: #77a85b; border-top: 5px solid #acd475; border-bottom: 4px solid #3f7957; }
 .ground-grass::after { content: ''; position: absolute; inset: 9px 0 auto; height: 5px; background: repeating-linear-gradient(90deg, #3f7957 0 12px, transparent 12px 38px, #3f7957 38px 54px, transparent 54px 88px); }
@@ -110,9 +124,8 @@ h2, .sheet-title { font-family: var(--font-display); font-size: 2rem; line-heigh
   .hero-cta { width: min(100%, 340px); }
   .hero-note { max-width: 300px; margin-top: 14px; font-size: .8125rem; }
   .prototype-note { gap: 6px 9px; margin-top: 20px; }
-  .hero-scene-region { --floor-height: 38px; --sprite-size: 128px; --sheet-width: 512px; --foot-padding: 12px; min-height: 228px; flex: 1 0 228px; margin-top: 8px; }
+  .hero-scene-region { --floor-height: 38px; --sprite-size: 128px; min-height: 228px; flex: 1 0 228px; margin-top: 8px; }
   .hero-scene { min-height: 180px; flex: 1 0 180px; }
-  .kito-frames { background-image: url('/media/hero/kito-walk-2x.webp'); }
   .cloud-left { left: 12%; top: 10px; width: 88px; }
   .cloud-right { display: none; }
   .landscape-right { width: 226px; right: -74px; bottom: calc(var(--floor-height) - 10px); }

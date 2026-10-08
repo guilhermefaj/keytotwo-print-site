@@ -3,12 +3,14 @@ import AxeBuilder from '@axe-core/playwright'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import os from 'node:os'
+import { createHash } from 'node:crypto'
 import { verifyTabVisibility } from './verify-tab-visibility.mjs'
 
 // Artifacts default outside the repository. Point HERO_URL at dev or production preview.
 const url = process.env.HERO_URL ?? 'http://127.0.0.1:4175/'
 const output = path.resolve(process.env.HERO_QA_DIR ?? path.join(os.tmpdir(), 'keytotwo-hero-qa'))
 const walkAssets = JSON.parse(await readFile(new URL('../docs/kito-walk-assets.json', import.meta.url), 'utf8'))
+const walkSource = JSON.parse(await readFile(new URL('../docs/kito-walk-source-manifest.json', import.meta.url), 'utf8'))
 await mkdir(output, { recursive: true })
 const browser = await chromium.launch()
 const report = { url, output, browser: browser.version(), viewports: [], accessibility: [], keyboard: [], contrast: [], motion: [], media: [], runtimeErrors: [], consoleErrors: [] }
@@ -21,7 +23,7 @@ async function layoutCheck(page) {
     const scene = document.querySelector('.hero-scene').getBoundingClientRect()
     const sprite = document.querySelector('.kito-track').getBoundingClientRect()
     const floor = document.querySelector('.ground').getBoundingClientRect()
-    const pixelScale = sprite.width / 64
+    const pixelScale = sprite.width / 384
     const note = (document.querySelector('.prototype-note') ?? document.querySelector('.hero-note')).getBoundingClientRect()
     const clipped = [...document.querySelectorAll('h1,h2,p,button,a,li')].filter(el => {
       if (!el.checkVisibility() || el.classList.contains('skip-link')) return false
@@ -29,7 +31,7 @@ async function layoutCheck(page) {
       const clipsY = ['hidden', 'clip'].includes(getComputedStyle(el).overflowY)
       return r.left < -1 || r.right > innerWidth + 1 || el.scrollWidth > el.clientWidth + 2 || (clipsY && el.scrollHeight > el.clientHeight + 2)
     }).map(el => ({ tag: el.tagName, text: el.textContent, width: el.clientWidth, scroll: el.scrollWidth }))
-    return { viewportWidth: innerWidth, documentWidth: root.scrollWidth, documentHeight: root.scrollHeight, sceneClearance: scene.top - note.bottom, spriteTopClearance: sprite.top + 6 * pixelScale - scene.top, footGroundDelta: sprite.top + 58 * pixelScale - floor.top, clipped }
+    return { viewportWidth: innerWidth, documentWidth: root.scrollWidth, documentHeight: root.scrollHeight, sceneClearance: scene.top - note.bottom, spriteTopClearance: sprite.top + 30 * pixelScale - scene.top, footGroundDelta: sprite.top + sprite.width * 1160 / 1254 - floor.top, clipped }
   })
   expect(result.documentWidth).toBeLessThanOrEqual(result.viewportWidth)
   expect(result.clipped).toEqual([])
@@ -239,7 +241,7 @@ try {
 
   const snapshot = page => page.evaluate(() => [...document.querySelectorAll('.kito-track,.kito-frames')].map(el => ({
     time: el.getAnimations()[0].currentTime, state: el.getAnimations()[0].playState,
-    transform: getComputedStyle(el).transform, frame: getComputedStyle(el).backgroundPositionX,
+    transform: getComputedStyle(el).transform, frame: getComputedStyle(el).backgroundPositionX, row: getComputedStyle(el).backgroundPositionY,
   })))
   async function assertStill(page) {
     await page.waitForTimeout(100)
@@ -276,7 +278,7 @@ try {
     expect((await snapshot(motionPage))[0].time).toBeGreaterThan(before[0].time + 200)
     report.keyboard.push(`${width}px: Tab reaches pause, 3px focus ring, Enter pauses both CSS animations, Space resumes both.`)
     // Observe a complete real-time travel period, with no clock fast-forward.
-    const loop = await motionPage.evaluate(async () => {
+    const loop = await motionPage.evaluate(async ({ cell, phases }) => {
       const track = document.querySelector('.kito-track')
       const frames = document.querySelector('.kito-frames')
       const duration = track.getAnimations()[0].effect.getTiming().duration
@@ -286,8 +288,15 @@ try {
         const sample = () => {
           const rect = track.getBoundingClientRect()
           const time = performance.now() - start
-          samples.push({ time, x: rect.x, right: rect.right })
-          seenFrames.add(getComputedStyle(frames).backgroundPositionX)
+          const css = getComputedStyle(frames)
+          const column = Math.round(-parseFloat(css.backgroundPositionX) / cell)
+          const row = Math.round(-parseFloat(css.backgroundPositionY) / cell)
+          const index = row * 6 + column
+          const support = phases[index].near.planted ? 'near' : 'far'
+          samples.push({ time, x: rect.x, right: rect.right, index, support,
+            supportX: rect.x + phases[index][support].ankleX * cell / 1254,
+            clockDelta: Math.abs(track.getAnimations()[0].currentTime - frames.getAnimations()[0].currentTime) })
+          seenFrames.add(index)
           if (time >= duration + 200) resolve()
           else requestAnimationFrame(sample)
         }
@@ -295,16 +304,33 @@ try {
       })
       const wraps = samples.slice(1).flatMap((point, i) => point.x < samples[i].x - 10 ? [{ before: samples[i], after: point }] : [])
       const forward = samples.slice(1).map((point, i) => ({ dx: point.x - samples[i].x, dt: point.time - samples[i].time })).filter(p => p.dx >= 0)
-      return { duration, elapsed: samples.at(-1).time, sampleCount: samples.length, wraps, frames: [...seenFrames], measuredSpeed: forward.reduce((n, p) => n + p.dx, 0) / forward.reduce((n, p) => n + p.dt, 0) * 1000 }
-    })
+      const pairs = samples.slice(1).map((point, i) => ({ before: samples[i], after: point })).filter(pair => pair.after.x >= pair.before.x)
+      const transitions = pairs.filter(pair => pair.before.index !== pair.after.index)
+      const supportPairs = pairs.filter(pair => pair.before.support === pair.after.support)
+      const heldPairs = pairs.filter(pair => pair.before.index === pair.after.index)
+      return { duration, elapsed: samples.at(-1).time, sampleCount: samples.length, wraps, frames: [...seenFrames],
+        measuredSpeed: forward.reduce((n, p) => n + p.dx, 0) / forward.reduce((n, p) => n + p.dt, 0) * 1000,
+        maxClockDelta: Math.max(...samples.map(sample => sample.clockDelta)),
+        maxHeldPoseTravel: Math.max(...heldPairs.map(pair => Math.abs(pair.after.x - pair.before.x))),
+        maxSupportDrift: Math.max(...supportPairs.map(pair => Math.abs(pair.after.supportX - pair.before.supportX))),
+        sequence: transitions.slice(0, 24).map(pair => [pair.before.index + 1, pair.after.index + 1]),
+        closes12to1: transitions.some(pair => pair.before.index === 11 && pair.after.index === 0),
+        skippedPoses: transitions.filter(pair => (pair.before.index + 1) % 12 !== pair.after.index).length,
+      }
+    }, { cell, phases: walkSource.framesData })
     expect(loop.elapsed).toBeGreaterThanOrEqual(loop.duration)
     expect(loop.wraps.length).toBeGreaterThanOrEqual(1)
     for (const wrap of loop.wraps) {
-      expect(wrap.before.x).toBeGreaterThan(width - 4)
-      expect(wrap.after.right).toBeLessThan(4)
+      expect(wrap.before.x).toBeGreaterThanOrEqual(width)
+      expect(wrap.after.right).toBeLessThanOrEqual(0.1)
     }
     expect(loop.measuredSpeed).toBeCloseTo(speed, 0)
-    expect(loop.frames.map(Number.parseFloat).sort((a, b) => b - a)).toEqual([0, -cell, -cell * 2, -cell * 3])
+    expect(loop.frames.sort((a, b) => a - b)).toEqual(Array.from({ length: 12 }, (_, i) => i))
+    expect(loop.maxClockDelta).toBeLessThan(0.1)
+    expect(loop.maxHeldPoseTravel).toBeLessThan(0.02)
+    expect(loop.maxSupportDrift).toBeLessThan(0.02)
+    expect(loop.closes12to1).toBe(true)
+    expect(loop.skippedPoses).toBe(0)
     // Real scrolling hides the stage; no IntersectionObserver mocking.
     await motionPage.locator('#comprar').scrollIntoViewIfNeeded()
     await expect(region).toHaveAttribute('data-in-view', 'false')
@@ -327,8 +353,9 @@ try {
   await expect(reduced.locator('.hero-scene-region')).toHaveAttribute('data-user-paused', 'true')
   const reducedBefore = await assertStill(reduced)
   const reducedImage = await reduced.locator('.kito-frames').evaluate(el => getComputedStyle(el).backgroundImage)
-  expect(reducedImage).toContain('kito-walk-2x.webp')
+  expect(reducedImage).toContain('kito-walk-v31-right-atlas.png')
   expect(reducedBefore[1].frame).toBe('0px')
+  expect(reducedBefore[1].row).toBe('0px')
   await reduced.locator('.motion-button').focus()
   await reduced.keyboard.press('Enter')
   await expect(reduced.locator('.hero-scene-region')).toHaveAttribute('data-running', 'true')
@@ -351,14 +378,19 @@ try {
     await mediaPage.evaluate(() => document.fonts.ready)
     await mediaPage.waitForLoadState('networkidle')
     const resources = await mediaPage.evaluate(() => performance.getEntriesByType('resource')
-      .filter(entry => /\.(webp|woff2?)(\?|$)/.test(entry.name))
+      .filter(entry => /\.(png|webp|woff2?)(\?|$)/.test(entry.name))
       .map(entry => ({ name: new URL(entry.name).pathname, encodedBytes: entry.encodedBodySize, transferBytes: entry.transferSize })))
     const bodyBytes = resources.reduce((sum, entry) => sum + entry.encodedBytes, 0)
     const transferBytes = resources.reduce((sum, entry) => sum + entry.transferBytes, 0)
-    expect(transferBytes).toBeLessThan(500_000)
+    // K31 explicitly requires the original 1.12 MB PNG, without conversion.
+    // Keep the former budget visible, and check the unchanged remainder separately.
+    const atlasBytes = walkAssets.assets[0].bytes
+    expect(transferBytes - atlasBytes).toBeLessThan(500_000)
     expect(resources.filter(r => r.name.includes('kito-walk-'))).toHaveLength(1)
-    expect(resources.some(r => /kito-static|walking_left/.test(r.name))).toBe(false)
-    report.media.push({ width, bodyBytes, transferBytes, resources })
+    expect(resources.some(r => /kito-static|walking_left|kito-walk-[23]x/.test(r.name))).toBe(false)
+    const atlasResponse = await mediaPage.request.get(new URL('/media/hero/kito-walk-v31-right-atlas.png', url).href)
+    expect(createHash('sha256').update(await atlasResponse.body()).digest('hex')).toBe(walkAssets.assets[0].sourceSha256)
+    report.media.push({ width, bodyBytes, transferBytes, resources, originalTarget: 500_000, targetMet: transferBytes < 500_000, exception: 'K31: supplied atlas preserved byte-for-byte; no image conversion allowed' })
     await mediaPage.close()
   }
   expect(report.runtimeErrors).toEqual([])
