@@ -32,23 +32,27 @@
   "sources": [
     {
       "source": "G:/Meu Drive/05-Projetos/KeyToTwo/Images/Pixel Art/Kito Walking v3/kito_walk_right_atlas.png",
-      "output": "kito-walk-v31-right-atlas.png",
+      "output": "kito-walk-v31-right-atlas.webp",
       "width": 2304,
       "height": 768,
-      "bytes": 1124099,
+      "bytes": 492982,
       "sourceSha256": "f4ec908e31d0a4038822fe65cc28d140ed4c958b2048a7c1656136b12d3d87bc",
-      "transformation": "byte-for-byte copy; no image modifications"
+      "sha256": "5642dc8f739afc4f1b3824f360df4327d0ec4e8d9cee5e46b3fc1bf790ec8ced",
+      "rgbaSha256": "a5f23cfe165944ab5fc7fc1bbfa13576c7a3ed0dbbe21a025f926f6dcc1b3e90",
+      "transformation": "WebP lossless exact; identical RGBA pixels, no resize"
     }
   ],
   "assets": [
     {
       "source": "G:/Meu Drive/05-Projetos/KeyToTwo/Images/Pixel Art/Kito Walking v3/kito_walk_right_atlas.png",
-      "output": "kito-walk-v31-right-atlas.png",
+      "output": "kito-walk-v31-right-atlas.webp",
       "width": 2304,
       "height": 768,
-      "bytes": 1124099,
+      "bytes": 492982,
       "sourceSha256": "f4ec908e31d0a4038822fe65cc28d140ed4c958b2048a7c1656136b12d3d87bc",
-      "transformation": "byte-for-byte copy; no image modifications"
+      "sha256": "5642dc8f739afc4f1b3824f360df4327d0ec4e8d9cee5e46b3fc1bf790ec8ced",
+      "rgbaSha256": "a5f23cfe165944ab5fc7fc1bbfa13576c7a3ed0dbbe21a025f926f6dcc1b3e90",
+      "transformation": "WebP lossless exact; identical RGBA pixels, no resize"
     }
   ],
   "bounds": [

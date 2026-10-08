@@ -1,0 +1,129 @@
+{
+  "task": "A2 phase 1",
+  "sourceNote": "Jogos/J001 - Rabisque e Adivinhe.md",
+  "sources": {
+    "atlas": {
+      "path": "G:/Meu Drive/05-Projetos/KeyToTwo/Images/Pixel Art/Kito Walking v3/kito_walk_right_atlas.png",
+      "bytes": 1124099,
+      "sha256": "f4ec908e31d0a4038822fe65cc28d140ed4c958b2048a7c1656136b12d3d87bc"
+    },
+    "board": {
+      "path": "G:/Meu Drive/09-Second-brain/95-Anexos/KeyToTwo/Marca/Pixel Art/kito_tabuleiro.png",
+      "bytes": 923639,
+      "sha256": "cdc4750090baa4b4c42ece8d762251c1312ba210523510bf4f2c49ee3488406f"
+    },
+    "hi": {
+      "path": "G:/Meu Drive/09-Second-brain/95-Anexos/KeyToTwo/Marca/Pixel Art/kito_hi.png",
+      "bytes": 648224,
+      "sha256": "e7acb17fc6be5d3631bd19c9f4846fbd8b2c75cf2f423d21d4467842bf8c8982"
+    },
+    "pdf": {
+      "path": "G:/Meu Drive/09-Second-brain/95-Anexos/KeyToTwo/Jogos/J001 - Rabisque e adivinhe.pdf",
+      "bytes": 1302077,
+      "sha256": "589d1797d5dad9184c6bb6a9a88192dbf981d242a241acdc3fb94c90b4297387"
+    }
+  },
+  "tooling": {
+    "sharp": "0.35.5",
+    "vips": "8.18.7",
+    "webp": "1.6.0",
+    "poppler": "pdftoppm version 23.10.0"
+  },
+  "webpOptions": {
+    "lossless": true,
+    "exact": true,
+    "quality": 100,
+    "effort": 6
+  },
+  "assets": [
+    {
+      "source": "atlas",
+      "output": "hero/kito-walk-v31-right-atlas.webp",
+      "width": 2304,
+      "height": 768,
+      "bytes": 492982,
+      "sha256": "5642dc8f739afc4f1b3824f360df4327d0ec4e8d9cee5e46b3fc1bf790ec8ced",
+      "rgbaSha256": "a5f23cfe165944ab5fc7fc1bbfa13576c7a3ed0dbbe21a025f926f6dcc1b3e90",
+      "differingRgbaBytes": 0,
+      "transformation": "PNG to exact lossless WebP; no resize, crop, palette change or frame edit; 6x2 cells of 384x384"
+    },
+    {
+      "source": "board",
+      "output": "experience/kito-tabuleiro-240.webp",
+      "width": 240,
+      "height": 240,
+      "bytes": 44750,
+      "sha256": "a4dfe9d08df6af0f46ef1587ed268cdd41c2e133879a839ef32c58a652a8e75c",
+      "rgbaSha256": "175188955dd85c2d24e6518c99165582fb027b2706d3a1b9568ce828b8f3133b",
+      "differingRgbaBytes": 0,
+      "transformation": "Full canvas, proportional nearest-neighbor resize to 240px; exact lossless WebP; no crop or retouch"
+    },
+    {
+      "source": "board",
+      "output": "experience/kito-tabuleiro-480.webp",
+      "width": 480,
+      "height": 480,
+      "bytes": 138918,
+      "sha256": "30ae613b647da5179714219b69b76315d04229841ec293b1ad140105db163e15",
+      "rgbaSha256": "1c7f2155b391fe29239672b5861c7a1cc567db204609f1cc21f2cd330481c652",
+      "differingRgbaBytes": 0,
+      "transformation": "Full canvas, proportional nearest-neighbor resize to 480px; exact lossless WebP; no crop or retouch"
+    },
+    {
+      "source": "hi",
+      "output": "experience/kito-hi-128.webp",
+      "width": 128,
+      "height": 128,
+      "bytes": 10382,
+      "sha256": "3a8d84067a41c6f4bc641c752bfaff7ebe1bf7b4cd26539f33beff650a11ddbe",
+      "rgbaSha256": "adaa951af54bea49e8d8687c5216b5e0448e117a3225fcb23eb3f633895a2548",
+      "differingRgbaBytes": 0,
+      "transformation": "Full canvas, proportional nearest-neighbor resize to 128px; exact lossless WebP; no crop or retouch"
+    },
+    {
+      "source": "hi",
+      "output": "experience/kito-hi-256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 33164,
+      "sha256": "cf583d45eae1151504ef704776442a56d9bb9043522f2041a0dc2ab86d2cfea2",
+      "rgbaSha256": "183fd806f87672421db14f6342fd2eb3cc419cb1d80794bb3f5d442ad8cb5629",
+      "differingRgbaBytes": 0,
+      "transformation": "Full canvas, proportional nearest-neighbor resize to 256px; exact lossless WebP; no crop or retouch"
+    },
+    {
+      "source": "pdf",
+      "output": "experience/j001-page-1-720.webp",
+      "width": 720,
+      "height": 1019,
+      "bytes": 59576,
+      "sha256": "53859f20de6340c15c62c416a4e1bc600c0d7df28745cd3c69ec6f1ac4ec8131",
+      "rgbaSha256": "a576c2cc8c3f59f8435d98cc7e64f7261a1cc5a4b2ac68010dc06f4eb1a2ec81",
+      "differingRgbaBytes": 0,
+      "transformation": "Actual PDF page 1, full page; Poppler raster at 720px wide, no crop or retouch; exact lossless WebP of raster"
+    },
+    {
+      "source": "pdf",
+      "output": "experience/j001-page-2-720.webp",
+      "width": 720,
+      "height": 1019,
+      "bytes": 13834,
+      "sha256": "a12a84b89bbf5e8b0e22bf3bebe0aed18fde9e7059ba61f5e0ca35b61317eec4",
+      "rgbaSha256": "be713306e4cba2f287c5b00b50a88f279ad5e0bc5ed351f87a7288e154e5ace5",
+      "differingRgbaBytes": 0,
+      "transformation": "Actual PDF page 2, full page; Poppler raster at 720px wide, no crop or retouch; exact lossless WebP of raster"
+    },
+    {
+      "source": "pdf",
+      "output": "experience/j001-page-3-720.webp",
+      "width": 720,
+      "height": 1019,
+      "bytes": 14420,
+      "sha256": "663879ea6bb9c823865353699ad4885479f8b2019e0ed8b28a1a48235f6dacf8",
+      "rgbaSha256": "8d33281c3225a6d65d6cb6b3c036860cdf36078fb3fd8dc91973297ab098eb24",
+      "differingRgbaBytes": 0,
+      "transformation": "Actual PDF page 3, full page; Poppler raster at 720px wide, no crop or retouch; exact lossless WebP of raster"
+    }
+  ],
+  "integration": "Prepared only. CSS still references the PNG until phase 2; retain it to avoid breaking the concurrent UI work."
+}

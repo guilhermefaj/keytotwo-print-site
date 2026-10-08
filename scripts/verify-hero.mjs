@@ -143,7 +143,7 @@ try {
   await expect(menu).toBeFocused()
   report.keyboard.push('Tab through skip link, logo, Entrar, mobile menu; Enter opens; focus trapped; Escape closes and restores trigger; focus outline 3px.')
 
-  for (const [name, target] of [['A experiência', 'experiencia'], ['Escolher um encontro', 'comprar']]) {
+  for (const [name, target] of [['A experiência', 'experiencia'], ['Escolher nosso encontro', 'comprar']]) {
     await menu.focus()
     await page.keyboard.press('Enter')
     // Focus the item via actual Tab traversal, then activate via Enter.
@@ -354,7 +354,7 @@ try {
   await expect(reduced.locator('.hero-scene-region')).toHaveAttribute('data-user-paused', 'true')
   const reducedBefore = await assertStill(reduced)
   const reducedImage = await reduced.locator('.kito-frames').evaluate(el => getComputedStyle(el).backgroundImage)
-  expect(reducedImage).toContain('kito-walk-v31-right-atlas.png')
+  expect(reducedImage).toContain('kito-walk-v31-right-atlas.webp')
   expect(reducedBefore[1].frame).toBe('0px')
   expect(reducedBefore[1].row).toBe('0px')
   await reduced.locator('.motion-button').focus()
@@ -383,15 +383,15 @@ try {
       .map(entry => ({ name: new URL(entry.name).pathname, encodedBytes: entry.encodedBodySize, transferBytes: entry.transferSize })))
     const bodyBytes = resources.reduce((sum, entry) => sum + entry.encodedBytes, 0)
     const transferBytes = resources.reduce((sum, entry) => sum + entry.transferBytes, 0)
-    // K31 explicitly requires the original 1.12 MB PNG, without conversion.
-    // Keep the former budget visible, and check the unchanged remainder separately.
+    // A2 preserves all atlas pixels in lossless WebP. Report the actual total,
+    // with a separate regression ceiling for the newly added real product media.
     const atlasBytes = walkAssets.assets[0].bytes
-    expect(transferBytes - atlasBytes).toBeLessThan(500_000)
+    expect(transferBytes - atlasBytes).toBeLessThan(750_000)
     expect(resources.filter(r => r.name.includes('kito-walk-'))).toHaveLength(1)
     expect(resources.some(r => /kito-static|walking_left|kito-walk-[23]x/.test(r.name))).toBe(false)
-    const atlasResponse = await mediaPage.request.get(new URL('/media/hero/kito-walk-v31-right-atlas.png', url).href)
-    expect(createHash('sha256').update(await atlasResponse.body()).digest('hex')).toBe(walkAssets.assets[0].sourceSha256)
-    report.media.push({ width, bodyBytes, transferBytes, resources, originalTarget: 500_000, targetMet: transferBytes < 500_000, exception: 'K31: supplied atlas preserved byte-for-byte; no image conversion allowed' })
+    const atlasResponse = await mediaPage.request.get(new URL('/media/hero/kito-walk-v31-right-atlas.webp', url).href)
+    expect(createHash('sha256').update(await atlasResponse.body()).digest('hex')).toBe(walkAssets.assets[0].sha256)
+    report.media.push({ width, bodyBytes, transferBytes, resources, originalTarget: 500_000, targetMet: transferBytes < 500_000, note: 'A2: lossless WebP; actual media target reported independently of functional PASS' })
     await mediaPage.close()
   }
   expect(report.runtimeErrors).toEqual([])
