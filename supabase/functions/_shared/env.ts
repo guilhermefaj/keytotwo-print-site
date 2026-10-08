@@ -75,6 +75,8 @@ export const env = {
   emailMode: () => (read('EMAIL_MODE') === 'brevo' ? 'brevo' : 'log') as 'brevo' | 'log',
   emailLogMailpitUrl: () => read('EMAIL_LOG_MAILPIT_URL')?.replace(/\/+$/, ''),
   brevoApiKey: () => required('BREVO_API_KEY'),
+  // Token Bearer configurado no webhook da Brevo (auth.type = bearer).
+  brevoWebhookSecret: () => required('BREVO_WEBHOOK_SECRET'),
   emailFrom: () => ({ email: required('EMAIL_FROM'), name: read('EMAIL_FROM_NAME') ?? 'KeyToTwo' }),
   // Lista de destinatários permitidos fora da produção (vírgula); vazia = todos.
   emailAllowedRecipients: () => (read('EMAIL_ALLOWED_RECIPIENTS') ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),

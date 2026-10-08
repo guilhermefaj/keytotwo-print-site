@@ -12,6 +12,13 @@ export interface DeliveryClaims {
   x: number // expira em (epoch s)
 }
 
+// Descadastro: não expira (RFC 8058); i = emitido em (epoch s).
+export interface UnsubscribeClaims {
+  t: 'u'
+  u: string // user_id
+  i: number
+}
+
 export type VerifyResult<T> = { ok: true; claims: T } | { ok: false; reason: 'invalid' | 'expired' }
 
 const encoder = new TextEncoder()
@@ -32,7 +39,7 @@ async function hmacKey(secret: string): Promise<CryptoKey> {
   return await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify'])
 }
 
-async function sign(claims: DeliveryClaims): Promise<string> {
+async function sign(claims: DeliveryClaims | UnsubscribeClaims): Promise<string> {
   const payload = toBase64Url(encoder.encode(JSON.stringify(claims)))
   const [secret] = env.emailLinkSecrets()
   const signature = await crypto.subtle.sign('HMAC', await hmacKey(secret), encoder.encode(payload))
@@ -71,4 +78,16 @@ export async function verifyDeliveryToken(token: string, now = Date.now()): Prom
   }
   if (claims.x * 1000 <= now) return { ok: false, reason: 'expired' }
   return { ok: true, claims: claims as unknown as DeliveryClaims }
+}
+
+export async function signUnsubscribeToken(userId: string, now = Date.now()): Promise<string> {
+  return await sign({ t: 'u', u: userId, i: Math.floor(now / 1000) })
+}
+
+export async function verifyUnsubscribeToken(token: string): Promise<VerifyResult<UnsubscribeClaims>> {
+  const claims = await verify(token)
+  if (!claims || claims.t !== 'u' || typeof claims.u !== 'string' || !UUID.test(claims.u) || typeof claims.i !== 'number') {
+    return { ok: false, reason: 'invalid' }
+  }
+  return { ok: true, claims: claims as unknown as UnsubscribeClaims }
 }

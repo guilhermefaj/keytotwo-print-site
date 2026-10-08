@@ -26,6 +26,10 @@ Deno.env.set('EMAIL_FROM', 'acesso@example.com')
 Deno.env.set('EMAIL_FROM_NAME', 'KeyToTwo')
 export const MAILPIT_URL = 'http://mailpit.teste'
 Deno.env.set('EMAIL_LOG_MAILPIT_URL', MAILPIT_URL)
+// I5: webhook da Brevo.
+export const BREVO_WEBHOOK_SECRET = 'segredo-webhook-brevo-teste'
+Deno.env.set('BREVO_WEBHOOK_SECRET', BREVO_WEBHOOK_SECRET)
+
 const KID = 'chave-teste'
 const keys = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
 const publicJwk = { ...(await crypto.subtle.exportKey('jwk', keys.publicKey)), kid: KID, alg: 'ES256', use: 'sig' }

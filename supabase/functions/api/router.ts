@@ -7,6 +7,7 @@ import { checkout } from './routes/checkout.ts'
 import { deliveryLink, downloadUrl } from './routes/downloads.ts'
 import { freeDownload, freeGame } from './routes/free.ts'
 import { orderStatus } from './routes/order-status.ts'
+import { unsubscribe, unsubscribePage } from './routes/unsubscribe.ts'
 import { library } from './routes/library.ts'
 
 type Params = Record<string, string>
@@ -46,6 +47,7 @@ const routes: Route[] = [
   route('/d/:token', { GET: deliveryLink }),
   route('/free-game', { GET: freeGame }),
   route('/free-download', { POST: freeDownload }),
+  route('/email/unsubscribe', { GET: unsubscribePage, POST: unsubscribe }),
 ]
 
 // Local e na nuvem o caminho chega como /api/<rota>; aceita também o prefixo /functions/v1.

@@ -1,6 +1,6 @@
 import { rpc, rpcRow } from './admin.ts'
 import { env } from './env.ts'
-import { signDeliveryToken } from './tokens.ts'
+import { signDeliveryToken, signUnsubscribeToken } from './tokens.ts'
 
 // Fila de e-mail por RPC (data-contract 6.7): claim → envio → mark_email_result. O banco decide novas tentativas
 // e confere de novo, no claim, o opt-in, a confirmação do e-mail e a supressão dos e-mails de marketing.
@@ -67,6 +67,12 @@ const link = (href: string, label: string) => `<a href="${escapeHtml(href)}" sty
 
 const displayName = (item: Named) => item.name ?? item.code
 
+// "A", "A e B", "A, B e C"
+function listNames(items: Named[]): string {
+  const names = items.map(displayName)
+  return names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`
+}
+
 function layout(subject: string, heading: string, body: string, footer = ''): string {
   return `<!doctype html>
 <html lang="pt-BR">
@@ -80,6 +86,23 @@ function layout(subject: string, heading: string, body: string, footer = ''): st
   </div>
 </body>
 </html>`
+}
+
+// Rodapé e headers de descadastro de todo e-mail de marketing (RFC 8058: POST em 1 clique pelo provedor;
+// o link do rodapé abre a página de preferências, que confirma e chama o POST).
+async function unsubscribeParts(row: OutboxRow) {
+  if (!row.user_id) throw new PermanentEmailError('marketing_sem_usuario')
+  const token = encodeURIComponent(await signUnsubscribeToken(row.user_id))
+  const page = `${env.siteUrl()}/email/preferencias?token=${token}`
+  const account = `${env.siteUrl()}/conta`
+  const footer = `<hr style="margin:28px 0 16px;border:0;border-top:1px solid #ddd5cb;">
+    ${paragraph(`Vocês recebem este e-mail porque aceitaram receber novidades da KeyToTwo. Não querem mais? ${link(page, 'Descadastrar')} (vale na hora) ou ajustem em ${link(account, 'Minha conta')}.`, true)}`
+  const text = ['', '--', 'Vocês recebem este e-mail porque aceitaram receber novidades da KeyToTwo.', `Descadastrar (vale na hora): ${page}`, `Minha conta: ${account}`]
+  const headers = {
+    'List-Unsubscribe': `<${env.apiPublicUrl()}/email/unsubscribe?token=${token}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  }
+  return { footer, text, headers }
 }
 
 // Entrega (transacional, pt-BR): um botão por jogo (link /d/{token}, válido por 30 dias) e o botão Meus jogos.
@@ -113,10 +136,61 @@ export async function renderDelivery(row: OutboxRow, apiBase: string): Promise<M
   return { to: row.to_email, subject, html, text, tag: row.kind }
 }
 
+// Lembrete de carrinho (marketing): o que ficou no carrinho e o botão de volta. Sem preço nem condição nova.
+export async function renderCartReminder(row: OutboxRow): Promise<Message> {
+  const items = row.payload.items ?? []
+  if (!items.length) throw new PermanentEmailError('lembrete_sem_itens')
+  const cart = `${env.siteUrl()}/carrinho`
+  const { footer, text: footerText, headers } = await unsubscribeParts(row)
+  const subject = 'Ficou um jogo no carrinho'
+  const names = listNames(items)
+  const html = layout(subject, 'Ficou um jogo no carrinho', [
+    paragraph(`Vocês deixaram ${escapeHtml(names)} no carrinho. Ele continua lá, esperando a próxima noite em que a dúvida for "o que a gente faz hoje?".`),
+    button(cart, 'Voltar ao carrinho'),
+    paragraph('Se já resolveram isso por outro caminho, pode ignorar este e-mail.', true),
+  ].join('\n    '), footer)
+  const text = [
+    'KeyToTwo', '', 'Ficou um jogo no carrinho', '',
+    `Vocês deixaram ${names} no carrinho. Ele continua lá, esperando a próxima noite em que a dúvida for "o que a gente faz hoje?".`, '',
+    `Voltar ao carrinho: ${cart}`, '',
+    'Se já resolveram isso por outro caminho, pode ignorar este e-mail.',
+    ...footerText,
+  ].join('\n')
+  return { to: row.to_email, subject, html, text, tag: row.kind, headers }
+}
+
+// Pós-compra (marketing): convite para jogar, Meus jogos e dicas de impressão.
+export async function renderPostPurchase(row: OutboxRow): Promise<Message> {
+  const games = row.payload.games ?? []
+  if (!games.length) throw new PermanentEmailError('pos_compra_sem_jogos')
+  const library = `${env.siteUrl()}/meus-jogos`
+  const printing = `${env.siteUrl()}/ajuda#impressao`
+  const { footer, text: footerText, headers } = await unsubscribeParts(row)
+  const subject = 'Já rolou a primeira partida?'
+  const names = listNames(games)
+  const html = layout(subject, 'Já rolou a primeira partida?', [
+    paragraph(`Faz alguns dias que ${escapeHtml(names)} ${games.length > 1 ? 'chegaram' : 'chegou'}. Se ainda não saíram da pasta de downloads, fica o convite: imprimam, escolham um jogo e deixem o celular em outro cômodo por uma rodada.`),
+    button(library, 'Abrir Meus jogos'),
+    paragraph(`Os arquivos ficam sempre em Meus jogos. Dicas para imprimir: ${link(printing, 'Ajuda')}.`, true),
+  ].join('\n    '), footer)
+  const text = [
+    'KeyToTwo', '', 'Já rolou a primeira partida?', '',
+    `Faz alguns dias que ${names} ${games.length > 1 ? 'chegaram' : 'chegou'}. Se ainda não saíram da pasta de downloads, fica o convite: imprimam, escolham um jogo e deixem o celular em outro cômodo por uma rodada.`, '',
+    `Meus jogos: ${library}`,
+    `Dicas para imprimir: ${printing}`,
+    ...footerText,
+  ].join('\n')
+  return { to: row.to_email, subject, html, text, tag: row.kind, headers }
+}
+
 export async function render(row: OutboxRow): Promise<Message> {
   switch (row.kind) {
     case 'delivery':
       return await renderDelivery(row, env.apiPublicUrl())
+    case 'cart_reminder':
+      return await renderCartReminder(row)
+    case 'post_purchase':
+      return await renderPostPurchase(row)
     default:
       throw new PermanentEmailError('kind_desconhecido')
   }
