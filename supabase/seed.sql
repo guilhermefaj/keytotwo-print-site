@@ -82,9 +82,18 @@ begin
       insert into public.product_games (product_id, game_id, position) values (v_av2, v_game, 1);
     end if;
 
-    -- sha256 e tamanho são placeholders; o I4 troca por valores reais do bucket de teste.
+    -- Tamanho e sha256 dos 5 PDFs fictícios de TESTE enviados ao bucket de teste do B2 (lidos de volta e conferidos pelo Ferrolho no I4).
+    -- Conteúdo fictício, sem dado pessoal e sem segredo; a chave, o nome e a versão são os de sempre. O bucket continua o nome fictício:
+    -- a API assina sempre no bucket configurado no ambiente.
     insert into public.files (game_id, kind, access, version, filename, size_bytes, sha256, status, published_at)
-    values (v_game, 'pdf', 'paid', '1.0', v_code || '-v1.0.pdf', 1024, repeat('0', 64), 'published', now())
+    values (v_game, 'pdf', 'paid', '1.0', v_code || '-v1.0.pdf', 699,
+            (jsonb_build_object(
+               'TESTE-J01', '35454cce258badc63d530a5744c9a2d46d1d6fd5a718f2adedbcf310194fd7da',
+               'TESTE-J02', '1f3251b5a26fd0efaae5f159e450f731923a7c4e862391571e5efc29d2b5a95f',
+               'TESTE-J03', 'd8165f721e1fd0acdc545dc4624785f04842d1ae0c1c3d46d0d95173de76dc0d',
+               'TESTE-J04', '98dd7189dd01904bcc4479a104aa4feb86466f0ff0dc42a6ea0f934c3673ed64',
+               'TESTE-J05', '40207c1576721c3e2fbdf4fc4c6822b4238033733dbd7d0914a4ed5a72bcf372') ->> v_code),
+            'published', now())
     returning id into v_file;
     insert into public.file_objects (file_id, access, bucket, object_key)
     values (v_file, 'paid', 'bucket-teste-pendente', 'paid/' || v_code || '/1.0/' || v_code || '-v1.0.pdf');

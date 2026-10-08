@@ -433,6 +433,18 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/deno.json"
 
+# KeyToTwo: interna (pg_cron/pg_net, api e webhook); a função confere a chave secreta no header apikey.
+[functions.email-dispatch]
+enabled = true
+verify_jwt = false
+import_map = "./functions/deno.json"
+
+# KeyToTwo: a Brevo envia Authorization: Bearer <BREVO_WEBHOOK_SECRET> (não é JWT); a função confere o segredo.
+[functions.brevo-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/deno.json"
+
 [analytics]
 # KeyToTwo: desligado no local; no Windows o contêiner vector reinicia em loop sem o daemon em tcp 2375.
 enabled = false

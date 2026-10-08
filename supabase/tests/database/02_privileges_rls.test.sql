@@ -151,14 +151,14 @@ select pg_temp.assert('funções de private sem EXECUTE para os papéis de API',
    where p.pronamespace = 'private'::regnamespace and has_function_privilege(r, p.oid, 'EXECUTE')));
 
 -- ===== RPCs do I2b e do I3: ACL e modo de execução ========================================================
-select pg_temp.assert('as RPCs de public são exatamente as 15 do I2b e do I3 (sem stub das de I4 e I5)',
-  (select array_agg(p.proname::text order by p.proname collate "C") = array['attach_checkout_session','cart_add','cart_remove','create_order_from_cart','fulfill_order','get_account','get_cart','get_catalog','get_library','get_order_status','mark_marketing_prompt','set_marketing_consent','set_order_status','set_stripe_customer','unsubscribe']
+select pg_temp.assert('as RPCs de public são exatamente as 22 do I2b ao I5 (todas as do contrato)',
+  (select array_agg(p.proname::text order by p.proname collate "C") = array['attach_checkout_session','cart_add','cart_remove','claim_email_batch','create_order_from_cart','fulfill_order','get_account','get_cart','get_catalog','get_free_game','get_library','get_order_status','mark_email_result','mark_marketing_prompt','record_email_event','resolve_delivery','resolve_download','resolve_free_download','set_marketing_consent','set_order_status','set_stripe_customer','unsubscribe']
    from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'));
 select pg_temp.assert('cada RPC: ACL = {dono, service_role} apenas',
-  (select count(*) = 15 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
+  (select count(*) = 22 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
      and p.proacl::text = '{postgres=X/postgres,service_role=X/postgres}'));
 select pg_temp.assert('cada RPC: SECURITY DEFINER com search_path vazio',
-  (select count(*) = 15 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
+  (select count(*) = 22 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
      and p.prosecdef and p.proconfig @> array['search_path=""']));
 
 -- ===== comportamento por papel ====================================================================

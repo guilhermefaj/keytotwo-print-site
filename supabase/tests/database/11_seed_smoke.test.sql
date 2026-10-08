@@ -1,4 +1,4 @@
--- 11_seed_smoke: o seed de teste (supabase/seed.sql) depois do db reset (docs/data-contract.md v0.3.3, seção 8).
+-- 11_seed_smoke: o seed de teste (supabase/seed.sql) depois do db reset (docs/data-contract.md v0.3.4, seção 8).
 -- Roda com `supabase test db` (pgTAP). Dados de teste só existem dentro da transação (rollback no fim).
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -152,7 +152,8 @@ select pg_temp.assert('6 jogos: 5 pagos publicados + 1 grátis em draft', (selec
 select pg_temp.assert('composição: P001 = 5 jogos; cada avulso = 1 (e os avulsos repetem jogos do P001)', (select count(*) = 7 from public.product_games pg where pg.product_id in (select id from seed_products))
   and (select count(*) = 5 from public.product_games pg join seed_products p on p.id = pg.product_id where p.code = 'P001'));
 select pg_temp.assert('7 arquivos e 7 objetos do B2, todos fictícios, sem URL', (select count(*) = 7 from seed_files) and (select count(*) = 7 from public.file_objects where file_id in (select id from seed_files))
-  and (select bool_and(sha256 = repeat('0', 64) and size_bytes = 1024) from seed_files)
+  and (select bool_and(case when status = 'published' then size_bytes = 699 and sha256 ~ '^[0-9a-f]{64}$' and sha256 <> repeat('0', 64)
+                            else size_bytes = 1024 and sha256 = repeat('0', 64) end) from seed_files)
   and (select bool_and(object_key !~ '(:|\?|\s)' and bucket = 'bucket-teste-pendente') from public.file_objects where file_id in (select id from seed_files)));
 select pg_temp.assert('ZIP do P001 e arquivo grátis em draft', (select count(*) = 2 from seed_files where status = 'draft' and (kind = 'zip' or access = 'free')));
 select pg_temp.assert('nenhum preço: valores 0 (e subtotal e desconto 0) nos pedidos do seed', (select bool_and(amount_total = 0 and amount_subtotal = 0 and amount_discount = 0 and promotion_code is null) from seed_orders where amount_total is not null));
@@ -191,7 +192,8 @@ select pg_temp.assert('consentimento: só A tem opt-in vigente (v1-TESTE)', (sel
 select pg_temp.assert('get_catalog: os 3 produtos do seed, todos vendáveis', (select count(*) = 3 and bool_and(coalesce(e->>'code', '') <> '') from jsonb_array_elements(public.get_catalog()) e where e->>'code' in ('P001', 'TESTE-AV1', 'TESTE-AV2')));
 
 -- ===== fila de e-mail ==============================================================================
-select pg_temp.assert('2 entregas na fila, transacionais e sem token', (select count(*) = 2 and bool_and(kind = 'delivery' and category = 'transactional' and status = 'queued' and payload::text !~ '(token|https?:)') from public.email_outbox where user_id in (select id from seed_users)));
+select pg_temp.assert('as 2 entregas do seed (pedidos pagos de A e de B) estão na fila de e-mail, transacionais e sem token (em qualquer estado: o despacho pode já tê-las enviado)',
+  (select count(*) = 2 and bool_and(category = 'transactional' and payload::text !~ '(token|https?:)') from public.email_outbox where kind = 'delivery' and user_id in (select id from seed_users)));
 select pg_temp.assert('payload da entrega: ref, produtos e um jogo por direito (entitlement_id e game_id)',
   (select jsonb_array_length(payload->'games') = 5 and (payload->'games'->0 ?& array['entitlement_id','game_id','code','name']) and payload->>'order_ref' ~ '^[0-9A-F]{8}$'
    from public.email_outbox o join public.orders ord on ord.id = o.order_id where ord.stripe_checkout_session_id = 'cs_test_TESTE_O1'));
@@ -230,6 +232,51 @@ select pg_temp.assert('seed I3: get_order_status do pedido pago de A (O1): dono 
    from public.get_order_status('a1000001-0000-4000-8000-000000000001'::uuid, (select id from seed_users where email = 'teste-a@keytotwo.test')))
   and (select relation = 'other' and items is null
    from public.get_order_status('a1000001-0000-4000-8000-000000000001'::uuid, (select id from seed_users where email = 'teste-e@keytotwo.test'))));
+
+-- ===== I4: downloads, entrega e fila sobre o seed (rollback no fim) ==================================
+do $c$
+declare
+  v_a uuid := (select id from seed_users where email = 'teste-a@keytotwo.test');
+  v_b uuid := (select id from seed_users where email = 'teste-b@keytotwo.test');
+  v_e uuid := (select id from seed_users where email = 'teste-e@keytotwo.test');
+  v_f1 uuid := (select id from public.files where filename = 'TESTE-J01-v1.0.pdf');
+  v_f3 uuid := (select id from public.files where filename = 'TESTE-J03-v1.0.pdf');
+  v_ent_a uuid := (select e.id from public.entitlements e where e.order_id = 'a1000001-0000-4000-8000-000000000001'::uuid);
+  v_game3 bigint := (select id from public.games where code = 'TESTE-J03');
+begin
+  if not exists (select 1 from pg_tables where tablename = 'smoke4') then create temp table smoke4 (k text, j jsonb); end if;
+  insert into smoke4 select 'dl_a', to_jsonb(r) from public.resolve_download(v_a, v_f1) r;
+  insert into smoke4 select 'dl_b3', to_jsonb(r) from public.resolve_download(v_b, v_f3) r;   -- B comprou o P001 no smoke do I3, logo acima
+  insert into smoke4 select 'dl_e1', to_jsonb(r) from public.resolve_download(v_e, v_f1) r;   -- E só tem direitos revogados
+  insert into smoke4 select 'del', to_jsonb(r) from public.resolve_delivery(v_ent_a, v_game3) r;
+  insert into smoke4 select 'free', public.get_free_game();
+end $c$;
+select pg_temp.assert('seed I4: A (dona do P001) baixa o TESTE-J01 com a chave do seed, o nome e os 699 bytes',
+  (select j->>'outcome' = 'ok' and j->>'object_key' = 'paid/TESTE-J01/1.0/TESTE-J01-v1.0.pdf' and j->>'filename' = 'TESTE-J01-v1.0.pdf' and j->>'content_type' = 'application/pdf'
+          and (j->>'size_bytes')::int = 699 from smoke4 where k = 'dl_a'));
+select pg_temp.assert('seed I4: B, que acabou de comprar o P001, baixa o jogo 3; E (sem direito ativo) não baixa o jogo 1',
+  (select j->>'outcome' = 'ok' and j->>'object_key' = 'paid/TESTE-J03/1.0/TESTE-J03-v1.0.pdf' from smoke4 where k = 'dl_b3')
+  and (select j->>'outcome' = 'not_entitled' and j->'object_key' = 'null'::jsonb from smoke4 where k = 'dl_e1'));
+select pg_temp.assert('seed I4: a entrega do pedido de A serve o jogo 3 pela versão vigente', (select j->>'outcome' = 'ok' and j->>'object_key' = 'paid/TESTE-J03/1.0/TESTE-J03-v1.0.pdf' from smoke4 where k = 'del'));
+select pg_temp.assert('seed I4: sem jogo gratuito publicado, available = false', (select j = '{"available": false}'::jsonb from smoke4 where k = 'free'));
+select pg_temp.assert('seed I4: os downloads gravaram eventos pagos, sem IP', (select count(*) = 3 and bool_and(kind = 'paid') from public.download_events where user_id in (select id from seed_users)));
+do $c$
+begin
+  insert into smoke4 select 'claim', to_jsonb(r) from public.claim_email_batch(5, (select (j->>'outbox_id')::uuid from smoke where k = 'ful')) r;
+end $c$;
+select pg_temp.assert('seed I4: o claim por p_outbox_id entrega ao despachante a entrega do pedido que o smoke do I3 acabou de pagar, com o payload por jogo',
+  (select count(*) = 1 and bool_and(j->>'kind' = 'delivery' and j->>'category' = 'transactional' and j->>'to_email' = 'teste-b@keytotwo.test' and jsonb_array_length(j->'payload'->'games') = 5) from smoke4 where k = 'claim'));
+do $c$
+declare v_id uuid := (select (j->>'id')::uuid from smoke4 where k = 'claim' order by j->>'id' limit 1);
+begin
+  insert into smoke4 select 'mark', to_jsonb(r) from public.mark_email_result(v_id, 'sent', 'msg-seed') r;
+  insert into smoke4 select 'marked_id', to_jsonb(v_id);
+end $c$;
+select pg_temp.assert('seed I4: mark sent aplica o envio', (select j->>'outcome' = 'applied' and j->>'status' = 'sent' from smoke4 where k = 'mark'));
+select pg_temp.assert('seed I4: ... a linha ficou sent e o funil registrou delivery_sent uma vez no pedido',
+  (select x.status = 'sent' and x.provider_message_id = 'msg-seed' from public.email_outbox x where x.id = (select (j #>> '{}')::uuid from smoke4 where k = 'marked_id'))
+  and (select count(*) = 1 from public.funnel_events f join public.email_outbox x on x.order_id = f.order_id
+        where f.type = 'delivery_sent' and x.id = (select (j #>> '{}')::uuid from smoke4 where k = 'marked_id')));
 
 select * from finish();
 rollback;

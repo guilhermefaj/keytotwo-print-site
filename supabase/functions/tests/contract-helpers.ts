@@ -13,6 +13,22 @@ Deno.env.set('SITE_URL', 'http://127.0.0.1:5176')
 export const TERMS_VERSION = 'termos-teste-1'
 Deno.env.set('TERMS_VERSION', TERMS_VERSION)
 Deno.env.set('ALLOWED_ORIGINS', 'http://127.0.0.1:5173')
+// I4: B2, links HMAC e e-mail (valores fictícios).
+Deno.env.set('B2_ENDPOINT', 's3.teste-001.backblazeb2.com')
+Deno.env.set('B2_REGION', 'teste-001')
+Deno.env.set('B2_BUCKET', 'bucket-de-teste')
+Deno.env.set('B2_READ_KEY_ID', 'chave-leitura-teste')
+Deno.env.set('B2_READ_APPLICATION_KEY', 'segredo-leitura-teste')
+export const LINK_SECRET = 'segredo-dos-links-de-teste'
+Deno.env.set('EMAIL_LINK_SECRET', LINK_SECRET)
+Deno.env.set('API_PUBLIC_URL', 'http://127.0.0.1:54321/functions/v1/api')
+Deno.env.set('EMAIL_FROM', 'acesso@example.com')
+Deno.env.set('EMAIL_FROM_NAME', 'KeyToTwo')
+export const MAILPIT_URL = 'http://mailpit.teste'
+Deno.env.set('EMAIL_LOG_MAILPIT_URL', MAILPIT_URL)
+// I5: webhook da Brevo.
+export const BREVO_WEBHOOK_SECRET = 'segredo-webhook-brevo-teste'
+Deno.env.set('BREVO_WEBHOOK_SECRET', BREVO_WEBHOOK_SECRET)
 
 const KID = 'chave-teste'
 const keys = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
@@ -73,6 +89,21 @@ export function onStripe(reply: (call: StripeCall) => Reply) {
   stripeReply = reply
 }
 
+// Outros serviços externos (Brevo, Mailpit): URL, corpo JSON e headers.
+export interface ExternalCall {
+  url: string
+  body: Record<string, unknown>
+  headers: Headers
+}
+
+export const externalCalls: ExternalCall[] = []
+let externalReply: (call: ExternalCall) => Reply = () => ({ status: 500, body: {} })
+
+export function onExternal(reply: (call: ExternalCall) => Reply) {
+  externalCalls.length = 0
+  externalReply = reply
+}
+
 const respond = ({ status, body }: Reply) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
@@ -98,6 +129,11 @@ globalThis.fetch = (input: string | URL | Request, init?: RequestInit): Promise<
     const call = { method, path: url.pathname, params, idempotencyKey: headers.get('Idempotency-Key') }
     stripeCalls.push(call)
     return Promise.resolve(respond(stripeReply(call)))
+  }
+  if (url.origin === 'https://api.brevo.com' || url.origin === MAILPIT_URL) {
+    const call = { url: url.href, body: JSON.parse(String(init?.body ?? '{}')), headers: new Headers(init?.headers) }
+    externalCalls.push(call)
+    return Promise.resolve(respond(externalReply(call)))
   }
   return Promise.reject(new Error(`fetch não simulado: ${url.origin}${url.pathname}`))
 }

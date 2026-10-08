@@ -1,4 +1,4 @@
--- 90_concurrency: webhook e retorno ao mesmo tempo, checkouts simultâneos e ordem de travas (docs/data-contract.md v0.3.3, T120 a T124 e T127).
+-- 90_concurrency: webhook e retorno ao mesmo tempo, checkouts simultâneos e ordem de travas (docs/data-contract.md v0.3.3, T120 a T125 e T127).
 -- Roda com `supabase test db` (pgTAP). SEM begin/rollback: os dados são gravados de verdade (dblink precisa enxergá-los) e removidos no fim.
 create extension if not exists pgtap with schema extensions;
 select * from no_plan();
@@ -232,7 +232,6 @@ $$;
 
 -- Cada corrida abre N conexões com dblink (todas com SET ROLE service_role, como a API), segura a trava da linha (pedido ou carrinho) numa conexão à parte, dispara as N chamadas,
 -- espera todas ficarem bloqueadas e só então solta a trava: a disputa é real, não depende de sorte de tempo.
--- T125 (claim_email_batch x claim_email_batch) chega com a fila de e-mail (I4).
 select exists (select 1 from pg_extension where extname = 'dblink') as had_dblink \gset
 create extension if not exists dblink with schema extensions;
 
@@ -283,6 +282,8 @@ begin
       perform extensions.dblink_connect('race' || i, v_conn);
       -- como a API: o COMMIT (e os gatilhos diferidos da I-5) roda com o papel service_role, que não tem SELECT em tabela alguma (D-12)
       perform extensions.dblink_exec('race' || i, 'set role service_role');
+      -- uma trava que não solta quebra o teste em 20 s (erro 55P03) em vez de pendurar a suíte
+      perform extensions.dblink_exec('race' || i, 'set lock_timeout = ''20s''');
     end loop;
     if p_hold_sql is not null then
       perform extensions.dblink_connect('racelock', pg_temp.conn_str('kt_racelock'));
@@ -521,6 +522,61 @@ select pg_temp.assert('T127: as 5 chamadas terminaram sem deadlock (40P01) nem e
 select pg_temp.assert('T127: o pedido foi liberado uma vez, com 2 direitos e uma entrega', (select status = 'paid' from public.orders where id = pg_temp.oid('t127'))
   and (select count(*) = 2 from public.entitlements where order_id = pg_temp.oid('t127'))
   and (select count(*) = 1 from public.email_outbox where order_id = pg_temp.oid('t127')));
+
+-- ----- T125: a fila não entrega a mesma linha a dois despachantes ---------------------------------------
+-- 24 entregas vencidas, as mais antigas do banco (os claims desta corrida nunca chegam às linhas de outros dados, como as do seed).
+do $fx$
+declare i integer; o uuid; v_prod bigint := (select id from public.products where code = 'CONCA1');
+begin
+  for i in 1..24 loop
+    perform pg_temp.mk_user('concq' || i);
+    o := pg_temp.mk_order(pg_temp.uid('concq' || i), 'paid', array[v_prod], 'CONCQ' || i);
+    perform pg_temp.mk_ents(o);
+    insert into public.email_outbox (user_id, order_id, kind, category, to_email, payload, scheduled_at, dedupe_key)
+    values (pg_temp.uid('concq' || i), o, 'delivery', 'transactional', 'concq' || i || '@pgtap.test', '{}'::jsonb,
+            now() - interval '2 days' - (i * interval '1 minute'), 'conc:q' || i);
+  end loop;
+end $fx$;
+
+-- (a) um despachante PEGA 8 e não confirma ainda (linhas travadas); outros dois pegam ao mesmo tempo: nenhum recebe linha do primeiro
+do $c$
+begin
+  perform extensions.dblink_connect('claimhold', pg_temp.conn_str('kt_claimhold'));
+  perform extensions.dblink_exec('claimhold', 'set role service_role');
+  perform extensions.dblink_exec('claimhold', 'begin');
+  insert into rr (test, j) select 't125_hold', j from extensions.dblink('claimhold', 'select to_jsonb(r) from public.claim_email_batch(8) r') as t(j jsonb);
+end $c$;
+insert into rr (test, j) select 't125_c', j from pg_temp.race(array[
+  'select to_jsonb(r) from public.claim_email_batch(8) r', 'select to_jsonb(r) from public.claim_email_batch(8) r']) j;
+do $c$
+begin
+  perform extensions.dblink_exec('claimhold', 'commit');
+  perform extensions.dblink_disconnect('claimhold');
+exception when others then
+  begin perform extensions.dblink_disconnect('claimhold'); exception when others then null; end;
+  raise;
+end $c$;
+select pg_temp.assert('T125: o despachante que segurava 8 linhas recebeu 8 e os outros dois, 16 (nenhum a mais, nenhum a menos)',
+  (select count(*) filter (where test = 't125_hold') = 8 and count(*) filter (where test = 't125_c') = 16 from rr where test like 't125%'));
+select pg_temp.assert('T125: nenhuma linha foi entregue duas vezes (24 ids distintos)', (select count(distinct j->>'id') = 24 from rr where test like 't125%'));
+select pg_temp.assert('T125: só linhas desta corrida (a fila de outros dados, como a do seed, não foi tocada)',
+  (select count(*) = 0 from rr where test like 't125%' and j->>'to_email' not like 'concq%@pgtap.test'));
+select pg_temp.assert('T125: as 24 linhas ficaram em envio, com locked_at',
+  (select count(*) = 24 and bool_and(status = 'sending' and locked_at is not null) from public.email_outbox where dedupe_key like 'conc:q%'));
+
+-- (b) o mesmo resultado informado ao mesmo tempo: uma aplica, as outras viram noop, e o funil registra uma vez
+do $c$
+begin
+  insert into pg_temp.oids select 't125_mark', id from public.email_outbox where dedupe_key = 'conc:q1';
+end $c$;
+insert into rr (test, j) select 't125_m', j from pg_temp.race(
+  array_fill(format($f$select to_jsonb(r) from public.mark_email_result(%L, 'sent', 'msg-conc') r$f$, pg_temp.oid('t125_mark')), array[6]),
+  format('select 1 from public.email_outbox where id = %L for update', pg_temp.oid('t125_mark'))) j;
+select pg_temp.assert('T125: 6 marcações simultâneas do mesmo envio: 1 applied e 5 noop',
+  (select count(*) = 6 and count(*) filter (where j->>'outcome' = 'applied') = 1 and count(*) filter (where j->>'outcome' = 'noop' and j->>'status' = 'sent') = 5 from rr where test = 't125_m'));
+select pg_temp.assert('T125: a linha ficou sent, com 1 funil delivery_sent no pedido',
+  (select status = 'sent' and provider_message_id = 'msg-conc' and sent_at is not null from public.email_outbox where dedupe_key = 'conc:q1')
+  and (select count(*) = 1 from public.funnel_events f join public.email_outbox x on x.order_id = f.order_id where x.dedupe_key = 'conc:q1' and f.type = 'delivery_sent'));
 
 -- ----- I-5 nos pedidos de todas as corridas, no estado gravado --------------------------------------------
 select pg_temp.assert('I-5 no estado gravado: todo pedido paid tem um direito por item e nenhum outro estado tem direito ativo',
