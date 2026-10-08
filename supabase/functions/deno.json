@@ -1,0 +1,11 @@
+{
+  "imports": {
+    "@supabase/auth-js": "npm:@supabase/auth-js@2.117.2"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true
+  }
+}
