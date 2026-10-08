@@ -1,11 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// The 12 routes pre-rendered into build/client/<route>/index.html.
+// The 13 routes pre-rendered into build/client/<route>/index.html.
 const routes = [
   '/',
   '/preview/hero',
   '/entrar',
-  '/carrinho',
+  '/carrinho', '/pagamento',
   '/meus-jogos',
   '/conta',
   '/pedido/confirmacao',
@@ -20,7 +20,7 @@ const viewports = [
   { name: '320', width: 320, height: 640 },
   { name: '1440', width: 1440, height: 900 },
 ]
-const protectedRoutes = ['/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao']
+const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao']
 
 // Collects anything that signals a runtime or hydration failure.
 function trackErrors(page: Page) {

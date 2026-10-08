@@ -45,7 +45,7 @@ export default function Root() {
   const [menuOpen, setMenuOpen] = useState(false)
   return <AuthProvider><ShopProvider>
     <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
-    {siteConfig.stage === 'test' && <p className="stage-banner">Ambiente de teste — compras desativadas.</p>}
+    {siteConfig.stage === 'test' && <p className="stage-banner">Ambiente de teste — sem cobranças reais.</p>}
     <SiteHeader onMenuOpenChange={setMenuOpen} />
     <Outlet context={{ menuOpen }} />
     <ConsentInvite />

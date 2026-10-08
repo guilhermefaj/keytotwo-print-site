@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { AccountNav, DataStatus } from '../components/account/AccountUi'
 import { offer } from '../content/offer'
 import { apiErrorMessage, money } from '../lib/api'
 import { useShop } from '../lib/shop-context'
+import { canCheckout, checkoutMock } from '../lib/checkout'
 
 export default function Carrinho() {
   const { cart, add, remove, busy } = useShop()
+  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -48,7 +50,7 @@ export default function Carrinho() {
     </section><aside className="cart-summary" aria-labelledby="cart-summary-title"><h2 id="cart-summary-title">Resumo</h2><p className="cart-subtotal">Subtotal <strong>{cart.data?.subtotal ? money(cart.data.subtotal.amount, cart.data.subtotal.currency) : 'Indisponível'}</strong></p>
       {cart.data?.warnings.some(warning => warning.code === 'PRICE_UNAVAILABLE') && <p>Um ou mais preços estão indisponíveis. A compra não pode ser finalizada.</p>}
       <div className="refund-notice"><p><strong>{offer.refund}</strong></p></div>
-      <button className="button button-primary" disabled aria-describedby="checkout-pending">Finalizar compra</button><p id="checkout-pending" className="pending-copy">O pagamento estará disponível em breve. Por enquanto, sua escolha fica salva no carrinho.</p><Link className="inline-link" to="/reembolsos">Ler a política de reembolsos</Link>
+      <button className="button button-primary" disabled={busy || cart.loading || Boolean(cart.error) || !canCheckout(cart.data)} onClick={() => navigate('/pagamento')} aria-describedby="checkout-help">Finalizar compra</button><p id="checkout-help" className="field-help">{checkoutMock ? 'Demonstração de pagamento. Nenhuma cobrança será feita.' : 'Pagamento protegido pela Stripe. Tem um cupom? Aplique na próxima etapa.'}</p>{checkoutMock && Boolean(items?.length) && !canCheckout(cart.data) && <Link className="inline-link" to="/pagamento">Ver demonstração do pagamento</Link>}<Link className="inline-link" to="/reembolsos">Ler a política de reembolsos</Link>
     </aside></div>
   </main>
 }

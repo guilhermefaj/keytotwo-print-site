@@ -24,6 +24,7 @@ export const otherPages = {
   '/entrar': { title: 'Entrar — KeyToTwo', description: 'Página de entrada para acessar sua conta KeyToTwo.' },
   '/meus-jogos': { title: 'Meus jogos — KeyToTwo', description: 'Área reservada aos jogos adquiridos na KeyToTwo.' },
   '/conta': { title: 'Minha conta — KeyToTwo', description: 'Área reservada às informações da sua conta KeyToTwo.' },
+  '/pagamento': { title: 'Pagamento — KeyToTwo', description: 'Confira seu pedido e finalize o pagamento com segurança.' },
   '/pedido/confirmacao': { title: 'Status da compra — KeyToTwo', description: 'Acompanhe a confirmação do seu pedido KeyToTwo.' },
   '/carrinho': { title: 'Carrinho de compras — KeyToTwo', description: 'Confira os itens do seu carrinho KeyToTwo. É preciso criar uma conta e entrar para finalizar a compra.' },
   '/404': { title: 'Página não encontrada — KeyToTwo', description: 'Este endereço não está disponível. Volte à página inicial da KeyToTwo.' },

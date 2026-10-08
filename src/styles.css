@@ -467,7 +467,39 @@ button, a { touch-action: manipulation; }
 .cart-summary .refund-notice { margin-block: 24px; }
 .cart-summary .button { width: 100%; }
 .cart-summary #checkout-pending { font-size: .8125rem; color: #345b5d; }
-/* Coupon UI can be added to cart-summary without changing this flexible layout. */
+.payment-page > .eyebrow { margin-top: 32px; }
+.payment-layout { display: grid; grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); gap: 36px; align-items: start; margin-top: 32px; }
+.payment-card { min-width: 0; background: #fff; border: 1px solid #d7e8e5; border-radius: 20px; padding: 32px; }
+.payment-items { list-style: none; padding: 0; margin: 0 0 24px; }
+.payment-items li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; padding-block: 16px; border-bottom: 1px solid #d7e8e5; }
+.payment-items li > span { flex: 1 1 130px; overflow-wrap: anywhere; }
+.payment-terms { margin-bottom: 20px; font-size: .9375rem; line-height: 1.65; }
+.payment-terms input { flex-shrink: 0; }
+.payment-card .button { max-width: 100%; }
+.checkout-demo { background: #fff4df; border-left: 3px solid #ae6920; padding: 12px 16px; font-size: .875rem; line-height: 1.6; }
+.stripe-payment, .mock-payment { margin-top: 24px; }
+.coupon { border-block: 1px solid #d7e8e5; padding-block: 10px; margin-block: 16px; }
+.coupon summary { padding-block: 10px; cursor: pointer; font-weight: 600; }
+.coupon-form { margin-block: 12px; }
+.coupon-form > div { display: flex; flex-wrap: wrap; align-items: start; gap: 12px; }
+.coupon-form input { flex: 1 1 130px; width: 0; }
+.coupon-form .button { margin: 0; }
+.payment-totals { margin: 24px 0; }
+.payment-totals > div { display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; padding-block: 8px; }
+.payment-totals dt { flex: 1 1 120px; overflow-wrap: anywhere; }
+.payment-totals dd { margin: 0; font-weight: 600; }
+.payment-total { font-size: 1.25rem; border-top: 1px solid #d7e8e5; margin-top: 12px; padding-top: 16px !important; }
+.payment-trust { margin-top: 20px !important; }
+#checkout-form { min-width: 0; }
+.mock-payment > .button { margin-top: 24px; }
+.confirmation-page { display: grid; place-items: start center; }
+.confirmation-card { width: min(100%, 740px); background: #fff; border: 1px solid #d7e8e5; border-radius: 24px; padding: clamp(24px,5vw,56px); }
+.confirmation-items { margin-block: 24px; padding-left: 24px; }
+@media (max-width: 767px) {
+  .payment-layout { grid-template-columns: minmax(0,1fr); gap: 24px; }
+  .payment-card { padding: 24px 16px; }
+  .payment-summary { padding: 24px 20px; }
+}
 .sheet-content { overscroll-behavior: contain; }
 @media (max-width: 1050px) {
   .site-header, .content-width { width: calc(100% - 48px); }
