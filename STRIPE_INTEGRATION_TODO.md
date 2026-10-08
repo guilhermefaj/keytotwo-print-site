@@ -1,6 +1,6 @@
 # Integração Stripe — o que falta e como operar
 
-Fonte única dos passos restantes da integração com a Stripe (nota "Stripe Checkout Studio", item 10). Estado em 2026-10-08: checkout com formulário embutido, confirmação e webhook implementados e testados localmente, **em modo de teste**; o I3-V validou o pagamento real de teste de ponta a ponta, menos o formulário no navegador (seção 5.1). Nada foi publicado no Supabase remoto.
+Fonte única dos passos restantes da integração com a Stripe (nota "Stripe Checkout Studio", item 10). Estado em 2026-10-08: checkout com formulário embutido, confirmação e webhook implementados e testados localmente, **em modo de teste**. O pagamento real de teste está validado de ponta a ponta: pela API no I3-V (seção 5.1) e **no navegador** no QA Q6 da Lupa, na sandbox vigente (seção 5.2). Nada foi publicado no Supabase remoto.
 
 Contrato das rotas: `docs/api-contract.md` (seções 6.5, 6.6 e 9). Código: `supabase/functions/api/routes/{checkout,order-status}.ts`, `supabase/functions/_shared/{stripe,fulfillment}.ts` e `supabase/functions/stripe-webhook/`.
 
@@ -18,10 +18,14 @@ Nunca cole valores neste arquivo. Os valores ficam em `D:/Maestri/keytotwo-print
 | `SITE_URL` | `http://127.0.0.1:5178` no local (prévia do redesign); subdomínio de teste no remoto | `https://keytotwo.com.br` |
 | Cupons | `TESTE10` (abaixo) | Cupons reais criados pelo responsável no modo live |
 
-**Cupom de teste** (criado em 2026-10-08, só em modo de teste, com autorização do orquestrador):
+**Sandbox de teste vigente** (51UOJi, desde 2026-10-08): o responsável trocou todo o conjunto Stripe do modelo de segredos (secreta, publicável e Price, da mesma conta; Price de 1990 BRL, `one_time`). Profiles locais com `stripe_customer_id` da sandbox anterior não valem nela: para testar, use um usuário novo (ou `db reset`).
 
-- Coupon `80pc8vWv`: 10%, duração `once`, nome "TESTE 10% (KeyToTwo, só modo de teste)".
-- Promotion Code `promo_1UOLNPEtA6WNSLpd5GjL9HaH`: código `TESTE10`.
+**Cupom de teste da sandbox vigente** (criado em 2026-10-08 no I3-W, só em modo de teste, com autorização do orquestrador):
+
+- Coupon `8i2wkRBk`: 10%, duração `once`, nome "TESTE 10% (KeyToTwo, só modo de teste)".
+- Promotion Code `promo_1UOOhIIAq9wLVP839YzM8IH9`: código `TESTE10`.
+
+Sandbox anterior (só histórico; o I3-V da seção 5.1 rodou nela): Coupon `80pc8vWv` e Promotion Code `promo_1UOLNPEtA6WNSLpd5GjL9HaH` (`TESTE10`).
 
 ## 2. Parâmetros configurados
 
@@ -51,7 +55,7 @@ Nunca cole valores neste arquivo. Os valores ficam em `D:/Maestri/keytotwo-print
 - Não há `consent_collection`: o aceite dos termos é colhido na nossa página e gravado no pedido.
 - Verificado na API de teste em 2026-10-08: essa combinação cria a sessão `ui_mode: form` com `client_secret`, `allow_promotion_codes: true` e validade de 24 h.
 
-**Aparência do formulário:** a da nota "Stripe Checkout Studio", sem mudanças.
+**Aparência do formulário:** a da nota "Stripe Checkout Studio". Ajuste A5 do Guache (PR 6): fonte DM Sans carregada pelo `fonts` do SDK e `promotionCodeCollection: 'never'` no formulário da Stripe; o cupom entra pelo campo do próprio site (`applyPromotionCode`, seção 4).
 
 ## 3. Setup
 
@@ -60,7 +64,7 @@ Nunca cole valores neste arquivo. Os valores ficam em `D:/Maestri/keytotwo-print
 1. `supabase/functions/.env` com `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_P001`, `TERMS_VERSION`, `SITE_URL` e `ALLOWED_ORIGINS`, copiados do modelo de segredos sem exibir valores.
 2. `products.stripe_price_id` do P001 no banco local igual ao Price de teste: depois de cada `db reset`, rode `node supabase/local/aplicar-price-teste.mjs` (passo do Lastro; lê `STRIPE_PRICE_ID_P001` do `.env` local). Sem ele, `POST /checkout` responde 502 ("No such price").
 3. Webhook local sem Stripe CLI: os testes assinam eventos com `generateTestHeaderStringAsync` e o mesmo segredo da função.
-4. Webhook real local (usado no I3-V): Stripe CLI (v1.51.1, fora do repositório) com a chave de teste em `STRIPE_API_KEY` e `STRIPE_CLI_TELEMETRY_OPTOUT=1`:
+4. Webhook real local (usado no I3-V e, na sandbox vigente, no QA Q6 no navegador): Stripe CLI (v1.51.1, fora do repositório) com a chave de teste em `STRIPE_API_KEY` e `STRIPE_CLI_TELEMETRY_OPTOUT=1`:
    - `stripe listen --print-secret` → o `whsec_` vai para `STRIPE_WEBHOOK_SECRET` do `.env` local (com backup do `.env`, sem exibir), e o `functions serve` é reiniciado;
    - `stripe listen --forward-to http://127.0.0.1:54321/functions/v1/stripe-webhook --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,charge.dispute.created,charge.dispute.closed,charge.refunded`;
    - no fim, restaure o `.env` do backup e reinicie o `functions serve`.
@@ -86,7 +90,7 @@ Nunca cole valores neste arquivo. Os valores ficam em `D:/Maestri/keytotwo-print
    - campo de cupom com `checkout.applyPromotionCode` e `removePromotionCode`;
    - `confirm` chama `actions.confirm`.
 4. **Retorno:** a Stripe leva a `/pedido/confirmacao?session_id=...`, e o site chama `GET /order-status`. A rota relê a sessão na Stripe e roda a mesma liberação idempotente do webhook.
-5. **Webhook:** `checkout.session.completed` (pago) → `fulfill_order`, que grava o pedido `paid` com subtotal, desconto, total e código promocional, cria um direito por item, limpa o carrinho e enfileira a entrega por e-mail (o envio entra no I4).
+5. **Webhook:** `checkout.session.completed` (pago) → `fulfill_order`, que grava o pedido `paid` com subtotal, desconto, total e código promocional, cria um direito por item, limpa o carrinho e enfileira a entrega por e-mail, que sai em segundo plano depois do commit (I4).
 6. **Contestações:** `charge.dispute.created` revoga; `closed` vencida devolve; perdida mantém revogado. Reembolso total manual revoga.
 
 ## 5. Cartões e cenários de teste
@@ -104,7 +108,7 @@ Confira os números atuais em https://docs.stripe.com/testing.
 
 ### 5.1 Validação real de teste sem o navegador (I3-V, 2026-10-08)
 
-Tudo pelo runtime local servido, com a Stripe de **teste** real: usuário criado por OTP (Mailpit) → carrinho com o P001 → `POST /checkout` com o aceite → confirmação pela API, como a fixture `checkout.session.completed` da Stripe CLI → webhook real pelo `stripe listen`.
+Rodado na sandbox anterior (seção 1). Tudo pelo runtime local servido, com a Stripe de **teste** real: usuário criado por OTP (Mailpit) → carrinho com o P001 → `POST /checkout` com o aceite → confirmação pela API, como a fixture `checkout.session.completed` da Stripe CLI → webhook real pelo `stripe listen`.
 
 - **Confirmação sem Stripe.js:** `GET /v1/payment_pages/{cs}` com a chave secreta (devido em `total_summary.due`) e `POST /v1/payment_pages/{cs}/confirm` com `payment_method` e `expected_amount`. O `confirm` recusa os atalhos `pm_card_*` ("No such PaymentMethod"): o PaymentMethod é criado antes de `tok_visa` (cartão 4242) ou `tok_chargeDeclined` (4000…0002), como na fixture.
 - **Cupom no servidor:** `POST /v1/payment_pages/{cs}` com `promotion_code=TESTE10` aplica o código na sessão aberta (o mesmo que o `applyPromotionCode` do formulário).
@@ -116,7 +120,18 @@ Tudo pelo runtime local servido, com a Stripe de **teste** real: usuário criado
 
 Observação: o `stripe listen` encaminha os eventos na versão padrão da conta (`2026-08-26.dahlia`); a função tratou os dois tipos sem diferença. O endpoint do Dashboard deve continuar com `2026-03-25.dahlia` (seção 3).
 
-**Falta validar só o formulário no navegador** (`initCheckoutFormSdk`/`createForm`, cupom pelo campo, `actions.confirm` e o retorno a `/pedido/confirmacao`). Ele exige `VITE_STRIPE_PUBLISHABLE_KEY` da **mesma conta** da `STRIPE_SECRET_KEY`: a pk atual do modelo é de outra conta, e o `payment_pages/{id}/init` responde 404 "No such checkout.session".
+Na época faltava o formulário no navegador: a pk do modelo era de outra conta, e o `payment_pages/{id}/init` respondia 404 "No such checkout.session". Resolvido com a troca do conjunto Stripe (seção 5.2).
+
+### 5.2 Validação no navegador (QA Q6 da Lupa, sandbox vigente 51UOJi, 2026-10-08)
+
+Formulário embutido no site do redesign, com a pk da mesma conta da chave secreta, a stack local e o webhook real pelo `stripe listen`:
+
+| Cenário | Resultado |
+| --- | --- |
+| Aprovado com TESTE10 | Cupom aplicado pelo campo do site: R$ 19,90 → R$ 17,91. Cartão 4242: confirmação mostrou o pedido pago, os jogos apareceram em Meus jogos, o download do PDF funcionou e o e-mail de entrega chegou |
+| Recusado | Cartão `4000 0000 0000 0002`: pagamento recusado e tratado pelo site |
+
+Com isso, o caminho de pagamento de teste está validado inteiro: formulário (`initCheckoutFormSdk`/`createForm`, cupom, `actions.confirm`), retorno, webhook, liberação, entrega e download.
 
 **Testes automatizados** (`supabase/functions/tests`):
 
@@ -128,7 +143,9 @@ Observação: o `stripe listen` encaminha os eventos na versão padrão da conta
 
 - [x] I4: despacho do e-mail de entrega (`send_delivery` do `fulfill_order`, em segundo plano).
 - [x] I3-V: pagamento real de teste aprovado (com cupom) e recusado, com webhook real (seção 5.1).
-- [ ] Responsável: trocar `VITE_STRIPE_PUBLISHABLE_KEY` pela `pk_test_` da mesma conta da `STRIPE_SECRET_KEY` e validar o formulário no navegador (4242 e TESTE10).
+- [x] Responsável: conjunto Stripe do modelo trocado para uma sandbox de teste única (secreta, publicável e Price da mesma conta); cupom TESTE10 recriado nela (seção 1).
+- [x] Formulário no navegador validado no QA Q6 (4242 com TESTE10 e recusa 4000…0002; seção 5.2).
+- [x] A5 (Guache, PR 6): fonte DM Sans pelo `fonts` do SDK e `promotionCodeCollection: 'never'`.
 - [ ] Endpoint de teste no Dashboard e segredos no projeto remoto (seção 3), com autorização.
 - [ ] Confirmar se o sufixo de preview vale para a versão do endpoint de webhook.
 - [ ] CSP do site (Costura): `docs/api-contract.md` 6.5.2.
