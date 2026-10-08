@@ -52,8 +52,11 @@ export const env = {
   supabaseUrl: () => required('SUPABASE_URL'),
   publishableKey: () => apiKey('SUPABASE_PUBLISHABLE_KEYS', 'SUPABASE_PUBLISHABLE_KEY'),
   secretKey: () => apiKey('SUPABASE_SECRET_KEYS', 'SUPABASE_SECRET_KEY'),
-  // Opcional no I2b: sem ela, o preço sai null (o site mostra "preço indisponível").
+  // Opcional na leitura de preço (sem ela, o preço sai null); obrigatória no checkout e no webhook.
   stripeSecretKey: () => read('STRIPE_SECRET_KEY'),
+  stripeWebhookSecret: () => required('STRIPE_WEBHOOK_SECRET'),
+  siteUrl: () => required('SITE_URL').replace(/\/+$/, ''),
+  termsVersion: () => required('TERMS_VERSION'),
   // Sem ALLOWED_ORIGINS nenhuma origem de navegador é aceita.
   allowedOrigins: () => (origins ??= parseOrigins()),
 }
