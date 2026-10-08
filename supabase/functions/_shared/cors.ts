@@ -1,7 +1,7 @@
 import { env } from './env.ts'
 
 const ALLOWED_HEADERS = 'authorization, apikey, content-type, x-client-info'
-const ALLOWED_METHODS = 'GET, POST, OPTIONS'
+const ALLOWED_METHODS = 'GET, POST, PUT, DELETE, OPTIONS'
 
 // Devolve o Origin da requisição quando ele está em ALLOWED_ORIGINS; senão null.
 export function allowedOrigin(req: Request): string | null {

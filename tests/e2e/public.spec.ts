@@ -5,6 +5,7 @@ import { expect, test, type Page } from '@playwright/test'
 // Stage-specific assertions follow the stage the build was made for (robots.txt tells which).
 const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao', '/ajuda', '/termos', '/privacidade', '/reembolsos', '/404']
 const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao', '/404']
+const protectedRoutes = ['/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao']
 const policyRoutes = ['/', '/ajuda', '/termos', '/reembolsos']
 const refundNotice = /N[ãa]o h[áa] reembolso ap[óo]s a libera[çc][ãa]o do download/i
 
@@ -12,6 +13,7 @@ async function builtFile(name: string) {
   return readFile(new URL(`../../build/client/${name}`, import.meta.url), 'utf8')
 }
 const isLive = async () => /^Sitemap:/m.test(await builtFile('robots.txt'))
+const isPreview = async () => !(await isLive()) && !(await builtFile('index.html')).includes('Ambiente de teste')
 
 async function visibleText(page: Page) {
   return page.evaluate(() => document.body.innerText)
@@ -75,13 +77,17 @@ test.describe('links e botões', () => {
 
 test.describe('conteúdo', () => {
   test('nenhum preço, valor em R$, depoimento ou número de clientes', async ({ page }) => {
+    const preview = await isPreview()
     for (const route of routes) {
       await page.goto(route)
       await page.waitForLoadState('networkidle')
       const text = await visibleText(page)
       const html = await page.content()
-      expect(text, `R$ em ${route}`).not.toMatch(/R\$|\bBRL\b|\breais\b|US\$|€/i)
-      expect(text, `valor monetário em ${route}`).not.toMatch(/\b\d+[.,]\d{2}\b/)
+      // I2b: test/live prices can come from the API. Preview still invents none.
+      if (preview) {
+        expect(text, `R$ em ${route}`).not.toMatch(/R\$|\bBRL\b|\breais\b|US\$|€/i)
+        expect(text, `valor monetário em ${route}`).not.toMatch(/\b\d+[.,]\d{2}\b/)
+      }
       expect(text, `promoção/parcelamento em ${route}`).not.toMatch(/por apenas|desconto|promo[çc][ãa]o|parcel|\d+\s?x\s?de/i)
       expect(text, `depoimento/avaliação em ${route}`).not.toMatch(/depoimento|avalia[çc][õo]es|estrelas|★|⭐/i)
       expect(text, `número de clientes em ${route}`).not.toMatch(/\d[\d.]*\+?\s*(clientes|casais|compradores|vendas|downloads)/i)
@@ -98,7 +104,8 @@ test.describe('conteúdo', () => {
     expect((await section.innerText()).match(/PENDENTE · composição/g)?.length, 'vagas PENDENTE').toBe(2)
     const offer = page.locator('section.offer-section')
     await expect(offer).toContainText('5 jogos')
-    await expect(offer).toContainText('PENDENTE: preço e moeda')
+    if (await isPreview()) await expect(offer).toContainText('PENDENTE: preço e moeda')
+    else await expect(offer.locator('.offer-price')).not.toBeEmpty()
     expect((await visibleText(page)).match(/\bP\d{3}\b/g) ?? [], 'códigos de produto além de P001').toEqual([])
   })
 
@@ -127,21 +134,18 @@ test.describe('conteúdo', () => {
     expect(result.actionsBeforeNotice, 'botões de compra antes do aviso').toEqual([])
   })
 
-  test('carrinho: aviso antes de Finalizar compra', async ({ page }) => {
+  test('carrinho exige login e preserva o destino', async ({ page }) => {
     await page.goto('/carrinho')
-    await expect(page.getByRole('link', { name: /Finalizar compra/ })).toHaveAttribute('href', '/entrar?next=%2Fcarrinho')
-    const before = await page.evaluate(() => {
-      const notice = [...document.querySelectorAll('main *')].find(el => el.children.length === 0 && /N[ãa]o h[áa] reembolso/i.test(el.textContent ?? ''))
-      const cta = [...document.querySelectorAll('main a')].find(el => /Finalizar compra/.test(el.textContent ?? ''))
-      return !!notice && !!cta && !!(notice.compareDocumentPosition(cta) & Node.DOCUMENT_POSITION_FOLLOWING)
-    })
-    expect(before, 'aviso antes de Finalizar compra').toBe(true)
+    await expect(page).toHaveURL(/\/entrar\?next=%2Fcarrinho$/)
+    await expect(page.getByRole('heading', { name: 'Entrar', exact: true })).toBeVisible()
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
+    // The refund-before-checkout assertion is in the authenticated I2b suite.
   })
 })
 
 test.describe('stage', () => {
   test('preview: sem Adicionar ao carrinho e sem acesso ao carrinho', async ({ page }) => {
-    test.skip(await isLive(), 'build live')
+    test.skip(!(await isPreview()), 'build test/live has an authenticated cart')
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 900 })
       for (const route of routes.filter(r => r !== '/carrinho')) {
@@ -182,12 +186,13 @@ test.describe('stage', () => {
     const titles = new Map<string, string>()
     for (const route of routes) {
       await page.goto(route)
+      await page.waitForLoadState('networkidle')
       const title = await page.title()
       expect(title, `title de ${route}`).not.toBe('')
       expect(await page.locator('meta[name="description"]').getAttribute('content'), `description de ${route}`).toBeTruthy()
       expect(await page.locator('link[rel="canonical"]').getAttribute('href'), `canonical de ${route}`).toBeTruthy()
       // /preview/hero is a copy of the home by design.
-      if (route !== '/preview/hero') {
+      if (route !== '/preview/hero' && !protectedRoutes.includes(route)) {
         expect(titles.get(title), `title repetido em ${route} e ${titles.get(title)}`).toBeUndefined()
         titles.set(title, route)
       }

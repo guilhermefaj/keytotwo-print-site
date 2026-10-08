@@ -20,6 +20,7 @@ const viewports = [
   { name: '320', width: 320, height: 640 },
   { name: '1440', width: 1440, height: 900 },
 ]
+const protectedRoutes = ['/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao']
 
 // Collects anything that signals a runtime or hydration failure.
 function trackErrors(page: Page) {
@@ -57,6 +58,10 @@ for (const route of routes) {
 
       await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
       await expect(page.locator('h1').first()).toBeVisible()
+      if (protectedRoutes.includes(route)) {
+        await expect(page).toHaveURL(new RegExp(`/entrar\\?next=${encodeURIComponent(route)}$`))
+        await expect(page.getByRole('heading', { name: 'Entrar', exact: true })).toBeVisible()
+      }
       expect(errors, `erros em ${route}`).toEqual([])
     })
 

@@ -1,0 +1,97 @@
+// Ambiente dos testes de contrato: sem rede e sem banco. As sessões são JWT ES256 assinados aqui,
+// com o JWKS servido pelo fetch simulado; RPCs e preços da Stripe também são simulados.
+export const SUPABASE_URL = 'http://supabase.teste'
+export const SECRET_KEY = 'chave-secreta-de-teste'
+
+Deno.env.set('SUPABASE_URL', SUPABASE_URL)
+Deno.env.set('SUPABASE_PUBLISHABLE_KEYS', JSON.stringify({ default: 'chave-publica-de-teste' }))
+Deno.env.set('SUPABASE_SECRET_KEYS', JSON.stringify({ default: SECRET_KEY }))
+Deno.env.set('STRIPE_SECRET_KEY', 'stripe-chave-de-teste')
+Deno.env.set('ALLOWED_ORIGINS', 'http://127.0.0.1:5173')
+
+const KID = 'chave-teste'
+const keys = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
+const publicJwk = { ...(await crypto.subtle.exportKey('jwk', keys.publicKey)), kid: KID, alg: 'ES256', use: 'sig' }
+
+const encoder = new TextEncoder()
+const base64url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
+
+export async function sessionToken(claims: Record<string, unknown> = {}): Promise<string> {
+  const now = Math.floor(Date.now() / 1000)
+  const header = base64url(encoder.encode(JSON.stringify({ alg: 'ES256', typ: 'JWT', kid: KID })))
+  const payload = base64url(encoder.encode(JSON.stringify({
+    sub: crypto.randomUUID(), role: 'authenticated', aud: 'authenticated', email: 'teste@example.com',
+    iat: now, exp: now + 600, is_anonymous: false, ...claims,
+  })))
+  const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, keys.privateKey, encoder.encode(`${header}.${payload}`))
+  return `${header}.${payload}.${base64url(new Uint8Array(signature))}`
+}
+
+export function userId(token: string): string {
+  return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub
+}
+
+export interface RpcCall {
+  fn: string
+  args: Record<string, unknown>
+  secretKeyOk: boolean
+  hasAuthorization: boolean
+}
+
+type Reply = { status: number; body: unknown }
+export const rpcCalls: RpcCall[] = []
+let rpcReply: (fn: string, args: Record<string, unknown>) => Reply = () => ({ status: 200, body: null })
+let priceReply: (id: string) => Reply = () => ({ status: 404, body: {} })
+
+export function onRpc(reply: (fn: string, args: Record<string, unknown>) => Reply) {
+  rpcCalls.length = 0
+  rpcReply = reply
+}
+
+export function onPrice(reply: (id: string) => Reply) {
+  priceReply = reply
+}
+
+const respond = ({ status, body }: Reply) =>
+  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
+
+globalThis.fetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+  const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url)
+  if (url.href === `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`) {
+    return Promise.resolve(respond({ status: 200, body: { keys: [publicJwk] } }))
+  }
+  const rpcMatch = url.href.startsWith(`${SUPABASE_URL}/rest/v1/rpc/`) ? url.pathname.split('/').pop()! : null
+  if (rpcMatch) {
+    const headers = new Headers(init?.headers)
+    const args = JSON.parse(String(init?.body ?? '{}'))
+    rpcCalls.push({ fn: rpcMatch, args, secretKeyOk: headers.get('apikey') === SECRET_KEY, hasAuthorization: headers.has('Authorization') })
+    return Promise.resolve(respond(rpcReply(rpcMatch, args)))
+  }
+  if (url.origin === 'https://api.stripe.com' && url.pathname.startsWith('/v1/prices/')) {
+    return Promise.resolve(respond(priceReply(decodeURIComponent(url.pathname.slice('/v1/prices/'.length)))))
+  }
+  return Promise.reject(new Error(`fetch não simulado: ${url.origin}${url.pathname}`))
+}
+
+export function request(path: string, options: { method?: string; token?: string; body?: unknown; headers?: HeadersInit } = {}): Request {
+  const headers = new Headers(options.headers)
+  if (options.token) headers.set('Authorization', `Bearer ${options.token}`)
+  if (options.body !== undefined) headers.set('Content-Type', 'application/json')
+  return new Request(`http://localhost/api${path}`, {
+    method: options.method ?? 'GET',
+    headers,
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+  })
+}
+
+// Erros esperados (500 simulados) não poluem a saída; os testes conferem o conteúdo do log.
+export async function captureErrors<T>(fn: () => Promise<T>): Promise<{ result: T; logs: string[] }> {
+  const original = console.error
+  const logs: string[] = []
+  console.error = (...args: unknown[]) => logs.push(args.join(' '))
+  try {
+    return { result: await fn(), logs }
+  } finally {
+    console.error = original
+  }
+}
