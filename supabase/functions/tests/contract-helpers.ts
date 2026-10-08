@@ -1,34 +1,46 @@
 // Ambiente dos testes de contrato: sem rede e sem banco. As sessões são JWT ES256 assinados aqui,
 // com o JWKS servido pelo fetch simulado; RPCs e preços da Stripe também são simulados.
+// Com KT_INTEGRATION=1 este módulo fica inerte (não grava env nem troca o fetch) e os testes de contrato são
+// ignorados: env e fetch valem para o processo inteiro, e as integrações do mesmo processo usariam os fictícios.
+export const integrationMode = Deno.env.get('KT_INTEGRATION') === '1'
+
 export const SUPABASE_URL = 'http://supabase.teste'
 export const SECRET_KEY = 'chave-secreta-de-teste'
-
-Deno.env.set('SUPABASE_URL', SUPABASE_URL)
-Deno.env.set('SUPABASE_PUBLISHABLE_KEYS', JSON.stringify({ default: 'chave-publica-de-teste' }))
-Deno.env.set('SUPABASE_SECRET_KEYS', JSON.stringify({ default: SECRET_KEY }))
-Deno.env.set('STRIPE_SECRET_KEY', 'stripe-chave-de-teste')
 export const WEBHOOK_SECRET = 'segredo-webhook-de-teste'
-Deno.env.set('STRIPE_WEBHOOK_SECRET', WEBHOOK_SECRET)
-Deno.env.set('SITE_URL', 'http://127.0.0.1:5176')
 export const TERMS_VERSION = 'termos-teste-1'
-Deno.env.set('TERMS_VERSION', TERMS_VERSION)
-Deno.env.set('ALLOWED_ORIGINS', 'http://127.0.0.1:5173')
-// I4: B2, links HMAC e e-mail (valores fictícios).
-Deno.env.set('B2_ENDPOINT', 's3.teste-001.backblazeb2.com')
-Deno.env.set('B2_REGION', 'teste-001')
-Deno.env.set('B2_BUCKET', 'bucket-de-teste')
-Deno.env.set('B2_READ_KEY_ID', 'chave-leitura-teste')
-Deno.env.set('B2_READ_APPLICATION_KEY', 'segredo-leitura-teste')
 export const LINK_SECRET = 'segredo-dos-links-de-teste'
-Deno.env.set('EMAIL_LINK_SECRET', LINK_SECRET)
-Deno.env.set('API_PUBLIC_URL', 'http://127.0.0.1:54321/functions/v1/api')
-Deno.env.set('EMAIL_FROM', 'acesso@example.com')
-Deno.env.set('EMAIL_FROM_NAME', 'KeyToTwo')
 export const MAILPIT_URL = 'http://mailpit.teste'
-Deno.env.set('EMAIL_LOG_MAILPIT_URL', MAILPIT_URL)
-// I5: webhook da Brevo.
 export const BREVO_WEBHOOK_SECRET = 'segredo-webhook-brevo-teste'
-Deno.env.set('BREVO_WEBHOOK_SECRET', BREVO_WEBHOOK_SECRET)
+
+const contractEnv: Record<string, string> = {
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEYS: JSON.stringify({ default: 'chave-publica-de-teste' }),
+  SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET_KEY }),
+  STRIPE_SECRET_KEY: 'stripe-chave-de-teste',
+  STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
+  SITE_URL: 'http://127.0.0.1:5176',
+  TERMS_VERSION,
+  ALLOWED_ORIGINS: 'http://127.0.0.1:5173',
+  // I4: B2, links HMAC e e-mail (valores fictícios).
+  B2_ENDPOINT: 's3.teste-001.backblazeb2.com',
+  B2_REGION: 'teste-001',
+  B2_BUCKET: 'bucket-de-teste',
+  B2_READ_KEY_ID: 'chave-leitura-teste',
+  B2_READ_APPLICATION_KEY: 'segredo-leitura-teste',
+  EMAIL_LINK_SECRET: LINK_SECRET,
+  API_PUBLIC_URL: 'http://127.0.0.1:54321/functions/v1/api',
+  EMAIL_FROM: 'acesso@example.com',
+  EMAIL_FROM_NAME: 'KeyToTwo',
+  EMAIL_LOG_MAILPIT_URL: MAILPIT_URL,
+  // I5: webhook da Brevo.
+  BREVO_WEBHOOK_SECRET,
+}
+if (!integrationMode) for (const [name, value] of Object.entries(contractEnv)) Deno.env.set(name, value)
+
+// Teste de contrato: ignorado no modo de integração (ver acima).
+export function contractTest(name: string, fn: () => void | Promise<void>): void {
+  Deno.test({ name, ignore: integrationMode, fn })
+}
 
 const KID = 'chave-teste'
 const keys = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
@@ -107,7 +119,7 @@ export function onExternal(reply: (call: ExternalCall) => Reply) {
 const respond = ({ status, body }: Reply) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
-globalThis.fetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+const contractFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
   const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url)
   if (url.href === `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`) {
     return Promise.resolve(respond({ status: 200, body: { keys: [publicJwk] } }))
@@ -137,6 +149,7 @@ globalThis.fetch = (input: string | URL | Request, init?: RequestInit): Promise<
   }
   return Promise.reject(new Error(`fetch não simulado: ${url.origin}${url.pathname}`))
 }
+if (!integrationMode) globalThis.fetch = contractFetch
 
 export function request(path: string, options: { method?: string; token?: string; body?: unknown; headers?: HeadersInit } = {}): Request {
   const headers = new Headers(options.headers)

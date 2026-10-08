@@ -4,6 +4,12 @@
     "stripe": "npm:stripe@22.0.2",
     "@std/assert": "jsr:@std/assert@1.0.19"
   },
+  "lock": false,
+  "tasks": {
+    "test:all": "deno run --no-lock --allow-read --allow-env --allow-run tests/run-all.ts all",
+    "test:contract": "deno run --no-lock --allow-read --allow-env --allow-run tests/run-all.ts contract",
+    "test:integration": "deno run --no-lock --allow-read --allow-env --allow-run tests/run-all.ts integration"
+  },
   "compilerOptions": {
     "strict": true,
     "noUnusedLocals": true,
