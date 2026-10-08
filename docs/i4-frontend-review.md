@@ -32,3 +32,5 @@ Para validar a fronteira da API sem modificar o dev, a variável foi definida so
 - Reset I4 liberado pelo Ferrolho; `$env:I2B_LOCAL_QA='1'; npm run test:e2e -- tests/e2e/i2b-frontend.spec.ts --workers=1`: **4 PASS, exit 0** (11,3 s), com contas novas pelo Mailpit e conta do seed para a biblioteca. Integração do backend I4 no Redesign ainda aguarda o Costura; manter entrega mock até o aviso do orquestrador. Não foram verificados download real do B2 nem envio de e-mail neste frontend.
 - Jogo gratuito ainda não definido; permanece fora da navegação.
 - Retomar os pagamentos 4242/recusa e as duas capturas solicitadas quando o responsável corrigir a chave publicável da conta Stripe. Nenhuma captura de sucesso foi produzida enquanto o pagamento está bloqueado.
+
+Atualização 2026-10-08 após merge f82beb4: integração real habilitada e validada. O padrão de test passou a ser API; mock apenas por opção explícita. Resultado e evidências em [i4-i5-real-integration.md](i4-i5-real-integration.md).

@@ -1,7 +1,8 @@
 import { api, ApiError } from './api'
 import { siteConfig } from './seo'
 
-export const emailPreferencesMock = siteConfig.stage !== 'live' && import.meta.env.VITE_EMAIL_PREFERENCES_MODE !== 'api'
+// I5 is integrated. A preview or explicit mock must never change a real preference.
+export const emailPreferencesMock = siteConfig.stage === 'preview' || (siteConfig.stage !== 'live' && import.meta.env.VITE_EMAIL_PREFERENCES_MODE === 'mock')
 
 export async function unsubscribeEmail(token: string, signal: AbortSignal) {
   // The server verifies the HMAC. No decoding, logging or persistence in the client.

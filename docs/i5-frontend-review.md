@@ -22,3 +22,5 @@ Dev 5178 mantém **mock identificado** até o merge I5. Para demonstração: `ht
 - Responsividade automática em 320, 390, 768, 1280 e 1440 px com fonte raiz 16/32 px, sem rolagem horizontal.
 
 Pendente: merge I5 e verificação com um link real do e-mail local, seguida da conferência da preferência na conta. Nada remoto; Stripe e Brevo dependem das correções do responsável já registradas no relatório I3.
+
+Atualização 2026-10-08 após merge f82beb4: descadastro real habilitado e validado pelo link do Mailpit, sem login e com idempotência. O padrão de test passou a ser API; mock apenas por opção explícita. Resultado em [i4-i5-real-integration.md](i4-i5-real-integration.md).

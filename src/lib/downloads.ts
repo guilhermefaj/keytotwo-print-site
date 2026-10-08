@@ -1,7 +1,8 @@
 import { api, ApiError, apiErrorMessage } from './api'
 import { siteConfig } from './seo'
 
-export const deliveryMock = siteConfig.stage !== 'live' && import.meta.env.VITE_DELIVERY_MODE !== 'api'
+// I4 is integrated: test/live use the API; preview and an explicit local mock stay isolated.
+export const deliveryMock = siteConfig.stage === 'preview' || (siteConfig.stage !== 'live' && import.meta.env.VITE_DELIVERY_MODE === 'mock')
 export type FreeGame = { available: false } | { available: true; game: { name: string }; file: { id: string; version: string; size_bytes: number } }
 export type DownloadLink = { url: string; expires_at: string; filename?: string | null }
 
