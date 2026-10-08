@@ -1,5 +1,4 @@
-import { PendingPage } from '../root'
+import { LegalPage } from '../components/legal/LegalPage'
+import { legal } from '../content/legal'
 
-export default function Termos() {
-  return <PendingPage title="Termos de uso">PENDENTE: texto dos termos de uso e revisão jurídica. Não há condições comerciais definidas nesta página.</PendingPage>
-}
+export default function Termos() { return <LegalPage content={legal.termos} /> }

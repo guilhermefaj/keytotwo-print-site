@@ -6,7 +6,7 @@ import os from 'node:os'
 import { verifyTabVisibility } from './verify-tab-visibility.mjs'
 
 // Artifacts default outside the repository. Point HERO_URL at dev or production preview.
-const url = process.env.HERO_URL ?? 'http://127.0.0.1:5174/'
+const url = process.env.HERO_URL ?? 'http://127.0.0.1:4175/'
 const output = path.resolve(process.env.HERO_QA_DIR ?? path.join(os.tmpdir(), 'keytotwo-hero-qa'))
 const walkAssets = JSON.parse(await readFile(new URL('../docs/kito-walk-assets.json', import.meta.url), 'utf8'))
 await mkdir(output, { recursive: true })
@@ -22,7 +22,7 @@ async function layoutCheck(page) {
     const sprite = document.querySelector('.kito-track').getBoundingClientRect()
     const floor = document.querySelector('.ground').getBoundingClientRect()
     const pixelScale = sprite.width / 64
-    const note = document.querySelector('.prototype-note').getBoundingClientRect()
+    const note = (document.querySelector('.prototype-note') ?? document.querySelector('.hero-note')).getBoundingClientRect()
     const clipped = [...document.querySelectorAll('h1,h2,p,button,a,li')].filter(el => {
       if (!el.checkVisibility() || el.classList.contains('skip-link')) return false
       const r = el.getBoundingClientRect()
@@ -57,7 +57,7 @@ try {
   const staticRoutes = [
     ['/', 'A próxima fase é de vocês dois.'],
     ['/preview/hero', 'A próxima fase é de vocês dois.'],
-    ['/entrar', 'Entrar'], ['/meus-jogos', 'Meus jogos'], ['/conta', 'Conta'],
+    ['/entrar', 'Entrar'], ['/carrinho', 'Carrinho'], ['/meus-jogos', 'Meus jogos'], ['/conta', 'Conta'],
     ['/pedido/confirmacao', 'Confirmação do pedido'], ['/ajuda', 'Ajuda'],
     ['/termos', 'Termos de uso'], ['/privacidade', 'Privacidade'],
     ['/reembolsos', 'Reembolsos'], ['/404', 'Página não encontrada'],
@@ -84,7 +84,7 @@ try {
       if (routePath !== '/' && routePath !== '/preview/hero') {
         await expect(routePage.locator('main')).toContainText('PENDENTE:')
         // Link navigation proves that the pre-rendered shell hydrated.
-        await routePage.getByRole('link', { name: 'Voltar ao início' }).click()
+        await routePage.locator('.site-header .brand').click()
         await expect(routePage.locator('h1')).toHaveText('A próxima fase é de vocês dois.')
         await expect(routePage.locator('.hero-scene-region')).toHaveAttribute('data-user-paused', 'true')
       } else {
@@ -120,7 +120,9 @@ try {
   await page.keyboard.press('Tab')
   await expect(page.getByText('Pular para o conteúdo')).toBeFocused()
   await page.keyboard.press('Tab')
-  await expect(page.getByRole('link', { name: 'KeyToTwo — início do protótipo' })).toBeFocused()
+  await expect(page.locator('.site-header .brand')).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(page.locator('.mobile-sign-in')).toBeFocused()
   await page.keyboard.press('Tab')
   const menu = page.getByRole('button', { name: 'Abrir menu' })
   await expect(menu).toBeFocused()
@@ -136,45 +138,38 @@ try {
   await page.screenshot({ path: path.join(output, 'menu-mobile.png'), fullPage: true })
   await page.keyboard.press('Escape')
   await expect(menu).toBeFocused()
-  report.keyboard.push('Tab through skip link, logo, mobile menu; Enter opens; focus trapped; Escape closes and restores trigger; focus outline 3px.')
+  report.keyboard.push('Tab through skip link, logo, Entrar, mobile menu; Enter opens; focus trapped; Escape closes and restores trigger; focus outline 3px.')
 
-  for (const [name, title] of [['Os 5 jogos', 'Os jogos estão tomando forma.'], ['Ver pacote', 'Uma noite a dois começa por aqui.']]) {
+  for (const [name, target] of [['Os 5 jogos', 'jogos'], ['Ver pacote', 'comprar']]) {
+    await menu.focus()
     await page.keyboard.press('Enter')
     // Focus the item via actual Tab traversal, then activate via Enter.
     for (let i = 0; i < 8; i++) {
-      if (await page.getByRole('dialog').getByRole('button', { name, exact: true }).evaluate(el => el === document.activeElement)) break
+      if (await page.getByRole('dialog').getByRole('link', { name, exact: true }).evaluate(el => el === document.activeElement)) break
       await page.keyboard.press('Tab')
     }
-    await expect(page.getByRole('dialog').getByRole('button', { name, exact: true })).toBeFocused()
+    await expect(page.getByRole('dialog').getByRole('link', { name, exact: true })).toBeFocused()
     await page.keyboard.press('Enter')
-    await expect(page.getByRole('dialog', { name: title })).toBeVisible()
-    await expect(page.getByRole('heading', { name: title })).toBeFocused()
-    await axe(page, `preview ${name}`)
-    await page.screenshot({ path: path.join(output, `panel-${name === 'Os 5 jogos' ? 'games' : 'package'}-mobile.png`), fullPage: true })
-    await page.keyboard.press('Escape')
-    await expect(menu).toBeFocused()
-    await expect(page.locator('.hero-scene-region')).toHaveAttribute('data-running', 'true')
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(page.locator(`#${target}`)).toBeFocused()
+    expect(new URL(page.url()).hash).toBe(`#${target}`)
+    await axe(page, `section ${name}`)
+    await page.screenshot({ path: path.join(output, `section-${target}-mobile.png`), fullPage: true })
   }
-  report.keyboard.push('Both mobile menu destinations open a native modal with initial title focus; Escape restores menu trigger.')
+  report.keyboard.push('Mobile menu links close the sheet and focus the real games/offer heading at the matching URL fragment.')
 
   const primary = page.locator('.hero-cta')
   await primary.focus()
   await page.keyboard.press('Enter')
-  await expect(page.locator('dialog')).toBeVisible()
-  await page.keyboard.press('Tab')
-  await expect(page.getByRole('button', { name: 'Voltar à hero', exact: true })).toBeFocused()
-  await page.keyboard.press('Enter')
-  await expect(primary).toBeFocused()
-  // Native dialog close restores focus before React receives its queued close
-  // event. Wait for the app to finish closing before issuing the next command.
-  await expect(page.locator('.hero-scene-region')).toHaveAttribute('data-running', 'true')
+  expect(new URL(page.url()).hash).toBe('#comprar')
+  await expect(page.locator('#comprar')).toBeInViewport()
   const secondary = page.locator('.secondary-action')
   await secondary.focus()
-  await page.keyboard.press('Space')
-  await expect(page.getByRole('dialog', { name: 'Os jogos estão tomando forma.' })).toBeVisible()
-  await page.keyboard.press('Escape')
-  await expect(secondary).toBeFocused()
-  report.keyboard.push('Hero CTAs support Enter/Space; modal close button and Escape restore the originating CTA.')
+  await page.keyboard.press('Enter')
+  expect(new URL(page.url()).hash).toBe('#jogos')
+  await expect(page.locator('#jogos')).toBeInViewport()
+  await expect(page.locator('dialog')).toHaveCount(0)
+  report.keyboard.push('Hero CTA links activate with Enter and scroll to the matching offer/games section; no demonstration panels remain.')
 
   // Measure computed colors for each button family across actual normal/hover/active/focus states.
   function contrast(foreground, background) {
@@ -200,7 +195,7 @@ try {
     report.contrast.push({ family, state, ...colors, ratio: Number(ratio.toFixed(2)) })
     expect(ratio).toBeGreaterThanOrEqual(4.5)
   }
-  for (const [family, locator] of [['primary', primary], ['secondary', secondary], ['icon', menu], ['motion', page.locator('.motion-button')], ['text-on-white', page.locator('.desktop-nav .text-button')]]) {
+  for (const [family, locator] of [['primary', primary], ['secondary', secondary], ['icon', menu], ['motion', page.locator('.motion-button')], ['text-on-white', page.locator('.desktop-nav .text-button').first()]]) {
     if (family === 'text-on-white') await page.setViewportSize({ width: 1280, height: 720 })
     await page.mouse.move(0, 0)
     await locator.evaluate(el => el.blur())
@@ -217,18 +212,17 @@ try {
   }
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 844 })
-    for (const surface of ['menu', 'games', 'package']) {
+    for (const surface of ['menu']) {
       await page.goto(url)
-      if (surface === 'menu') await menu.click()
-      else await page.locator(surface === 'games' ? '.secondary-action' : '.hero-cta').click()
+      await menu.click()
       await doubleText(page)
       const modal = page.getByRole('dialog')
       expect(await modal.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-      const lastButton = modal.getByRole('button').last()
-      await lastButton.focus()
-      await lastButton.scrollIntoViewIfNeeded()
-      const finalControl = await lastButton.evaluate(el => {
+      const lastLink = modal.getByRole('link').last()
+      await lastLink.focus()
+      await lastLink.scrollIntoViewIfNeeded()
+      const finalControl = await lastLink.evaluate(el => {
         const box = el.getBoundingClientRect()
         return { top: box.top, bottom: box.bottom, left: box.left, right: box.right, viewportHeight: innerHeight, viewportWidth: innerWidth }
       })
@@ -312,14 +306,13 @@ try {
     expect(loop.measuredSpeed).toBeCloseTo(speed, 0)
     expect(loop.frames.map(Number.parseFloat).sort((a, b) => b - a)).toEqual([0, -cell, -cell * 2, -cell * 3])
     // Real scrolling hides the stage; no IntersectionObserver mocking.
-    await doubleText(motionPage)
-    await motionPage.evaluate(() => scrollTo(0, 0))
+    await motionPage.locator('#comprar').scrollIntoViewIfNeeded()
     await expect(region).toHaveAttribute('data-in-view', 'false')
     await assertStill(motionPage)
     await motionPage.locator('.hero-scene').scrollIntoViewIfNeeded()
     await expect(region).toHaveAttribute('data-running', 'true')
     await button.click()
-    await motionPage.evaluate(() => scrollTo(0, 0))
+    await motionPage.locator('#comprar').scrollIntoViewIfNeeded()
     await expect(region).toHaveAttribute('data-in-view', 'false')
     await motionPage.locator('.hero-scene').scrollIntoViewIfNeeded()
     await expect(region).toHaveAttribute('data-in-view', 'true')
@@ -330,6 +323,7 @@ try {
   }
   const reduced = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' })
   await reduced.goto(url)
+  await expect(reduced.locator('.hero-scene-region')).toHaveAttribute('data-visible', 'true')
   await expect(reduced.locator('.hero-scene-region')).toHaveAttribute('data-user-paused', 'true')
   const reducedBefore = await assertStill(reduced)
   const reducedImage = await reduced.locator('.kito-frames').evaluate(el => getComputedStyle(el).backgroundImage)

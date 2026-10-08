@@ -13,6 +13,10 @@ tests
 playwright.config.ts
 art-source
 docs
+# Only scripts needed by the image build; QA scripts depend on excluded docs.
+scripts/*
+!scripts/seo-files.mjs
+!scripts/check-release.mjs
 supabase
 **/.env
 **/.env.*

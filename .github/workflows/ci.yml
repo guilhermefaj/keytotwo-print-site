@@ -28,8 +28,12 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
+      - name: Fixtures do bloqueio de release
+        run: node scripts/check-release.mjs --self-test
       - name: Build pré-renderizado
         run: npm run build
+      - name: Validar conteúdo e preço para release
+        run: node scripts/check-release.mjs --built
       - name: Instalar navegadores e dependências do Playwright
         run: npx playwright install --with-deps
       - name: Testes E2E
