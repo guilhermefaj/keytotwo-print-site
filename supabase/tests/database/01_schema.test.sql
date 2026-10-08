@@ -1,4 +1,4 @@
--- 01_schema: as 19 tabelas, tipos novos, constraints, unicidades, FKs compostas e índices (docs/data-contract.md v0.3.2, seções 2 e 3).
+-- 01_schema: as 19 tabelas, tipos novos, constraints, unicidades, FKs compostas e índices (docs/data-contract.md v0.3.3, seções 2 e 3).
 -- Roda com `supabase test db` (pgTAP). Dados de teste só existem dentro da transação (rollback no fim).
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -76,6 +76,8 @@ begin
   update public.orders o set
      status = p_to,
      amount_total = case when v_money then 0 else o.amount_total end,
+     amount_subtotal = case when v_money then 0 else o.amount_subtotal end,
+     amount_discount = case when v_money then 0 else o.amount_discount end,
      currency = case when v_money then 'brl' else o.currency end,
      paid_at = case when v_paid then coalesce(o.paid_at, now()) else o.paid_at end,
      stripe_payment_intent_id = case when v_paid then coalesce(o.stripe_payment_intent_id, 'pi_PGTAP_' || replace(o.id::text, '-', '')) else o.stripe_payment_intent_id end,
@@ -155,7 +157,7 @@ select pg_temp.assert('toda FK tem índice com a 1ª coluna na frente',
 select pg_temp.assert('nenhuma coluna url/uri/ip/user_agent (I-11)',
   not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name not in ('test')
     and (column_name ~* '(^|_)(url|uri)(_|$)' or column_name ~* '^(ip|ip_address|user_agent)$')));
-select pg_temp.assert('v0.3.2: sem entitlements.expires_at, orders.product_id e email_outbox.product_name',
+select pg_temp.assert('v0.3.3: sem entitlements.expires_at, orders.product_id e email_outbox.product_name',
   not exists (select 1 from information_schema.columns where table_schema = 'public' and
     ((table_name = 'entitlements' and column_name = 'expires_at') or (table_name = 'orders' and column_name = 'product_id')
      or (table_name = 'email_outbox' and column_name = 'product_name'))));
@@ -197,6 +199,21 @@ select pg_temp.expect('orders: dispute_lost sem paid_at', format($q$insert into 
 select pg_temp.expect('orders: refunded sem refunded_at', format($q$insert into public.orders (user_id,email,status,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency,paid_at) values (%L,'a@b.test','refunded',0,'v',now(),false,0,'brl',now())$q$, pg_temp.uid('u1')), '23514');
 select pg_temp.expect('orders: estado desconhecido', format($q$insert into public.orders (user_id,email,status,cart_version,terms_version,terms_accepted_at,livemode) values (%L,'a@b.test','zzz',0,'v',now(),false)$q$, pg_temp.uid('u1')), '23514');
 select pg_temp.expect('orders: valor sem moeda', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,amount_total) values (%L,'a@b.test',0,'v',now(),false,5)$q$, pg_temp.uid('u1')), '23514');
+-- D-24: subtotal, desconto, total e código promocional
+select pg_temp.expect('orders: subtotal sem desconto (par)', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency,amount_subtotal) values (%L,'a@b.test',0,'v',now(),false,5,'brl',5)$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: desconto sem subtotal (par)', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency,amount_discount) values (%L,'a@b.test',0,'v',now(),false,5,'brl',0)$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: subtotal sem total', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,amount_subtotal,amount_discount) values (%L,'a@b.test',0,'v',now(),false,10,0)$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: desconto maior que o subtotal', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency,amount_subtotal,amount_discount) values (%L,'a@b.test',0,'v',now(),false,0,'brl',5,9)$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: total diferente de subtotal - desconto', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency,amount_subtotal,amount_discount) values (%L,'a@b.test',0,'v',now(),false,8,'brl',10,3)$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: desconto negativo', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency,amount_subtotal,amount_discount) values (%L,'a@b.test',0,'v',now(),false,11,'brl',10,-1)$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: subtotal negativo', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency,amount_subtotal,amount_discount) values (%L,'a@b.test',0,'v',now(),false,-5,'brl',-5,0)$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: paid exige o subtotal (além do total)', format($q$insert into public.orders (user_id,email,status,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency,paid_at) values (%L,'a@b.test','paid',0,'v',now(),false,5,'brl',now())$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: pending_payment exige o subtotal', format($q$insert into public.orders (user_id,email,status,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency) values (%L,'a@b.test','pending_payment',0,'v',now(),false,5,'brl')$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: código promocional em branco', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,promotion_code) values (%L,'a@b.test',0,'v',now(),false,'')$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: código promocional com espaços nas pontas', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,promotion_code) values (%L,'a@b.test',0,'v',now(),false,' TESTE10 ')$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: código promocional com mais de 200 caracteres', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,promotion_code) values (%L,'a@b.test',0,'v',now(),false,repeat('x', 201))$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: valores coerentes com cupom passam', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency,amount_subtotal,amount_discount,promotion_code) values (%L,'a@b.test',0,'v',now(),false,7,'brl',10,3,'TESTE10')$q$, pg_temp.uid('u1')), 'OK');
+select pg_temp.expect('orders: cupom de 100% (total 0) passa', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency,amount_subtotal,amount_discount) values (%L,'a@b.test',0,'v',now(),false,0,'brl',10,10)$q$, pg_temp.uid('u1')), 'OK');
 select pg_temp.expect('orders: sessão repetida', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode,stripe_checkout_session_id) values (%L,'a@b.test',0,'v',now(),false,'cs_test_PGTAP_FX1')$q$, pg_temp.uid('u1')), '23505');
 select pg_temp.expect('orders: user_id inexistente', $q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode) values (gen_random_uuid(),'a@b.test',0,'v',now(),false)$q$, '23503');
 select pg_temp.expect('order_items: posição repetida', $q$insert into public.order_items (order_id,product_id,position,stripe_price_id) select o.id, p.id, 1, p.stripe_price_id from public.orders o, public.products p where o.stripe_checkout_session_id='cs_test_PGTAP_FX2' and p.code='SG2'$q$, '23505');

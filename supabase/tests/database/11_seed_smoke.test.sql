@@ -1,4 +1,4 @@
--- 11_seed_smoke: o seed de teste (supabase/seed.sql) depois do db reset (docs/data-contract.md v0.3.2, seção 8).
+-- 11_seed_smoke: o seed de teste (supabase/seed.sql) depois do db reset (docs/data-contract.md v0.3.3, seção 8).
 -- Roda com `supabase test db` (pgTAP). Dados de teste só existem dentro da transação (rollback no fim).
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -76,6 +76,8 @@ begin
   update public.orders o set
      status = p_to,
      amount_total = case when v_money then 0 else o.amount_total end,
+     amount_subtotal = case when v_money then 0 else o.amount_subtotal end,
+     amount_discount = case when v_money then 0 else o.amount_discount end,
      currency = case when v_money then 'brl' else o.currency end,
      paid_at = case when v_paid then coalesce(o.paid_at, now()) else o.paid_at end,
      stripe_payment_intent_id = case when v_paid then coalesce(o.stripe_payment_intent_id, 'pi_PGTAP_' || replace(o.id::text, '-', '')) else o.stripe_payment_intent_id end,
@@ -153,7 +155,9 @@ select pg_temp.assert('7 arquivos e 7 objetos do B2, todos fictícios, sem URL',
   and (select bool_and(sha256 = repeat('0', 64) and size_bytes = 1024) from seed_files)
   and (select bool_and(object_key !~ '(:|\?|\s)' and bucket = 'bucket-teste-pendente') from public.file_objects where file_id in (select id from seed_files)));
 select pg_temp.assert('ZIP do P001 e arquivo grátis em draft', (select count(*) = 2 from seed_files where status = 'draft' and (kind = 'zip' or access = 'free')));
-select pg_temp.assert('nenhum preço: valores 0 e Price de teste', (select bool_and(amount_total = 0) from seed_orders where amount_total is not null) and (select bool_and(stripe_price_id like 'price_TESTE_%') from seed_products));
+select pg_temp.assert('nenhum preço: valores 0 (e subtotal e desconto 0) nos pedidos do seed', (select bool_and(amount_total = 0 and amount_subtotal = 0 and amount_discount = 0 and promotion_code is null) from seed_orders where amount_total is not null));
+select pg_temp.assert('Prices: formato da Stripe em todos; os avulsos são price_TESTE_*; o P001 é price_TESTE_P001 ou o Price real de TESTE aplicado localmente',
+  (select bool_and(stripe_price_id ~ '^price_[A-Za-z0-9_]+$') from seed_products) and (select bool_and(stripe_price_id like 'price_TESTE_%') from seed_products where code <> 'P001'));
 select pg_temp.assert('e-mails, ids da Stripe e termos rotulados como teste', (select count(*) = 8 and bool_and(email like '%@keytotwo.test' and terms_version = 'v1-TESTE') from seed_orders)
   and (select bool_and(coalesce(stripe_checkout_session_id, 'cs_test_TESTE_x') ~ 'TESTE' and coalesce(stripe_payment_intent_id, 'pi_TESTE_x') ~ 'TESTE') from seed_orders)
   and (select bool_and(stripe_customer_id ~ 'TESTE') from public.profiles where user_id in (select id from seed_users) and stripe_customer_id is not null));
@@ -191,6 +195,41 @@ select pg_temp.assert('2 entregas na fila, transacionais e sem token', (select c
 select pg_temp.assert('payload da entrega: ref, produtos e um jogo por direito (entitlement_id e game_id)',
   (select jsonb_array_length(payload->'games') = 5 and (payload->'games'->0 ?& array['entitlement_id','game_id','code','name']) and payload->>'order_ref' ~ '^[0-9A-F]{8}$'
    from public.email_outbox o join public.orders ord on ord.id = o.order_id where ord.stripe_checkout_session_id = 'cs_test_TESTE_O1'));
+
+-- ===== I3: checkout e liberação sobre o seed (rollback no fim: o seed não muda) =====================
+do $c$
+declare
+  v_b uuid := (select id from seed_users where email = 'teste-b@keytotwo.test');
+  v_o uuid;
+  v_price text := (select stripe_price_id from public.products where code = 'P001');
+begin
+  create temp table smoke (k text primary key, j jsonb);
+  insert into smoke select 'co1', to_jsonb(r) from public.create_order_from_cart(v_b, false, 1, 'v1-TESTE', true) r;
+  insert into smoke select 'co2', to_jsonb(r) from public.create_order_from_cart(v_b, false, 1, 'v1-TESTE', true) r;
+  v_o := (select (j->>'order_id')::uuid from smoke where k = 'co1');
+  perform public.attach_checkout_session(v_o, 'cs_test_SMOKE_B1');
+  insert into smoke select 'ful', to_jsonb(r) from public.fulfill_order(v_o, 'cs_test_SMOKE_B1', 'paid', 100, 10, 90, 'brl', 'SMOKE10', 'pi_SMOKE_B1', null, false,
+    jsonb_build_array(jsonb_build_object('stripe_price_id', v_price, 'quantity', 1, 'unit_amount', 100, 'currency', 'brl')), 'webhook', 'evt_SMOKE_B1', 'checkout.session.completed') r;
+  insert into smoke select 'rep', to_jsonb(r) from public.fulfill_order(v_o, 'cs_test_SMOKE_B1', 'paid', 100, 10, 90, 'brl', 'SMOKE10', 'pi_SMOKE_B1', null, false,
+    jsonb_build_array(jsonb_build_object('stripe_price_id', v_price, 'quantity', 1, 'unit_amount', 100, 'currency', 'brl')), 'webhook', 'evt_SMOKE_B1', 'checkout.session.completed') r;
+end $c$;
+select pg_temp.assert('seed I3: o carrinho de B vira um pedido open com o P001 e o Price do catálogo',
+  (select j->>'outcome' = 'ok' and not (j->>'reused')::boolean and j->'items' = jsonb_build_array(jsonb_build_object('product_code', 'P001', 'stripe_price_id', (select stripe_price_id from public.products where code = 'P001')))
+          and j->>'email' = 'teste-b@keytotwo.test' from smoke where k = 'co1'));
+select pg_temp.assert('seed I3: chamar de novo reaproveita o pedido', (select (j->>'reused')::boolean and j->>'order_id' = (select j->>'order_id' from smoke where k = 'co1') from smoke where k = 'co2'));
+select pg_temp.assert('seed I3: fulfill_order libera o P001 com o cupom e a entrega', (select j->>'outcome' = 'applied' and (j->>'entitlement_count')::int = 1 and (j->>'send_delivery')::boolean from smoke where k = 'ful'));
+select pg_temp.assert('seed I3: reenvio do mesmo evento é duplicate_event', (select j->>'outcome' = 'duplicate_event' and not (j->>'send_delivery')::boolean from smoke where k = 'rep'));
+select pg_temp.assert('seed I3: B passa a ter os 5 jogos do P001 (o J01 já era dele) e o carrinho sem o P001',
+  (select jsonb_array_length(public.get_library(u.id)->'games') = 5 from seed_users u where u.email = 'teste-b@keytotwo.test')
+  and (select count(*) = 0 from public.cart_items ci join seed_users u on u.id = ci.user_id where u.email = 'teste-b@keytotwo.test'));
+select pg_temp.assert('seed I3: o pedido de B guarda subtotal 100, desconto 10, total 90 e o código',
+  (select amount_subtotal = 100 and amount_discount = 10 and amount_total = 90 and promotion_code = 'SMOKE10' and status = 'paid'
+   from public.orders o join seed_users u on u.id = o.user_id where u.email = 'teste-b@keytotwo.test' and o.stripe_checkout_session_id = 'cs_test_SMOKE_B1'));
+select pg_temp.assert('seed I3: get_order_status do pedido pago de A (O1): dono vê o P001, outra conta só o estado',
+  (select outcome = 'ok' and status = 'paid' and relation = 'owner' and items->0->>'code' = 'P001'
+   from public.get_order_status('a1000001-0000-4000-8000-000000000001'::uuid, (select id from seed_users where email = 'teste-a@keytotwo.test')))
+  and (select relation = 'other' and items is null
+   from public.get_order_status('a1000001-0000-4000-8000-000000000001'::uuid, (select id from seed_users where email = 'teste-e@keytotwo.test'))));
 
 select * from finish();
 rollback;

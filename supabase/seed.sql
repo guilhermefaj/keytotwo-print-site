@@ -147,6 +147,8 @@ begin
       update public.orders o set
         status = v_step,
         amount_total = case when v_step in ('pending_payment','paid','disputed','dispute_lost','refunded') then 0 else o.amount_total end,
+        amount_subtotal = case when v_step in ('pending_payment','paid','disputed','dispute_lost','refunded') then 0 else o.amount_subtotal end,
+        amount_discount = case when v_step in ('pending_payment','paid','disputed','dispute_lost','refunded') then 0 else o.amount_discount end,
         currency     = case when v_step in ('pending_payment','paid','disputed','dispute_lost','refunded') then 'brl' else o.currency end,
         paid_at      = case when v_step in ('paid','disputed','dispute_lost','refunded') then coalesce(o.paid_at, o.created_at + interval '5 minutes') else o.paid_at end,
         stripe_payment_intent_id = case when v_step in ('paid','disputed','dispute_lost','refunded') then coalesce(o.stripe_payment_intent_id, 'pi_TESTE_O' || r.n) else o.stripe_payment_intent_id end,
