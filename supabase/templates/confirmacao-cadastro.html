@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confirme seu e-mail na KeyToTwo</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f3ee;font-family:Arial,Helvetica,sans-serif;color:#2b2622;">
+  <div style="max-width:480px;margin:0 auto;padding:32px 24px;">
+    <p style="margin:0 0 24px;font-size:20px;font-weight:bold;">KeyToTwo</p>
+    <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;">Confirme seu e-mail</h1>
+    <p style="margin:0 0 16px;font-size:16px;line-height:1.5;">Para confirmar este e-mail e entrar, digite o código na página do site:</p>
+    <p style="margin:0 0 16px;font-size:32px;font-weight:bold;letter-spacing:6px;font-family:'Courier New',Courier,monospace;">{{ .Token }}</p>
+    <p style="margin:0 0 16px;font-size:16px;line-height:1.5;">Ou confirme pelo botão:</p>
+    <p style="margin:0 0 24px;">
+      <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:12px 20px;background:#2b2622;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;">Confirmar e-mail</a>
+    </p>
+    <p style="margin:0 0 24px;font-size:14px;line-height:1.5;color:#5c534b;">O código e o botão valem por 10 minutos e só podem ser usados uma vez. Depois disso, peça um novo código na página de entrada.</p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.5;color:#5c534b;">Se você não se cadastrou na KeyToTwo, ignore este e-mail.</p>
+    <p style="margin:0;font-size:14px;line-height:1.5;color:#5c534b;">Precisa de ajuda? <a href="{{ .SiteURL }}/ajuda" style="color:#2b2622;">{{ .SiteURL }}/ajuda</a></p>
+  </div>
+</body>
+</html>
