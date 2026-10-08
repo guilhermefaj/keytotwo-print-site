@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  site:
+    name: Site (Node 24)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Instalar dependências
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build pré-renderizado
+        run: npm run build
+      - name: Instalar navegadores e dependências do Playwright
+        run: npx playwright install --with-deps
+      - name: Testes E2E
+        run: npm run test:e2e
+
+  functions:
+    name: Edge Functions (Deno 2.9.x)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Detectar funções
+        id: functions
+        shell: bash
+        run: |
+          if [[ -d supabase/functions ]]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        if: steps.functions.outputs.present == 'true'
+        with:
+          deno-version: 'v2.9.x'
+      - name: Deno check
+        if: steps.functions.outputs.present == 'true'
+        working-directory: supabase/functions
+        run: deno check .

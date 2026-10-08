@@ -6,12 +6,13 @@ import os from 'node:os'
 import { verifyTabVisibility } from './verify-tab-visibility.mjs'
 
 // Artifacts default outside the repository. Point HERO_URL at dev or production preview.
-const url = process.env.HERO_URL ?? 'http://127.0.0.1:5173/preview/hero'
+const url = process.env.HERO_URL ?? 'http://127.0.0.1:5174/'
 const output = path.resolve(process.env.HERO_QA_DIR ?? path.join(os.tmpdir(), 'keytotwo-hero-qa'))
 const walkAssets = JSON.parse(await readFile(new URL('../docs/kito-walk-assets.json', import.meta.url), 'utf8'))
 await mkdir(output, { recursive: true })
 const browser = await chromium.launch()
-const report = { url, output, browser: browser.version(), viewports: [], accessibility: [], keyboard: [], contrast: [], motion: [], media: [], runtimeErrors: [] }
+const report = { url, output, browser: browser.version(), viewports: [], accessibility: [], keyboard: [], contrast: [], motion: [], media: [], runtimeErrors: [], consoleErrors: [] }
+report.routes = []
 report.artRevision = { revision: walkAssets.revision, sources: walkAssets.sources, motion: walkAssets.motion }
 
 async function layoutCheck(page) {
@@ -52,10 +53,54 @@ async function doubleText(page) {
 }
 
 try {
+  // Framework foundation: HTML exists before JS; direct route loads hydrate cleanly.
+  const staticRoutes = [
+    ['/', 'A próxima fase é de vocês dois.'],
+    ['/preview/hero', 'A próxima fase é de vocês dois.'],
+    ['/entrar', 'Entrar'], ['/meus-jogos', 'Meus jogos'], ['/conta', 'Conta'],
+    ['/pedido/confirmacao', 'Confirmação do pedido'], ['/ajuda', 'Ajuda'],
+    ['/termos', 'Termos de uso'], ['/privacidade', 'Privacidade'],
+    ['/reembolsos', 'Reembolsos'], ['/404', 'Página não encontrada'],
+  ]
+  for (const [routePath, title] of staticRoutes) {
+    const file = new URL(`../build/client${routePath === '/' ? '' : routePath}/index.html`, import.meta.url)
+    const html = await readFile(file, 'utf8')
+    expect(html).toMatch(/<meta name="robots" content="noindex, nofollow"/)
+    expect(html).toContain('<h1')
+    if (routePath === '/') expect(html).toContain('A próxima fase <span>é de vocês dois.</span>')
+    for (const width of [320, 390, 1440]) {
+      const routePage = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: 'reduce' })
+      routePage.on('pageerror', error => report.runtimeErrors.push(`${routePath}: ${error.message}`))
+      routePage.on('console', message => { if (message.type() === 'error') report.consoleErrors.push(`${routePath}: ${message.text()}`) })
+      const response = await routePage.goto(new URL(routePath, url).href)
+      expect(response.status()).toBe(200)
+      const servedHtml = await response.text()
+      const servedHeading = servedHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '')
+      expect(servedHeading).toBe(title)
+      await expect(routePage.locator('h1')).toHaveText(title)
+      await routePage.evaluate(() => document.fonts.ready)
+      await expect(routePage.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow')
+      expect(await routePage.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+      if (routePath !== '/' && routePath !== '/preview/hero') {
+        await expect(routePage.locator('main')).toContainText('PENDENTE:')
+        // Link navigation proves that the pre-rendered shell hydrated.
+        await routePage.getByRole('link', { name: 'Voltar ao início' }).click()
+        await expect(routePage.locator('h1')).toHaveText('A próxima fase é de vocês dois.')
+        await expect(routePage.locator('.hero-scene-region')).toHaveAttribute('data-user-paused', 'true')
+      } else {
+        await expect(routePage.locator('.hero-scene-region')).toHaveAttribute('data-in-view', 'true')
+      }
+      expect(report.runtimeErrors).toEqual([])
+      expect(report.consoleErrors).toEqual([])
+      report.routes.push({ routePath, width, html: 'pre-rendered', noindex: true, overflow: false })
+      await routePage.close()
+    }
+  }
   for (const [width, height] of [[320, 800], [390, 844], [768, 1024], [1280, 720], [1440, 900]]) {
     const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' })
     const page = await context.newPage()
     page.on('pageerror', error => report.runtimeErrors.push(error.message))
+    page.on('console', message => { if (message.type() === 'error') report.consoleErrors.push(message.text()) })
     await page.goto(url)
     await page.evaluate(() => document.fonts.ready)
     await expect(page.locator('h1')).toHaveText('A próxima fase é de vocês dois.')
@@ -108,6 +153,7 @@ try {
     await page.screenshot({ path: path.join(output, `panel-${name === 'Os 5 jogos' ? 'games' : 'package'}-mobile.png`), fullPage: true })
     await page.keyboard.press('Escape')
     await expect(menu).toBeFocused()
+    await expect(page.locator('.hero-scene-region')).toHaveAttribute('data-running', 'true')
   }
   report.keyboard.push('Both mobile menu destinations open a native modal with initial title focus; Escape restores menu trigger.')
 
@@ -119,6 +165,9 @@ try {
   await expect(page.getByRole('button', { name: 'Voltar à hero', exact: true })).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(primary).toBeFocused()
+  // Native dialog close restores focus before React receives its queued close
+  // event. Wait for the app to finish closing before issuing the next command.
+  await expect(page.locator('.hero-scene-region')).toHaveAttribute('data-running', 'true')
   const secondary = page.locator('.secondary-action')
   await secondary.focus()
   await page.keyboard.press('Space')
@@ -319,6 +368,7 @@ try {
     await mediaPage.close()
   }
   expect(report.runtimeErrors).toEqual([])
+  expect(report.consoleErrors).toEqual([])
   report.status = 'PASS'
 } catch (error) {
   report.status = 'FAIL'
