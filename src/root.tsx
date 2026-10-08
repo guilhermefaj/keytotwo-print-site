@@ -23,6 +23,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta name="description" content={seo.description} />
         <link rel="canonical" href={seo.canonical} />
         <meta name="robots" content={seo.robots} />
+        {pathname === '/email/preferencias' && <meta name="referrer" content="no-referrer" />}
         <meta property="og:title" content={seo.title} />
         <meta property="og:description" content={seo.description} />
         <meta property="og:url" content={seo.canonical} />
@@ -43,12 +44,13 @@ export function Layout({ children }: { children: ReactNode }) {
 
 export default function Root() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { pathname } = useLocation()
   return <AuthProvider><ShopProvider>
     <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
     {siteConfig.stage === 'test' && <p className="stage-banner">Ambiente de teste — sem cobranças reais.</p>}
     <SiteHeader onMenuOpenChange={setMenuOpen} />
     <Outlet context={{ menuOpen }} />
-    <ConsentInvite />
+    {pathname !== '/email/preferencias' && <ConsentInvite />}
     <SiteFooter />
   </ShopProvider></AuthProvider>
 }
