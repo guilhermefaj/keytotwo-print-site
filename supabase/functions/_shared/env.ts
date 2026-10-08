@@ -59,4 +59,23 @@ export const env = {
   termsVersion: () => required('TERMS_VERSION'),
   // Sem ALLOWED_ORIGINS nenhuma origem de navegador é aceita.
   allowedOrigins: () => (origins ??= parseOrigins()),
+  // Base pública da api nos links dos e-mails (no local, SUPABASE_URL é o endereço interno do gateway).
+  apiPublicUrl: () => (read('API_PUBLIC_URL') ?? `${required('SUPABASE_URL').replace(/\/+$/, '')}/functions/v1/api`).replace(/\/+$/, ''),
+  // Links HMAC dos e-mails: o atual assina e verifica; o anterior (opcional) só verifica, durante a rotação.
+  emailLinkSecrets: () => [required('EMAIL_LINK_SECRET'), read('EMAIL_LINK_SECRET_PREVIOUS')].filter((s): s is string => Boolean(s)),
+  // Chave do email-dispatch: a secreta nomeada "dispatch" na nuvem; sem ela (local), a "default".
+  dispatchKey: () => {
+    try {
+      return apiKey('SUPABASE_SECRET_KEYS', '__SEM_CHAVE_DISPATCH__', 'dispatch')
+    } catch {
+      return apiKey('SUPABASE_SECRET_KEYS', 'SUPABASE_SECRET_KEY')
+    }
+  },
+  // log (padrão): nada sai para fora; brevo: envio real pela API v3.
+  emailMode: () => (read('EMAIL_MODE') === 'brevo' ? 'brevo' : 'log') as 'brevo' | 'log',
+  emailLogMailpitUrl: () => read('EMAIL_LOG_MAILPIT_URL')?.replace(/\/+$/, ''),
+  brevoApiKey: () => required('BREVO_API_KEY'),
+  emailFrom: () => ({ email: required('EMAIL_FROM'), name: read('EMAIL_FROM_NAME') ?? 'KeyToTwo' }),
+  // Lista de destinatários permitidos fora da produção (vírgula); vazia = todos.
+  emailAllowedRecipients: () => (read('EMAIL_ALLOWED_RECIPIENTS') ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
 }

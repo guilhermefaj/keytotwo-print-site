@@ -1,6 +1,8 @@
 import type Stripe from 'stripe'
 import { rpcRow } from '../../_shared/admin.ts'
 import { requireSessionUser } from '../../_shared/auth.ts'
+import { runInBackground } from '../../_shared/background.ts'
+import { dispatchEmails } from '../../_shared/email.ts'
 import { fulfill, loadSession, orderIdFromSession, pendingPaymentArgs, setStatus } from '../../_shared/fulfillment.ts'
 import { HttpError, json } from '../../_shared/http.ts'
 import { isStripeError, stripeErrorLabel } from '../../_shared/stripe.ts'
@@ -62,7 +64,14 @@ export async function orderStatus(req: Request, url: URL): Promise<Response> {
   if (!orderId) return json({ state: 'not_found' })
 
   // Mesma liberação idempotente do webhook (p_source = 'return_page').
-  if (paid(session)) await tryApply('fulfill_order', () => fulfill(session, items, 'return_page'))
+  if (paid(session)) {
+    await tryApply('fulfill_order', async () => {
+      const result = await fulfill(session, items, 'return_page')
+      // Quem liberou (aqui ou no webhook) despacha a entrega depois do commit.
+      const outboxId = result.outbox_id
+      if (result.send_delivery && outboxId) runInBackground('order-status: entrega', () => dispatchEmails({ outboxId }))
+    })
+  }
   else if (session.status === 'complete') await tryApply('pending_payment', () => setStatus(orderId, 'pending_payment', 'return_page', pendingPaymentArgs(session)))
   else if (session.status === 'expired') await tryApply('expired', () => setStatus(orderId, 'expired', 'return_page'))
 

@@ -1,5 +1,7 @@
 import type Stripe from 'stripe'
 import { RpcError } from '../_shared/admin.ts'
+import { runInBackground } from '../_shared/background.ts'
+import { dispatchEmails } from '../_shared/email.ts'
 import { ConfigError, env } from '../_shared/env.ts'
 import { fulfill, isUuid, loadSession, orderIdFromSession, type OrderOutcome, pendingPaymentArgs, setStatus } from '../_shared/fulfillment.ts'
 import { errorResponse, HttpError, json } from '../_shared/http.ts'
@@ -97,7 +99,9 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
     }
     // Evento que só vale depois de outro (ex.: contestação antes da liberação): a Stripe reenvia.
     if (result.outcome === 'deferred') return json({ received: false, outcome: 'deferred' }, 500)
-    if (result.send_delivery) console.log(`stripe-webhook: entrega do pedido enfileirada (despacho no I4)`)
+    // Entrega por e-mail depois do commit, em segundo plano; se falhar, a agenda reenvia.
+    const outboxId = result.outbox_id
+    if (result.send_delivery && outboxId) runInBackground('stripe-webhook: entrega', () => dispatchEmails({ outboxId }))
     return json({ received: true, outcome: result.outcome })
   } catch (error) {
     const code = codeOf(error)

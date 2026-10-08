@@ -2,7 +2,9 @@
 // As URLs e chaves vêm de `supabase status -o env`, carregadas no ambiente sem imprimir valores:
 //   set -a; eval "$(npx supabase@2.118.0 status -o env)"; set +a
 //   KT_INTEGRATION=1 npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json \
-//     --allow-env --allow-net=127.0.0.1:54321,127.0.0.1:54324 supabase/functions/tests/
+//     --allow-env --allow-read --allow-net supabase/functions/tests/*.integration.test.ts
+// Rode as integrações num processo separado dos testes de contrato: contract-helpers.ts troca o fetch
+// global e o SUPABASE_URL pelos simulados. O I4 também acessa o B2 de teste (por isso --allow-net amplo).
 // Os usuários criados aqui usam o domínio example.com e o prefixo teste-, e são removidos no fim.
 import { GoTrueClient } from '@supabase/auth-js'
 
@@ -110,6 +112,13 @@ export async function lastMail(to: string, after: number): Promise<Mail> {
     await sleep(500)
   }
   throw new Error('e-mail não chegou ao Mailpit')
+}
+
+// Quantos e-mails o Mailpit tem para `to` com o assunto que contém `subject`.
+export async function mailCount(to: string, subject: string): Promise<number> {
+  const query = encodeURIComponent(`to:"${to}" subject:"${subject}"`)
+  const { messages } = await (await fetch(`${MAILPIT_URL}/api/v1/search?query=${query}`)).json()
+  return (messages ?? []).length
 }
 
 export function code(mail: Mail): string {
