@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { money } from '../../lib/api'
 import { stripePublishableKey } from '../../lib/checkout'
 import { siteConfig } from '../../lib/seo'
-import { loadStripe, studioAppearance, type CheckoutActions, type CheckoutForm, type CheckoutSession } from '../../lib/stripe'
+import { loadStripe, studioAppearance, studioFonts, type CheckoutActions, type CheckoutForm, type CheckoutSession } from '../../lib/stripe'
 
 export function StripePayment({ clientSecret }: { clientSecret: string }) {
   const host = useRef<HTMLDivElement>(null)
@@ -32,7 +32,7 @@ export function StripePayment({ clientSecret }: { clientSecret: string }) {
         if (!stripePublishableKey || (siteConfig.stage !== 'live' && !stripePublishableKey.startsWith('pk_test_'))) throw new Error('STRIPE_NOT_CONFIGURED')
         const Stripe = await loadStripe()
         if (!active || failed || !host.current) return
-        const sdk = Stripe(stripePublishableKey, { betas: ['custom_checkout_payment_form_1'] }).initCheckoutFormSdk({ clientSecret, appearance: studioAppearance })
+        const sdk = Stripe(stripePublishableKey, { betas: ['custom_checkout_payment_form_1'] }).initCheckoutFormSdk({ clientSecret, appearance: studioAppearance, fonts: studioFonts })
         sdk.on('change', next => { if (active && !failed) setSession(next) })
         const result = await sdk.loadActions()
         if (!active || failed) return
@@ -41,7 +41,7 @@ export function StripePayment({ clientSecret }: { clientSecret: string }) {
         const initial = checkout.getSession()
         if (siteConfig.stage !== 'live' && initial.livemode) throw new Error('TEST_ONLY')
         actions.current = checkout; setSession(initial)
-        form = sdk.createForm({ layout: 'expanded' })
+        form = sdk.createForm({ layout: 'expanded', features: { promotionCodeCollection: 'never' } })
         form.on('ready', () => { if (active) { clearTimeout(timer); setReady(true) } })
         form.on('loaderror', fail)
         form.on('confirm', async event => {
