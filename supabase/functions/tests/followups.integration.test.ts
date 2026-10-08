@@ -6,11 +6,10 @@
 //     --allow-env --allow-read --allow-net --allow-run=docker supabase/functions/tests/followups.integration.test.ts
 // O passo do Lastro supabase/local/aplicar-dispatch-vault.mjs precisa ter rodado (Vault com URL e chave do despacho).
 import { assert, assertEquals, assertMatch } from '@std/assert'
-import { enabled, lastMail, mailCount, MAILPIT_URL, removeTestUsers, sleep } from './integration-helpers.ts'
+import { enabled, lastMail, mailCount, MAILPIT_URL, removeTestUsers, settle, sleep } from './integration-helpers.ts'
 import { buyer, call, deliver, pay, sessionObject, startCheckout } from './stripe-fake.ts'
 import { handleBrevoWebhook } from '../brevo-webhook/handler.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
-import { setBackgroundRunner } from '../_shared/background.ts'
 import { signUnsubscribeToken } from '../_shared/tokens.ts'
 
 const DB_CONTAINER = 'supabase_db_keytotwo-print-site'
@@ -18,7 +17,6 @@ const FUNCTIONS_URL = `${Deno.env.get('API_URL') || 'http://127.0.0.1:54321'}/fu
 const REMINDER = 'Ficou um jogo no carrinho'
 const POST_PURCHASE = 'Já rolou a primeira partida?'
 
-const tasks: Promise<unknown>[] = []
 if (enabled) {
   const wanted = ['EMAIL_LINK_SECRET', 'API_PUBLIC_URL', 'EMAIL_FROM', 'EMAIL_FROM_NAME', 'BREVO_WEBHOOK_SECRET']
   for (const line of (await Deno.readTextFile(new URL('../.env', import.meta.url))).split(/\r?\n/)) {
@@ -27,9 +25,7 @@ if (enabled) {
   }
   Deno.env.set('EMAIL_MODE', 'log')
   Deno.env.set('EMAIL_LOG_MAILPIT_URL', MAILPIT_URL)
-  setBackgroundRunner((task) => tasks.push(task))
 }
-const settle = async () => void (await Promise.all(tasks.splice(0)))
 
 // SQL só de teste, no banco local (ids e estados; nenhum segredo).
 async function sql(query: string): Promise<string[]> {
@@ -213,7 +209,6 @@ Deno.test({
       })
     } finally {
       if (scheduled) await sql(`select cron.schedule('email-dispatch-tick', '*/5 * * * *', 'select private.dispatch_tick()')`)
-      setBackgroundRunner(null)
       const cleanup = await removeTestUsers()
       console.log(`usuários de teste removidos: ${cleanup.removed}; mantidos pelo banco: ${cleanup.kept}`)
     }

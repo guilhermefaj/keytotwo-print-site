@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assertEquals } from '@std/assert'
-import { captureErrors, onRpc, onStripe, request, rpcCalls, sessionToken, type StripeCall, stripeCalls, TERMS_VERSION, userId, WEBHOOK_SECRET } from './contract-helpers.ts'
+import { captureErrors, onRpc, onStripe, request, rpcCalls, sessionToken, type StripeCall, stripeCalls, TERMS_VERSION, userId, WEBHOOK_SECRET, contractTest } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { handleStripeWebhook } from '../stripe-webhook/handler.ts'
 import { cryptoProvider, stripe } from '../_shared/stripe.ts'
@@ -68,7 +68,7 @@ const checkoutBody = { cart_version: 3, terms_accepted: true, terms_version: TER
 
 // ---------- POST /checkout ----------
 
-Deno.test('checkout: valida sessão, termos e versão do carrinho antes do banco', async () => {
+contractTest('checkout: valida sessão, termos e versão do carrinho antes do banco', async () => {
   onRpc(() => ok(null))
   onStripe(() => ok({}))
   assertEquals((await handleRequest(request('/checkout', { method: 'POST', body: checkoutBody }))).status, 401)
@@ -89,7 +89,7 @@ Deno.test('checkout: valida sessão, termos e versão do carrinho antes do banco
   assertEquals([rpcCalls.length, stripeCalls.length], [0, 0])
 })
 
-Deno.test('checkout: recusas do carrinho viram 409 com details, sem chamar a Stripe', async () => {
+contractTest('checkout: recusas do carrinho viram 409 com details, sem chamar a Stripe', async () => {
   const token = await sessionToken()
   onStripe(() => ok({}))
   for (const [outcome, code, detail] of [
@@ -106,7 +106,7 @@ Deno.test('checkout: recusas do carrinho viram 409 com details, sem chamar a Str
   assertEquals(stripeCalls.length, 0)
 })
 
-Deno.test('checkout: cria Customer, sessão do formulário embutido com os parâmetros do Studio e devolve client_secret', async () => {
+contractTest('checkout: cria Customer, sessão do formulário embutido com os parâmetros do Studio e devolve client_secret', async () => {
   const token = await sessionToken()
   const uid = userId(token)
   onRpc((fn) => {
@@ -155,7 +155,7 @@ Deno.test('checkout: cria Customer, sessão do formulário embutido com os parâ
   })
 })
 
-Deno.test('checkout: Customer existente é atualizado; falha da Stripe vira 502 sem gravar a sessão', async () => {
+contractTest('checkout: Customer existente é atualizado; falha da Stripe vira 502 sem gravar a sessão', async () => {
   const token = await sessionToken()
   onRpc((fn) => (fn === 'create_order_from_cart'
     ? row({ outcome: 'ok', order_id: ORDER_ID, email: 'novo@example.com', stripe_customer_id: 'cus_antigo', items: [{ product_code: 'P001', stripe_price_id: PRICE }], reused: true, detail: null })
@@ -183,7 +183,7 @@ function orderStatusRpc(status: string, relation: 'owner' | 'other', fulfillRepl
   })
 }
 
-Deno.test('order-status: sessão paga com cupom libera pelo banco e responde paid ao dono', async () => {
+contractTest('order-status: sessão paga com cupom libera pelo banco e responde paid ao dono', async () => {
   const token = await sessionToken()
   stripeWith(session())
   orderStatusRpc('paid', 'owner')
@@ -197,7 +197,7 @@ Deno.test('order-status: sessão paga com cupom libera pelo banco e responde pai
   assertEquals(await (await handleRequest(request(`/order-status?session_id=${SESSION_ID}`, { token }))).json(), { state: 'paid', next: 'other_account' })
 })
 
-Deno.test('order-status: aberta, expirada, liberação falhando, sessão inexistente e sessão alheia', async () => {
+contractTest('order-status: aberta, expirada, liberação falhando, sessão inexistente e sessão alheia', async () => {
   const token = await sessionToken()
   const get = async () => (await handleRequest(request(`/order-status?session_id=${SESSION_ID}`, { token }))).json()
 
@@ -229,7 +229,7 @@ Deno.test('order-status: aberta, expirada, liberação falhando, sessão inexist
 
 // ---------- stripe-webhook ----------
 
-Deno.test('webhook: assinatura inválida responde 400 sem tocar no banco; GET responde 405', async () => {
+contractTest('webhook: assinatura inválida responde 400 sem tocar no banco; GET responde 405', async () => {
   onRpc(() => ok(null))
   stripeWith(session())
   const { status, body } = await webhook(stripeEvent('checkout.session.completed', session()), false)
@@ -238,7 +238,7 @@ Deno.test('webhook: assinatura inválida responde 400 sem tocar no banco; GET re
   assertEquals([rpcCalls.length, stripeCalls.length], [0, 0])
 })
 
-Deno.test('webhook: completed pago libera com cupom e evento; repetido responde 200 (idempotência no banco)', async () => {
+contractTest('webhook: completed pago libera com cupom e evento; repetido responde 200 (idempotência no banco)', async () => {
   stripeWith(session())
   onRpc(() => row({ outcome: 'applied', order_status: 'paid', outbox_id: '22222222-2222-4222-8222-222222222222', send_delivery: true }))
   const event = stripeEvent('checkout.session.completed', session())
@@ -251,7 +251,7 @@ Deno.test('webhook: completed pago libera com cupom e evento; repetido responde 
   assertEquals([again.status, again.body.outcome], [200, 'duplicate_event'])
 })
 
-Deno.test('webhook: unpaid vira pending_payment; async_failed, expired e sessão alheia', async () => {
+contractTest('webhook: unpaid vira pending_payment; async_failed, expired e sessão alheia', async () => {
   stripeWith(session({ payment_status: 'unpaid' }))
   onRpc(() => row({ outcome: 'applied' }))
   const pending = stripeEvent('checkout.session.completed', session({ payment_status: 'unpaid' }))
@@ -275,7 +275,7 @@ Deno.test('webhook: unpaid vira pending_payment; async_failed, expired e sessão
   assertEquals([outro.status, outro.body.outcome], [200, 'ignored'])
 })
 
-Deno.test('webhook: contestação aberta, vencida, perdida e reembolso total; pedido pelo PaymentIntent', async () => {
+contractTest('webhook: contestação aberta, vencida, perdida e reembolso total; pedido pelo PaymentIntent', async () => {
   const intent = (metadata: Record<string, string>) => (call: StripeCall) =>
     call.path === '/v1/payment_intents/pi_teste' ? ok({ id: 'pi_teste', object: 'payment_intent', metadata }) : null
   const dispute = (status: string) => ({ id: 'dp_teste', object: 'dispute', payment_intent: 'pi_teste', reason: 'fraudulent', status })
@@ -310,7 +310,7 @@ Deno.test('webhook: contestação aberta, vencida, perdida e reembolso total; pe
   assertEquals(stripeCalls[1].params.get('payment_intent'), 'pi_teste')
 })
 
-Deno.test('webhook: deferred e defeitos corrigíveis respondem 500; erros finais respondem 200', async () => {
+contractTest('webhook: deferred e defeitos corrigíveis respondem 500; erros finais respondem 200', async () => {
   stripeWith(null, (call) => (call.path === '/v1/payment_intents/pi_teste' ? ok({ id: 'pi_teste', object: 'payment_intent', metadata: { order_id: ORDER_ID } }) : null))
   onRpc(() => row({ outcome: 'deferred' }))
   const deferred = await webhook(stripeEvent('charge.dispute.created', { id: 'dp', object: 'dispute', payment_intent: 'pi_teste', reason: 'fraudulent', status: 'needs_response' }))

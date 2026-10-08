@@ -4,11 +4,10 @@
 //   KT_INTEGRATION=1 npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json \
 //     --allow-env --allow-read --allow-net supabase/functions/tests/delivery.integration.test.ts
 import { assert, assertEquals, assertMatch } from '@std/assert'
-import { enabled, lastMail, mailCount, MAILPIT_URL, removeTestUsers } from './integration-helpers.ts'
+import { enabled, fetchRetry, lastMail, mailCount, MAILPIT_URL, removeTestUsers, settle } from './integration-helpers.ts'
 import { buyer, call, deliver, pay, sessionObject, startCheckout } from './stripe-fake.ts'
 import { handleRequest } from '../api/router.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
-import { setBackgroundRunner } from '../_shared/background.ts'
 import { presignUrl, readOnlyConfig } from '../_shared/b2.ts'
 import { signDeliveryToken, verifyDeliveryToken } from '../_shared/tokens.ts'
 
@@ -22,7 +21,6 @@ const SHA256: Record<string, string> = {
 }
 const SUBJECT = 'Seus jogos chegaram'
 
-const tasks: Promise<unknown>[] = []
 const claimedOutbox: string[] = []
 if (enabled) {
   const wanted = ['B2_ENDPOINT', 'B2_REGION', 'B2_BUCKET', 'B2_READ_KEY_ID', 'B2_READ_APPLICATION_KEY', 'EMAIL_LINK_SECRET', 'API_PUBLIC_URL', 'EMAIL_FROM', 'EMAIL_FROM_NAME']
@@ -33,7 +31,6 @@ if (enabled) {
   Deno.env.set('EMAIL_MODE', 'log')
   Deno.env.set('EMAIL_LOG_MAILPIT_URL', MAILPIT_URL)
   // Despacho em segundo plano: os testes aguardam as tarefas; o outbox de cada despacho fica registrado.
-  setBackgroundRunner((task) => tasks.push(task))
   const inner = globalThis.fetch
   globalThis.fetch = (input: string | URL | Request, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
@@ -44,13 +41,12 @@ if (enabled) {
     return inner(input, init)
   }
 }
-const settle = async () => void (await Promise.all(tasks.splice(0)))
 
 const hex = (bytes: ArrayBuffer) => Array.from(new Uint8Array(bytes), (b) => b.toString(16).padStart(2, '0')).join('')
 
 // Baixa do B2 e confere status, tipo, anexo e conteúdo.
 async function fetchPdf(url: string) {
-  const res = await fetch(url)
+  const res = await fetchRetry(url)
   const body = await res.arrayBuffer()
   return {
     status: res.status,
@@ -82,6 +78,9 @@ Deno.test({
   sanitizeResources: false,
   async fn(t) {
     try {
+      // Despachos de outros arquivos do mesmo processo terminam antes; o registro passa a contar só este teste.
+      await settle()
+      claimedOutbox.length = 0
       const a = await buyer('i4-a')
       const started = Date.now() - 5_000
       const sessionA = await startCheckout(a.token)
@@ -155,11 +154,11 @@ Deno.test({
         const res = await call('/download-url', a.token, 'POST', { file_id: games[0].files[0].id })
         const key = decodeURIComponent(new URL(res.body.url).pathname.slice(1))
         const old = await presignUrl(readOnlyConfig(), { key, now: new Date(Date.now() - 600_000), expiresIn: 300 })
-        const expired = await fetch(old.url)
+        const expired = await fetchRetry(old.url)
         const text = await expired.text()
         // O B2 responde 401 com "Request has expired" para a assinatura vencida.
         assertEquals([expired.status, /expired/i.test(text)], [401, true], text.slice(0, 200))
-        const forged = await fetch(res.body.url.replace(/X-Amz-Signature=[0-9a-f]{4}/, 'X-Amz-Signature=0000'))
+        const forged = await fetchRetry(res.body.url.replace(/X-Amz-Signature=[0-9a-f]{4}/, 'X-Amz-Signature=0000'))
         const forgedText = await forged.text()
         assertEquals([forged.status, /signature/i.test(forgedText)], [403, true], forgedText.slice(0, 200))
       })
@@ -194,7 +193,6 @@ Deno.test({
         assertEquals([paid.status, paid.body.error.code], [404, 'FILE_NOT_FOUND'])
       })
     } finally {
-      setBackgroundRunner(null)
       const cleanup = await removeTestUsers()
       console.log(`usuários de teste removidos: ${cleanup.removed}; mantidos pelo banco: ${cleanup.kept}`)
     }

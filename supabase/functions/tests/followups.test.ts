@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assert, assertEquals, assertMatch } from '@std/assert'
-import { BREVO_WEBHOOK_SECRET, captureErrors, externalCalls, onExternal, onRpc, request, rpcCalls, SECRET_KEY } from './contract-helpers.ts'
+import { BREVO_WEBHOOK_SECRET, captureErrors, externalCalls, onExternal, onRpc, request, rpcCalls, SECRET_KEY, contractTest } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { handleBrevoWebhook } from '../brevo-webhook/handler.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
@@ -17,7 +17,7 @@ const API = 'http://127.0.0.1:54321/functions/v1/api'
 
 // ---------- token e rotas de descadastro ----------
 
-Deno.test('token de descadastro: não expira, e token de entrega não serve como descadastro', async () => {
+contractTest('token de descadastro: não expira, e token de entrega não serve como descadastro', async () => {
   const token = await signUnsubscribeToken(USER, Date.now() - 400 * 24 * 3600 * 1000)
   const verified = await verifyUnsubscribeToken(token)
   assert(verified.ok)
@@ -26,7 +26,7 @@ Deno.test('token de descadastro: não expira, e token de entrega não serve como
   assertEquals((await verifyUnsubscribeToken(`${token.slice(0, -2)}AA`)).ok, false)
 })
 
-Deno.test('GET /email/unsubscribe não muda nada: leva à página de preferências', async () => {
+contractTest('GET /email/unsubscribe não muda nada: leva à página de preferências', async () => {
   onRpc(() => row({ outcome: 'applied', opted_in: false }))
   const token = await signUnsubscribeToken(USER)
   const res = await handleRequest(request(`/email/unsubscribe?token=${encodeURIComponent(token)}`))
@@ -35,7 +35,7 @@ Deno.test('GET /email/unsubscribe não muda nada: leva à página de preferênci
   assertEquals(rpcCalls.length, 0)
 })
 
-Deno.test('POST /email/unsubscribe: 1 clique (query + formulário), JSON, idempotente; token inválido 400', async () => {
+contractTest('POST /email/unsubscribe: 1 clique (query + formulário), JSON, idempotente; token inválido 400', async () => {
   const token = await signUnsubscribeToken(USER)
   const expected = { p_user_id: USER, p_source: 'unsubscribe_link' }
 
@@ -104,7 +104,7 @@ async function unsubscribeTokenOf(mail: MailpitBody): Promise<string> {
   return token
 }
 
-Deno.test('lembrete de carrinho: itens, botão do carrinho, rodapé e headers de descadastro (RFC 8058)', async () => {
+contractTest('lembrete de carrinho: itens, botão do carrinho, rodapé e headers de descadastro (RFC 8058)', async () => {
   Deno.env.set('EMAIL_MODE', 'log')
   dispatchRpc([CART_ROW])
   onExternal(() => ok({ ID: 'mp-1' }))
@@ -116,7 +116,7 @@ Deno.test('lembrete de carrinho: itens, botão do carrinho, rodapé e headers de
   await unsubscribeTokenOf(mail)
 })
 
-Deno.test('pós-compra: jogos, Meus jogos, ajuda de impressão e descadastro', async () => {
+contractTest('pós-compra: jogos, Meus jogos, ajuda de impressão e descadastro', async () => {
   dispatchRpc([POST_ROW])
   onExternal(() => ok({ ID: 'mp-2' }))
   assertEquals((await dispatch()).sent, 1)
@@ -127,7 +127,7 @@ Deno.test('pós-compra: jogos, Meus jogos, ajuda de impressão e descadastro', a
   await unsubscribeTokenOf(mail)
 })
 
-Deno.test('marketing sem usuário ou sem itens é recusado; entrega não leva descadastro; Brevo recebe os headers', async () => {
+contractTest('marketing sem usuário ou sem itens é recusado; entrega não leva descadastro; Brevo recebe os headers', async () => {
   dispatchRpc([{ ...CART_ROW, user_id: null }])
   await captureErrors(dispatch)
   assertEquals([rpcCalls[1].args.p_status, rpcCalls[1].args.p_error], ['rejected', 'marketing_sem_usuario'])
@@ -164,7 +164,7 @@ const webhook = (body: unknown, auth: string | null = `Bearer ${BREVO_WEBHOOK_SE
 
 const EVENT = { event: 'hard_bounce', email: ' Casal@Example.com ', id: 1, 'message-id': '<abc@relay>', ts_event: 1_790_000_000, reason: 'mailbox' }
 
-Deno.test('brevo-webhook: segredo ausente ou errado 401, método 405, corpo 415/400, sem tocar no banco', async () => {
+contractTest('brevo-webhook: segredo ausente ou errado 401, método 405, corpo 415/400, sem tocar no banco', async () => {
   onRpc(() => row({ outcome: 'applied', user_id: USER }))
   assertEquals((await webhook(EVENT, null)).status, 401)
   assertEquals((await webhook(EVENT, 'Bearer segredo-errado')).status, 401)
@@ -176,7 +176,7 @@ Deno.test('brevo-webhook: segredo ausente ou errado 401, método 405, corpo 415/
   assertEquals(rpcCalls.length, 0)
 })
 
-Deno.test('brevo-webhook: evento único e lote mapeiam para record_email_event; outros eventos são ignorados', async () => {
+contractTest('brevo-webhook: evento único e lote mapeiam para record_email_event; outros eventos são ignorados', async () => {
   onRpc(() => row({ outcome: 'applied', user_id: USER }))
   const single = await webhook(EVENT)
   assertEquals([single.status, await single.json()], [200, { received: 1, recorded: 1, ignored: 0 }])
@@ -201,7 +201,7 @@ Deno.test('brevo-webhook: evento único e lote mapeiam para record_email_event; 
   assertEquals(rpcCalls[1].args.p_occurred_at, new Date(1_790_000_100_000).toISOString())
 })
 
-Deno.test('brevo-webhook: KT001 é ignorado; falha do banco vira 500 para a Brevo reenviar, sem e-mail no log', async () => {
+contractTest('brevo-webhook: KT001 é ignorado; falha do banco vira 500 para a Brevo reenviar, sem e-mail no log', async () => {
   onRpc(() => ({ status: 400, body: { code: 'KT001', message: 'e-mail inválido' } }))
   const { result: invalid } = await captureErrors(() => webhook({ event: 'spam', email: 'sem-arroba' }))
   assertEquals(await invalid.json(), { received: 1, recorded: 0, ignored: 1 })

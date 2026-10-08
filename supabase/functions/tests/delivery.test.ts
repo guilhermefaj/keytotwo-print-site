@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assert, assertEquals, assertMatch } from '@std/assert'
-import { captureErrors, externalCalls, LINK_SECRET, onExternal, onRpc, onStripe, request, rpcCalls, SECRET_KEY, sessionToken, userId, WEBHOOK_SECRET } from './contract-helpers.ts'
+import { captureErrors, externalCalls, LINK_SECRET, onExternal, onRpc, onStripe, request, rpcCalls, SECRET_KEY, sessionToken, userId, WEBHOOK_SECRET, contractTest } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { attachment } from '../api/routes/downloads.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
@@ -22,7 +22,7 @@ const outcome = (name: string) => ({ outcome: name, bucket: null, object_key: nu
 
 // ---------- tokens e B2 ----------
 
-Deno.test('token de entrega: válido, adulterado, de outro segredo, vencido e rotação do segredo', async () => {
+contractTest('token de entrega: válido, adulterado, de outro segredo, vencido e rotação do segredo', async () => {
   const token = await signDeliveryToken(ENTITLEMENT, 7)
   const good = await verifyDeliveryToken(token)
   assert(good.ok)
@@ -44,7 +44,7 @@ Deno.test('token de entrega: válido, adulterado, de outro segredo, vencido e ro
   Deno.env.set('EMAIL_LINK_SECRET', LINK_SECRET)
 })
 
-Deno.test('B2: assinatura SigV4 confere com o vetor oficial da AWS', async () => {
+contractTest('B2: assinatura SigV4 confere com o vetor oficial da AWS', async () => {
   const { url, expiresAt } = await presignUrl(
     { endpoint: 's3.amazonaws.com', region: 'us-east-1', bucket: 'examplebucket', keyId: 'AKIAIOSFODNN7EXAMPLE', secret: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' },
     { key: 'test.txt', expiresIn: 86400, now: new Date('2013-05-24T00:00:00Z') },
@@ -55,7 +55,7 @@ Deno.test('B2: assinatura SigV4 confere com o vetor oficial da AWS', async () =>
 
 // ---------- POST /download-url ----------
 
-Deno.test('download-url: sessão, formato do id e outcomes de resolve_download', async () => {
+contractTest('download-url: sessão, formato do id e outcomes de resolve_download', async () => {
   onRpc(() => row(FILE_OK))
   assertEquals((await handleRequest(request('/download-url', { method: 'POST', body: { file_id: FILE_ID } }))).status, 401)
   const token = await sessionToken()
@@ -83,7 +83,7 @@ Deno.test('download-url: sessão, formato do id e outcomes de resolve_download',
 
 // ---------- GET /d/{token} ----------
 
-Deno.test('link do e-mail: válido redireciona ao B2; adulterado 401; vencido e revogado vão a Meus jogos', async () => {
+contractTest('link do e-mail: válido redireciona ao B2; adulterado 401; vencido e revogado vão a Meus jogos', async () => {
   const token = await signDeliveryToken(ENTITLEMENT, 7)
   onRpc(() => row(FILE_OK))
   const res = await handleRequest(request(`/d/${token}`))
@@ -110,7 +110,7 @@ Deno.test('link do e-mail: válido redireciona ao B2; adulterado 401; vencido e 
 
 // ---------- jogo gratuito ----------
 
-Deno.test('jogo gratuito: indisponível por padrão; free-download só assina arquivo gratuito', async () => {
+contractTest('jogo gratuito: indisponível por padrão; free-download só assina arquivo gratuito', async () => {
   onRpc(() => ok({ available: false }))
   assertEquals(await (await handleRequest(request('/free-game'))).json(), { available: false })
   onRpc(() => ok({ available: true, game: { code: 'TESTE-GRATIS', name: 'Gratuito' }, file: { id: FILE_ID, version: '0.1', size_bytes: 10, filename: 'g.pdf' } }))
@@ -139,7 +139,7 @@ function dispatchRpc(rows: unknown[]) {
 const dispatchRequest = (body: unknown, apikey: string | null = SECRET_KEY, method = 'POST') =>
   handleEmailDispatch(new Request('http://localhost/email-dispatch', { method, headers: apikey ? { apikey } : {}, body: method === 'POST' ? JSON.stringify(body) : undefined }))
 
-Deno.test('email-dispatch: chave obrigatória e validação do corpo', async () => {
+contractTest('email-dispatch: chave obrigatória e validação do corpo', async () => {
   dispatchRpc([])
   assertEquals((await dispatchRequest({}, null)).status, 401)
   assertEquals((await dispatchRequest({}, 'outra-chave')).status, 401)
@@ -152,7 +152,7 @@ Deno.test('email-dispatch: chave obrigatória e validação do corpo', async () 
   assertEquals(rpcCalls[0].args, { p_limit: 5, p_outbox_id: null })
 })
 
-Deno.test('email-dispatch modo log: um botão por jogo com link /d/{token} válido, Meus jogos, Mailpit e mark sent', async () => {
+contractTest('email-dispatch modo log: um botão por jogo com link /d/{token} válido, Meus jogos, Mailpit e mark sent', async () => {
   Deno.env.set('EMAIL_MODE', 'log')
   dispatchRpc([DELIVERY_ROW])
   onExternal(() => ok({ ID: 'mailpit-1' }))
@@ -171,7 +171,7 @@ Deno.test('email-dispatch modo log: um botão por jogo com link /d/{token} váli
   assertEquals(claims.map((c) => c.ok && [c.claims.e, c.claims.g]), [[ENTITLEMENT, 7], [ENTITLEMENT, 8]])
 })
 
-Deno.test('email-dispatch modo brevo: chave v3, lista de teste, recusa definitiva e falha transitória', async () => {
+contractTest('email-dispatch modo brevo: chave v3, lista de teste, recusa definitiva e falha transitória', async () => {
   Deno.env.set('EMAIL_MODE', 'brevo')
   const run = async () => {
     dispatchRpc([DELIVERY_ROW])
@@ -208,7 +208,7 @@ Deno.test('email-dispatch modo brevo: chave v3, lista de teste, recusa definitiv
   Deno.env.set('EMAIL_MODE', 'log')
 })
 
-Deno.test('webhook: liberação com send_delivery despacha a entrega daquele outbox em segundo plano', async () => {
+contractTest('webhook: liberação com send_delivery despacha a entrega daquele outbox em segundo plano', async () => {
   const tasks: Promise<unknown>[] = []
   setBackgroundRunner((task) => tasks.push(task))
   const SESSION = 'cs_test_entrega'

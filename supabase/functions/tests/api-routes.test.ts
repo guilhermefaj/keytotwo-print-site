@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assertEquals, assertExists } from '@std/assert'
-import { captureErrors, onPrice, onRpc, request, rpcCalls, sessionToken, userId } from './contract-helpers.ts'
+import { captureErrors, onPrice, onRpc, request, rpcCalls, sessionToken, userId, contractTest } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 
 const GAME = { code: 'J001', name: 'Jogo [TESTE]' }
@@ -26,7 +26,7 @@ function cartItem(code: string, extra: Record<string, unknown> = {}) {
 
 onPrice((id) => (id === 'price_fora' ? { status: 404, body: {} } : { status: 200, body: { id, active: true, unit_amount: 1990, currency: 'brl' } }))
 
-Deno.test('GET /catalog é pública, lê preço da Stripe e não expõe o stripe_price_id', async () => {
+contractTest('GET /catalog é pública, lê preço da Stripe e não expõe o stripe_price_id', async () => {
   onRpc(() => ({ status: 200, body: CATALOG }))
   const res = await handleRequest(request('/catalog'))
   assertEquals(res.status, 200)
@@ -38,7 +38,7 @@ Deno.test('GET /catalog é pública, lê preço da Stripe e não expõe o stripe
   assertEquals(rpcCalls[0].secretKeyOk && !rpcCalls[0].hasAuthorization, true)
 })
 
-Deno.test('rotas privadas recusam sem sessão, sessão vencida e papel errado', async () => {
+contractTest('rotas privadas recusam sem sessão, sessão vencida e papel errado', async () => {
   onRpc(() => ({ status: 200, body: null }))
   const expired = await sessionToken({ exp: Math.floor(Date.now() / 1000) - 60 })
   const anon = await sessionToken({ role: 'anon' })
@@ -52,7 +52,7 @@ Deno.test('rotas privadas recusam sem sessão, sessão vencida e papel errado', 
   assertEquals(rpcCalls.length, 0)
 })
 
-Deno.test('GET /cart soma o subtotal dos disponíveis e gera avisos', async () => {
+contractTest('GET /cart soma o subtotal dos disponíveis e gera avisos', async () => {
   const token = await sessionToken()
   onRpc(() => ({
     status: 200,
@@ -87,7 +87,7 @@ Deno.test('GET /cart soma o subtotal dos disponíveis e gera avisos', async () =
   assertEquals(await (await handleRequest(request('/cart', { token }))).json(), { version: 0, items: [], subtotal: null, warnings: [] })
 })
 
-Deno.test('POST /cart/items adiciona e mapeia os outcomes de cart_add', async () => {
+contractTest('POST /cart/items adiciona e mapeia os outcomes de cart_add', async () => {
   const token = await sessionToken()
   const reply = (outcome: string) => (fn: string) =>
     fn === 'cart_add' ? { status: 200, body: [{ outcome, cart_version: 1, owned_games: [] }] } : { status: 200, body: { version: 1, items: [cartItem('P001')] } }
@@ -110,7 +110,7 @@ Deno.test('POST /cart/items adiciona e mapeia os outcomes de cart_add', async ()
   }
 })
 
-Deno.test('POST /cart/items valida corpo e código antes do banco', async () => {
+contractTest('POST /cart/items valida corpo e código antes do banco', async () => {
   const token = await sessionToken()
   onRpc(() => ({ status: 200, body: null }))
   for (const body of [{ product_code: 'p001' }, { product_code: 'P' }, { product_code: 42 }, {}, ['P001']]) {
@@ -122,7 +122,7 @@ Deno.test('POST /cart/items valida corpo e código antes do banco', async () => 
   assertEquals(rpcCalls.length, 0)
 })
 
-Deno.test('DELETE /cart/items/{code} remove e devolve o carrinho', async () => {
+contractTest('DELETE /cart/items/{code} remove e devolve o carrinho', async () => {
   const token = await sessionToken()
   onRpc((fn) => (fn === 'cart_remove' ? { status: 200, body: [{ outcome: 'removed', cart_version: 5 }] } : { status: 200, body: { version: 5, items: [] } }))
   const res = await handleRequest(request('/cart/items/P001', { method: 'DELETE', token }))
@@ -136,7 +136,7 @@ Deno.test('DELETE /cart/items/{code} remove e devolve o carrinho', async () => {
   assertEquals(rpcCalls.length, 0)
 })
 
-Deno.test('GET /account e GET /library repassam as RPCs', async () => {
+contractTest('GET /account e GET /library repassam as RPCs', async () => {
   const token = await sessionToken()
   onRpc((fn) => ({ status: 200, body: fn === 'get_account' ? ACCOUNT : LIBRARY }))
   assertEquals(await (await handleRequest(request('/account', { token }))).json(), ACCOUNT)
@@ -147,7 +147,7 @@ Deno.test('GET /account e GET /library repassam as RPCs', async () => {
   assertEquals(await (await handleRequest(request('/library', { token }))).json(), { games: [], pending: [] })
 })
 
-Deno.test('PUT /account/marketing grava o consentimento e devolve a preferência', async () => {
+contractTest('PUT /account/marketing grava o consentimento e devolve a preferência', async () => {
   const token = await sessionToken()
   onRpc((fn) => (fn === 'set_marketing_consent' ? { status: 200, body: [{ outcome: 'applied', opted_in: true }] } : { status: 200, body: ACCOUNT }))
   const res = await handleRequest(request('/account/marketing', { method: 'PUT', token, body: { granted: true, source: 'cart', text_version: 'mkt-1' } }))
@@ -171,7 +171,7 @@ Deno.test('PUT /account/marketing grava o consentimento e devolve a preferência
   assertEquals(rpcCalls.length, 0)
 })
 
-Deno.test('POST /account/marketing/prompt registra o convite visto e devolve a preferência', async () => {
+contractTest('POST /account/marketing/prompt registra o convite visto e devolve a preferência', async () => {
   const token = await sessionToken()
   onRpc((fn) => (fn === 'mark_marketing_prompt' ? { status: 200, body: '2026-10-08T12:00:00Z' } : { status: 200, body: ACCOUNT }))
   const res = await handleRequest(request('/account/marketing/prompt', { method: 'POST', token }))
@@ -180,7 +180,7 @@ Deno.test('POST /account/marketing/prompt registra o convite visto e devolve a p
   assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['mark_marketing_prompt', { p_user_id: userId(token) }], ['get_account', { p_user_id: userId(token) }]])
 })
 
-Deno.test('KT009 vira 403 EMAIL_NOT_CONFIRMED; outra falha de RPC vira 500 sem dado pessoal no log', async () => {
+contractTest('KT009 vira 403 EMAIL_NOT_CONFIRMED; outra falha de RPC vira 500 sem dado pessoal no log', async () => {
   const token = await sessionToken()
   onRpc(() => ({ status: 400, body: { code: 'KT009', message: 'e-mail não confirmado de teste@example.com' } }))
   const res = await handleRequest(request('/account', { token }))
@@ -196,7 +196,7 @@ Deno.test('KT009 vira 403 EMAIL_NOT_CONFIRMED; outra falha de RPC vira 500 sem d
   assertEquals(logs[0].includes('PGRST202'), true)
 })
 
-Deno.test('router: 404, 405 com Allow e CORS com PUT e DELETE', async () => {
+contractTest('router: 404, 405 com Allow e CORS com PUT e DELETE', async () => {
   onRpc(() => ({ status: 200, body: null }))
   assertEquals((await handleRequest(request('/nada'))).status, 404)
   const notAllowed = await handleRequest(request('/cart', { method: 'PUT' }))
