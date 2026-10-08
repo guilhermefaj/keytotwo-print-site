@@ -3,9 +3,9 @@ import { api, apiErrorMessage } from './api'
 import { useAuth } from './auth-context'
 import { authConfigured } from './supabase'
 
-export function useApiResource<T>(path: string, isPublic = false) {
+export function useApiResource<T>(path: string, isPublic = false, paused = false) {
   const { session } = useAuth()
-  const enabled = authConfigured && (isPublic || Boolean(session))
+  const enabled = !paused && authConfigured && (isPublic || Boolean(session))
   const [revision, setRevision] = useState(0)
   const owner = `${path}:${isPublic ? 'public' : session?.user.id}`
   const key = `${owner}:${revision}`

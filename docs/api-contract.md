@@ -1,10 +1,10 @@
-# Contrato da API — KeyToTwo (v0.3)
+# Contrato da API — KeyToTwo (v0.3.2)
 
 | | |
 | --- | --- |
-| Versão | 0.3, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11. |
+| Versão | 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
 | Dono | Ferrolho (Backend sênior). Banco, permissões e RPCs: `docs/data-contract.md` v0.3 (Lastro). |
-| Estado | I2b: `/health`, `/catalog`, `/cart`, `/cart/items`, `/account`, `/account/marketing` e `/library` implementadas (`supabase/functions/api`), com testes de contrato e de integração em `supabase/functions/tests`. Checkout, webhook, entrega e e-mails entram no I3, I4 e I5. |
+| Estado | I4: além do I3 (`POST /checkout`, `GET /order-status`, `stripe-webhook`), implementadas `POST /download-url`, `GET /d/{token}`, `GET /free-game`, `POST /free-download` e a função `email-dispatch` (entrega; modo log no local). I5: e-mails de marketing (`cart_reminder`, `post_purchase`) no `email-dispatch`, `GET`/`POST /email/unsubscribe`, a função `brevo-webhook` e a agenda (`pg_cron` + `pg_net`, migração do Lastro). Testes em `supabase/functions/tests`. Passos restantes da Stripe: `STRIPE_INTEGRATION_TODO.md`. |
 | Fontes | Nota "Plano do site P2" (ajustes do orquestrador, seções 4 e 5) e decisões do responsável registradas nas notas P1 e P2. |
 
 **Alinhamento:** conferido com `docs/data-contract.md` v0.3.1 (21 RPCs), em revisão cruzada com o Lastro. **Marcador:** **[D#]** indica decisão pendente do responsável (nota P2, seção 7).
@@ -143,7 +143,7 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `GET /cart` · `POST /cart/items` · `DELETE /cart/items/{code}` | Sessão | I2b | Implementada |
 | `GET /account` · `PUT /account/marketing` · `POST /account/marketing/prompt` | Sessão | I2b | Implementada |
 | `GET /library` | Sessão | I2b | Implementada |
-| `POST /checkout` · `GET /order-status` | Sessão | I3 | Planejada |
+| `POST /checkout` · `GET /order-status` | Sessão | I3 | Implementada |
 | `POST /download-url` | Sessão | I4 | Planejada |
 | `GET /d/{token}` | Token HMAC | I4 | Planejada |
 | `GET /free-game` · `POST /free-download` | Pública **[D12]** | I4 | Planejada |
@@ -237,7 +237,10 @@ Um carrinho por usuário, guardado no banco (vale entre aparelhos). Não há car
       "created_at": "2026-10-08T12:00:00Z",
       "paid_at": "2026-10-08T12:01:00Z",
       "status": "paid",
+      "amount_subtotal": 0,
+      "amount_discount": 0,
       "amount_total": 0,
+      "promotion_code": null,
       "currency": "brl",
       "items": [{ "code": "P001", "name": "<nome>", "unit_amount": 0, "currency": "brl" }]
     }
@@ -324,7 +327,8 @@ O aceite dos termos (sem reembolso) é colhido **na nossa página**, numa caixa 
    | `client_reference_id` | `order_id` | Nossa arquitetura |
    | `customer` | `stripe_customer_id` | Nossa arquitetura |
    | `metadata` | `{ order_id, terms_version }` | Nossa arquitetura |
-   | `payment_intent_data.metadata` | `{ order_id }`, para achar o pedido nas contestações (compatibilidade com o modo `form` a confirmar no I3; o recurso é buscar a sessão pelo `payment_intent`) | Nossa arquitetura |
+   | `allow_promotion_codes` | `true`: o cliente digita o cupom no formulário | Nossa decisão (cupons) |
+   | `payment_intent_data.metadata` | `{ order_id }`, para achar o pedido nas contestações; se faltar, a rota busca a sessão pelo `payment_intent` | Nossa arquitetura |
    | `locale` | `'pt-BR'` | Nossa arquitetura |
    | `return_url` | `SITE_URL/pedido/confirmacao?session_id={CHECKOUT_SESSION_ID}` | Nossa arquitetura |
 
@@ -341,10 +345,19 @@ O aceite dos termos (sem reembolso) é colhido **na nossa página**, numa caixa 
 
 Erros: `400 INVALID_REQUEST`, `400 TERMS_NOT_ACCEPTED`, `409 TERMS_CHANGED`, os da tabela do passo 1, `401`, `403 EMAIL_NOT_CONFIRMED` e `502 PAYMENT_PROVIDER_ERROR`.
 
+**Verificado na API de teste (2026-10-08):** `ui_mode: 'form'` com os parâmetros do Studio, `allow_promotion_codes: true` e `payment_intent_data.metadata` criam a sessão juntos, com `client_secret` e validade de 24 h.
+
+**Cupons:**
+
+- O cliente aplica o código no formulário embutido (`checkout.applyPromotionCode` e `checkout.removePromotionCode`), e o total se atualiza antes de confirmar. Os cupons são criados pelo responsável na Stripe (Coupon e Promotion Code).
+- O valor que vale é sempre o cobrado pela Stripe. Na liberação, o pedido grava `amount_subtotal` (preço cheio), `amount_discount` (`total_details.amount_discount`), `amount_total` e o texto do código promocional. Os itens guardam o preço unitário cheio.
+- `/account` mostra esses campos por pedido. O site não exibe preço riscado fictício.
+- `payment_status = no_payment_required` (cupom de 100%) só é aceito pelo banco com total 0 e desconto maior que zero.
+
 ### 6.5.1 Stripe: versão da API, SDK e risco do preview
 
 - **Cliente no servidor:** `new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia; custom_checkout_payment_form_preview=v1' })`.
-- **SDK fixo:** `npm:stripe@<versão exata>` no `supabase/functions/deno.json`, escolhida no I3 e registrada no `STRIPE_INTEGRATION_TODO.md`. Nunca faixa de versão.
+- **SDK fixo:** `npm:stripe@22.0.2` no `supabase/functions/deno.json`, cuja API padrão é a `2026-03-25.dahlia` (registrado no `STRIPE_INTEGRATION_TODO.md`). Nunca faixa de versão. Cliente HTTP por `fetch`; criptografia do webhook pelo Web Crypto.
 - **Regra do `ui_mode`:** `'form'` se o SDK `stripe` for ≥ 21.0.0; `'custom'` se for menor. A regra fica numa constante ao lado da versão fixada.
 - **Webhook:** o endpoint de teste é criado com a versão base `2026-03-25.dahlia`, para o formato dos eventos bater com o SDK. Se o sufixo de preview vale para endpoint, fica a confirmar no I3. A assinatura é verificada com `constructEventAsync` e o provedor de criptografia do Web Crypto (Deno).
 - **Risco:** `custom_checkout_payment_form_preview=v1` é API em **preview (beta)**. Pode mudar ou sair sem a garantia de compatibilidade das versões estáveis, e pode depender de a conta estar no programa. Mitigações:
@@ -401,7 +414,9 @@ Erros: `400 INVALID_REQUEST`, `401`, `403 EMAIL_NOT_CONFIRMED` e `502 PAYMENT_PR
 
 ### 6.7 `POST /download-url`
 
-Corpo `{ "file_id": "<uuid>" }` → `resolve_download(uid, file_id)`. Com `ok`, assina a URL do B2, válida por 300 s; a RPC registra `download_event`, sem IP, na emissão da URL.
+Corpo `{ "file_id": "<uuid>" }` → `resolve_download(uid, file_id)`. Com `ok`, assina a URL do B2, válida por 300 s; a RPC registra `download_event`, sem IP, na emissão da URL. Sem sessão → `401`; e-mail não confirmado → `403 EMAIL_NOT_CONFIRMED`; `file_id` inválido → `400`.
+
+**URL do B2:** SigV4 por consulta, estilo virtual-hosted (`https://<bucket>.<endpoint>/<object_key>`), só o header `host` assinado, chave **só leitura**, bucket da configuração (`B2_BUCKET`; o banco fornece o `object_key`). A URL leva `response-content-disposition=attachment` (nome do banco, RFC 6266) e `response-content-type`: o B2 responde sempre como anexo PDF, independente do metadado do upload. O site gera uma URL nova a cada clique e não a guarda.
 
 `200 { "url": "<url assinada>", "expires_at": "...", "filename": "<arquivo>" }`
 
@@ -416,25 +431,30 @@ Corpo `{ "file_id": "<uuid>" }` → `resolve_download(uid, file_id)`. Com `ok`, 
 
 Pública, autenticada pelo token (seção 7). Um botão por jogo no e-mail de entrega.
 
-1. Confere a assinatura, o propósito `d` e a validade. Token vencido ou inválido → `302` para `SITE_URL/meus-jogos?link=expirado`.
+1. Confere a assinatura, o propósito `d` e a validade. Token adulterado ou malformado → `401 INVALID_TOKEN` (JSON da seção 4), sem consultar o banco. Token vencido → `302` para `SITE_URL/meus-jogos?link=expirado`.
 2. `resolve_delivery(entitlement_id, game_id)` confere o direito `active` **na hora** e escolhe a versão publicada vigente do jogo. Também registra `download_event`.
 3. `ok` → `302` para a URL assinada do B2 (300 s). Revogado, inexistente ou sem arquivo → `302` para `SITE_URL/meus-jogos?link=indisponivel`.
 
-- Respostas com `Cache-Control: no-store` e `Referrer-Policy: no-referrer`. Só `GET`; não há resposta JSON.
+- Respostas com `Cache-Control: no-store` e `Referrer-Policy: no-referrer`. Só `GET`; fora o `401`, não há resposta JSON. O redirecionamento leva só `link=`, sem o jogo.
 - Quem tem o link baixa sem login enquanto o direito estiver ativo e o link valer, como um anexo encaminhado. A validade padrão é de 30 dias **[D4]**.
 
 ### 6.9 `GET /free-game` e `POST /free-download`
 
-Iguais à v0.2: `get_free_game()` e `resolve_free_download(file_id)`, com `ok` assinando a URL e `not_found` (inclusive id de arquivo pago) virando `404`. As condições do jogo gratuito e a eventual exigência de login estão pendentes **[D12]**. Rota pública que grava no banco: limite de abuso pendente (seção 12).
+Públicas.
+
+- `GET /free-game` → `get_free_game()`: `200 { "available": false }` enquanto não houver jogo gratuito publicado, ou `200 { "available": true, "game": { "name": "…" }, "file": { "id": "<uuid>", "version": "1.0", "size_bytes": 123 } }`.
+- `POST /free-download` com `{ "file_id": "<uuid>" }` → `resolve_free_download(file_id)`: `ok` → `200 { "url", "expires_at" }` (300 s, anexo como em 6.7); `not_found`, inclusive id de arquivo pago, → `404 FILE_NOT_FOUND`. Corpo inválido → `400`.
+
+ As condições do jogo gratuito e a eventual exigência de login estão pendentes **[D12]**. Rota pública que grava no banco: limite de abuso pendente (seção 12).
 
 ### 6.10 Descadastro: `GET` e `POST /email/unsubscribe`
 
 Autenticado pelo token de propósito `u` (seção 7), presente em todo e-mail de marketing. Segue o descadastro em 1 clique (RFC 8058):
 
 - Headers do e-mail: `List-Unsubscribe: <API/email/unsubscribe?token=...>` e `List-Unsubscribe-Post: List-Unsubscribe=One-Click`.
-- `POST`, com o token na query ou em `{ "token": "..." }`. Aceita `application/x-www-form-urlencoded` (`List-Unsubscribe=One-Click`) ou JSON. Chama `unsubscribe(user_id, 'unsubscribe_link')`, com efeito imediato e idempotente. Responde `200 { "status": "unsubscribed" }`; token inválido, `400 INVALID_TOKEN`.
+- `POST`, com o token na query (é como o provedor de e-mail chama, com o corpo `List-Unsubscribe=One-Click`), em JSON `{ "token": "..." }` ou em formulário `token=...`. Chama `unsubscribe(user_id, 'unsubscribe_link')`, com efeito imediato e idempotente: revoga o opt-in e cancela o marketing na fila. Responde `200 { "status": "unsubscribed" }` também na repetição; token ausente, adulterado ou de outro propósito → `400 INVALID_TOKEN`. Pública e sem sessão; o `POST` do provedor chega sem `Origin` e passa pelo CORS.
 - `GET` não muda nada (scanners de e-mail abrem links): faz `302` para `SITE_URL/email/preferencias?token=...`. Essa página pública confirma e chama o `POST`.
-- O link no rodapé dos e-mails de marketing aponta para `/email/preferencias?token=...`.
+- O link no rodapé dos e-mails de marketing aponta para `/email/preferencias?token=...` (página do site, a construir pela Aquarela: mostra o pedido de descadastro, chama o `POST` com `{ "token" }` e confirma). O rodapé também leva a Minha conta (`/conta`).
 - Transacionais (entrega, códigos do Auth) não dependem de consentimento e não levam descadastro.
 
 ## 7. Tokens HMAC (entrega e descadastro)
@@ -454,12 +474,18 @@ Formato: `<payload>.<assinatura>`, ambos em base64url sem preenchimento.
 
 ## 8. Funções de e-mail
 
-Todo e-mail do app sai pela API v3 da Brevo, com templates da Brevo: o responsável edita o texto sem deploy, e o código guarda só o id do template e os parâmetros. O remetente é `EMAIL_FROM` / `EMAIL_FROM_NAME` **[D7]**.
+Todo e-mail do app sai pela API v3 da Brevo (as Edge Functions não podem usar SMTP). No I4 o template da entrega está **no código** (`_shared/email.ts`, HTML e texto em pt-BR); mudar o texto exige deploy. Templates da Brevo continuam possíveis depois, sem mudar banco nem rotas. O remetente é `EMAIL_FROM` / `EMAIL_FROM_NAME` **[D7]**.
+
+**Modo de envio (`EMAIL_MODE`):**
+
+- `log` (padrão, e o único usado no local): nada sai para fora. O console registra só o tipo e o id da linha, sem e-mail nem token. Com `EMAIL_LOG_MAILPIT_URL`, uma cópia vai para o Mailpit local, para conferir o e-mail.
+- `brevo`: envio real. Exige chave v3 (`xkeysib-`); outra chave → `rejected` com `brevo_chave_nao_v3`. Com `EMAIL_ALLOWED_RECIPIENTS` preenchida (ambientes de teste), destinatário fora da lista → `rejected` com `fora_da_lista_de_teste`. Na produção a lista fica vazia.
 
 ### 8.1 `brevo-webhook`
 
-- **Autenticação:** segredo compartilhado `BREVO_WEBHOOK_SECRET` (proposto), comparado em tempo constante. O formato depende do que a Brevo oferecer **(a confirmar)**: header `Authorization: Bearer <segredo>` se a Brevo permitir header próprio; senão, `?key=<segredo>` na URL cadastrada. Inválido → `401`.
-- **Eventos** (nomes da Brevo a confirmar no I5):
+- **Autenticação:** `Authorization: Bearer <BREVO_WEBHOOK_SECRET>`, comparado em tempo constante. A Brevo oferece isso no cadastro do webhook (`POST /v3/webhooks` com `"auth": { "type": "bearer", "token": "<segredo>" }`, tipo `transactional`). Segredo na URL não é aceito. Sem o header ou com outro valor → `401`.
+- **Corpo:** `application/json` (senão `415`), um evento ou, com `batched: true`, uma lista (até 1 MB). JSON inválido ou lista vazia → `400`. O horário do evento vem de `ts_event` (ou `ts`), em segundos; sem ele, o banco usa `now()`.
+- **Eventos** (nomes conferidos na documentação de webhooks transacionais da Brevo):
 
   | Evento da Brevo | Chamada |
   | --- | --- |
@@ -469,44 +495,46 @@ Todo e-mail do app sai pela API v3 da Brevo, com templates da Brevo: o responsá
   | Os demais (`delivered`, `opened`, `click`, `soft_bounce`...) | `200` sem chamada |
 
 - `record_email_event` é idempotente por e-mail e motivo e grava a supressão. Reclamação e descadastro também revogam o consentimento e cancelam o marketing na fila; bounce só suprime.
-- Resposta `200` rápida. `400` para corpo inválido; `500` só em falha transitória do banco, para a Brevo reenviar. O e-mail do payload nunca vai para o log.
+- Resposta `200 { "received", "recorded", "ignored" }`. Evento sem e-mail, de outro tipo ou recusado pelo banco com `KT001` (e-mail fora do padrão) conta como `ignored`. Outra falha do banco → `500`, para a Brevo reenviar (a RPC é idempotente). O e-mail do payload nunca vai para o log.
 
 ### 8.2 `email-dispatch`
 
 - **Autenticação:** header `apikey` igual a uma chave secreta do projeto, comparada em tempo constante. Na nuvem é a chave nomeada `dispatch`, criada no painel e guardada no Vault para o `pg_net`; no local, a `default`. Não precisa de variável nova. Sem chave válida → `401`.
-- **Corpo:** `{ "limit": 20 }` (máximo 100), ou `{ "outbox_id": "<uuid>" }` para um e-mail específico.
+- **Corpo:** `{ "limit": 20 }` (de 1 a 100), ou `{ "outbox_id": "<uuid>" }` para um e-mail específico. Corpo inválido → `400`; método diferente de `POST` → `405`.
 - **Passos:**
   1. `claim_email_batch(limit, outbox_id)` (o terceiro parâmetro, `p_now`, só serve aos testes). A RPC troca as linhas para `sending` com `SKIP LOCKED` e retoma as presas em `sending` há mais de 10 minutos.
      - Marketing: pula (`skipped`, com motivo) quem não tem opt-in, quem está suprimido, o lembrete de carrinho que mudou ou foi pago e o pós-compra de pedido fora de `paid`. O limite de 1 e-mail de marketing por dia adia para o dia seguinte.
      - Entrega: cancela se o pedido não está `paid` ou se algum direito foi revogado.
-  2. Para cada linha, monta os parâmetros do template a partir do `payload`. Entrega: um link `GET /d/{token}` por jogo e o botão Meus jogos. Marketing: token de descadastro e os headers `List-Unsubscribe`.
-  3. Envia: `POST https://api.brevo.com/v3/smtp/email` com `templateId`, `params`, `to`, `sender`, `headers` e `tags: [kind]`.
+  2. Para cada linha, monta o e-mail a partir do `payload`. Entrega: assunto "Seus jogos chegaram (pedido <ref>)", um botão por jogo com link `GET /d/{token}` (30 dias, base `API_PUBLIC_URL`), o botão Meus jogos (`SITE_URL/meus-jogos`) e o link de ajuda. Lembrete de carrinho: assunto "Ficou um jogo no carrinho", os itens e o botão Voltar ao carrinho (`/carrinho`). Pós-compra: "Já rolou a primeira partida?", os jogos, Meus jogos e as dicas de impressão (`/ajuda#impressao`). Todo marketing leva o rodapé de descadastro (seção 6.10) e os headers `List-Unsubscribe: <API_PUBLIC_URL/email/unsubscribe?token=...>` e `List-Unsubscribe-Post: List-Unsubscribe=One-Click`. Marketing sem `user_id` ou sem itens e `kind` desconhecido → `rejected`.
+  3. Envia pelo modo configurado. Brevo: `POST https://api.brevo.com/v3/smtp/email` com `sender`, `to`, `subject`, `htmlContent`, `textContent`, `tags: [kind]` e, no marketing, `headers`. No modo log, a cópia no Mailpit leva os mesmos headers.
   4. `mark_email_result(id, status, message_id, erro)`:
      - `sent`;
-     - `failed`, para erro transitório: timeout, `429` ou `5xx` da Brevo;
-     - `rejected`, para recusa definitiva: `4xx` da Brevo, exceto `429`.
+     - `failed`, para erro transitório: timeout, `429`, `5xx`, e também `401`/`403` da Brevo (chave ou IP não autorizado: configuração que se corrige, então a fila tenta de novo);
+     - `rejected`, para recusa definitiva: outros `4xx` da Brevo e as recusas do modo `brevo` acima.
 
      O banco decide a nova tentativa: no máximo 5, com atraso de 5 min × tentativas². `rejected` encerra a linha. O erro informado é só o código HTTP ou o código da Brevo, nunca a mensagem nem o e-mail.
-- **Resposta:** `200 { "claimed": 0, "sent": 0, "failed": 0, "skipped": 0 }`.
-- **Agenda:** `pg_cron` roda `private.enqueue_followups()` e chama esta função a cada 5 minutos (migração do Lastro no I5) **[D3]**.
+- **Resposta:** `200 { "claimed": 0, "sent": 0, "failed": 0, "rejected": 0 }`. Linhas puladas ou canceladas pela RPC não voltam no `claim` e não entram na contagem.
+- **Entrega única:** `dedupe_key` `delivery:{order_id}` cria no máximo uma linha por pedido; o `claim` passa a linha para `sending` com `SKIP LOCKED`, e `mark_email_result` numa linha que já saiu de `sending` responde `noop`. Só quem recebeu `send_delivery = true` de `fulfill_order` despacha.
+- **Agenda (migração do Lastro, I5):** o job `email-dispatch-tick` do `pg_cron` roda `private.dispatch_tick()` a cada 5 minutos: primeiro `private.enqueue_followups()` (prazos D3), depois, se o Vault tiver `email_dispatch_url` e `email_dispatch_key`, `net.http_post` para esta função com `{ "limit": 20 }` e o header `apikey`. Sem os segredos no Vault, só enfileira e registra um aviso no log do banco. Nenhum valor vai na migração: no local, o passo `supabase/local/aplicar-dispatch-vault.mjs` grava a URL interna do gateway e a chave `default` (rodar depois de cada `db reset`); na nuvem, a chave nomeada `dispatch` é gravada à mão no Vault (I6) **[D3]**.
+- **Recheque no envio:** o `claim_email_batch` confere de novo opt-in, e-mail confirmado e supressão, pula o lembrete de carrinho que mudou ou foi pago e o pós-compra de pedido fora de `paid`, e aplica o limite de 1 marketing a cada 24 h (adiando, sem pular).
 - **Entrega imediata:** depois do commit de `fulfill_order`, o `stripe-webhook` ou o `/order-status` despacham o `outbox_id` devolvido, em segundo plano (`EdgeRuntime.waitUntil`). Se falhar, a agenda reenvia.
-- **Templates da Brevo**, ids em variáveis (propostas): `BREVO_TEMPLATE_DELIVERY`, `BREVO_TEMPLATE_CART_REMINDER` e `BREVO_TEMPLATE_POST_PURCHASE`.
+- **Templates da Brevo** (opção futura): `BREVO_TEMPLATE_DELIVERY`, `BREVO_TEMPLATE_CART_REMINDER` e `BREVO_TEMPLATE_POST_PURCHASE` ficam reservadas e não são lidas no I4.
 - **Anexo [D4]:** opção futura do despachante, sem mudar banco nem rotas. Ligado por configuração, anexa os PDFs que couberem nos limites da Brevo (cerca de 4 MB por anexo e 20 MB por mensagem, a confirmar), além dos links. Arquivo acima do limite segue só por link. Hoje: só links.
 - **Risco [D8]:** se a Brevo não aceitar conteúdo promocional pela API transacional, só o envio dos tipos de marketing muda (evento `trackEvent` para uma automação mínima). O banco continua decidindo e registrando.
 
 ## 9. `stripe-webhook`
 
-1. Confere a assinatura no corpo bruto. Se for inválida, responde `400` sem tocar no banco.
+1. Confere a assinatura no corpo bruto. Se for inválida, responde `400 INVALID_SIGNATURE` sem tocar no banco. Método diferente de `POST` responde `405`.
 2. Acha o pedido:
    - eventos `checkout.session.*`: pelo `client_reference_id`;
    - `charge.*` e `charge.dispute.*`: pelo `metadata.order_id` do PaymentIntent, com recurso para a sessão do `payment_intent`.
    - Sem pedido nosso: `200` com log, sem RPC.
 3. Faz uma única RPC. O evento é gravado na mesma transação do efeito.
-4. Responde e, se houver `outbox_id` a enviar, despacha a entrega em segundo plano.
+4. Responde. Se `fulfill_order` devolver `send_delivery`, despacha o `outbox_id` em segundo plano (`EdgeRuntime.waitUntil`, mesmo código do `email-dispatch`); se falhar, a linha fica na fila para a agenda.
 
 | Evento | RPC |
 | --- | --- |
-| `checkout.session.completed`, `payment_status = paid` | `fulfill_order` com itens (preço, quantidade, valor e moeda das `line_items`), Customer e intent. O aceite dos termos já está no pedido desde o checkout; `fulfill_order` não o recebe |
+| `checkout.session.completed`, `payment_status = paid` | `fulfill_order` com a sessão relida na Stripe (código promocional expandido): subtotal, desconto, total, moeda, código promocional, itens (preço, quantidade, valor unitário cheio e moeda), Customer, intent, `p_stripe_event_id` e `p_event_type`. O aceite dos termos já está no pedido desde o checkout |
 | `checkout.session.completed`, `unpaid` | `set_order_status('pending_payment')` |
 | `checkout.session.async_payment_succeeded` | `fulfill_order` |
 | `checkout.session.async_payment_failed` | `set_order_status('failed')` |
@@ -536,10 +564,14 @@ Contestação e reembolso valem para o pedido inteiro.
 | `SITE_URL` | `api`, `stripe-webhook`, `email-dispatch` | Já no modelo; usada em retornos, redirecionamentos e links |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | `api`, `stripe-webhook` | Já no modelo |
 | **`VITE_STRIPE_PUBLISHABLE_KEY`** | site (build), não as funções | **Nova**, pública (`pk_test_...` no teste). Usada pelo formulário embutido |
-| `BREVO_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME` | `email-dispatch` | Já no modelo |
-| `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET`, `B2_READ_KEY_ID`, `B2_READ_APPLICATION_KEY` | `api` | Já no modelo |
+| `BREVO_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME` | `email-dispatch`, `api` e `stripe-webhook` (despacho em segundo plano) | Já no modelo. Chave v3 (`xkeysib-`) e, na Brevo, sem restrição de IP: as funções não têm IP fixo |
+| **`EMAIL_MODE`** | as mesmas | **Nova**, não secreta: `log` (padrão) ou `brevo` |
+| **`EMAIL_LOG_MAILPIT_URL`** | as mesmas | **Nova**, só local: Mailpit que recebe a cópia no modo `log` |
+| **`EMAIL_ALLOWED_RECIPIENTS`** | as mesmas | **Nova**, só teste: destinatários permitidos no modo `brevo` (vírgula); vazia na produção |
+| **`API_PUBLIC_URL`** | as mesmas | **Nova**, não secreta: base pública da `api` nos links dos e-mails. Padrão `SUPABASE_URL/functions/v1/api`; no local é obrigatória (lá `SUPABASE_URL` é o endereço interno do gateway) |
+| `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET`, `B2_READ_KEY_ID`, `B2_READ_APPLICATION_KEY` | `api` | Já no modelo. Só a chave de leitura vai para as funções; a de escrita fica fora delas |
 | **`EMAIL_LINK_SECRET`** (+ `EMAIL_LINK_SECRET_PREVIOUS` opcional) | `api`, `email-dispatch` | **Nova, secreta** |
-| **`BREVO_WEBHOOK_SECRET`** | `brevo-webhook` | **Nova, secreta** |
+| **`BREVO_WEBHOOK_SECRET`** | `brevo-webhook` | **Nova, secreta**, já no modelo. É o token Bearer cadastrado no webhook da Brevo |
 | **`BREVO_TEMPLATE_DELIVERY`**, **`BREVO_TEMPLATE_CART_REMINDER`**, **`BREVO_TEMPLATE_POST_PURCHASE`** | `email-dispatch` | **Novas**, ids (não secretos) |
 | **`TERMS_VERSION`** | `api` | **Nova**, não secreta. Versão vigente dos termos mostrada na página de checkout; o aceite precisa vir com ela **[D11]** |
 
@@ -562,11 +594,30 @@ Contestação e reembolso valem para o pedido inteiro.
 | CORS | `GET, POST` | `GET, POST, PUT, DELETE` |
 | Erros novos | — | `EMAIL_NOT_CONFIRMED`, `ALREADY_OWNED`, `CART_EMPTY`, `CART_CHANGED`, `INVALID_TOKEN` |
 
+### 11.1 O que mudou na v0.3.1 (I4)
+
+- `GET /d/{token}`: token adulterado ou malformado → `401 INVALID_TOKEN`, em vez de `302` (pedido da tarefa I4); vencido continua `302 ?link=expirado`.
+- `GET /free-game` e `POST /free-download`: formato da resposta descrito (6.9).
+- URL do B2 com `response-content-disposition=attachment` e `response-content-type` (6.7).
+- E-mail: template da entrega no código, `EMAIL_MODE` (`log`/`brevo`), `EMAIL_LOG_MAILPIT_URL`, `EMAIL_ALLOWED_RECIPIENTS` e `API_PUBLIC_URL` (seções 8 e 10); a resposta do `email-dispatch` conta `rejected`, não `skipped`; `401`/`403` da Brevo viram `failed`.
+- Webhook e `/order-status` despacham a entrega em segundo plano.
+
+### 11.2 O que mudou na v0.3.2 (I5)
+
+- `email-dispatch` envia `cart_reminder` e `post_purchase` (templates no código) com rodapé e headers de descadastro (8.2).
+- `/email/unsubscribe` implementada; aceita também formulário `token=...` (6.10).
+- `brevo-webhook`: autenticação definida (Bearer), eventos conferidos, lote aceito e resposta com contagem (8.1).
+- Agenda por `private.dispatch_tick()` e segredos do Vault (8.2).
+
 ## 12. Pendências
 
 - **[D1]** Catálogo além do P001. **[D2]** Posse sobreposta (padrão provisório na seção 6.2). **[D3]** Fluxos e prazos de follow-up. **[D4]** Links ou anexos e validade do link. **[D5]** Reembolso parcial. **[D6]** Texto e versão do consentimento. **[D7]** Remetentes. **[D8]** Plano da Brevo e conteúdo promocional pela API. **[D9]** Métodos de pagamento, URL dos termos e validade da sessão. **[D11]** Texto de sem-reembolso validado por advogado. **[D12]** Condições do jogo gratuito.
-- Autenticação do webhook da Brevo: confirmar o mecanismo oferecido.
+- Webhook da Brevo: cadastrar na conta (tipo `transactional`, eventos `hard_bounce`, `invalid_email`, `blocked`, `spam` e `unsubscribed`, `auth` bearer com o `BREVO_WEBHOOK_SECRET`) quando houver URL pública (I6). Os eventos de marketing da Brevo (campanhas) não são usados.
+- Página `/email/preferencias` no site (Aquarela).
 - Limite de abuso nas rotas públicas que gravam (`/free-download`) e no carrinho: taxa ou CAPTCHA antes da produção.
 - Login com Google configurado localmente e ainda não testado: falta credencial.
 - Revisão cruzada com `docs/data-contract.md` v0.3.1 concluída: assinaturas, `outcome`, códigos `KT` e o aceite dos termos no checkout estão alinhados.
 - Stripe em preview (seção 6.5.1): versão exata do SDK, `payment_intent_data` no modo `form` e versão do endpoint do webhook, a confirmar no I3.
+- Brevo: envio real ainda não feito. A chave v3 está no modelo, mas a conta recusa a API por IP não autorizado (`401 unauthorized`). O responsável precisa desativar a restrição de IP da chave (as Edge Functions não têm IP fixo) ou autorizar o IP do teste, e confirmar que `EMAIL_FROM` está ativo como remetente na Brevo.
+- `email-dispatch` na nuvem: criar a chave secreta nomeada `dispatch` e guardá-la no Vault para o `pg_net` (I5, com a agenda).
+- `GET /d/{token}` com token inválido responde JSON `401`; uma página amigável para quem clica num link corrompido pode vir depois.

@@ -1,0 +1,28 @@
+﻿import { expect, test } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
+
+test('real previews and catalog price; mobile purchase bar yields to offer and keyboard focus', async ({ page }) => {
+  const html = await readFile(new URL('../../build/client/index.html', import.meta.url), 'utf8')
+  test.skip(!html.includes('Ambiente de teste'), 'Stage test required')
+  await page.route('**/api/catalog', route => route.fulfill({ json: { products: [{ code: 'P001', name: '[PENDENTE] [TESTE]', price: { unit_amount: 1990, currency: 'brl' }, games: [] }] } }))
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await expect(page.locator('.offer-price')).toHaveText('R$ 19,90')
+  await expect(page.locator('.product-title')).toHaveText('Pacote KeyToTwo')
+  await expect(page.locator('.experience-section .sample-page')).toHaveCount(3)
+  const bar = page.locator('.mobile-purchase-bar')
+  await expect(bar).toHaveAttribute('data-visible', 'false')
+  await page.locator('.pillars-section').scrollIntoViewIfNeeded()
+  await expect(bar).toHaveAttribute('data-visible', 'true')
+  await page.locator('.offer-section').scrollIntoViewIfNeeded()
+  await expect(bar).toHaveAttribute('data-visible', 'false')
+  await page.locator('.pillars-section').scrollIntoViewIfNeeded()
+  await expect(bar).toHaveAttribute('data-visible', 'true')
+  await page.locator('.experience-copy .button').focus()
+  await expect(bar).toHaveAttribute('data-visible', 'false')
+  await page.evaluate(() => (document.activeElement as HTMLElement).blur())
+  await page.locator('.pillars-section').scrollIntoViewIfNeeded()
+  await expect(bar).toHaveAttribute('data-visible', 'true')
+  await bar.getByRole('button', { name: 'Adicionar ao carrinho' }).click()
+  await expect(page).toHaveURL(/\/entrar\?next=%2Fcarrinho&add=P001/)
+})

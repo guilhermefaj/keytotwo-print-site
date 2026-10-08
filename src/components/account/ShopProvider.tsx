@@ -2,11 +2,13 @@ import { useRef, useState, type ReactNode } from 'react'
 import { api, type Account, type Cart, type CatalogProduct } from '../../lib/api'
 import { ShopContext } from '../../lib/shop-context'
 import { useApiResource } from '../../lib/use-api-resource'
+import { deliveryMock, type FreeGame } from '../../lib/downloads'
 
 export function ShopProvider({ children }: { children: ReactNode }) {
   const cart = useApiResource<Cart>('/cart')
   const account = useApiResource<Account>('/account')
   const catalog = useApiResource<{ products: CatalogProduct[] }>('/catalog', true)
+  const freeGame = useApiResource<FreeGame>('/free-game', true, deliveryMock)
   const [busy, setBusy] = useState(false)
   const mutation = useRef(false)
   async function mutate(code: string, remove: boolean) {
@@ -18,5 +20,5 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       cart.reload()
     } finally { mutation.current = false; setBusy(false) }
   }
-  return <ShopContext.Provider value={{ cart, account, catalog, busy, add: code => mutate(code, false), remove: code => mutate(code, true) }}>{children}</ShopContext.Provider>
+  return <ShopContext.Provider value={{ cart, account, catalog, freeGame: deliveryMock ? { ...freeGame, data: { available: false } } : freeGame, busy, add: code => mutate(code, false), remove: code => mutate(code, true) }}>{children}</ShopContext.Provider>
 }

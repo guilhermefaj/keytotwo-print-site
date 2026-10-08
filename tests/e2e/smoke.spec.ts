@@ -1,14 +1,16 @@
 import { expect, test, type Page } from '@playwright/test'
 
-// The 12 routes pre-rendered into build/client/<route>/index.html.
+// The 15 routes pre-rendered into build/client/<route>/index.html.
 const routes = [
   '/',
   '/preview/hero',
   '/entrar',
-  '/carrinho',
+  '/carrinho', '/pagamento',
   '/meus-jogos',
   '/conta',
   '/pedido/confirmacao',
+  '/jogo-gratuito',
+  '/email/preferencias',
   '/ajuda',
   '/termos',
   '/privacidade',
@@ -20,7 +22,7 @@ const viewports = [
   { name: '320', width: 320, height: 640 },
   { name: '1440', width: 1440, height: 900 },
 ]
-const protectedRoutes = ['/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao']
+const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao']
 
 // Collects anything that signals a runtime or hydration failure.
 function trackErrors(page: Page) {
@@ -82,7 +84,7 @@ for (const route of routes) {
 
 test('H1 da hero em /', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('h1#hero-title')).toContainText('A próxima fase')
-  await expect(page.locator('h1#hero-title')).toContainText('é de vocês dois.')
+  await expect(page.locator('h1#hero-title')).toContainText('A rotina pode esperar.')
+  await expect(page.locator('h1#hero-title')).toContainText('Vocês têm um encontro.')
   await expect(page.locator('h1')).toHaveCount(1)
 })

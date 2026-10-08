@@ -1,11 +1,11 @@
-import { readFile } from 'node:fs/promises'
+import { mkdir, readFile } from 'node:fs/promises'
 import { expect, test, type Page } from '@playwright/test'
 
 // Checks for the public sales pages, run against the prerendered build (build/client).
 // Stage-specific assertions follow the stage the build was made for (robots.txt tells which).
-const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao', '/ajuda', '/termos', '/privacidade', '/reembolsos', '/404']
-const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao', '/404']
-const protectedRoutes = ['/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao']
+const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/ajuda', '/termos', '/privacidade', '/reembolsos', '/404']
+const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/404']
+const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao']
 const policyRoutes = ['/', '/ajuda', '/termos', '/reembolsos']
 const refundNotice = /N[ãa]o h[áa] reembolso ap[óo]s a libera[çc][ãa]o do download/i
 
@@ -95,17 +95,23 @@ test.describe('conteúdo', () => {
     }
   })
 
-  test('só o P001, com 3 jogos nomeados e 2 PENDENTE', async ({ page }) => {
+  test('experiência, um CTA na hero e prova social explicitamente reservada', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')
-    const section = page.locator('section.games-section')
-    const names = (await section.locator('h3').allTextContents()).map(s => s.trim())
-    expect(names, 'cartões da seção de jogos').toEqual(['Rabisque e Adivinhe', 'Hora dos Artistas', 'Boardgame', 'Jogo a definir', 'Jogo a definir'])
-    expect((await section.innerText()).match(/PENDENTE · composição/g)?.length, 'vagas PENDENTE').toBe(2)
+    await expect(page.locator('.hero-copy a')).toHaveCount(1)
+    await expect(page.locator('.hero-benefits li')).toHaveCount(3)
+    await expect(page.locator('.steps-list li')).toHaveCount(3)
+    await expect(page.locator('.faq-item')).toHaveCount(5)
+    await expect(page.locator('.social-card[data-placeholder="true"]')).toHaveCount(3)
+    await expect(page.locator('.social-card blockquote')).toHaveCount(0)
+    await expect(page.locator('.social-metrics')).toContainText('Nota a preencher')
+    await expect(page.locator('.social-metrics')).toContainText('Total de relatos a preencher')
+    await expect(page.locator('[data-product-code]')).toHaveCount(1)
+    await expect(page.locator('[data-product-code]')).toHaveAttribute('data-product-code', 'P001')
+    await expect(page.locator('.games-section')).toHaveCount(0)
+    expect(await visibleText(page)).not.toMatch(/PENDENTE|Hora dos Artistas|Boardgame/)
     const offer = page.locator('section.offer-section')
-    await expect(offer).toContainText('5 jogos')
-    if (await isPreview()) await expect(offer).toContainText('PENDENTE: preço e moeda')
-    else await expect(offer.locator('.offer-price')).not.toBeEmpty()
+    await expect(offer.locator('.offer-price')).not.toBeEmpty()
     expect((await visibleText(page)).match(/\bP\d{3}\b/g) ?? [], 'códigos de produto além de P001').toEqual([])
   })
 
@@ -214,5 +220,39 @@ test.describe('rolagem horizontal', () => {
         expect(scrollWidth, `${route} @${width}: scrollWidth ${scrollWidth} > ${clientWidth}`).toBeLessThanOrEqual(clientWidth)
       }
     })
+  }
+})
+
+test('home: matriz responsiva, texto 200%, cena preservada e capturas', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const captureDir = process.env.REDESIGN_QA_DIR
+  if (captureDir) await mkdir(captureDir, { recursive: true })
+  for (const [width, height] of [[320, 800], [390, 844], [768, 1024], [1280, 720], [1440, 900]]) {
+    await page.setViewportSize({ width, height })
+    await page.goto('/')
+    await page.evaluate(() => document.fonts.ready)
+    const scene = page.locator('.hero-scene-region')
+    await expect(scene).toHaveAttribute('data-running', 'false')
+    expect(await page.locator('.kito-frames').evaluate(el => getComputedStyle(el).backgroundImage)).toContain('kito-walk-v31-right-atlas.webp')
+    for (const zoom of [100, 200]) {
+      if (zoom === 200) await page.evaluate(() => {
+        const sizes = [...document.querySelectorAll<HTMLElement>('body *')].map(el => [el, parseFloat(getComputedStyle(el).fontSize)] as const)
+        for (const [el, size] of sizes) el.style.fontSize = `${size * 2}px`
+      })
+      const overflow = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('body *')].filter(el => {
+        if (!el.checkVisibility() || el.closest('[aria-hidden="true"]') || el.classList.contains('skip-link')) return false
+        const rect = el.getBoundingClientRect()
+        return rect.left < -1 || rect.right > innerWidth + 1 || el.scrollWidth > el.clientWidth + 2
+      }).map(el => ({ tag: el.tagName, class: el.className, width: el.clientWidth, scroll: el.scrollWidth })))
+      expect(overflow, `home ${width}px, text ${zoom}%`).toEqual([])
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+      const copy = await page.locator('.hero-copy').boundingBox()
+      const stage = await page.locator('.hero-scene').boundingBox()
+      expect(copy!.y + copy!.height).toBeLessThan(stage!.y)
+      if (captureDir && zoom === 100 && [390, 1440].includes(width)) {
+        await page.screenshot({ path: `${captureDir}/home-${width}.png`, fullPage: true })
+        await page.screenshot({ path: `${captureDir}/hero-${width}.png` })
+      }
+    }
   }
 })

@@ -161,12 +161,14 @@ site_url = "http://127.0.0.1:5173"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-# KeyToTwo: dev do site nas portas 5173 a 5176 e build de QA na 4174 (local apenas; o remoto é configurado no painel).
+# KeyToTwo: dev do site nas portas 5173 a 5176, prévia do redesign na 5178 e build de QA na 4174
+# (local apenas; o remoto é configurado no painel).
 additional_redirect_urls = [
   "http://127.0.0.1:5173/**", "http://localhost:5173/**",
   "http://127.0.0.1:5174/**", "http://localhost:5174/**",
   "http://127.0.0.1:5175/**", "http://localhost:5175/**",
   "http://127.0.0.1:5176/**", "http://127.0.0.1:4174/**",
+  "http://127.0.0.1:5178/**",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
@@ -421,6 +423,24 @@ deno_version = 2
 # KeyToTwo: a api tem rotas públicas e o site envia a chave publishable (sb_publishable_, não é JWT)
 # no header apikey. O gateway não valida; cada rota privada valida a sessão no código (_shared/auth.ts).
 [functions.api]
+enabled = true
+verify_jwt = false
+import_map = "./functions/deno.json"
+
+# KeyToTwo: a Stripe não envia JWT; a função confere a assinatura Stripe-Signature no corpo bruto.
+[functions.stripe-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/deno.json"
+
+# KeyToTwo: interna (pg_cron/pg_net, api e webhook); a função confere a chave secreta no header apikey.
+[functions.email-dispatch]
+enabled = true
+verify_jwt = false
+import_map = "./functions/deno.json"
+
+# KeyToTwo: a Brevo envia Authorization: Bearer <BREVO_WEBHOOK_SECRET> (não é JWT); a função confere o segredo.
+[functions.brevo-webhook]
 enabled = true
 verify_jwt = false
 import_map = "./functions/deno.json"

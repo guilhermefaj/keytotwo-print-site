@@ -58,7 +58,10 @@ test('guest add → Mailpit code → persistent cart; consent once; marketing an
   await expect(page).toHaveURL(/\/carrinho$/)
   await expect(page.locator('[data-cart-product="P001"]')).toBeVisible()
   await expect(page.locator('.desktop-action').getByRole('link', { name: 'Carrinho, 1 item', exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Finalizar compra', exact: true })).toBeDisabled()
+  // I3 enables checkout only when the real catalog supplies a price.
+  const checkout = page.getByRole('button', { name: 'Finalizar compra', exact: true })
+  if (await page.getByText('Preço indisponível', { exact: true }).count()) await expect(checkout).toBeDisabled()
+  else await expect(checkout).toBeEnabled()
   expect(await page.evaluate(() => {
     const notice = document.querySelector('.cart-summary .refund-notice')!
     const button = document.querySelector('.cart-summary button')!
@@ -167,7 +170,7 @@ test('seed account has library by game and orders; full ownership prevents addin
   expect(library.games.length).toBeGreaterThan(0)
   expect(new Set(library.games.map((game: { code: string }) => game.code)).size).toBe(library.games.length)
   await expect(page.locator('.library-grid > li')).toHaveCount(library.games.length)
-  await expect(page.getByRole('button', { name: /baixar|download/i })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(library.games.length)
   await noOverflow(page)
   const accountResponse = page.waitForResponse(response => response.url().endsWith('/api/account') && response.status() === 200)
   await page.goto('/conta')
@@ -177,5 +180,5 @@ test('seed account has library by game and orders; full ownership prevents addin
   await noOverflow(page)
   await page.goto('/')
   await page.getByRole('button', { name: 'Adicionar ao carrinho', exact: true }).click()
-  await expect(page.locator('.offer-cart-action [role="alert"]')).toContainText('Você já tem todos os jogos')
+  await expect(page.locator('.offer-section .offer-cart-action [role="alert"]')).toContainText('Você já tem todos os jogos')
 })

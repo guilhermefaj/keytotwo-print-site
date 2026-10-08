@@ -1,266 +1,157 @@
 {
-  "revision": "2 (2026-10-08 09:33)",
-  "method": "center of 20px cells; shared original origin; binary alpha threshold 128; nearest integer upscale; lossless WebP",
+  "revision": "3.1",
   "sequence": [
     1,
     2,
     3,
-    4
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
   ],
   "motion": {
-    "fps": 8,
-    "cycleSeconds": 0.5,
-    "stanceIntervalSeconds": 0.25,
-    "meanStanceDelta": 2.833333333333332,
-    "nativePixelsPerSecond": 11.333333,
-    "desktopPixelsPerSecond": 34,
-    "mobilePixelsPerSecond": 22.666667
+    "frames": 12,
+    "fps": 10,
+    "cycleSeconds": 1.2,
+    "sourceCanvas": 1254,
+    "sourceDistancePerCycle": 520,
+    "groundSourceY": 1160,
+    "atlasCell": 384,
+    "columns": 6,
+    "rows": 2,
+    "desktopCanvas": 192,
+    "mobileCanvas": 128,
+    "desktopPixelsPerSecond": 66.34768740031897,
+    "mobilePixelsPerSecond": 44.23179160021266
   },
-  "stanceDeltas": [
-    1,
-    4.666666666666664
-  ],
-  "measurements": [
-    {
-      "step": 1,
-      "sourceTop": 112,
-      "sourceBottom": 1157,
-      "eye": {
-        "x": 777.9101271712159,
-        "y": 442.00209367245657
-      },
-      "nativeTop": 6,
-      "nativeBottom": 57,
-      "nearGroundX": 21,
-      "leftFootX": 19.19607843137255,
-      "rightFootX": 46.29032258064516,
-      "flatSole": {
-        "x": 21,
-        "y": 56
-      },
-      "nativeTranslation": [
-        0,
-        0
-      ]
-    },
-    {
-      "step": 2,
-      "sourceTop": 111,
-      "sourceBottom": 1168,
-      "eye": {
-        "x": 777.860162856248,
-        "y": 442.32743501409334
-      },
-      "nativeTop": 6,
-      "nativeBottom": 57,
-      "nearGroundX": 44,
-      "leftFootX": 16.225806451612904,
-      "rightFootX": 43.75471698113208,
-      "flatSole": {
-        "x": 44,
-        "y": 57
-      },
-      "nativeTranslation": [
-        0,
-        0
-      ]
-    },
-    {
-      "step": 3,
-      "sourceTop": 113,
-      "sourceBottom": 1155,
-      "eye": {
-        "x": 777.8458734098666,
-        "y": 441.87930499534593
-      },
-      "nativeTop": 6,
-      "nativeBottom": 57,
-      "nearGroundX": 19.714285714285715,
-      "leftFootX": 18.761194029850746,
-      "rightFootX": 47,
-      "flatSole": {
-        "x": 20,
-        "y": 57
-      },
-      "nativeTranslation": [
-        0,
-        0
-      ]
-    },
-    {
-      "step": 4,
-      "sourceTop": 112,
-      "sourceBottom": 1159,
-      "eye": {
-        "x": 777.4597247990105,
-        "y": 442.0468460111317
-      },
-      "nativeTop": 6,
-      "nativeBottom": 57,
-      "nearGroundX": 33.714285714285715,
-      "leftFootX": 28.2,
-      "rightFootX": 42.78431372549019,
-      "flatSole": {
-        "x": 39.333333333333336,
-        "y": 56
-      },
-      "nativeTranslation": [
-        0,
-        0
-      ]
-    }
-  ],
   "sources": [
     {
-      "source": "kito_walking_right_step01.png",
-      "width": 1254,
-      "height": 1254,
-      "sourceBytes": 742824,
-      "sourceSha256": "8f4ff15f23801c1ca82de676cbce01b823b5749f1f8a62322d85a816a99741bf"
-    },
-    {
-      "source": "kito_walking_right_step02.png",
-      "width": 1254,
-      "height": 1254,
-      "sourceBytes": 747061,
-      "sourceSha256": "7523cc2f7b8bc453c2975b2cfc9be02b4871963610ada97d2e63f98199e55d1c"
-    },
-    {
-      "source": "kito_walking_right_step03.png",
-      "width": 1254,
-      "height": 1254,
-      "sourceBytes": 732143,
-      "sourceSha256": "aaf48ef989d61133f2342ea260ad464b4a002f14252c9af821063c2ea900b43a"
-    },
-    {
-      "source": "kito_walking_right_step04.png",
-      "width": 1254,
-      "height": 1254,
-      "sourceBytes": 740464,
-      "sourceSha256": "70e7462ab067d6a3757b6841718ad72030be159ba2c9ef5123f316ca509de2a5"
+      "source": "G:/Meu Drive/05-Projetos/KeyToTwo/Images/Pixel Art/Kito Walking v3/kito_walk_right_atlas.png",
+      "output": "kito-walk-v31-right-atlas.webp",
+      "width": 2304,
+      "height": 768,
+      "bytes": 492982,
+      "sourceSha256": "f4ec908e31d0a4038822fe65cc28d140ed4c958b2048a7c1656136b12d3d87bc",
+      "sha256": "5642dc8f739afc4f1b3824f360df4327d0ec4e8d9cee5e46b3fc1bf790ec8ced",
+      "rgbaSha256": "a5f23cfe165944ab5fc7fc1bbfa13576c7a3ed0dbbe21a025f926f6dcc1b3e90",
+      "transformation": "WebP lossless exact; identical RGBA pixels, no resize"
     }
   ],
   "assets": [
     {
-      "source": "kito_walking_right_step01.png … step04.png",
-      "output": "kito-walk-2x.webp",
-      "width": 512,
-      "height": 128,
-      "bytes": 13322,
-      "scale": 2,
-      "sources": [
-        {
-          "source": "kito_walking_right_step01.png",
-          "width": 1254,
-          "height": 1254,
-          "sourceBytes": 742824,
-          "sourceSha256": "8f4ff15f23801c1ca82de676cbce01b823b5749f1f8a62322d85a816a99741bf"
-        },
-        {
-          "source": "kito_walking_right_step02.png",
-          "width": 1254,
-          "height": 1254,
-          "sourceBytes": 747061,
-          "sourceSha256": "7523cc2f7b8bc453c2975b2cfc9be02b4871963610ada97d2e63f98199e55d1c"
-        },
-        {
-          "source": "kito_walking_right_step03.png",
-          "width": 1254,
-          "height": 1254,
-          "sourceBytes": 732143,
-          "sourceSha256": "aaf48ef989d61133f2342ea260ad464b4a002f14252c9af821063c2ea900b43a"
-        },
-        {
-          "source": "kito_walking_right_step04.png",
-          "width": 1254,
-          "height": 1254,
-          "sourceBytes": 740464,
-          "sourceSha256": "70e7462ab067d6a3757b6841718ad72030be159ba2c9ef5123f316ca509de2a5"
-        }
-      ]
-    },
-    {
-      "source": "kito_walking_right_step01.png … step04.png",
-      "output": "kito-walk-3x.webp",
-      "width": 768,
-      "height": 192,
-      "bytes": 15078,
-      "scale": 3,
-      "sources": [
-        {
-          "source": "kito_walking_right_step01.png",
-          "width": 1254,
-          "height": 1254,
-          "sourceBytes": 742824,
-          "sourceSha256": "8f4ff15f23801c1ca82de676cbce01b823b5749f1f8a62322d85a816a99741bf"
-        },
-        {
-          "source": "kito_walking_right_step02.png",
-          "width": 1254,
-          "height": 1254,
-          "sourceBytes": 747061,
-          "sourceSha256": "7523cc2f7b8bc453c2975b2cfc9be02b4871963610ada97d2e63f98199e55d1c"
-        },
-        {
-          "source": "kito_walking_right_step03.png",
-          "width": 1254,
-          "height": 1254,
-          "sourceBytes": 732143,
-          "sourceSha256": "aaf48ef989d61133f2342ea260ad464b4a002f14252c9af821063c2ea900b43a"
-        },
-        {
-          "source": "kito_walking_right_step04.png",
-          "width": 1254,
-          "height": 1254,
-          "sourceBytes": 740464,
-          "sourceSha256": "70e7462ab067d6a3757b6841718ad72030be159ba2c9ef5123f316ca509de2a5"
-        }
-      ]
+      "source": "G:/Meu Drive/05-Projetos/KeyToTwo/Images/Pixel Art/Kito Walking v3/kito_walk_right_atlas.png",
+      "output": "kito-walk-v31-right-atlas.webp",
+      "width": 2304,
+      "height": 768,
+      "bytes": 492982,
+      "sourceSha256": "f4ec908e31d0a4038822fe65cc28d140ed4c958b2048a7c1656136b12d3d87bc",
+      "sha256": "5642dc8f739afc4f1b3824f360df4327d0ec4e8d9cee5e46b3fc1bf790ec8ced",
+      "rgbaSha256": "a5f23cfe165944ab5fc7fc1bbfa13576c7a3ed0dbbe21a025f926f6dcc1b3e90",
+      "transformation": "WebP lossless exact; identical RGBA pixels, no resize"
     }
   ],
-  "reviews": [
+  "bounds": [
     {
-      "output": "step01-3x.png",
-      "width": 192,
-      "height": 192,
-      "pages": 1,
-      "bytes": 5174
+      "frame": 1,
+      "left": 71,
+      "top": 37,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 319
     },
     {
-      "output": "step02-3x.png",
-      "width": 192,
-      "height": 192,
-      "pages": 1,
-      "bytes": 5289
+      "frame": 2,
+      "left": 71,
+      "top": 35,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 321
     },
     {
-      "output": "step03-3x.png",
-      "width": 192,
-      "height": 192,
-      "pages": 1,
-      "bytes": 5217
+      "frame": 3,
+      "left": 71,
+      "top": 32,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 324
     },
     {
-      "output": "step04-3x.png",
-      "width": 192,
-      "height": 192,
-      "pages": 1,
-      "bytes": 5005
+      "frame": 4,
+      "left": 71,
+      "top": 30,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 326
     },
     {
-      "output": "official-walk-preview.webp",
-      "width": 192,
-      "height": 192,
-      "pages": 4,
-      "bytes": 15746
+      "frame": 5,
+      "left": 71,
+      "top": 32,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 324
     },
     {
-      "output": "official-contact-sheet.png",
-      "width": 768,
-      "height": 224,
-      "pages": 1,
-      "bytes": 24467
+      "frame": 6,
+      "left": 71,
+      "top": 35,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 321
+    },
+    {
+      "frame": 7,
+      "left": 71,
+      "top": 37,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 319
+    },
+    {
+      "frame": 8,
+      "left": 71,
+      "top": 35,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 321
+    },
+    {
+      "frame": 9,
+      "left": 71,
+      "top": 32,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 324
+    },
+    {
+      "frame": 10,
+      "left": 71,
+      "top": 30,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 326
+    },
+    {
+      "frame": 11,
+      "left": 71,
+      "top": 32,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 324
+    },
+    {
+      "frame": 12,
+      "left": 71,
+      "top": 35,
+      "right": 314,
+      "bottom": 355,
+      "visibleHeight": 321
     }
   ],
-  "eyeSpreadNativePixels": 0.03176801892591107
+  "sourceManifest": "kito-walk-source-manifest.json"
 }

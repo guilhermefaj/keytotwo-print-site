@@ -1,15 +1,18 @@
-# Contrato de dados — KeyToTwo Print (v0.3)
+# Contrato de dados — KeyToTwo Print (v0.3.5)
 
 | | |
 | --- | --- |
-| Versão | 0.3.2, 2026-10-08. Substitui a v0.2.2 (seção 13 lista o que mudou). A v0.3.1 incorporou a revisão cruzada do Ferrolho (checkout embutido, D-21). A v0.3.2 registra o I2b implementado (linha "Implementado" abaixo), decide o P-15 e acrescenta o marcador do convite de marketing (D-22). |
+| Versão | 0.3.5, 2026-10-08. Substitui a v0.2.2 (seção 13 lista o que mudou). A v0.3.1 incorporou a revisão cruzada do Ferrolho (checkout embutido, D-21). A v0.3.2 registrou o I2b implementado, decidiu o P-15 e acrescentou o marcador do convite de marketing (D-22). A v0.3.3 acrescenta os **cupons** (D-24 e D-25: `orders` ganha subtotal, desconto e código promocional; `order_items` guarda o preço cheio) e especifica as RPCs do I3 como implementadas (linha "Implementado (I3)"). A v0.3.4 especifica como implementadas as RPCs de download, entrega, jogo gratuito e fila de e-mail do I4 (linha "Implementado (I4)") e traz no seed os metadados reais dos 5 PDFs de TESTE (D-26). A v0.3.5 especifica como implementados `record_email_event`, `private.enqueue_followups` e a agenda do `pg_cron` com o Vault (D-27, linha "Implementado (I5)"): **as 22 RPCs do contrato existem no banco**. |
 | Dono | Lastro (Dados e Supabase). Consumidor: Ferrolho (Edge Functions). |
 | Escopo | Referência para as migrações do I2b em diante. **Nenhuma migração, nenhuma escrita remota.** As migrações rascunho da v0.2.2 (sem commit, nunca aplicadas) serão reescritas no I2b. |
 | Ambiente | Postgres 17 (projeto de teste `keytotwo-print-db`, sa-east-1, plano Free). Desenvolvimento local com Supabase CLI. |
 | Fontes | Nota **Plano do site P2** (ajustes do orquestrador no topo e seção 3, que é a especificação), Plano do site P1 (decisões do responsável), `docs/auth-setup.md`, skills `supabase` e `supabase-postgres-best-practices`. |
 | Verificado (DDL do contrato) | O DDL dos blocos `-- @ddl` (19 tabelas, funções e triggers de `private`, triggers em `auth.users`, RLS e GRANTs) aplica sem erro num Postgres descartável (imagem Supabase, PG 17.6) com o **schema `auth` real do GoTrue v2.197** e GRANT automático da plataforma emulado, e **160 verificações passaram** (a mesma bateria rodou de novo depois da v0.3.1, com `terms_accepted_at NOT NULL` e as assinaturas de `create_order_from_cart`, `fulfill_order` e `set_order_status` alteradas): CHECKs e unicidades novas; matriz de 64 transições (11 arestas + 8 "mesmo estado" passam, 45 recusadas); imutabilidade de pedido e item; I-5 por item com `SET CONSTRAINTS IMMEDIATE` (14 casos); trigger de senha e de perfil (7 cenários, inclusive senha trocada no mesmo `UPDATE` da confirmação); consentimento só por inserção com `profiles` sincronizado; `marketing_allowed`; `product_is_sellable`; exclusão de usuário (RESTRICT/CASCADE/SET NULL); nenhum privilégio de tabela, coluna ou sequência para `anon`, `authenticated` e `service_role`; ACL das 21 assinaturas; `public.test` (sósia) com ACL e RLS inalterados. |
 | Implementado (I2b) | 4 migrações em `supabase/migrations` (`commerce_schema`, `auth_triggers`, `rls_grants`, `rpcs_i2b`), `supabase/seed.sql`, 8 arquivos pgTAP em `supabase/tests/database` (`01`, `02`, `03`, `04`, `06`, `07`, `08`, `11`) e `supabase/tests/gotrue/trigger-senha.mjs`. Na stack local, `supabase db reset` aplica migrações e seed do zero; `supabase test db` passa; o teste da trigger com o GoTrue real (v2.197) passa; `supabase db advisors --local` não tem WARN nem ERROR (só INFO: 4 FKs compostas sem índice que cubra as duas colunas). Números da última rodada: `supabase test db` com 8 arquivos e **394** testes (PASS); 10 RPCs. |
-| Não verificado | Fora do I2b: as RPCs de pedido, entrega e fila (I3 a I5), os testes `05`, `09`, `10` e de concorrência (`90`), e o login com Google (exige credenciais do Google; verificação manual). Regras de plataforma (Data API) não foram lidas do projeto remoto. |
+| Implementado (I3) | Migração `20261008174321_i3_checkout_fulfillment.sql` (subtotal, desconto e código promocional em `orders`; `guard_order_changes` com os valores imutáveis; `private.access_effect` e `private.cancel_order_emails`; `create_order_from_cart`, `attach_checkout_session`, `fulfill_order`, `set_order_status`, `get_order_status`; `get_account` com o desconto), seed com subtotal e desconto, pgTAP `05_checkout_fulfill` e `90_concurrency` (dblink; spike do P-12 feito), T72 no `07`, constraints do cupom no `01` e imutabilidade no `03`, `supabase/local/aplicar-price-teste.mjs` (passo local, fora do git, que põe o Price de TESTE da Stripe no P001). **15 RPCs** no banco (10 do I2b + 5 do I3). Verificado na stack local: `supabase db reset` do zero aplica as 5 migrações e o seed; `supabase test db`: 10 arquivos e **683** testes (PASS, inclusive a corrida com `dblink` com conexões `service_role`, que também passa 4 vezes seguidas no banco descartável); `supabase db advisors --local` sem WARN nem ERROR (INFO: 4 FKs compostas sem índice e índices ainda não usados); caminho de atualização (banco do I2b com o seed antigo, depois a migração do I3: subtotal = total e desconto 0 nos pedidos existentes); mutação (sem o `FOR UPDATE` do pedido o T120 quebra). |
+| Implementado (I4) | Migração `20261008183123_i4_delivery_downloads_queue.sql` (nenhuma tabela muda): `resolve_download`, `resolve_delivery`, `get_free_game`, `resolve_free_download`, `claim_email_batch` e `mark_email_result`. Seed com tamanho e sha256 reais dos 5 PDFs de TESTE no bucket de teste do B2 (D-26). pgTAP `09_email_queue` e `10_downloads`, T125 no `90_concurrency` (dois despachantes e a marcação simultânea), I4 sobre o seed no `11`. **21 RPCs** no banco. Verificado na stack local: `supabase db reset` do zero com as 6 migrações e o seed; `supabase test db` com 12 arquivos e **831** testes (PASS); `supabase db advisors --local` sem WARN nem ERROR (INFO: 4 FKs compostas sem índice e índices ainda não usados). |
+| Implementado (I5) | Migração `20261008190749_i5_followups_suppressions_agenda.sql` (nenhuma tabela muda): extensões `pg_cron`, `pg_net` e `supabase_vault`; `record_email_event` (público, só `service_role`); `private.enqueue_followups` e `private.dispatch_tick` (sem EXECUTE para papel de API); o job `email-dispatch-tick` a cada 5 minutos. Passo local `supabase/local/aplicar-dispatch-vault.mjs` (grava no Vault a URL e a chave do despacho, sem imprimir). pgTAP `12_followups` (T65, T88 e T89). **22 RPCs** no banco, todas as do contrato. Verificado na stack local: `supabase db reset` do zero com as 7 migrações e o seed; `supabase test db` com 13 arquivos e **879** testes (PASS, também depois de o despacho já ter enviado as entregas do seed); `supabase db advisors --local` sem WARN nem ERROR; o primeiro disparo real do `pg_cron` rodou (`succeeded`), o `pg_net` chamou o `email-dispatch` pelo Kong com a chave do Vault e recebeu **HTTP 200**, e o despacho enviou (modo log) as 2 entregas do seed. |
+| Não verificado | Fora do I5: o despacho real pela Brevo, o `brevo-webhook` e o link `GET /d/{token}` (Ferrolho, só se provam na integração); a chave `dispatch` e os segredos do Vault na nuvem (I6, à mão no painel); a assinatura da URL no B2; o login com Google (exige credenciais do Google; verificação manual). O Checkout real da Stripe (sessão embutida, cupom, retorno) é do Ferrolho e só se prova na integração. Regras de plataforma (Data API) não foram lidas do projeto remoto. |
 
 Os blocos `sql` marcados com `-- @ddl` são o DDL de referência (exequível). Os demais são assinaturas e exemplos. Nome comercial, preço, composição de avulsos, textos legais e remetentes **não são decididos aqui**: aparecem como `PENDENTE` (seção 11).
 
@@ -27,7 +30,7 @@ Os blocos `sql` marcados com `-- @ddl` são o DDL de referência (exequível). O
 | D-8 | IDs: `uuid` (v4) nas entidades que aparecem na API; `bigint identity` no catálogo e nos logs. Texto + `CHECK`, sem `ENUM`. | Opaco contra enumeração; PG17 não tem `uuidv7()`. |
 | D-9 | **Gate de venda por produto:** só entra no carrinho e só é cobrado produto `active`, completo (`games_expected`) e com todos os jogos publicados. | "Vender o pacote completo quando os conteúdos estiverem disponíveis." |
 | D-11 | `public.test` intocada. Nenhuma migração usa `alter default privileges` nem `GRANT/REVOKE ... ON ALL ... IN SCHEMA public` (seção 10). | Restrição permanente do responsável (keep-alive externo). |
-| D-12 | **`service_role` não tem privilégio de tabela algum, sem exceção.** Toda leitura e escrita da API passam por RPC, inclusive a fila de e-mail (`claim_email_batch`, `mark_email_result`). | Menor privilégio. Testes que contam linhas leem como dono (`postgres`). |
+| D-12 | **`service_role` não tem privilégio de tabela algum, sem exceção.** Toda leitura e escrita da API passam por RPC, inclusive a fila de e-mail (`claim_email_batch`, `mark_email_result`). **Vale também no COMMIT:** os gatilhos diferidos (a I-5) disparam fora da RPC, com o papel da sessão; por isso `private.assert_order_entitlement_consistency` é `SECURITY DEFINER` (defeito achado na integração do I3 e coberto pelo T130). | Menor privilégio. Testes que contam linhas leem como dono (`postgres`). |
 | D-13 | **Venda só para usuário cadastrado e com e-mail confirmado.** `orders.user_id` é `NOT NULL`: o dono do pedido é sempre o usuário. Some a compra anônima (`claim_orders`, vínculo por e-mail, `relation anonymous/claimable`). | Decisão do responsável. Grande simplificação. |
 | D-14 | **Carrinho multi-item, 1 por usuário,** quantidade sempre 1. `carts.version` sobe a cada mudança e protege contra cobrar carrinho diferente do mostrado. | Decisão do responsável. |
 | D-15 | **Sem reembolso e acesso sem expiração (P-1 e P-3 decididos).** Contestação aberta revoga o acesso do pedido inteiro; vencida devolve; perdida mantém revogado; reembolso manual excepcional revoga o pedido inteiro. `entitlements.expires_at` deixa de existir. | Decisão do responsável; o texto legal depende de advogado (CDC art. 49). |
@@ -39,6 +42,10 @@ Os blocos `sql` marcados com `-- @ddl` são o DDL de referência (exequível). O
 | D-21 | **Aceite dos termos (sem reembolso) na nossa página**, antes de montar o formulário embutido do Stripe (sem `consent_collection`). O pedido grava `terms_accepted_at` (`NOT NULL`) e `terms_version` **na criação**; `fulfill_order` e `set_order_status` não recebem mais o aceite. | Decisão do orquestrador (nota Stripe Checkout Studio). O texto legal depende de advogado (CDC art. 49). |
 | D-22 | **Marcador do convite de marketing** (`profiles.marketing_prompted_at`, RPC `mark_marketing_prompt`): o convite pós-login aparece uma vez e vale entre aparelhos. **Ver ou dispensar o convite não é consentimento:** nada entra em `marketing_consents` e `marketing_opt_in` não muda. | Pedido da Aquarela, aprovado pelo orquestrador (relatado pelo Ferrolho). |
 | D-23 | **FK de consentimento permanece `RESTRICT`; exclusão de conta é anonimização** (P-8, D6). Nenhum `DELETE` físico de usuário com histórico; a RPC de anonimização é futura, conduzida pelo suporte. | Decisão do orquestrador (achado do Ferrolho: `23503` ao apagar conta com consentimento). |
+| D-24 | **Cupons habilitados no checkout (I3).** A sessão da Stripe traz o que foi cobrado; o pedido grava `amount_subtotal` (soma dos preços cheios), `amount_discount`, `amount_total` (= subtotal − desconto, **sem imposto**: `automatic_tax` desligado) e `promotion_code` (o texto digitado, ou NULL). `order_items.unit_amount` guarda o **preço cheio** do item; o desconto fica só no pedido. Tudo é gravado uma vez e não muda (`KT010`). As regras comerciais do cupom (percentual, validade, usos) vivem na Stripe, não no banco. | Decisão do responsável (nota Plano do site P2, "Cupons"); desenho do Lastro, valores conferidos pelo Ferrolho. |
+| D-25 | **Cupom de 100%:** `payment_status = 'no_payment_required'` com total 0 e desconto > 0 libera o acesso como pago (pedido `paid` com total 0, sem `payment_intent`). Sem desconto, ou com total > 0, continua `KT002`. | Padrão do Lastro para o cupom aprovado; confirmação do responsável em P-22. |
+| D-26 | **Arquivos do B2: o banco guarda só metadados e a chave sai só das RPCs de download.** `resolve_download`, `resolve_delivery` e `resolve_free_download` devolvem `bucket` e `object_key` a quem tem `EXECUTE` (só o `service_role`, ou seja, a API), que assina a URL no servidor; nenhuma outra RPC nem tabela expõe a chave e nenhuma coluna guarda URL. Publicar um arquivo novo segue **SQL do operador**, no ciclo da seção 7 (sem RPC de publicação na API: P-4). O seed traz os 5 PDFs de TESTE do bucket de teste com tamanho e sha256 reais (conteúdo fictício). | Decisão do Lastro (P-4) com os dados do Ferrolho; D-12. |
+| D-27 | **Agenda dos follow-ups e do despacho: `pg_cron` a cada 5 minutos chama `private.dispatch_tick()`**, que enfileira os follow-ups (`private.enqueue_followups`) e, se o **Vault** tem `email_dispatch_url` e `email_dispatch_key`, chama a função de borda `email-dispatch` por `pg_net` (`POST`, cabeçalhos `Content-Type` e `apikey`, corpo `{"limit": 20}`). **Nenhum valor secreto vai para migração ou para o git:** local = passo `supabase/local/aplicar-dispatch-vault.mjs` (lê `supabase status -o env` e grava a URL do Kong e a secret key `default`); nuvem = chave nomeada `dispatch` criada no painel e gravada no Vault à mão (I6). Sem os segredos o job só enfileira e avisa no log. | Proposta do Ferrolho, aceita pelo Lastro; D-12 e D3. |
 
 ## 1. Convenções e fronteiras
 
@@ -282,7 +289,7 @@ create index cart_items_product_id_idx on public.cart_items (product_id);
 
 ### 2.6 Pedidos: `orders`, `order_items`, `order_events`
 
-Um pedido é do usuário (`user_id NOT NULL`) e tem 1 ou mais itens. O preço cobrado de cada item é gravado na liberação (vem das `line_items` da sessão da Stripe).
+Um pedido é do usuário (`user_id NOT NULL`) e tem 1 ou mais itens. O que foi cobrado vem da sessão da Stripe e é gravado na liberação (`fulfill_order`) ou, no pagamento assíncrono, em `pending_payment`: o pedido guarda `amount_subtotal`, `amount_discount`, `amount_total` e `promotion_code` (D-24); cada item guarda o **preço cheio** (`unit_amount`, antes do cupom). Sem imposto: `amount_total = amount_subtotal − amount_discount`.
 
 ```sql
 -- @ddl
@@ -296,6 +303,9 @@ create table public.orders (
   terms_accepted_at          timestamptz not null,                         -- aceite na página do site, antes do formulário; gravado na criação
   amount_total               bigint,
   currency                   text,
+  amount_subtotal            bigint,                                       -- soma dos preços cheios dos itens, antes do cupom (da sessão); gravado uma vez
+  amount_discount            bigint,                                       -- desconto do cupom (da sessão); 0 sem cupom
+  promotion_code             text,                                         -- texto do código promocional digitado; NULL sem código
   stripe_checkout_session_id text unique,
   stripe_payment_intent_id   text unique,
   livemode                   boolean not null,
@@ -316,7 +326,15 @@ create table public.orders (
   constraint orders_session_check  check (stripe_checkout_session_id is null or stripe_checkout_session_id ~ '^cs_(test|live)_[A-Za-z0-9_]+$'),
   constraint orders_intent_check   check (stripe_payment_intent_id is null or stripe_payment_intent_id ~ '^pi_[A-Za-z0-9_]+$'),
   constraint orders_amount_required check (
-    status not in ('pending_payment', 'paid', 'disputed', 'dispute_lost', 'refunded') or amount_total is not null),
+    status not in ('pending_payment', 'paid', 'disputed', 'dispute_lost', 'refunded')
+    or (amount_total is not null and amount_subtotal is not null)),
+  constraint orders_discount_pair  check ((amount_subtotal is null) = (amount_discount is null)),
+  constraint orders_discount_range check (
+    amount_subtotal is null
+    or (amount_total is not null and amount_subtotal >= 0 and amount_discount >= 0
+        and amount_discount <= amount_subtotal and amount_total = amount_subtotal - amount_discount)),
+  constraint orders_promotion_code_check check (
+    promotion_code is null or (promotion_code = btrim(promotion_code) and char_length(promotion_code) between 1 and 200)),
   constraint orders_paid_at_check     check ((status in ('paid', 'disputed', 'dispute_lost', 'refunded')) = (paid_at is not null)),
   constraint orders_refunded_at_check check ((status = 'refunded') = (refunded_at is not null))
 );
@@ -330,7 +348,7 @@ create table public.order_items (
   product_id      bigint   not null references public.products (id),
   position        smallint not null,
   stripe_price_id text     not null,         -- Price enviado ao Checkout (fotografia na criação do pedido)
-  unit_amount     bigint,                    -- cobrado, das line_items; preenchido na liberação
+  unit_amount     bigint,                    -- PREÇO CHEIO do item (antes do cupom), das line_items; preenchido na liberação
   currency        text,
   primary key (order_id, product_id),
   constraint order_items_position_check check (position >= 1),
@@ -626,8 +644,9 @@ $$;
 
 -- I-5 (checada no commit), por item. paid: todo item tem direito, ativo ou revogado manualmente (atendimento).
 -- disputed, dispute_lost e refunded: todo item tem direito e todos revogados. Demais estados: nenhum direito.
+-- SECURITY DEFINER (D-12): os gatilhos diferidos disparam no COMMIT, fora da RPC, com o papel da sessão (service_role, sem SELECT em tabela).
 create function private.assert_order_entitlement_consistency() returns trigger
-language plpgsql set search_path = '' as $$
+language plpgsql security definer set search_path = '' as $$
 declare
   v_order_id uuid;
   v_status   text;
@@ -734,6 +753,14 @@ begin
   if old.terms_accepted_at is not null and new.terms_accepted_at is distinct from old.terms_accepted_at then
     raise exception 'orders: terms_accepted_at não muda depois de gravado' using errcode = 'KT010';
   end if;
+  -- D-24: o que foi cobrado (e o cupom) é gravado uma vez
+  if (old.amount_total is not null and new.amount_total is distinct from old.amount_total)
+     or (old.amount_subtotal is not null and new.amount_subtotal is distinct from old.amount_subtotal)
+     or (old.amount_discount is not null and new.amount_discount is distinct from old.amount_discount)
+     or (old.currency is not null and new.currency is distinct from old.currency)
+     or (old.promotion_code is not null and new.promotion_code is distinct from old.promotion_code) then
+    raise exception 'orders: valores e código promocional não mudam depois de gravados' using errcode = 'KT010';
+  end if;
   if new.status is distinct from old.status and not private.order_transition_allowed(old.status, new.status) then
     raise exception 'orders: transição % -> % não permitida', old.status, new.status using errcode = 'KT006';
   end if;
@@ -812,7 +839,8 @@ Outras funções e triggers internos (descritos aqui, escritos no I2b a partir d
 | --- | --- | --- |
 | `private.guard_file_changes()` | `files` (BEFORE UPDATE/DELETE) | `status` só avança (`draft→published→retired`, `KT006`); conteúdo (`game_id`, `product_id`, `kind`, `access`, `version`, `filename`, `size_bytes`, `sha256`, `published_at`) imutável depois de `draft` (`KT010`); só rascunho se apaga. Preenche `published_at`/`retired_at` se vierem nulos. |
 | `private.guard_file_object_changes()` | `file_objects` (BEFORE UPDATE/DELETE) | `bucket` e `object_key` imutáveis quando o arquivo não é `draft`. |
-| `private.access_effect(text)` | usada por `set_order_status` | Efeito do estado do pedido nos direitos de **todos** os itens: `disputed→revoked(dispute)`, `dispute_lost→permanece revoked(dispute)`, `refunded→revoked(refund)`; `disputed→paid` reativa só os revogados por `dispute` (os `manual` ficam). |
+| `private.access_effect(text)` | usada por `set_order_status` | Motivo da revogação que o estado impõe aos direitos de **todos** os itens: `disputed` e `dispute_lost` → `dispute`; `refunded` → `refund`; demais → NULL. `disputed→paid` reativa só os revogados por `dispute` (os `manual` ficam); `refunded` troca `dispute` por `refund` (o `manual` fica). |
+| `private.cancel_order_emails(uuid, text)` | usada por `set_order_status` | Passa para `canceled` (com o motivo dado) os e-mails ainda `queued` de um pedido: contestação aberta e reembolso (`entitlement_revoked`). |
 | `private.enqueue_followups(timestamptz)` | agenda do `pg_cron` (I5) | Seção 6.7. |
 
 #### Triggers em `auth.users` (D-18)
@@ -941,8 +969,8 @@ expired, failed, dispute_lost, refunded: terminais
 | De → Para | Quem aplica | Gatilho (Stripe / fluxo) | Efeito nos direitos | Observação |
 | --- | --- | --- | --- | --- |
 | (novo) → `open` | `create_order_from_cart` | Finalizar compra | nenhum | Funil `checkout_started`. Reaproveita pedido `open` da mesma versão |
-| `open` → `pending_payment` | `set_order_status` | `checkout.session.completed` com `payment_status='unpaid'` (método assíncrono) | nenhum | Exige valor e moeda (o aceite dos termos já está no pedido) |
-| `open` → `paid` | `fulfill_order` | `checkout.session.completed` com `payment_status='paid'`; ou retorno | **cria** um direito `active` por item + fotografia; limpa do carrinho os produtos pagos e sobe a `version`; enfileira a entrega | Funil `order_paid`. Único caminho para `paid` a partir de `open` |
+| `open` → `pending_payment` | `set_order_status` | `checkout.session.completed` com `payment_status='unpaid'` (método assíncrono) | nenhum | Exige subtotal, desconto, total e moeda (o aceite dos termos já está no pedido); grava o código promocional |
+| `open` → `paid` | `fulfill_order` | `checkout.session.completed` com `payment_status='paid'` (ou `no_payment_required` com cupom de 100%, D-25); ou retorno | **cria** um direito `active` por item + fotografia; limpa do carrinho os produtos pagos e sobe a `version`; enfileira a entrega | Funil `order_paid`. Único caminho para `paid` a partir de `open` |
 | `pending_payment` → `paid` | `fulfill_order` | `checkout.session.async_payment_succeeded` | idem | |
 | `open`/`pending_payment` → `failed` | `set_order_status` | `checkout.session.async_payment_failed` (pode chegar antes do `completed`) | nenhum | Terminal; nova tentativa = novo pedido |
 | `open` → `expired` | `set_order_status` | `checkout.session.expired` | nenhum | Terminal. Funil `checkout_expired` |
@@ -1044,7 +1072,7 @@ Todas: `security definer`, `search_path=''`, `EXECUTE` só `service_role`, chama
 | Código | Nome | Quando | HTTP no PostgREST |
 | --- | --- | --- | --- |
 | `KT001` | `invalid_argument` | Argumento nulo, fora do formato ou valor desconhecido | 400 |
-| `KT002` | `payment_not_confirmed` | `fulfill_order` com `p_payment_status <> 'paid'`, inclusive `no_payment_required` (cupom de 100%) | 400 |
+| `KT002` | `payment_not_confirmed` | `fulfill_order` com `p_payment_status` diferente de `paid`; `no_payment_required` só passa com total 0 e desconto > 0 (cupom de 100%, D-25) | 400 |
 | `KT003` | `product_unavailable` | `fulfill_order` com item cujo produto não tem jogos (composição vazia) | 400 |
 | `KT004` | `session_conflict` | Sessão, intent ou cliente da Stripe diferente do já associado | 400 |
 | `KT005` | `livemode_mismatch` | `p_livemode` ≠ `orders.livemode` | 400 |
@@ -1054,9 +1082,9 @@ Todas: `security definer`, `search_path=''`, `EXECUTE` só `service_role`, chama
 | `KT009` | `email_not_confirmed` | Usuário inexistente, removido ou sem `email_confirmed_at` (vira 403 `EMAIL_NOT_CONFIRMED`) | 400 |
 | `KT010` | `immutable_column` | Alterar coluna imutável (pedido, item, arquivo) | 400 |
 | `KT011` | `access_inconsistent` | I-5 violada no commit (pagamento e direitos divergem) | 400 |
-| `KT012` | `items_mismatch` | `fulfill_order`: as `line_items` da sessão não batem com os itens do pedido | 400 |
+| `KT012` | `items_mismatch` | `fulfill_order`: as `line_items` da sessão não batem com os itens do pedido, ou os valores (soma dos itens, subtotal, desconto, total) não fecham ou diferem do já gravado; `set_order_status('pending_payment')` com valores que não fecham | 400 |
 
-Violação de unicidade (`23505`) de sessão/intent de outro pedido também chega como erro; tratar como `KT004`. **Resposta do webhook:** `200` com log nos casos que reenvio não resolve (`KT001`, `KT002`, `KT004`, `KT005`, `KT007`, `KT012`); `500` nos defeitos nossos ou de dados, que o reparo cura e a Stripe reenvia por até 3 dias (`KT003`, `KT010`, `KT011`) e nas falhas de rede ou de banco. `KT003` (composição vazia de um produto já pago) fica em `500` de propósito: `200` deixaria um cliente pago sem acesso até a reconciliação manual, enquanto o reenvio libera o pedido assim que a composição for corrigida. O P1 não prevê cupom; se vier a existir, `no_payment_required` precisa de decisão própria.
+Violação de unicidade (`23505`) de sessão/intent de outro pedido também chega como erro; tratar como `KT004`. **Resposta do webhook:** `200` com log nos casos que reenvio não resolve (`KT001`, `KT002`, `KT004`, `KT005`, `KT007`, `KT012`); `500` nos defeitos nossos ou de dados, que o reparo cura e a Stripe reenvia por até 3 dias (`KT003`, `KT010`, `KT011`) e nas falhas de rede ou de banco. `KT003` (composição vazia de um produto já pago) fica em `500` de propósito: `200` deixaria um cliente pago sem acesso até a reconciliação manual, enquanto o reenvio libera o pedido assim que a composição for corrigida. Cupom: `no_payment_required` com total 0 e desconto > 0 é cupom de 100% e libera o acesso (D-25); qualquer outro `no_payment_required` é `KT002` (nada foi cobrado nem desconto aplicado).
 
 ### 6.2 Catálogo e carrinho
 
@@ -1108,8 +1136,10 @@ create function public.create_order_from_cart(
 1. `require_confirmed_email` → e-mail da conta. `p_terms_accepted` diferente de `true`: `KT007`, sem gravar nada.
 2. Trava o carrinho `FOR UPDATE`. Sem carrinho ou vazio: `cart_empty`. `version` diferente de `p_cart_version`: `cart_changed` (com a versão atual em `detail`).
 3. Algum item não vendável: `product_unavailable`. Algum item com todos os jogos já possuídos: `already_owned`. Ambos com os códigos em `detail`.
-4. **Reaproveita** o pedido `open` do usuário com a mesma `cart_version`, o mesmo `livemode`, o **mesmo `terms_version`** e `checkout_expires_at` nulo ou futuro (`reused=true`; o Checkout recria a mesma sessão pela chave de idempotência `order_id`). Outra versão dos termos cria pedido novo, com novo aceite.
-5. Senão grava o pedido `open` (`email` da conta, `cart_version`, `terms_version`, **`terms_accepted_at = now()`**, `livemode`), os `order_items` com `position` pela ordem de `added_at` e o `stripe_price_id` atual de cada produto, e o funil `checkout_started`.
+4. **Reaproveita** o pedido `open` do usuário com a mesma `cart_version`, o mesmo `livemode`, o **mesmo `terms_version`**, os mesmos itens com os **mesmos `stripe_price_id` de hoje** e `checkout_expires_at` nulo ou futuro (`reused=true`; o Checkout recria a mesma sessão pela chave de idempotência `order_id`). Outra versão dos termos, outro ambiente, um Price que mudou ou uma sessão vencida criam pedido novo, com novo aceite; o pedido antigo segue `open` até o `expired` da Stripe. O reaproveitamento lê o pedido sem travá-lo (a ordem de travas é pedido, depois carrinho).
+5. Senão grava o pedido `open` (`email` da conta, `cart_version`, `terms_version`, **`terms_accepted_at = now()`**, `livemode`), os `order_items` com `position` pela ordem de `added_at` (empate: id do produto) e o `stripe_price_id` atual de cada produto, a trilha `order_events` (`null → open`, origem `checkout`) e o funil `checkout_started`.
+
+`detail`: `{"cart_version": N}` em `cart_changed`; `{"product_codes": ["…"]}` em `product_unavailable` e `already_owned` (`product_unavailable` tem precedência); nulo nos demais casos. Fora do `ok`, só `outcome` e `detail` vêm preenchidos.
 
 Concorrência: dois checkouts simultâneos do mesmo usuário serializam na trava do carrinho; o segundo reaproveita o pedido do primeiro.
 
@@ -1118,7 +1148,7 @@ create function public.attach_checkout_session(p_order_id uuid, p_checkout_sessi
                                                p_expires_at timestamptz default null)
   returns text;   -- 'applied' | 'noop' | 'ignored' | 'not_found'
 ```
-- Só com pedido `open`. Mesma sessão de novo: `noop`. Sessão diferente da já gravada: `KT004`. Sessão de outro pedido: `23505`.
+- Avaliação: `KT001` (pedido nulo ou sessão fora de `cs_(test|live)_…`) → `not_found` → `KT005` (prefixo `cs_live_` diferente de `orders.livemode`) → sessão já gravada: igual = `noop`, diferente = `KT004` → pedido que não está `open` = `ignored` → `applied` (grava a sessão e `checkout_expires_at`). Sessão de outro pedido: `23505`. Trava o pedido `FOR UPDATE`.
 
 ```sql
 create function public.set_stripe_customer(p_user_id uuid, p_stripe_customer_id text) returns text;
@@ -1131,15 +1161,19 @@ create function public.set_stripe_customer(p_user_id uuid, p_stripe_customer_id 
 create function public.fulfill_order(
   p_order_id            uuid,           -- orders.id (vem de client_reference_id)
   p_checkout_session_id text,           -- cs_...
-  p_payment_status      text,           -- valor lido da Stripe; precisa ser 'paid'
-  p_amount_total        bigint,         -- centavos, da sessão
+  p_payment_status      text,           -- 'paid'; 'no_payment_required' só com total 0 e desconto > 0 (cupom de 100%, D-25)
+  p_amount_subtotal     bigint,         -- centavos, da sessão: soma dos preços cheios, antes do desconto
+  p_amount_discount     bigint,         -- centavos: total_details.amount_discount da sessão (0 sem cupom)
+  p_amount_total        bigint,         -- centavos, da sessão (= subtotal − desconto, sem imposto)
   p_currency            text,
-  p_payment_intent_id   text,           -- pi_...; aceita NULL (nunca apaga nem sobrescreve o já gravado)
+  p_promotion_code      text,           -- texto do código promocional (promotion_code.code); NULL sem código
+  p_payment_intent_id   text,           -- pi_...; aceita NULL (cupom de 100%); nunca apaga nem sobrescreve o já gravado
   p_customer_id         text,           -- cus_...; confere/grava no perfil
   p_livemode            boolean,
-  p_items               jsonb,          -- line_items: [ { "stripe_price_id", "quantity", "unit_amount", "currency" } ]
+  p_items               jsonb,          -- line_items: [ { "stripe_price_id", "quantity", "unit_amount" (PREÇO CHEIO), "currency" } ]
   p_source              text default 'webhook',   -- 'webhook' | 'return_page' | 'reconcile'
-  p_stripe_event_id     text default null         -- evt_...; null fora do webhook
+  p_stripe_event_id     text default null,        -- evt_...; null fora do webhook
+  p_event_type          text default null         -- event.type, para o livro-razão (null grava 'unspecified')
 ) returns table (
   outcome           text,      -- 'applied' | 'noop' | 'duplicate_event' | 'ignored' | 'not_found'
   order_id          uuid,
@@ -1152,18 +1186,18 @@ create function public.fulfill_order(
 
 **Algoritmo (uma transação):**
 
-1. Validar argumentos (`KT001`; só `p_payment_intent_id` e `p_customer_id` podem ser NULL); `p_payment_status = 'paid'` senão `KT002`. Defesa: `orders.terms_accepted_at` nulo seria `KT007` (hoje impossível: a coluna é `NOT NULL`).
-2. `select ... from orders where id = p_order_id for update`. Não existe: `not_found` (grava o evento, se houver, com `order_id` nulo).
-3. `p_livemode` ≠ `orders.livemode`: `KT005`.
+1. Validar argumentos (`KT001`; só `p_promotion_code`, `p_payment_intent_id`, `p_customer_id`, `p_stripe_event_id` e `p_event_type` podem ser NULL; `p_items` é uma lista não vazia; valores ≥ 0; moeda em minúsculas). Pagamento: `p_payment_status = 'paid'`, ou `'no_payment_required'` com `p_amount_total = 0` e `p_amount_discount > 0` (cupom de 100%, D-25); senão `KT002`.
+2. `select ... from orders where id = p_order_id for update`. Não existe: `not_found` (grava o evento, se houver, com `order_id` nulo; evento já gravado: `duplicate_event`).
+3. `p_livemode` ≠ `orders.livemode`, ou prefixo da sessão (`cs_live_`) incoerente com o pedido: `KT005`.
 4. `p_stripe_event_id` já em `stripe_events`: `duplicate_event`, **nada muda**.
-5. Sessão e intent: se o pedido não tem, grava; se tem e difere, `KT004` (intent `NULL` é aceito). Cliente: perfil sem `stripe_customer_id` recebe o `p_customer_id`; perfil com outro valor: `KT004`.
-6. Estado: `paid` → `noop`; `open`/`pending_payment` → segue; demais → `ignored`.
-7. **Itens:** `p_items` precisa ter exatamente os `stripe_price_id` dos `order_items` (mesmo conjunto, `quantity = 1`, mesma moeda de `p_currency`), senão `KT012`. Preenche `unit_amount` e `currency` de cada item.
-8. `orders`: `status='paid'`, `paid_at=now()`, `amount_total`, `currency` e intent. O aceite dos termos já está gravado desde a criação do pedido.
-9. Para cada item: `insert into entitlements ... on conflict (order_id, product_id) do nothing`; se inseriu, copia `product_games` do produto para `entitlement_games` (produto sem jogos: `KT003`).
-10. **Carrinho:** apaga de `cart_items` os produtos do pedido e **sobe a `version`** do carrinho (trava o carrinho depois do pedido). Cancela os `cart_reminder` ainda `queued` do usuário (`skip_reason='already_purchased'`).
-11. **Entrega:** `insert into email_outbox (kind 'delivery', category 'transactional', dedupe_key 'delivery:{order_id}', to_email, payload) on conflict (dedupe_key) do nothing` → `send_delivery := found`. `to_email` = `auth.users.email` normalizado do dono (senão, `orders.email`). `payload` conforme a seção 2.9, lido na mesma transação.
-12. `order_events`; funil `order_paid`; `stripe_events` (outcome). Retorna `applied`.
+5. Sessão e intent: o pedido não pode estar associado a outra sessão nem a outro intent (`KT004`; intent `NULL` é aceito). Cliente: o perfil não pode ter outro `stripe_customer_id` (`KT004`).
+6. Estado: `open`/`pending_payment` → segue; `paid` → `noop`; demais → `ignored`. Em `noop` e `ignored` o evento fica no livro-razão com esse resultado e nada mais muda.
+7. **Itens e valores (`KT012`):** `p_items` precisa ter exatamente os `stripe_price_id` dos `order_items` (cada um uma vez, `quantity = 1`, `unit_amount` inteiro ≥ 0, `currency = p_currency`); a soma dos `unit_amount` tem de ser o `p_amount_subtotal`; `p_amount_discount ≤ p_amount_subtotal`; `p_amount_subtotal − p_amount_discount = p_amount_total`. Se o pedido já tem valores (de `pending_payment`), a sessão não pode trazer outros; um código promocional já gravado não pode ser trocado (se a sessão vier sem código, vale o gravado). Preenche `unit_amount` (preço cheio) e `currency` de cada item.
+8. `orders`: `status='paid'`, `paid_at=now()`, `amount_subtotal`, `amount_discount`, `amount_total`, `currency`, `promotion_code` (sem espaços; vazio vira NULL) e intent. O aceite dos termos já está gravado desde a criação do pedido. O perfil sem cliente da Stripe recebe `p_customer_id`.
+9. Para cada item: `insert into entitlements ... on conflict (order_id, product_id) do nothing`; se inseriu, copia `product_games` do produto para `entitlement_games` (produto sem jogos: `KT003`, e nada do pedido é gravado).
+10. **Carrinho:** trava o carrinho (depois do pedido), apaga de `cart_items` os produtos do pedido e **sobe a `version`**. Cancela os `cart_reminder` ainda `queued` do usuário (`skip_reason='already_purchased'`).
+11. **Entrega:** `insert into email_outbox (kind 'delivery', category 'transactional', dedupe_key 'delivery:{order_id}', to_email, payload) on conflict (dedupe_key) do nothing` → `send_delivery := inseriu`. `to_email` = `auth.users.email` normalizado do dono (senão, `orders.email`). `payload` conforme a seção 2.9, com **um jogo por jogo comprado** (se o mesmo jogo chega por dois itens do pedido, aparece uma vez, com o direito do item de menor `position`).
+12. `order_events` (origem `p_source`, com o evento); funil `order_paid`; `stripe_events` (`applied`, com `p_event_type` e a sessão como `stripe_object_id`). Retorna `applied`.
 
 **Idempotência e concorrência**
 
@@ -1171,30 +1205,34 @@ create function public.fulfill_order(
 | --- | --- |
 | Primeira chamada | `applied`: pedido `paid`, N direitos e N fotografias, 1 entrega `queued`, carrinho sem os itens pagos e com `version` maior, 1 `order_event`, 1 `stripe_event`, funil `order_paid` |
 | Mesmo evento reenviado | `duplicate_event`; contagens idênticas; `send_delivery=false` |
-| Outro evento ou página de retorno para o mesmo pedido | `noop`; `send_delivery=false` |
-| N chamadas simultâneas (webhook + order-status) | A trava `FOR UPDATE` do pedido serializa; a 2ª em diante relê o pedido já `paid` e devolve `noop`/`duplicate_event`. Exatamente uma `applied` e uma com `send_delivery=true` |
-| Falha antes do commit | Nada gravado (inclusive o evento): a Stripe reenvia |
+| Outro evento ou página de retorno para o mesmo pedido | `noop`; `send_delivery=false`; devolve o `outbox_id` da entrega que já existe |
+| N chamadas simultâneas (webhook + order-status) | A trava `FOR UPDATE` do pedido serializa; a 2ª em diante relê o pedido já `paid` e devolve `noop`/`duplicate_event`. Exatamente uma `applied` e uma com `send_delivery=true` (T120, T121) |
+| Falha antes do commit (inclusive `KT003`, `KT004`, `KT012`) | Nada gravado (inclusive o evento): a Stripe reenvia |
 
-Ordem de travas: **pedido, depois carrinho**. `create_order_from_cart` só trava o carrinho (e insere um pedido novo) e `cart_add`/`cart_remove` só o carrinho: não há ciclo.
+Ordem de travas: **pedido, depois carrinho**. `create_order_from_cart` só trava o carrinho (e insere um pedido novo) e `cart_add`/`cart_remove` só o carrinho: não há ciclo (T127).
 
-Exemplo (supabase-js, backend):
+Exemplo (supabase-js, backend), com o código promocional lido da sessão (`total_details.breakdown.discounts[].promotion_code.code`, expandido na leitura):
 
 ```ts
 const { data, error } = await admin.rpc('fulfill_order', {
   p_order_id: session.client_reference_id,
   p_checkout_session_id: session.id,
-  p_payment_status: session.payment_status,     // precisa ser 'paid'; 'no_payment_required' → KT002
+  p_payment_status: session.payment_status,           // 'paid'; 'no_payment_required' só com cupom de 100% (D-25)
+  p_amount_subtotal: session.amount_subtotal,
+  p_amount_discount: session.total_details?.amount_discount ?? 0,
   p_amount_total: session.amount_total,
   p_currency: session.currency,
+  p_promotion_code: promotionCode ?? null,            // texto digitado (ex.: "TESTE10") ou null
   p_payment_intent_id: typeof session.payment_intent === 'string'    // NULL quando não há intent
     ? session.payment_intent
     : (session.payment_intent?.id ?? null),
   p_customer_id: typeof session.customer === 'string' ? session.customer : (session.customer?.id ?? null),
   p_livemode: session.livemode,
   p_items: lineItems.map((li) => ({
-    stripe_price_id: li.price.id, quantity: li.quantity, unit_amount: li.price.unit_amount, currency: li.currency })),
+    stripe_price_id: li.price.id, quantity: li.quantity, unit_amount: li.price.unit_amount, currency: li.currency })),   // PREÇO CHEIO
   p_source: 'webhook',
   p_stripe_event_id: event.id,
+  p_event_type: event.type,
 });
 // data[0] = { outcome: 'applied', order_id, order_status: 'paid', entitlement_count: 2, outbox_id, send_delivery: true }
 if (data[0].send_delivery) await dispatchEmail(data[0].outbox_id);   // depois do commit (claim_email_batch com p_outbox_id)
@@ -1206,26 +1244,30 @@ if (data[0].send_delivery) await dispatchEmail(data[0].outbox_id);   // depois d
 create function public.set_order_status(
   p_order_id           uuid,
   p_new_status         text,     -- 'pending_payment' | 'failed' | 'expired' | 'disputed' | 'dispute_lost' | 'refunded' | 'paid' (só a partir de 'disputed')
-  p_source             text default 'webhook',
+  p_source             text default 'webhook',   -- 'webhook' | 'return_page' | 'reconcile'
   p_stripe_event_id    text default null,
-  p_reason             text default null,   -- livre, sem dado pessoal, até 200 caracteres
+  p_reason             text default null,   -- livre, sem dado pessoal, até 200 caracteres (ex.: o motivo da contestação)
   p_amount_total       bigint default null, -- para 'pending_payment'
-  p_currency           text default null,
-  p_payment_intent_id  text default null    -- para 'pending_payment'
+  p_currency           text default null,   -- para 'pending_payment'
+  p_payment_intent_id  text default null,   -- para 'pending_payment'
+  p_amount_subtotal    bigint default null, -- para 'pending_payment' (D-24)
+  p_amount_discount    bigint default null, -- para 'pending_payment' (D-24)
+  p_promotion_code     text default null,   -- para 'pending_payment' (D-24)
+  p_event_type         text default null    -- event.type, para o livro-razão (null grava 'unspecified')
 ) returns table (
   outcome            text,   -- 'applied' | 'noop' | 'duplicate_event' | 'ignored' | 'deferred' | 'not_found'
   order_id           uuid,
   previous_status    text,
   order_status       text,
-  entitlement_status text    -- 'active' | 'revoked' | null (estado dos direitos do pedido)
+  entitlement_status text    -- 'active' (algum direito ativo) | 'revoked' (todos revogados) | null (sem direitos)
 );
 ```
 
 - O backend resolve o `order_id` antes, pelo `client_reference_id` da sessão. Nos eventos de cobrança (`charge.*`), que trazem o intent, a rota busca na Stripe a sessão do `payment_intent` e usa o `client_reference_id` dela, sem ler o banco.
-- Ordem de avaliação: `not_found` → `duplicate_event` → `noop` (mesmo estado) → `deferred` → `ignored` (aresta inexistente) → `applied`.
-- `p_new_status = 'open'`, ou `'paid'` a partir de `open`/`pending_payment` (use `fulfill_order`): `KT001`. `pending_payment` exige valor e moeda (`KT007`); o aceite dos termos já está no pedido.
-- Efeitos (seção 4.1): `disputed` revoga **todos** os direitos do pedido e cancela os e-mails `queued` do pedido (`entitlement_revoked`); `disputed→paid` reativa os revogados por `dispute`; `dispute_lost` mantém revogado; `refunded` grava `refunded_at`, revoga todos e cancela e-mails `queued`. Funil: `checkout_expired` (em `expired`), `dispute_opened` (em `disputed`), `dispute_closed` (em `disputed→paid` e `disputed→dispute_lost`). Efeito do estado nos direitos: `private.access_effect`.
-- Concorrência: mesma trava `FOR UPDATE` do pedido. Um evento de contestação que ganha a trava antes de `fulfill_order` devolve `deferred`; reenviado depois, vira `applied`.
+- Ordem de avaliação: `KT001` (argumentos) → `not_found` → `duplicate_event` → `noop` (mesmo estado) → `KT001` (`paid` a partir de `open`/`pending_payment`: use `fulfill_order`) → `deferred` → `ignored` (aresta inexistente) → `applied`. `not_found` **não grava** o evento (sem pedido não há `livemode` para o livro-razão): a rota registra no log.
+- `p_new_status = 'open'` ou desconhecido: `KT001`. `pending_payment` exige subtotal, desconto, total e moeda (`KT007`) que fechem (`desconto ≤ subtotal` e `subtotal − desconto = total`, senão `KT012`); grava o código promocional e o intent, se vierem. O aceite dos termos já está no pedido.
+- Efeitos (seção 4.1): `disputed` revoga **todos** os direitos ativos do pedido (`dispute`) e cancela os e-mails `queued` do pedido (`entitlement_revoked`); `disputed→paid` reativa os revogados por `dispute` (os `manual` ficam); `dispute_lost` mantém revogado; `refunded` grava `refunded_at`, revoga todos (`refund`; os que a contestação tinha revogado passam a `refund`, o `manual` fica) e cancela e-mails `queued`. Funil: `checkout_expired` (em `expired`), `dispute_opened` (em `disputed`), `dispute_closed` (em `disputed→paid` e `disputed→dispute_lost`). Motivo do estado nos direitos: `private.access_effect`.
+- Concorrência: mesma trava `FOR UPDATE` do pedido. Um evento de contestação que ganha a trava antes de `fulfill_order` devolve `deferred`; reenviado depois, vira `applied` (T122).
 
 ### 6.6 Consulta: `get_order_status`, `get_library`, `get_account`
 
@@ -1233,7 +1275,7 @@ create function public.set_order_status(
 create function public.get_order_status(p_order_id uuid, p_user_id uuid)
   returns table (outcome text, status text, items jsonb, relation text);
 ```
-- `outcome`: `ok` | `not_found` (os demais campos vêm nulos). `status` é o `orders.status`. `items` = `[ { "code", "name" } ]`. `relation`: `owner` (`orders.user_id = p_user_id`) ou `other` (qualquer outro). Nunca devolve e-mail, valores nem id de usuário. A rota localiza o pedido pelo `client_reference_id` da sessão.
+- `outcome`: `ok` | `not_found` (os demais campos vêm nulos). `status` é o `orders.status`. `items` = `[ { "code", "name" } ]` por `position`, **só para o dono**; para `other` vem NULL (defesa em profundidade: a rota também não mostra). `relation`: `owner` (`orders.user_id = p_user_id`) ou `other` (qualquer outro). Nunca devolve e-mail, valores nem id de usuário. A rota localiza o pedido pelo `client_reference_id` da sessão. `KT009` sem e-mail confirmado; `KT001` com argumento nulo.
 
 ```sql
 create function public.get_library(p_user_id uuid) returns jsonb;
@@ -1258,11 +1300,11 @@ create function public.get_account(p_user_id uuid) returns jsonb;
 { "email": "…",
   "marketing": { "opted_in": true, "updated_at": "…", "text_version": "v1", "prompted_at": "…" },
   "orders": [ { "ref": "A1B2C3D4", "created_at": "…", "paid_at": "…", "status": "paid",
-                "amount_total": 0, "currency": "brl",
+                "amount_subtotal": 0, "amount_discount": 0, "amount_total": 0, "currency": "brl", "promotion_code": null,
                 "items": [ { "code": "P001", "name": "…", "unit_amount": 0, "currency": "brl" } ] } ] }
 ```
 - `email`: `auth.users.email`. `marketing.opted_in` vem de `profiles`; `updated_at` = a última linha do histórico (NULL se nunca houve); `text_version` = a do consentimento vigente (NULL sem opt-in); `prompted_at` = `profiles.marketing_prompted_at` (NULL se o convite nunca foi exibido).
-- `orders`: do usuário, **sem** `open` e `expired`, do mais recente ao mais antigo; `ref` de 8 caracteres maiúsculos; `items` por `position`. Sem ids da Stripe nem URL (o comprovante, se adotado, a rota busca na Stripe).
+- `orders`: do usuário, **sem** `open` e `expired`, do mais recente ao mais antigo; `ref` de 8 caracteres maiúsculos; `items` por `position` (com o **preço cheio** em `unit_amount`; subtotal, desconto, total e código do cupom ficam no pedido; nulos antes de `pending_payment`). Sem ids da Stripe nem URL (o comprovante, se adotado, a rota busca na Stripe).
 
 ### 6.7 Consentimento, supressão e fila de e-mail
 
@@ -1289,7 +1331,11 @@ create function public.record_email_event(p_email text, p_event text, p_provider
                                           p_occurred_at timestamptz default now())
   returns table (outcome text, user_id uuid);   -- 'applied' | 'noop'
 ```
-- `p_event` ∈ `hard_bounce`, `complaint`, `unsubscribe` (vira o motivo `unsubscribe_all`). Insere em `email_suppressions` (origem `brevo_webhook`); **idempotente** por `(email, motivo)` (a mesma mensagem reenviada é `noop`). `complaint` e `unsubscribe` também revogam o consentimento do usuário com esse e-mail (origem `brevo_webhook`) e cancelam o marketing na fila. `hard_bounce` suprime sem mexer no consentimento.
+- `p_event` ∈ `hard_bounce`, `complaint`, `unsubscribe` (este grava o motivo `unsubscribe_all`); evento desconhecido (inclusive `soft_bounce` e `delivered`), nulo ou e-mail fora do formato: `KT001`. O e-mail é normalizado (maiúsculas e espaços não importam).
+- Insere em `email_suppressions` (origem `brevo_webhook`, mensagem do provedor cortada em 200 caracteres); **idempotente** por `(email, motivo)`. **O horário que vale é o do evento** (`p_occurred_at`; no futuro vira agora) e vai para `occurred_at` e `created_at`, de modo que um descadastro **anterior** ao opt-in não bloqueia o opt-in novo. A supressão vale mesmo sem conta (`user_id` nulo no retorno); conta removida não casa.
+- `complaint` e `unsubscribe`, com conta cujo consentimento está vigente e o evento é **posterior** ao opt-in: revogam o consentimento (origem `brevo_webhook`) e cancelam o marketing na fila (`no_opt_in`); a transacional (entrega) não é tocada. Por isso, depois de um novo opt-in, um **novo** descadastro ainda revoga (a supressão antiga é a mesma linha), e o reenvio de um evento velho não revoga o opt-in novo. `hard_bounce` só suprime: o marketing que estiver na fila é barrado no envio (`suppressed`).
+- `outcome`: `applied` (a supressão foi inserida ou o consentimento foi revogado) | `noop`; `user_id` volta nos dois casos.
+
 
 ```sql
 create function public.claim_email_batch(p_limit integer default 20, p_outbox_id uuid default null,
@@ -1297,28 +1343,34 @@ create function public.claim_email_batch(p_limit integer default 20, p_outbox_id
   returns table (id uuid, kind text, category text, user_id uuid, order_id uuid,
                  to_email text, payload jsonb, attempts integer);
 ```
-- Pega até `p_limit` e-mails vencidos (`scheduled_at <= p_now`; `queued`, ou `sending` parado há mais de 10 minutos) com `FOR UPDATE SKIP LOCKED`, ou só o `p_outbox_id` (envio imediato depois do commit), e os marca `sending` (`locked_at`). **Marketing é rechecado aqui:**
-  - sem `marketing_allowed` → `skipped` (`no_opt_in` ou `suppressed`);
-  - `cart_reminder` com a `version` do carrinho diferente da do `payload`, ou carrinho vazio → `skipped` (`cart_changed`, `cart_empty`);
-  - `post_purchase` com pedido fora de `paid` → `skipped` (`order_not_paid`);
-  - limite de 1 e-mail de marketing por pessoa por dia (D3): vai para o dia seguinte, sem pular.
-- Transacional (`delivery`): se o pedido não está `paid` ou algum direito ficou revogado → `canceled` (`order_not_paid`/`entitlement_revoked`); senão segue.
+- `p_limit` de 1 a 200 e `p_now` não nulo (`KT001`). Examina até `p_limit` e-mails vencidos (`scheduled_at <= p_now`; `queued`, ou `sending` parado há mais de 10 minutos), do mais antigo ao mais novo, com `FOR UPDATE SKIP LOCKED`, ou só o `p_outbox_id` (envio imediato depois do `COMMIT`). **Devolve só os que ficaram `sending`** (com `locked_at = p_now`); os cancelados, pulados e adiados saem da fila sozinhos e não voltam na resposta. Dois despachantes ao mesmo tempo nunca recebem a mesma linha (T125).
+- `sending` parado há mais de 10 minutos (o despachante caiu) volta e **conta uma tentativa**; na 5ª, vira `failed` (`last_error` "despachante não respondeu (timeout)") em vez de travar a fila.
+- **Marketing é rechecado aqui** (opt-in vigente, e-mail confirmado, supressão):
+  - sem `marketing_allowed` → `skipped`: `no_opt_in` (sem opt-in), `email_not_confirmed` (e-mail não confirmado ou conta removida) ou `suppressed` (bounce, queixa, descadastro geral depois do opt-in);
+  - `cart_reminder`: carrinho vazio ou inexistente → `skipped` (`cart_empty`); `version` diferente da do `payload` (ou `payload` sem `cart_version`) → `skipped` (`cart_changed`);
+  - `post_purchase` com o pedido fora de `paid` → `skipped` (`order_not_paid`);
+  - limite de **1 e-mail de marketing por pessoa a cada 24 h** (D3, janela móvel): se o último `sent` do usuário tem menos de 24 h, ou se outro marketing dele está `sending`, o e-mail **não é pulado**: volta a `queued` com `scheduled_at` = 24 h depois desse envio. A entrega transacional não conta nem sofre o limite.
+- Transacional (`delivery`): pedido `disputed`, `dispute_lost` ou `refunded`, ou algum direito do pedido fora de `active` → `canceled` (`entitlement_revoked`); pedido em outro estado que não `paid` → `canceled` (`order_not_paid`); senão segue.
 
 ```sql
 create function public.mark_email_result(p_id uuid, p_status text,
                                           p_provider_message_id text default null, p_error text default null)
   returns table (outcome text, status text, next_attempt_at timestamptz);
 ```
-- `p_status` ∈ `sent`, `failed` (erro transitório) e `rejected` (recusa definitiva do provedor). Só vale para linhas `sending`. `sent` grava `sent_at` e `provider_message_id` e, na entrega, o funil `delivery_sent`. `failed` soma uma tentativa; abaixo do máximo (5) volta a `queued` com `scheduled_at` adiado (5 min × tentativas²); no máximo, `failed` final. `rejected` vai direto a `failed`. O banco decide a nova tentativa; a rota só informa o resultado. Chamar de novo para linha que já saiu de `sending`: `outcome='noop'`.
+- `p_status` ∈ `sent`, `failed` (erro transitório) e `rejected` (recusa definitiva do provedor); outro valor ou `p_id` nulo: `KT001`. `outcome`: `applied` | `noop` | `not_found`. Só vale para linhas `sending`; para linha que já saiu de `sending` (ou nunca entrou) o resultado é `noop`, com o estado atual, e nada muda.
+- `sent`: grava `sent_at`, a mensagem do provedor (até 200 caracteres) e, na entrega, o funil `delivery_sent` (uma vez por pedido). `failed`: soma uma tentativa; abaixo de 5 volta a `queued` com `scheduled_at` adiado em **5 min × tentativas²** (5, 20, 45 e 80 min) e devolve essa data em `next_attempt_at`; a 5ª falha é `failed` final. `rejected` vai direto a `failed` (uma tentativa a mais). `last_error` é cortado em 500 caracteres. O banco decide a nova tentativa; a rota só informa o resultado.
 
-**`private.enqueue_followups(p_now timestamptz default now()) returns integer`** (agenda do `pg_cron`, I5; devolve quantos enfileirou). Parâmetros são a proposta D3 e ficam em constantes da função:
+
+**`private.enqueue_followups(p_now timestamptz default now()) returns integer`** (chamada só pela agenda; **nenhum papel de API executa**; devolve quantos e-mails enfileirou). As constantes são a **proposta D3** (P-18) e ficam à vista na função:
 
 | Fluxo | Regra | `dedupe_key` |
 | --- | --- | --- |
-| `cart_reminder` | Carrinho com itens cuja última mudança (`carts.updated_at`) foi há 3 h ou mais; usuário com `marketing_allowed`; nenhum lembrete para essa `version` | `cart_reminder:{user_id}:{cart_version}` |
-| `post_purchase` | Pedido `paid` há 3 dias ou mais, com direito ativo; usuário com `marketing_allowed` | `post_purchase:{order_id}` |
+| `cart_reminder` | Carrinho cuja última mudança (`carts.updated_at`) foi há **3 h ou mais** (inclusivo), com ao menos um item **vendável e ainda não possuído por inteiro**; usuário com `marketing_allowed`; sem pedido em `pending_payment`; um por `version` | `cart_reminder:{user_id}:{cart_version}` |
+| `post_purchase` | Pedido `paid` entre **3 dias (inclusivo) e 14 dias (exclusivo)** atrás, com direito ativo; usuário com `marketing_allowed`; um por pedido. A janela superior evita disparar pós-compra de pedido velho quando a agenda ligar | `post_purchase:{order_id}` |
 
-**Nunca enfileira** sem opt-in, com supressão, para e-mail não confirmado, nem lembrete cujo carrinho foi pago depois (a `version` sobe na compra). Conferir de novo no envio é obrigatório (`claim_email_batch`). O `payload` do lembrete: `{ "cart_version": 3, "items": [ { "code", "name" } ] }`; do pós-compra: `{ "order_ref", "games": [ { "code", "name" } ] }`.
+- `scheduled_at = least(p_now, now())`: em produção é `p_now`; permite ao teste adiantar o relógio do enfileiramento (`p_now = now() + 4 h`) e ainda assim ter a linha vencida para o `claim_email_batch` com `now()`.
+- **Nunca enfileira** sem opt-in, com supressão, para e-mail não confirmado, carrinho vazio, item fora do ar ou já possuído, nem lembrete cujo carrinho foi pago depois (a `version` sobe e o carrinho esvazia na compra). Conferir de novo no envio é obrigatório (`claim_email_batch`). O `payload` do lembrete: `{ "cart_version": 3, "items": [ { "code", "name" } ] }` (só os itens vendáveis e não possuídos); do pós-compra: `{ "order_ref", "games": [ { "code", "name" } ] }` (um por jogo, na ordem dos itens). A linha traz `user_id` e o e-mail da conta; o despachante gera o token de descadastro com o `user_id` que o `claim_email_batch` devolve.
+
 
 **O que cancela ou pula**
 
@@ -1330,27 +1382,43 @@ create function public.mark_email_result(p_id uuid, p_status text,
 | Bounce permanente | marketing deixa de ser elegível (`suppressed`) no envio |
 | Carrinho mudou antes do envio | `skipped` (`cart_changed`) |
 
+### 6.7.1 Agenda: `pg_cron`, `pg_net` e Vault
+
+```sql
+create function private.dispatch_tick() returns void;   -- só o pg_cron (postgres) executa
+-- select cron.schedule('email-dispatch-tick', '*/5 * * * *', 'select private.dispatch_tick()');
+```
+1. **Enfileira:** `private.enqueue_followups()`. Um erro vira `WARNING` no log do banco e **não** impede o passo 2 (a fila existente nunca fica refém).
+2. **Chama o despacho** se o Vault tem **os dois** segredos: `net.http_post(url := email_dispatch_url, headers := {'Content-Type': 'application/json', 'apikey': email_dispatch_key}, body := {'limit': 20})`. Falta qualquer um: não chama e avisa (`WARNING`, sem valor de segredo). Falha na chamada também vira `WARNING`. O `pg_net` é assíncrono: a resposta do despacho não volta para o job.
+3. O despacho (Ferrolho) aceita o `apikey` igual à chave local `default` ou, na nuvem, à chave `dispatch`; ele pega a fila com `claim_email_batch`, envia pela Brevo e informa com `mark_email_result` (inclui os reenvios das falhas).
+
+- **Segredos no Vault, nunca na migração:** `email_dispatch_url` e `email_dispatch_key`. Local: `node supabase/local/aplicar-dispatch-vault.mjs` depois de cada `supabase db reset` (a URL é a do Kong dentro da rede do Docker, `http://supabase_kong_<project_id>:8000/functions/v1/email-dispatch`). Nuvem (I6): gravados à mão no Vault, com a chave `dispatch`.
+- **Em desenvolvimento** o job roda a cada 5 min e pode enfileirar para dados de QA com opt-in (e, com o Vault preenchido, mandar o despacho enviar); se atrapalhar, `select cron.unschedule('email-dispatch-tick')` (o job volta no próximo `db reset`). Os testes do banco se isolam disso: o `09` e o `12` tomam a fila só dentro da transação e o `11` não depende do estado da fila.
+- `pg_cron` (em `pg_catalog`), `pg_net` (em `extensions`) e `supabase_vault` (em `vault`) são criados pela migração do I5; a extensão `pg_cron` só pode ser criada no banco indicado por `cron.database_name`.
+
 ### 6.8 Downloads
+
+A chave do B2 (`bucket` e `object_key`) **sai só destas RPCs**, para a API (D-26). O cliente nunca a recebe: a API assina uma URL de curta duração no servidor e responde com ela.
 
 ```sql
 create function public.resolve_download(p_user_id uuid, p_file_id uuid)
   returns table (outcome text, bucket text, object_key text, filename text,
                  content_type text, size_bytes bigint);
 ```
-- `outcome`: `ok` | `not_found` | `not_entitled` | `unavailable`. Campos de localização só vêm preenchidos com `ok`. HTTP sugerido: 404 / 404 / 403 / 503.
+- `KT009` sem e-mail confirmado; `KT001` com argumento nulo. `outcome`: `ok` | `not_found` | `not_entitled` | `unavailable`. Os campos de localização só vêm preenchidos com `ok`. HTTP sugerido: 404 / 404 / 403 / 503.
 - Avaliação, nesta ordem:
-  1. Arquivo inexistente ou `access='free'`: `not_found`.
-  2. Sem direito: `not_entitled` se o arquivo está `published`; `not_found` se não está.
+  1. Arquivo inexistente ou `access='free'` (o gratuito tem a sua rota): `not_found`.
+  2. Sem direito: `not_entitled` se o arquivo está `published`; `not_found` se não está (rascunho e aposentado não vazam).
   3. Com direito: `published` → `ok`. `retired` **com sucessor publicado** (mesmo jogo ou produto, mesmo tipo e acesso) → `not_found`: o site recarrega a biblioteca e recebe o id novo. `draft`, ou `retired` sem sucessor → `unavailable`.
-- Direito = direito `active` do `p_user_id` cuja fotografia contém o `game_id` do arquivo (ou o `product_id` do arquivo igual ao do direito). Sem expiração.
-- Com `ok`, grava `download_events (kind='paid', user_id, file_id)` na mesma transação. `content_type` derivado de `kind`.
+- Direito = direito `active` do `p_user_id` cuja fotografia contém o `game_id` do arquivo (vale para quem tem o jogo por **qualquer** produto), ou, no ZIP, o `product_id` do direito igual ao do arquivo. Revogado (reembolso, contestação) não resolve. Sem expiração.
+- Com `ok`, grava `download_events (kind='paid', user_id, file_id)` na mesma transação; as recusas não gravam nada. `content_type` derivado de `kind` (`application/pdf` ou `application/zip`). `filename` é o nome do `Content-Disposition` gravado no upload.
 
 ```sql
 create function public.resolve_delivery(p_entitlement_id uuid, p_game_id bigint)
   returns table (outcome text, bucket text, object_key text, filename text,
                  content_type text, size_bytes bigint);
 ```
-- Link do e-mail (`GET /d/{token}`): o token HMAC (validade, direito e jogo) é verificado pela rota; **o direito é conferido de novo no clique**. `outcome`: `ok` | `revoked` (direito revogado: a rota leva a `/meus-jogos`) | `not_found` (direito inexistente ou jogo fora da fotografia) | `unavailable` (sem PDF pago publicado do jogo).
+- Link do e-mail (`GET /d/{token}`): o token HMAC (validade, direito e jogo) é verificado pela rota; **o direito é conferido de novo no clique**. `KT001` com argumento nulo. `outcome` (nesta ordem): `not_found` (direito inexistente ou jogo fora da fotografia do direito) → `revoked` (direito revogado: a rota leva a `/meus-jogos`; o link de pedido contestado ou reembolsado não baixa) → `unavailable` (sem PDF pago publicado do jogo) → `ok`.
 - Serve a versão **vigente** do jogo (P-2). Com `ok`, grava `download_events (kind='paid', user_id do direito)`. `size_bytes` permite ao despachante decidir **anexo** em vez de link (D4); anexar exige PDFs medidos abaixo do limite da Brevo.
 
 ```sql
@@ -1361,8 +1429,8 @@ create function public.resolve_free_download(p_file_id uuid)
   returns table (outcome text, bucket text, object_key text, filename text,
                  content_type text, size_bytes bigint);   -- 'ok' | 'not_found'
 ```
-- Disponível = jogo `access='free'` e `published` com PDF `free` `published`. Senão `available=false` (nenhum botão no site).
-- `resolve_free_download`: `ok` só para `access='free'` e `published`; qualquer outro id (inclusive pago) é `not_found`. Grava `download_events (kind='free', user_id NULL)`. **Não captura e-mail nem contato** (condições do gratuito pendentes, P-10).
+- Disponível = jogo `access='free'` e `published` com PDF `free` `published` (e objeto no B2). Senão `available=false` (nenhum botão no site). A resposta não traz bucket nem chave.
+- `resolve_free_download`: `ok` só para arquivo `access='free'` e `published` de jogo grátis `published`; qualquer outro id (inclusive pago) é `not_found`. Sem login. Grava `download_events (kind='free', user_id NULL)`. **Não captura e-mail nem contato** (condições do gratuito pendentes, P-10); `download_events` não tem coluna de IP, agente nem e-mail.
 
 ### 6.9 Rota → RPC (para o Ferrolho)
 
@@ -1372,7 +1440,7 @@ create function public.resolve_free_download(p_file_id uuid)
 | `GET /cart` | `get_cart(uid)` |
 | `POST /cart/items` | `cart_add(uid, code)` |
 | `DELETE /cart/items/{code}` | `cart_remove(uid, code)` |
-| `POST /checkout` | `create_order_from_cart` (a rota repassa o `terms_accepted` colhido na nossa página) → (cliente: `set_stripe_customer`) → Stripe (sessão **embutida**, sem `consent_collection`) → `attach_checkout_session` |
+| `POST /checkout` | `create_order_from_cart` (a rota repassa o `terms_accepted` colhido na nossa página) → (cliente: `set_stripe_customer`) → Stripe (sessão **embutida**, sem `consent_collection`, com código promocional liberado) → `attach_checkout_session` |
 | `GET /order-status` | Lê a sessão na Stripe (o pedido vem do `client_reference_id`); se preciso, `fulfill_order`/`set_order_status` com `p_source='return_page'`; depois `get_order_status(order_id, uid)` |
 | `GET /library` | `get_library(uid)` |
 | `GET /account` | `get_account(uid)` |
@@ -1382,9 +1450,10 @@ create function public.resolve_free_download(p_file_id uuid)
 | `GET /d/{token}` (pública) | `resolve_delivery(entitlement_id, game_id)` → 302 para a URL assinada ou `/meus-jogos` |
 | `GET /free-game`, `POST /free-download` | `get_free_game()`, `resolve_free_download(file_id)` |
 | `POST /email/unsubscribe` (pública, token HMAC) | `unsubscribe(uid, 'unsubscribe_link')` |
-| `stripe-webhook` | `fulfill_order`/`set_order_status` com `p_stripe_event_id`; `deferred` → responde `500` (a Stripe reenvia); `send_delivery` → despacho imediato |
+| `stripe-webhook` | `fulfill_order`/`set_order_status` com `p_stripe_event_id` e `p_event_type` (e, na liberação, subtotal, desconto e código promocional da sessão); `deferred` → responde `500` (a Stripe reenvia); `send_delivery` → despacho imediato |
 | `brevo-webhook` | `record_email_event(email, event, message_id, occurred_at)` |
-| `email-dispatch` (interna) | `private.enqueue_followups` (pg_cron) · `claim_email_batch` → envia pela API da Brevo → `mark_email_result` |
+| `POST /email/unsubscribe` (pública, token HMAC) | `unsubscribe(uid, 'unsubscribe_link')` (o `user_id` do token vem da linha do `claim_email_batch`) |
+| `email-dispatch` (interna) | Chamada pelo `pg_cron` (via `private.dispatch_tick` e `pg_net`, `apikey` do Vault), que já enfileirou os follow-ups: `claim_email_batch` → envia pela API da Brevo → `mark_email_result` |
 
 ## 7. Arquivos do B2 (somente metadados)
 
@@ -1410,17 +1479,17 @@ create function public.resolve_free_download(p_file_id uuid)
 | Dado | Conteúdo |
 | --- | --- |
 | Usuários (`auth.users` + identidade `email`, sem senha) | **A** `teste-a@keytotwo.test`, **B** `teste-b@keytotwo.test`, **D** `teste-d@keytotwo.test`, **E** `teste-e@keytotwo.test`: confirmados. **C** `teste-c@keytotwo.test`: **não confirmado** (testa `KT009`). A trigger cria os perfis e o `account_confirmed`. O GoTrue local aceita o domínio `.test` (verificado). **Formato do GoTrue:** o INSERT direto em `auth.users` grava `''` (nunca `NULL`) em `confirmation_token`, `recovery_token`, `email_change_token_new` e `email_change` (o GoTrue lê essas colunas como texto: com `NULL`, `GET /auth/v1/admin/users` responde 500 e o login por código desses usuários falha); as identidades `email` têm `provider_id = id` e `email_verified` coerente com a confirmação. O `11_seed_smoke` e o `trigger-senha.mjs` guardam essa regra. |
-| Produtos | `P001` (`bundle`, 5 jogos, nome `[PENDENTE] Nome comercial do P001 [TESTE]`, `status='active'`, `stripe_price_id='price_TESTE_P001'`, `games_expected=5`); `TESTE-AV1` (`single`, jogo `TESTE-J01`) e `TESTE-AV2` (`single`, jogo `TESTE-J02`), nomes `[TESTE] Avulso …`. Sem preço. |
+| Produtos | `P001` (`bundle`, 5 jogos, nome `[PENDENTE] Nome comercial do P001 [TESTE]`, `status='active'`, `stripe_price_id='price_TESTE_P001'`, `games_expected=5`); `TESTE-AV1` (`single`, jogo `TESTE-J01`) e `TESTE-AV2` (`single`, jogo `TESTE-J02`), nomes `[TESTE] Avulso …`. Sem preço. **Price real de TESTE do P001:** o seed versionado usa o Price fictício; o checkout real no ambiente local precisa do Price da conta Stripe de teste (`STRIPE_PRICE_ID_P001`, em `.env` ignorado pelo git). O passo local `node supabase/local/aplicar-price-teste.mjs` (depois de cada `supabase db reset`) lê só essa linha, valida o formato `price_…` e faz `update products set stripe_price_id = … where code = 'P001'` no banco local; o valor nunca vai para arquivo versionado. Os testes aceitam as duas formas (fictício ou real) no P001. |
 | Jogos | `TESTE-J01` Rabisque e Adivinhe [TESTE], `TESTE-J02` Hora dos Artistas [TESTE], `TESTE-J03` Boardgame (nome provisório) [TESTE], `TESTE-J04` Vaga 4 PENDENTE [TESTE], `TESTE-J05` Vaga 5 PENDENTE [TESTE], todos `published`, `paid`. Os códigos são de teste (a base ainda não atribuiu J002 em diante). |
 | Jogo gratuito | `TESTE-GRATIS`, `access='free'`, **`draft`** (estado padrão = sem jogo gratuito). |
-| Arquivos | Um PDF `paid` `published` v1.0 por jogo (`TESTE-J0N-v1.0.pdf`, bucket `bucket-teste-pendente`, chave `paid/TESTE-J0N/1.0/…`), um PDF `free` `draft`, um ZIP do pacote `draft`. `sha256` = 64 zeros e tamanho 1024 como **placeholder** até o I4 trazer os valores reais do bucket de teste. |
+| Arquivos | Um PDF `paid` `published` v1.0 por jogo (`TESTE-J0N-v1.0.pdf`, bucket `bucket-teste-pendente`, chave `paid/TESTE-J0N/1.0/TESTE-J0N-v1.0.pdf`), um PDF `free` `draft`, um ZIP do pacote `draft` (estes dois sem arquivo no bucket: `sha256` = 64 zeros e tamanho 1024 como placeholder). **Os 5 PDFs pagos são os arquivos fictícios de TESTE já enviados ao bucket de teste do B2**, lidos de volta e conferidos pelo Ferrolho: tamanho 699 bytes e sha256 `TESTE-J01` `35454cce…fd7da`, `TESTE-J02` `1f3251b5…5a95f`, `TESTE-J03` `d8165f72…dc0d`, `TESTE-J04` `98dd7189…ed64` e `TESTE-J05` `40207c15…2bcf372` (valores inteiros no `seed.sql`; conteúdo fictício, sem segredo). O bucket do seed segue o nome fictício: a API assina sempre no bucket configurado no ambiente. |
 | Pedidos (ids fixos; valor `0` = fictício) | **A:** `paid` do `P001` (5 direitos... 1 direito, 5 jogos) → A possui os 5 jogos. **B:** `paid` do `TESTE-AV1`. **D:** `pending_payment` do `P001`; `refunded` do `TESTE-AV2` (direito revogado `refund`); `disputed` do `TESTE-AV1` (revogado `dispute`). **E:** `dispute_lost` do `TESTE-AV2`; `expired`; e um `open` abandonado. |
 | Carrinho | **B:** `P001` (sobreposição parcial: já possui o J01). **A:** vazio (testar `already_owned` chamando `cart_add`). |
 | Consentimento | **A:** `granted` (`signup_prompt`, texto `v1-TESTE`) e convite já exibido (`marketing_prompted_at`); os demais sem consentimento e sem convite exibido. |
 | Fila | `delivery` `queued` para os pedidos pagos de A e B (payload por jogo, sem token). |
 | Ids Stripe | `cs_test_TESTE_…`, `pi_TESTE_…`, `evt_TESTE_…`, `cus_TESTE_…`. Nunca valores reais. |
 
-No I2b o seed grava direto, como dono (as RPCs de escrita de pedido chegam no I3); as invariantes (CHECKs e triggers) validam a coerência. Depois do I3 passa a usar as RPCs e vira teste de fumaça (T110).
+O seed grava os pedidos direto, como dono, com ids fixos (`subtotal` e `desconto` = 0 nos estados com valor); as invariantes (CHECKs e triggers) validam a coerência. O `11_seed_smoke` (T110) exercita as RPCs do I3 sobre o seed, dentro de uma transação que dá rollback: o carrinho de B vira pedido, é liberado com cupom e entrega, e `get_order_status` mostra a relação `owner`/`other`.
 
 ## 9. Plano de testes pgTAP
 
@@ -1432,22 +1501,26 @@ No I2b o seed grava direto, como dono (as RPCs de escrita de pedido chegam no I3
 | `02_privileges_rls` | **T10** RLS ligada nas 19 tabelas. **T11** `deny_client_access` é a única policy de cada tabela. **T12** `anon`/`authenticated`/`service_role` sem **nenhum** privilégio de tabela, coluna ou sequência (`has_table_privilege`, `has_any_column_privilege`, `has_sequence_privilege`). **T14** as RPCs (no I2b: as 10 implementadas, sem stub das demais): `EXECUTE` só para `service_role`; `private.*` para ninguém. **T15** comportamento: `SELECT`/`INSERT` em qualquer tabela como `anon`, `authenticated` e `service_role` → `42501`; chamar RPC como `anon`/`authenticated` → `42501`. **T16** as RPCs são `SECURITY DEFINER` com `search_path` vazio (`proconfig @> array['search_path=""']`) e `proacl` exatamente `{postgres=X/postgres,service_role=X/postgres}`. |
 | `03_state_machine` | **T20** matriz completa: dos 64 pares (de, para) entre os 8 estados, `UPDATE` direto só passa nas 11 arestas da seção 4.1 e nos 8 "mesmo estado"; o resto levanta `KT006`. **T21** imutáveis (`livemode`, `created_at`, `cart_version`, `terms_version`); `user_id` não muda para outro valor (muda com `keytotwo.allow_reassign`); ids Stripe preenchidos não mudam. **T22** `order_items` imutáveis depois de `open`, exceto o valor cobrado (uma vez). **T23** I-5, com `set constraints all immediate`: `paid` sem direito em algum item, `refunded`/`disputed`/`dispute_lost` com direito ativo, direito em pedido `open`, e o par que passa (revogação `manual` em `paid`; pedido de 2 itens com os 2 direitos). **T24** `files`: `draft→published→retired` passa; retornos e pulos falham; conteúdo imutável após `draft`; só rascunho se apaga. |
 | `04_cart` | **T30** carrinho isolado por usuário (A não vê nem altera o de B). **T31** `cart_add`: `added`, `noop` (repetido), `version` sobe só quando muda, funil `cart_item_added`. **T32** `cart_remove`: `removed`/`noop`, `version`, funil. **T33** `already_owned`: produto cujos jogos o usuário já tem todos é recusado; avulso dentro de um pacote possuído também. **T34** sobreposição parcial: aceita, com `owned_games` preenchido; `shared_with` entre itens do carrinho. **T35** `product_unavailable`: produto `draft`, sem preço, composição incompleta, jogo não publicado ou sem PDF publicado. **T36** `KT009` com usuário não confirmado, removido ou inexistente (em `cart_add`, `get_cart`, `create_order_from_cart`). **T37** `get_cart`: `status` `ok`/`unavailable`/`already_owned`, ordem por `added_at`, carrinho vazio `{"version": 0, "items": []}`. **T38** `get_catalog` só devolve ativos e vendáveis, com jogos e `stripe_price_id`. |
-| `05_checkout_fulfill` | **T40** `create_order_from_cart`: `cart_empty`, `cart_changed`, `product_unavailable`, `already_owned` (com `detail`). **T41** caminho feliz: pedido `open` com e-mail da conta, `cart_version`, `terms_version` e `terms_accepted_at` gravados na criação, itens com `position` e `stripe_price_id`, funil `checkout_started`; `p_terms_accepted` falso ou nulo: `KT007` e nada gravado; **reaproveita** o pedido `open` da mesma versão **e do mesmo `terms_version`** (outra versão dos termos cria pedido novo). **T42** `set_stripe_customer`: grava; não sobrescreve; devolve o vigente; cliente de outro perfil → `23505`. **T43** `attach_checkout_session`: `applied`/`noop`/`KT004`. **T44** `fulfill_order` com **2 itens**: `applied`, 2 direitos e 2 fotografias, `unit_amount` gravado por item, `terms_accepted_at` herdado da criação do pedido, carrinho sem os itens pagos e com `version` maior, 1 entrega `queued` com `payload` por jogo, funil `order_paid`. **T45** replay do mesmo evento: `duplicate_event`, contagens iguais, `send_delivery=false`; outro evento/`return_page`: `noop`. **T46** `KT002` (`unpaid`, `no_payment_required`), `KT005`, `KT004` (sessão, intent, cliente), `KT012` (preço, quantidade ou moeda diferente das `line_items`), `p_payment_intent_id` NULL. **T47** pedido inexistente: `not_found`; `failed`/`expired`/`disputed`/`dispute_lost`/`refunded`: `ignored`. **T48** compra só dos itens pagos: o item que não foi pago continua no carrinho. **T49** fotografia imutável: mudar `product_games` depois da compra não muda os direitos. **T50** contestação: `paid→disputed` revoga **todos** os direitos e cancela e-mails `queued`; `disputed→paid` reativa só os revogados por `dispute`; `disputed→dispute_lost` mantém revogado; `paid→refunded` manual revoga todos; funil `dispute_opened`/`dispute_closed`. **T51** `deferred`: contestação/reembolso com pedido `open`/`pending_payment` (e `dispute_lost` com `paid`) não grava evento nem altera; depois de `fulfill_order`, o mesmo evento é `applied`. **T52** `open→failed` sem e-mail passa; `pending_payment` exige valor e moeda (`KT007`); `expired` grava `checkout_expired`. |
+| `05_checkout_fulfill` | **T40** `create_order_from_cart`: `cart_empty`, `cart_changed`, `product_unavailable` (antes de `already_owned`), `already_owned` (com `detail`); recusas não gravam nada; `KT009`/`KT001`/`KT007`. **T41** caminho feliz: pedido `open` com e-mail da conta, `cart_version`, `terms_version` e `terms_accepted_at` gravados na criação, itens com `position` por `added_at` e o `stripe_price_id`, trilha `null → open` e funil `checkout_started`; **reaproveita** o pedido da mesma versão, do mesmo ambiente e dos mesmos termos, e **não** reaproveita com sessão vencida, Price que mudou ou carrinho novo; `stripe_customer_id` volta no resultado. **T43** `attach_checkout_session`: `applied`/`noop`/`KT004`/`23505`/`KT005`/`ignored`/`not_found`/`KT001`. **T44** `fulfill_order` com **2 itens** (um pacote de 3 jogos + um avulso): `applied`, 2 direitos e 4 fotografias, valores e preço cheio por item, `terms_accepted_at` herdado, carrinho sem os itens pagos (o que entrou depois fica) e com `version` maior, lembrete cancelado, 1 entrega `queued` com `payload` por jogo sem token, trilha, funil e livro-razão com o tipo do evento, cliente no perfil. **T45** replay do mesmo evento: `duplicate_event`; outro evento/`return_page`: `noop` (o evento `noop` entra no livro-razão); contagens iguais. **T46** `KT002` (`unpaid`, `no_payment_required` sem cupom de 100%), `KT001` (14 formatos), `KT005`, `KT004` (sessão, intent, cliente), `p_payment_intent_id` NULL; **T46b** `KT012` (subtotal ≠ soma dos itens, total ≠ subtotal − desconto, desconto > subtotal, quantidade, moeda, item a mais/a menos/repetido/de outro Price, item que não é objeto, `unit_amount` nulo/negativo) sem nenhum rastro. **T47** pedido inexistente: `not_found` e evento sem pedido. **T49** fotografia imutável (mudar `product_games` depois da compra não muda o direito); `KT003` sem rastro. **T50** contestação aberta (todos os direitos revogados por `dispute`, entrega cancelada, funil `dispute_opened`, I-5), vencida (`disputed→paid` reativa e não reenvia a entrega, `dispute_closed`), perdida (revogados, terminal: pagar, reembolsar, falhar e liberar viram `ignored`); contestação sobre revogação manual (o `manual` fica); reembolso manual (`refund`, `refunded_at`, entrega cancelada, terminal) e reembolso depois da contestação (o motivo passa a `refund`). **T51** `deferred`: contestação/reembolso/perda com o pedido `open`/`pending_payment` (e `dispute_lost` com `paid`) não grava evento nem altera; depois da liberação o mesmo evento é `applied`. **T52** validações de `set_order_status` (`KT001`, `KT007`, `KT012`), `open→failed`, `open→expired` com `checkout_expired`, `pending_payment→failed`, `ignored` nos terminais. **T53 (cupom)** desconto gravado (subtotal, desconto, total, código) e itens com preço cheio; `get_account` com o desconto; código em branco vira NULL; desconto sem código; **cupom de 100%** (D-25) libera como pago, sem intent; `pending_payment` com cupom e depois a liberação (valores e código mantidos; valores ou código diferentes: `KT012`); valores imutáveis (`KT010`). **T130 (papel da API)** `create_order_from_cart`, `attach_checkout_session`, `fulfill_order` (com cupom), `set_order_status` (contestação aberta, vencida e perdida, `pending_payment` e reembolso) e as RPCs de escrita do I2b terminam sem erro no COMMIT quando rodam como `service_role` (I-5 dispara como `service_role`). Controle negativo: o I-5 enxerga um pedido `paid` sem direito, inclusive disparando como `service_role` (`KT011`). |
+
 | `06_account_consent` | **T60** trigger de `auth.users`: INSERT cria o perfil; INSERT já confirmado grava `account_confirmed` uma vez. **T61** primeira confirmação (`NULL→valor`) **zera a senha**, cria o perfil se faltar e grava `account_confirmed`; segunda atualização do `email_confirmed_at`, troca de e-mail e nova senha **não** zeram; senha trocada **no mesmo UPDATE** da confirmação é preservada. **T62** `set_marketing_consent`: conceder exige versão; `applied` insere no histórico e atualiza `profiles`; mesmo estado = `noop` sem linha nova; revogar zera `marketing_opt_in_at`. **T63** histórico só por inserção; `profiles.marketing_opt_in` sempre igual à última ação. **T64** `unsubscribe` revoga na hora, cancela marketing `queued`, funciona sem e-mail confirmado. **T65** `record_email_event`: `hard_bounce`/`complaint`/`unsubscribe` suprimem; idempotente; `complaint` e `unsubscribe` revogam o consentimento; `hard_bounce` não. **T66** `marketing_allowed`: só com opt-in, e-mail confirmado, sem supressão e sem `unsubscribe_all` posterior ao opt-in. **T67** `get_account`: e-mail, `marketing`, pedidos do usuário sem `open`/`expired`, do mais recente ao mais antigo, `ref` de 8 caracteres, `items` com `unit_amount`; usuário removido ou não confirmado → `KT009`; sem vazar pedido de outro. **T68** `mark_marketing_prompt`: grava uma vez e devolve o mesmo valor depois; não cria linha em `marketing_consents` nem muda `marketing_opt_in`; `set_marketing_consent` com `signup_prompt` preenche o marcador (inclusive em `noop`) sem sobrescrever; `get_account` devolve `marketing.prompted_at`. |
 | `07_library_status` | **T70** `get_library` por jogo: só direitos ativos do usuário; revogado some; outro usuário não vê; jogo repetido por dois produtos vira **um** item com os dois em `products`; `acquired_at` = o mais antigo. **T71** só arquivos `published`; jogo sem arquivo publicado aparece com `files=[]`; `pending` lista só `pending_payment` do usuário, mais recente primeiro; sem chave do B2, e-mail nem ids de pedido ou de direito; sem compra `{"games": [], "pending": []}`. **T72** `get_order_status`: `owner`, `other`, `not_found`; só `outcome`, `status`, `items`, `relation` (sem e-mail, valores nem ids de usuário); `KT009` sem e-mail confirmado. |
 | `08_b2_metadata` | **T80** `object_key` rejeita `https://…`, `..`, barra inicial, `?`, espaço e prefixo diferente de `access`; `bucket` fora do formato. **T81** `unique (bucket, object_key)`; `sha256`, `size_bytes`, extensão × `kind`. **T82** publicar novo exige aposentar o anterior (sequência na mesma transação passa). **T83** apagar arquivo publicado → `KT010`; rascunho com `download_events` → 23503. **T84** `bucket`/`object_key` imutáveis depois de `draft`. |
-| `09_email_queue` | **T85** `delivery` nunca duplica (`dedupe_key`). **T86** `claim_email_batch`: pega só vencidos, respeita `p_limit`, `SKIP LOCKED`, `p_outbox_id`, `sending` parado há mais de 10 min volta; **marketing sem opt-in → `skipped` (`no_opt_in`), suprimido → `suppressed`, lembrete com `version` antiga → `cart_changed`, carrinho vazio → `cart_empty`, pós-compra com pedido fora de `paid` → `order_not_paid`**; limite de 1 marketing por dia adia sem pular; `delivery` de pedido contestado → `canceled`. **T87** `mark_email_result`: `sent` (com funil `delivery_sent` na entrega), `failed` volta a `queued` com `scheduled_at` adiado, 5ª falha → `failed`, `rejected` → `failed`; repetir é `noop`. **T88** `enqueue_followups`: **nunca** enfileira sem opt-in, com supressão, sem e-mail confirmado nem para carrinho vazio; lembrete só 3 h depois da última mudança e **um por `version`** (rodar duas vezes não duplica); pós-compra só em D+3 com direito ativo e uma vez por pedido; **compra cancela o lembrete pendente**. |
-| `10_downloads` | **T100** `resolve_download`: `ok` grava `download_events` (pago, `user_id`); `not_entitled` (outro usuário, pedido contestado ou reembolsado); `not_found` (id inexistente, arquivo grátis, **`retired` com sucessor publicado**); `unavailable` (direito ok, `draft` ou `retired` sem sucessor); localização nula e nenhum evento quando `outcome ≠ ok`. **T101** `resolve_delivery`: `ok` (grava `download_events`), `revoked`, `not_found` (jogo fora da fotografia), `unavailable`; devolve `size_bytes`; serve a versão vigente. **T102** `get_free_game`/`resolve_free_download`: `false` sem publicado; `ok` só para `free`+`published`; id de arquivo pago → `not_found`; evento `free` com `user_id` nulo. |
+| `09_email_queue` | O arquivo é dono da fila (tira da fila, só dentro da transação, o que já existia). **T85** `delivery` nunca duplica (`dedupe_key` repetida: 23505). **T86** `claim_email_batch`: `KT001` (`p_limit`, `p_now`); pega só o vencido, respeita `p_limit`, a ordem e o `p_outbox_id`; não pega `sent`/`failed`/`canceled`; `sending` fresco não volta e parado há mais de 10 min volta contando tentativa (na 5ª falha de vez); **entrega**: paga com direitos ativos segue, contestada/perdida/reembolsada ou com direito revogado à mão → `canceled` (`entitlement_revoked`), em outro estado → `canceled` (`order_not_paid`); **marketing**: sem opt-in → `no_opt_in`, bounce/queixa/descadastro geral depois do opt-in → `suppressed` (antes do opt-in não bloqueia), e-mail não confirmado → `email_not_confirmed`; lembrete com `version` diferente, sem `cart_version`, carrinho vazio ou inexistente → `cart_changed`/`cart_empty`; pós-compra com o pedido fora de `paid` → `order_not_paid`; **limite de 1 marketing por 24 h** adia sem pular (no mesmo lote, quem recebeu há 2 h, quem recebeu há 25 h passa, a entrega não conta). **T87** `mark_email_result`: `KT001`, `not_found`, `noop` em linha que não está em envio; `sent` (mensagem do provedor, `sent_at`, funil `delivery_sent` uma vez na entrega e nenhum no marketing; repetir é `noop`); `failed` volta à fila com 5, 20, 45 e 80 min e a 5ª falha é final; `rejected` vai a `failed`; erro de 900 caracteres cortado em 500; só sai de novo quando a data vence. De ponta a ponta: `fulfill_order` → `claim` por `p_outbox_id` → `mark sent` → a fila não envia duas vezes, nem pelo lote nem pelo reenvio da página de retorno. Papel da API: `service_role` executa, `anon` e `authenticated` não (`42501`). |
+
+| `10_downloads` | **T100** `resolve_download`: `ok` com bucket, chave, nome, tipo e tamanho e grava `download_events` (pago, usuário e arquivo; cada download um evento); `not_entitled` (quem não comprou, dono de outro jogo, **direito revogado por reembolso ou por contestação**); `not_found` (id inexistente, arquivo grátis mesmo com direito, **`retired` com sucessor publicado**, rascunho e aposentado sem direito); `unavailable` (direito ok com `draft` ou com `retired` sem sucessor); o dono de **outro produto que contém o jogo** também baixa; ZIP do pacote pelo direito do produto; localização nula e nenhum evento quando `outcome ≠ ok`; `KT009`/`KT001`. **`download_events` sem IP**: só `id`, `user_id`, `file_id`, `kind` e `created_at`, e só inserção. A chave do B2 não aparece em `get_library`, `get_account` nem `get_catalog`. **T101** `resolve_delivery`: `ok` (grava o evento do dono do direito, serve a versão vigente 1.1 e devolve o tamanho), `not_found` (direito inexistente, jogo fora da fotografia, que vem antes de `revoked`), `revoked` (reembolso e contestação), `unavailable` (sem PDF pago publicado); as recusas não gravam evento. **T102** `get_free_game`/`resolve_free_download`: `false` com jogo ou arquivo em rascunho; `true` só com os dois publicados (sem bucket nem chave na resposta); `ok` sem login e evento `free` com `user_id` nulo; id de arquivo pago, rascunho ou inexistente → `not_found`. Só o `service_role` executa. |
+
 | `11_seed_smoke` | **T110** após `db reset`: contagens da seção 8; todo nome, arquivo e e-mail com `TESTE`/`.test`; ids Stripe com `TESTE`; pedidos nos estados esperados; perfis criados pela trigger; A possui os 5 jogos; `cart_add(A, TESTE-AV1)` → `already_owned`; carrinho de B mostra a sobreposição parcial; C (não confirmado) → `KT009`. |
-| `90_concurrency` | Sem `begin/rollback` (precisa de commits visíveis a outras sessões); usa `dblink` e `dblink_send_query` em N conexões; dados com prefixo `CONC-TESTE`, removidos no fim. **T120** N=10 `fulfill_order` simultâneos, mesmo pedido e evento: 1 `applied` + 9 `duplicate_event`/`noop`; contagens 1/1/1; um único `send_delivery=true`. **T121** `fulfill_order` do webhook ∥ do retorno (eventos distintos): 1 `applied`. **T122** `fulfill_order` ∥ `set_order_status(disputed)`: qualquer ordem de serialização é aceita (a contestação que ganha a trava devolve `deferred` e, reenviada, `applied`); estado final cumpre I-5, sem duplicata. **T123** N `create_order_from_cart` simultâneos do mesmo usuário e versão: **um** pedido `open` (os demais `reused`). **T124** `cart_add` ∥ `create_order_from_cart`: ou `cart_changed`, ou pedido com o carrinho visto. **T125** `claim_email_batch` ∥ `claim_email_batch`: nenhuma linha devolvida às duas. |
+| `12_followups` | O arquivo é dono da fila e das supressões (o que já existia sai de toda elegibilidade, só dentro da transação). **T65** `record_email_event`: `KT001`; `hard_bounce` suprime sem mexer no consentimento nem na fila (barrado no envio); `complaint` e `unsubscribe` revogam o consentimento (origem `brevo_webhook`) e cancelam o marketing na fila sem tocar a entrega; idempotente por e-mail e motivo (noop devolve o usuário; e-mail com maiúsculas e espaços); e-mail sem conta e conta removida (`user_id` nulo); horário do evento (futuro vira agora; descadastro anterior ao opt-in não revoga nem bloqueia; reenvio de evento velho é noop; opt-in de novo e novo descadastro revoga); mensagem do provedor em branco ou longa; só inserção; só `service_role`. **T88** `enqueue_followups`: lembrete só 3 h depois da última mudança (limite inclusivo), um por `version`, só itens vendáveis e não possuídos, nunca sem opt-in, com bounce, com descadastro depois do opt-in, com e-mail não confirmado, carrinho vazio, jogos já possuídos ou pagamento assíncrono em curso; a compra cancela o lembrete da fila e nenhum novo nasce; pós-compra só entre D+3 (inclusivo) e D+14 (exclusivo), um por pedido, com direito ativo (não com reembolso, contestação, direito revogado, sem opt-in, com queixa nem pedido não pago); payloads; `scheduled_at`; a contagem devolvida; o claim refaz as checagens (descadastro e carrinho que mudou). **T89** agenda: job `email-dispatch-tick` a cada 5 min e ativo; ninguém de API executa `dispatch_tick` nem `enqueue_followups`; sem os segredos no Vault só enfileira; com só um dos dois não chama; com os dois chama o despacho por `pg_net` (POST, JSON, `apikey` e `{"limit": 20}`); erro no enfileiramento vira aviso e o despacho ainda é chamado. |
+| `90_concurrency` | Sem `begin/rollback` (precisa de commits visíveis a outras sessões); usa `dblink` em N conexões, com a trava da linha (pedido ou carrinho) segura numa conexão à parte até que **todas** as chamadas estejam bloqueadas, e só então a solta: a disputa é real. Dados com prefixo `conc`/`CONC`, removidos no fim e no começo da próxima execução (os logs só-inserção são liberados dentro de uma transação de limpeza). Pula (`skip`) se o `dblink` não conectar. **T120** N=10 `fulfill_order` simultâneos, mesmo pedido e evento: 1 `applied` + 9 `duplicate_event`; contagens 1/1/1; um único `send_delivery=true`. **T121** webhook ∥ retorno (eventos distintos e sem evento): 1 `applied`, o resto `noop`/`duplicate_event`. **T122** `fulfill_order` ∥ `set_order_status(disputed)` em 6 rodadas (a ordem das chamadas alterna): a contestação que ganha a trava antes da liberação devolve `deferred` e, reenviada, `applied`; o estado final cumpre a I-5, sem duplicata. **T123** 8 `create_order_from_cart` simultâneos do mesmo usuário e versão: **um** pedido `open` (os outros `reused`). **T124** `cart_add` ∥ `create_order_from_cart` em 4 rodadas: ou `ok` com o carrinho visto, ou `cart_changed` sem pedido; o `cart_add` nunca se perde. **T127** `fulfill_order` ∥ `create_order_from_cart` ∥ `cart_add` ∥ `cart_remove`: sem deadlock (prova a ordem pedido → carrinho). **T125** 24 entregas vencidas: um despachante pega 8 e **segura sem confirmar**, outros dois pegam ao mesmo tempo: o primeiro fica com 8 e os outros dois com 16, 24 ids distintos, nenhuma linha duas vezes e nenhuma linha de outros dados (`SKIP LOCKED`); e 6 `mark_email_result` simultâneos do mesmo envio: 1 `applied`, 5 `noop` e um único funil `delivery_sent`. |
 
 Observações do plano:
 
-- O `dblink` com a trava de `FOR UPDATE` prova concorrência sem script externo. A conexão do `dblink` dentro do contêiner local **não foi validada**: spike de 15 minutos no I3; se falhar, o fallback é `psql` paralelo (N processos chamando a RPC) mais uma consulta de contagem (P-12).
+- O `dblink` com a trava de `FOR UPDATE` prova concorrência sem script externo. **Spike do P-12 (feito no I3):** `dblink` instala em `extensions` e funciona no contêiner local, mas o `postgres` não é superusuário e o `pg_hba` confia em `127.0.0.1`; por isso o `dblink` recusa a conexão ("password is required"). A corrida conecta pelo **IP do próprio servidor** (`inet_server_addr()`, que cai na regra `scram-sha-256`) com a senha padrão do banco local (`postgres`). Se a conexão falhar (IP nulo ou senha diferente), o arquivo faz `skip` em vez de falhar. Mutação verificada: sem o `FOR UPDATE` do pedido em `fulfill_order`, o T120 quebra.
 - `get_advisors` (MCP) ou `supabase db advisors`: **zero ERROR** após as migrações. Avisos preexistentes e que não são nossos: `public.test` sem policy e `rls_auto_enable()` executável (seção 10).
 - Testes de API e E2E (Lupa) que contam linhas leem o banco como dono (`psql`/`supabase db query`), não com a chave secreta (D-12).
 - `supabase test db` roda no CI (Costura) com a CLI de versão fixa.
-- **Estado no I2b:** implementados `01`, `02`, `03`, `04`, `06`, `07`, `08` e `11`. Os rótulos dos testes são descritivos e agrupam os casos T01–T16, T20–T24, T30–T38, T60–T68, T70–T71, T80–T84 e T110. Ficam para o I3 a I5: `05`, `09`, `10` e `90`.
+- **Papel da API (T130):** os testes de escrita rodam também com `set local role service_role` e antecipam o COMMIT com `set constraints all immediate` ainda como `service_role` (o `pg_temp.as_api`), e a corrida do `90_concurrency` abre as conexões com `SET ROLE service_role`. Rodar só como dono (`postgres`) esconde defeitos de privilégio nos gatilhos diferidos: foi assim que o `SECURITY INVOKER` da I-5 passou despercebido até a integração do I3. **Estado no I3:** implementados `01`, `02`, `03`, `04`, `05`, `06`, `07`, `08`, `11` e `90`. Os rótulos dos testes são descritivos e agrupam os casos T01–T16, T20–T24, T30–T38, T40–T53, T60–T68, T70–T72, T80–T84, T110 e T120–T127. **Estado no I4:** implementados também `09` (fila) e `10` (downloads) e o T125. **Estado no I5:** implementado também o `12_followups` (T65, T88 e T89): com isso **todos os testes do plano existem**. O pg_cron do banco local também roda o job fora dos testes: os testes que dependem da fila (`09`, `12`, o `11`) se isolam dele.
 - O teste da trigger com o GoTrue real é `supabase/tests/gotrue/trigger-senha.mjs` (`node supabase/tests/gotrue/trigger-senha.mjs`, com a stack no ar): 4 cenários (cadastro legítimo, ataque de cadastro prévio com código, ataque de cadastro prévio com "esqueci a senha", só por código). Leva cerca de 70 s por causa do intervalo de 60 s do Auth entre e-mails ao mesmo endereço, e apaga os usuários que cria.
 
 **Cobertura dos aceites do P2**
@@ -1463,6 +1536,7 @@ Observações do plano:
 | I3: idempotência, webhook concorrente com retorno | T45, T120, T121 |
 | I3: `terms_accepted_at` gravado na criação e funil até `order_paid` | T41, T44 |
 | I3: contestação aberta revoga, vencida devolve, perdida mantém | T50, T51, T122 |
+| I3: cupom gravado (subtotal, desconto, total, código; preço cheio nos itens) e cupom de 100% | T53 |
 | I3: expiração gera `checkout_expired` | T52 |
 | I4: entrega 1 vez por pedido; link de pedido contestado não baixa; sem direito 403 | T85, T101, T100 |
 | I5: sem opt-in nada sai; opt-out bloqueia na hora; compra cancela o lembrete; dedupe por versão; bounce e queixa suprimem | T86, T88, T64, T65 |
@@ -1491,13 +1565,14 @@ Os pontos que dependem do responsável usam a numeração D da nota Plano do sit
 | # | Ponto | Decisor | Efeito se mudar |
 | --- | --- | --- | --- |
 | P-2 | Atualizações: servir a versão publicada vigente (proposto; o link do e-mail e `resolve_download` já fazem isso) ou congelar a versão comprada? | Responsável (ficha do P001: "direito a futuras versões") | Congelar exige tabela `entitlement_files` e ajuste em `resolve_download`/`resolve_delivery`/`get_library` |
-| P-4 | Quem publica arquivo: RPC `publish_file` (recomendada, I4) ou SQL do operador. Reversão manual de acesso (`manual`) hoje é SQL de atendimento. | Orquestrador / Lastro | Nova RPC |
+| P-4 | **Decidido no I4 (D-26):** quem publica arquivo é o **SQL do operador**, no ciclo da seção 7; não há RPC `publish_file` na API. Reversão manual de acesso (`manual`) também é SQL de atendimento. Reabrir só se surgir painel administrativo. | Lastro (D-26) | Nova RPC, só com painel |
 | P-5 | Origem do `stripe_price_id`: coluna preenchida por script do ambiente (proposto) ou variável de ambiente da função. | Orquestrador / Ferrolho | Coluna fica NULL e o gate muda |
 | P-6 | Leitura direta pelo cliente (catálogo/pedidos pela Data API). Não adotada; reabrir só se surgir necessidade. | Orquestrador | Seção 5.3 |
 | P-7 / D5 | Reembolso parcial e por item: proposta de que o reembolso excepcional seja sempre do pedido inteiro e o parcial só pelo suporte (fora das RPCs). | Responsável (I3) | Novo estado ou `amount_refunded` |
 | P-8 | LGPD: exclusão de conta é **anonimização** (FK `RESTRICT` de pedidos, consentimentos e fila; confirmado em D-23). A RPC de anonimização (suporte) é futura. Rotina e retenção de `orders.email`, do e-mail no histórico de consentimento, funil e `download_events` seguem **pendentes** do responsável (D6, P-19); política de privacidade pendente. | Responsável / jurídico (D6, D11) | Rotina de anonimização |
 | P-10 | Jogo gratuito: no máximo um publicado (índice); conteúdo e condições (e se passa a exigir login) pendentes. O contrato não captura contato. | Responsável (D12) | Remover o índice se houver mais de um |
-| P-12 | `dblink` no contêiner local para o teste de concorrência (spike no I3) | Lastro | Fallback `psql` paralelo |
+| P-12 | **Fechado no I3:** o `dblink` funciona no contêiner local pelo IP do servidor com a senha padrão (seção 9). Se a senha local mudar, o `90_concurrency` faz `skip`. | Lastro | — |
+| P-22 | **Cupom de 100%** (D-25): o banco libera o acesso como pago (total 0). Se o responsável não quiser cupom de 100%, basta não criá-lo na Stripe; para o banco recusar, `fulfill_order` passa a tratar `no_payment_required` como `KT002`. Imposto: o total é subtotal − desconto porque `automatic_tax` está desligado; se um dia ligar, o pedido precisa de `amount_tax` (v0.4). | Responsável (cupons) / Lastro | Uma condição em `fulfill_order`; coluna nova |
 | P-13 | Nome comercial, preço, moeda, composição de avulsos e textos legais: **PENDENTES**. O banco não os decide. | Responsável (D1, D11) | — |
 | P-15 | Falta verificar, só com credenciais reais: o login com Google e a troca de e-mail (`double_confirm_changes`) com a trigger. Os demais fluxos estão verificados no GoTrue real. | Lastro / Ferrolho (I6, jornada integrada) | Ajuste fino da trigger |
 | P-16 | **D2:** posse sobreposta. Padrão provisório: recusar produto possuído por inteiro, aceitar sobreposição parcial com aviso, sem desconto (D-16). | Responsável | `owned_game_ids` e as RPCs de carrinho |
@@ -1505,16 +1580,16 @@ Os pontos que dependem do responsável usam a numeração D da nota Plano do sit
 | P-18 | **D3:** fluxos, prazos e limites dos follow-ups (proposta: lembrete 3 h após a última mudança; pós-compra em D+3; no máximo 1 marketing por dia). Constantes de `enqueue_followups` e `claim_email_batch`. | Responsável | Constantes |
 | P-19 | **D6:** texto e versão do consentimento, onde perguntar, guardar IP ou não (proposta: não), retenção do funil e do histórico. | Responsável | Coluna de IP, rotina de retenção |
 | P-20 | **D7/D8:** remetentes e plano da Brevo; se a API transacional aceita conteúdo promocional. Se não aceitar, só o despachante dos kinds de marketing muda (`trackEvent`). | Responsável | Só o despachante |
-| P-21 | `pg_cron` e `pg_net` precisam ser habilitados no projeto (disponíveis; instalados só no I5). Backfill de `profiles` na migração do I2b. | Lastro (I5) | Migração |
+| P-21 | **Fechado no I5:** `pg_cron`, `pg_net` e `supabase_vault` são criados pela migração do I5 (disponíveis no Supabase). Na nuvem, o Vault precisa dos segredos do despacho gravados à mão (I6), e a chave `dispatch` criada no painel. Backfill de `profiles` já feito no I2b. | Lastro / Ferrolho (I6) | Passo manual |
 
 ## 12. Entregas derivadas deste contrato
 
 | Incremento | Arquivos do Lastro |
 | --- | --- |
 | I2b | Reescrita das migrações (`supabase/migrations`): `<ts>_commerce_schema.sql` (seções 2 e 3), `<ts>_auth_triggers.sql` (2.10), `<ts>_rls_grants.sql` (2.10 e 5), RPCs de conta, carrinho, catálogo e biblioteca (`get_catalog`, `get_cart`, `cart_add`, `cart_remove`, `get_library`, `get_account`, `set_marketing_consent`, `unsubscribe`, `set_stripe_customer`); `supabase/seed.sql`; pgTAP `01`–`04`, `06`, `07`, `08`, `11` |
-| I3 | `create_order_from_cart`, `attach_checkout_session`, `fulfill_order`, `set_order_status`, `get_order_status`; pgTAP `05` e `90_concurrency` |
-| I4 | `resolve_download`, `resolve_delivery`, `get_free_game`, `resolve_free_download`, `claim_email_batch`, `mark_email_result`; metadados reais do bucket de teste no seed; `publish_file` se aprovado (P-4); pgTAP `09` (fila) e `10` |
-| I5 | `private.enqueue_followups` + agenda `pg_cron` (migração), `record_email_event`, supressões, testes |
+| I3 (v0.3.3, implementado) | `<ts>_i3_checkout_fulfillment.sql`: `create_order_from_cart`, `attach_checkout_session`, `fulfill_order` (com cupom), `set_order_status` (contestações e reembolso), `get_order_status`, `get_account` com o desconto; pgTAP `05` e `90_concurrency`; `supabase/local/aplicar-price-teste.mjs` |
+| I4 (v0.3.4, implementado) | `<ts>_i4_delivery_downloads_queue.sql`: `resolve_download`, `resolve_delivery`, `get_free_game`, `resolve_free_download`, `claim_email_batch`, `mark_email_result`; metadados reais dos 5 PDFs de TESTE no seed (D-26); sem `publish_file` (P-4); pgTAP `09` (fila), `10` (downloads) e o T125 |
+| I5 (v0.3.5, implementado) | `<ts>_i5_followups_suppressions_agenda.sql`: `record_email_event`, `private.enqueue_followups`, `private.dispatch_tick` e o job do `pg_cron`; `supabase/local/aplicar-dispatch-vault.mjs`; pgTAP `12_followups` |
 
 Criar cada migração com `supabase migration new <nome>` (nunca inventar o nome do arquivo). Sem stub: RPC que ainda não existe fica fora da migração. **Estado:** o I2b está implementado (linha "Implementado" do cabeçalho). As RPCs do I2b são `get_catalog`, `get_cart`, `cart_add`, `cart_remove`, `get_library`, `get_account`, `set_marketing_consent`, `mark_marketing_prompt`, `unsubscribe` e `set_stripe_customer` (10); I3 a I5 seguem pendentes.
 
@@ -1542,6 +1617,9 @@ Criar cada migração com `supabase migration new <nome>` (nunca inventar o nome
 | Decisões | P-1 (reembolso) e P-3 (prazo) propostas | **P-1 e P-3 decididos** (D-15); D2 e D4 em padrão provisório (D-16, D-17); P-2 e P-10 seguem como propostas |
 | Seed | P001 e 5 jogos; pedidos O1–O6 de um produto | P001 + avulsos **só TESTE**; 5 usuários (um não confirmado); pedidos em todos os estados novos; carrinhos; consentimento; entrega na fila |
 | Aceite dos termos (v0.3.1) | Previsto no `consent_collection` do Checkout hospedado | Checkout **embutido**: aceite colhido na nossa página; `create_order_from_cart(..., p_terms_accepted)` grava `terms_accepted_at` e `terms_version`; `fulfill_order` e `set_order_status` não recebem o aceite |
+| Follow-ups, supressões e agenda (v0.3.5) | Só contrato | `record_email_event` (horário do evento, revogação só para evento posterior ao opt-in), `private.enqueue_followups` (3 h, D+3 até D+14, `scheduled_at = least(p_now, now())`) e `private.dispatch_tick` com o job do `pg_cron` (D-27); segredos do despacho no Vault; as 22 RPCs do contrato existem |
+| Downloads, entrega e fila (v0.3.4) | Só contrato | `resolve_download`, `resolve_delivery`, `get_free_game`, `resolve_free_download`, `claim_email_batch` e `mark_email_result` implementados; a chave do B2 sai só delas (D-26); a fila rechecada no claim (marketing, carrinho, pedido, limite de 1 por 24 h); `sending` parado conta tentativa; seed com os metadados reais dos 5 PDFs de TESTE |
+| Cupons (v0.3.3) | Sem cupom | `orders` ganha `amount_subtotal`, `amount_discount` e `promotion_code` (valores gravados uma vez, `KT010`); `order_items.unit_amount` passa a ser o preço cheio; `fulfill_order` e `set_order_status` recebem subtotal, desconto, código e `p_event_type`; `no_payment_required` com total 0 e desconto > 0 libera como pago (D-25); `get_account` mostra o desconto; `get_order_status` só traz itens ao dono |
 | Convite de marketing (v0.3.2) | — | `profiles.marketing_prompted_at` e `mark_marketing_prompt(uuid)`; `set_marketing_consent` com `signup_prompt` preenche o marcador; `get_account` devolve `marketing.prompted_at`. Ver ou dispensar o convite não é consentimento |
 | Testes | T01–T104 (12 tabelas, 11 RPCs) | Reorganizados em 11 arquivos + concorrência, T01–T125 (19 tabelas, 22 RPCs); novos: carrinho, checkout multi-item, contestações, consentimento, fila de e-mail, follow-ups, trigger de senha |
 

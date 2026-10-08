@@ -1,6 +1,6 @@
 // Sources: Site — Estrutura e taxonomia; Site — Direção visual (draft copy).
 export const navigation = [
-  { label: 'Os 5 jogos', href: '/#jogos' },
+  { label: 'A experiência', href: '/#experiencia' },
   { label: 'Como funciona', href: '/#como-funciona' },
 ] as const
 
@@ -12,7 +12,7 @@ export const site = {
 
 // Only these routes may enter the sitemap in live. Private/preview shells never do.
 export const publicPages = {
-  '/': { title: 'Jogos para casais, para imprimir — KeyToTwo', description: 'Conheça o pacote de 5 jogos para imprimir da KeyToTwo: composição, preparação, condições e dúvidas para jogar a dois em casa.' },
+  '/': { title: 'Jogos para casais, para imprimir — KeyToTwo', description: 'Saiam do automático com jogos para imprimir e jogar a dois. Uma ideia da KeyToTwo para conversar, rir e fazer a noite acontecer.' },
   '/ajuda': { title: 'Ajuda com jogos, impressão e acesso — KeyToTwo', description: 'Encontre orientações sobre os jogos para imprimir, materiais, acesso às compras e atendimento da KeyToTwo.' },
   '/termos': { title: 'Termos de uso — KeyToTwo', description: 'Consulte o estado dos termos de uso da KeyToTwo, incluindo licença dos jogos, condições de acesso e validações pendentes.' },
   '/privacidade': { title: 'Privacidade e dados pessoais — KeyToTwo', description: 'Veja o estado da política de privacidade da KeyToTwo e as informações sobre dados pessoais que aguardam validação.' },
@@ -24,6 +24,9 @@ export const otherPages = {
   '/entrar': { title: 'Entrar — KeyToTwo', description: 'Página de entrada para acessar sua conta KeyToTwo.' },
   '/meus-jogos': { title: 'Meus jogos — KeyToTwo', description: 'Área reservada aos jogos adquiridos na KeyToTwo.' },
   '/conta': { title: 'Minha conta — KeyToTwo', description: 'Área reservada às informações da sua conta KeyToTwo.' },
+  '/pagamento': { title: 'Pagamento — KeyToTwo', description: 'Confira seu pedido e finalize o pagamento com segurança.' },
+  '/jogo-gratuito': { title: 'Jogo gratuito — KeyToTwo', description: 'Confira a disponibilidade da experiência gratuita da KeyToTwo.' },
+  '/email/preferencias': { title: 'Preferências de e-mail — KeyToTwo', description: 'Escolha se deseja receber novidades da KeyToTwo por e-mail.' },
   '/pedido/confirmacao': { title: 'Status da compra — KeyToTwo', description: 'Acompanhe a confirmação do seu pedido KeyToTwo.' },
   '/carrinho': { title: 'Carrinho de compras — KeyToTwo', description: 'Confira os itens do seu carrinho KeyToTwo. É preciso criar uma conta e entrar para finalizar a compra.' },
   '/404': { title: 'Página não encontrada — KeyToTwo', description: 'Este endereço não está disponível. Volte à página inicial da KeyToTwo.' },

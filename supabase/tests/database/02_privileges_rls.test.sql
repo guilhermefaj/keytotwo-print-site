@@ -1,4 +1,4 @@
--- 02_privileges_rls: RLS, policies, GRANTs e ACL (docs/data-contract.md v0.3.2, seção 5; D-1 e D-12).
+-- 02_privileges_rls: RLS, policies, GRANTs e ACL (docs/data-contract.md v0.3.3, seção 5; D-1 e D-12).
 -- Roda com `supabase test db` (pgTAP). Dados de teste só existem dentro da transação (rollback no fim).
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -76,6 +76,8 @@ begin
   update public.orders o set
      status = p_to,
      amount_total = case when v_money then 0 else o.amount_total end,
+     amount_subtotal = case when v_money then 0 else o.amount_subtotal end,
+     amount_discount = case when v_money then 0 else o.amount_discount end,
      currency = case when v_money then 'brl' else o.currency end,
      paid_at = case when v_paid then coalesce(o.paid_at, now()) else o.paid_at end,
      stripe_payment_intent_id = case when v_paid then coalesce(o.stripe_payment_intent_id, 'pi_PGTAP_' || replace(o.id::text, '-', '')) else o.stripe_payment_intent_id end,
@@ -148,15 +150,15 @@ select pg_temp.assert('funções de private sem EXECUTE para os papéis de API',
   (select count(*) = 0 from pg_proc p, unnest(array['anon','authenticated','service_role']) r
    where p.pronamespace = 'private'::regnamespace and has_function_privilege(r, p.oid, 'EXECUTE')));
 
--- ===== RPCs do I2b: ACL e modo de execução ========================================================
-select pg_temp.assert('as RPCs de public são exatamente as 10 do I2b (sem stub das de I3, I4 e I5)',
-  (select array_agg(p.proname::text order by p.proname) = array['cart_add','cart_remove','get_account','get_cart','get_catalog','get_library','mark_marketing_prompt','set_marketing_consent','set_stripe_customer','unsubscribe']
+-- ===== RPCs do I2b e do I3: ACL e modo de execução ========================================================
+select pg_temp.assert('as RPCs de public são exatamente as 22 do I2b ao I5 (todas as do contrato)',
+  (select array_agg(p.proname::text order by p.proname collate "C") = array['attach_checkout_session','cart_add','cart_remove','claim_email_batch','create_order_from_cart','fulfill_order','get_account','get_cart','get_catalog','get_free_game','get_library','get_order_status','mark_email_result','mark_marketing_prompt','record_email_event','resolve_delivery','resolve_download','resolve_free_download','set_marketing_consent','set_order_status','set_stripe_customer','unsubscribe']
    from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'));
 select pg_temp.assert('cada RPC: ACL = {dono, service_role} apenas',
-  (select count(*) = 10 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
+  (select count(*) = 22 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
      and p.proacl::text = '{postgres=X/postgres,service_role=X/postgres}'));
 select pg_temp.assert('cada RPC: SECURITY DEFINER com search_path vazio',
-  (select count(*) = 10 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
+  (select count(*) = 22 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
      and p.prosecdef and p.proconfig @> array['search_path=""']));
 
 -- ===== comportamento por papel ====================================================================

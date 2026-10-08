@@ -1,13 +1,46 @@
 // Ambiente dos testes de contrato: sem rede e sem banco. As sessões são JWT ES256 assinados aqui,
 // com o JWKS servido pelo fetch simulado; RPCs e preços da Stripe também são simulados.
+// Com KT_INTEGRATION=1 este módulo fica inerte (não grava env nem troca o fetch) e os testes de contrato são
+// ignorados: env e fetch valem para o processo inteiro, e as integrações do mesmo processo usariam os fictícios.
+export const integrationMode = Deno.env.get('KT_INTEGRATION') === '1'
+
 export const SUPABASE_URL = 'http://supabase.teste'
 export const SECRET_KEY = 'chave-secreta-de-teste'
+export const WEBHOOK_SECRET = 'segredo-webhook-de-teste'
+export const TERMS_VERSION = 'termos-teste-1'
+export const LINK_SECRET = 'segredo-dos-links-de-teste'
+export const MAILPIT_URL = 'http://mailpit.teste'
+export const BREVO_WEBHOOK_SECRET = 'segredo-webhook-brevo-teste'
 
-Deno.env.set('SUPABASE_URL', SUPABASE_URL)
-Deno.env.set('SUPABASE_PUBLISHABLE_KEYS', JSON.stringify({ default: 'chave-publica-de-teste' }))
-Deno.env.set('SUPABASE_SECRET_KEYS', JSON.stringify({ default: SECRET_KEY }))
-Deno.env.set('STRIPE_SECRET_KEY', 'stripe-chave-de-teste')
-Deno.env.set('ALLOWED_ORIGINS', 'http://127.0.0.1:5173')
+const contractEnv: Record<string, string> = {
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEYS: JSON.stringify({ default: 'chave-publica-de-teste' }),
+  SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET_KEY }),
+  STRIPE_SECRET_KEY: 'stripe-chave-de-teste',
+  STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
+  SITE_URL: 'http://127.0.0.1:5176',
+  TERMS_VERSION,
+  ALLOWED_ORIGINS: 'http://127.0.0.1:5173',
+  // I4: B2, links HMAC e e-mail (valores fictícios).
+  B2_ENDPOINT: 's3.teste-001.backblazeb2.com',
+  B2_REGION: 'teste-001',
+  B2_BUCKET: 'bucket-de-teste',
+  B2_READ_KEY_ID: 'chave-leitura-teste',
+  B2_READ_APPLICATION_KEY: 'segredo-leitura-teste',
+  EMAIL_LINK_SECRET: LINK_SECRET,
+  API_PUBLIC_URL: 'http://127.0.0.1:54321/functions/v1/api',
+  EMAIL_FROM: 'acesso@example.com',
+  EMAIL_FROM_NAME: 'KeyToTwo',
+  EMAIL_LOG_MAILPIT_URL: MAILPIT_URL,
+  // I5: webhook da Brevo.
+  BREVO_WEBHOOK_SECRET,
+}
+if (!integrationMode) for (const [name, value] of Object.entries(contractEnv)) Deno.env.set(name, value)
+
+// Teste de contrato: ignorado no modo de integração (ver acima).
+export function contractTest(name: string, fn: () => void | Promise<void>): void {
+  Deno.test({ name, ignore: integrationMode, fn })
+}
 
 const KID = 'chave-teste'
 const keys = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
@@ -52,10 +85,41 @@ export function onPrice(reply: (id: string) => Reply) {
   priceReply = reply
 }
 
+// Chamadas à API da Stripe (fora de /v1/prices): método, caminho, parâmetros (form ou query) e chave de idempotência.
+export interface StripeCall {
+  method: string
+  path: string
+  params: URLSearchParams
+  idempotencyKey: string | null
+}
+
+export const stripeCalls: StripeCall[] = []
+let stripeReply: (call: StripeCall) => Reply = () => ({ status: 404, body: { error: { type: 'invalid_request_error', code: 'resource_missing' } } })
+
+export function onStripe(reply: (call: StripeCall) => Reply) {
+  stripeCalls.length = 0
+  stripeReply = reply
+}
+
+// Outros serviços externos (Brevo, Mailpit): URL, corpo JSON e headers.
+export interface ExternalCall {
+  url: string
+  body: Record<string, unknown>
+  headers: Headers
+}
+
+export const externalCalls: ExternalCall[] = []
+let externalReply: (call: ExternalCall) => Reply = () => ({ status: 500, body: {} })
+
+export function onExternal(reply: (call: ExternalCall) => Reply) {
+  externalCalls.length = 0
+  externalReply = reply
+}
+
 const respond = ({ status, body }: Reply) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
-globalThis.fetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+const contractFetch = (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
   const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url)
   if (url.href === `${SUPABASE_URL}/auth/v1/.well-known/jwks.json`) {
     return Promise.resolve(respond({ status: 200, body: { keys: [publicJwk] } }))
@@ -70,8 +134,22 @@ globalThis.fetch = (input: string | URL | Request, init?: RequestInit): Promise<
   if (url.origin === 'https://api.stripe.com' && url.pathname.startsWith('/v1/prices/')) {
     return Promise.resolve(respond(priceReply(decodeURIComponent(url.pathname.slice('/v1/prices/'.length)))))
   }
+  if (url.origin === 'https://api.stripe.com') {
+    const headers = new Headers(init?.headers)
+    const method = (init?.method ?? 'GET').toUpperCase()
+    const params = method === 'GET' ? url.searchParams : new URLSearchParams(String(init?.body ?? ''))
+    const call = { method, path: url.pathname, params, idempotencyKey: headers.get('Idempotency-Key') }
+    stripeCalls.push(call)
+    return Promise.resolve(respond(stripeReply(call)))
+  }
+  if (url.origin === 'https://api.brevo.com' || url.origin === MAILPIT_URL) {
+    const call = { url: url.href, body: JSON.parse(String(init?.body ?? '{}')), headers: new Headers(init?.headers) }
+    externalCalls.push(call)
+    return Promise.resolve(respond(externalReply(call)))
+  }
   return Promise.reject(new Error(`fetch não simulado: ${url.origin}${url.pathname}`))
 }
+if (!integrationMode) globalThis.fetch = contractFetch
 
 export function request(path: string, options: { method?: string; token?: string; body?: unknown; headers?: HeadersInit } = {}): Request {
   const headers = new Headers(options.headers)

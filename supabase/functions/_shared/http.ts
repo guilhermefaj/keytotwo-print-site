@@ -2,6 +2,7 @@
 export type ErrorCode =
   | 'INVALID_REQUEST'
   | 'INVALID_TOKEN'
+  | 'INVALID_SIGNATURE'
   | 'TERMS_NOT_ACCEPTED'
   | 'UNAUTHENTICATED'
   | 'EMAIL_NOT_CONFIRMED'
@@ -66,17 +67,25 @@ export function toErrorResponse(error: unknown): Response {
 
 const MAX_BODY_BYTES = 16 * 1024
 
+// Corpo como texto, com limite de tamanho (16 KB por padrão).
+export async function readText(req: Request, maxBytes = MAX_BODY_BYTES): Promise<string> {
+  const declared = Number(req.headers.get('Content-Length'))
+  if (declared > maxBytes) throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'Corpo da requisição grande demais.')
+  const bytes = new Uint8Array(await req.arrayBuffer())
+  if (bytes.byteLength > maxBytes) throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'Corpo da requisição grande demais.')
+  return new TextDecoder().decode(bytes)
+}
+
+export const isContentType = (req: Request, type: string) =>
+  new RegExp(`^${type.replace('/', '\\/')}\\s*(;|$)`, 'i').test(req.headers.get('Content-Type') ?? '')
+
 export async function readJson(req: Request): Promise<unknown> {
-  const type = req.headers.get('Content-Type') ?? ''
-  if (!/^application\/json\s*(;|$)/i.test(type)) {
+  if (!isContentType(req, 'application/json')) {
     throw new HttpError(415, 'UNSUPPORTED_MEDIA_TYPE', 'Envie o corpo como application/json.')
   }
-  const declared = Number(req.headers.get('Content-Length'))
-  if (declared > MAX_BODY_BYTES) throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'Corpo da requisição grande demais.')
-  const bytes = new Uint8Array(await req.arrayBuffer())
-  if (bytes.byteLength > MAX_BODY_BYTES) throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'Corpo da requisição grande demais.')
+  const text = await readText(req)
   try {
-    return JSON.parse(new TextDecoder().decode(bytes))
+    return JSON.parse(text)
   } catch {
     throw new HttpError(400, 'INVALID_REQUEST', 'Corpo JSON inválido.')
   }
