@@ -1,0 +1,29 @@
+backend:
+  name: github
+  repo: guilhermefaj/keytotwo-print-site
+  branch: main
+
+media_folder: public/images/blog
+public_folder: /images/blog
+locale: pt
+
+collections:
+  - name: blog
+    label: Blog
+    label_singular: Artigo
+    folder: content/blog
+    create: true
+    format: yaml-frontmatter
+    extension: md
+    slug: '{{slug}}'
+    preview_path: blog/{{slug}}
+    summary: '{{title}} — {{date}}'
+    fields:
+      - { name: title, label: Título, widget: string }
+      - { name: description, label: Resumo, widget: text, hint: 'Usado na lista, no RSS e na descrição para buscas.' }
+      - { name: date, label: Data, widget: datetime, format: 'YYYY-MM-DD', date_format: 'DD/MM/YYYY', time_format: false }
+      - { name: cover, label: Capa, widget: image, required: false, hint: 'Use uma imagem JPG, PNG, WebP, AVIF ou GIF.' }
+      - { name: coverAlt, label: Descrição da capa, widget: string, default: '', required: false, hint: 'Obrigatória ao usar capa. Descreva o que a imagem mostra.' }
+      - { name: tags, label: Temas, widget: list, required: false }
+      - { name: draft, label: Rascunho, widget: boolean, default: true, hint: 'Ativado: visível apenas nos ambientes preview e test. Desative só após revisar.' }
+      - { name: body, label: Texto, widget: markdown, hint: 'Use títulos a partir de H2 e texto alternativo nas imagens. HTML cru é exibido como texto.' }

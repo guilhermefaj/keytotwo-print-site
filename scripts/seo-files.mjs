@@ -1,23 +1,32 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { loadEnv } from 'vite'
 import { publicPages } from '../src/content/site.ts'
-import { resolveSiteConfig } from '../src/lib/seo.ts'
+import { readBlogPosts } from '../src/lib/blog.server.ts'
+import { buildSiteConfig } from '../src/lib/site-build.server.ts'
 
 // Match Vite's build mode and precedence; no secrets are read or emitted.
-const mode = process.env.SEO_MODE || 'production'
-const config = resolveSiteConfig({ ...loadEnv(mode, process.cwd(), 'VITE_SITE_'),
-  ...(process.env.VITE_SITE_STAGE ? { VITE_SITE_STAGE: process.env.VITE_SITE_STAGE } : {}),
-  ...(process.env.VITE_SITE_URL ? { VITE_SITE_URL: process.env.VITE_SITE_URL } : {}),
-})
+const config = buildSiteConfig()
 const outDir = path.resolve('build/client')
 await mkdir(outDir, { recursive: true })
 const xmlEscape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll("'", '&apos;')
-const urls = config.stage === 'live' ? Object.keys(publicPages) : []
+const posts = await readBlogPosts({ stage: config.stage })
+const urls = config.stage === 'live' ? [...Object.keys(publicPages), ...posts.map(post => `/blog/${post.slug}`)] : []
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(route => `  <url><loc>${xmlEscape(new URL(route, config.origin).href)}</loc></url>`).join('\n')}\n</urlset>\n`
 const robots = config.stage === 'live'
-  ? `User-agent: *\nAllow: /\nDisallow: /entrar\nDisallow: /carrinho\nDisallow: /meus-jogos\nDisallow: /conta\nDisallow: /pedido/\nDisallow: /preview/\nDisallow: /404\nSitemap: ${config.origin}/sitemap.xml\n`
+  ? `User-agent: *\nAllow: /\nDisallow: /entrar\nDisallow: /carrinho\nDisallow: /meus-jogos\nDisallow: /conta\nDisallow: /pedido/\nDisallow: /preview/\nDisallow: /admin\nDisallow: /404\nSitemap: ${config.origin}/sitemap.xml\n`
   : 'User-agent: *\nDisallow: /\n'
+const rss = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel>
+<title>Blog KeyToTwo</title><link>${xmlEscape(`${config.origin}/blog`)}</link>
+<description>${xmlEscape(publicPages['/blog'].description)}</description><language>pt-BR</language>
+<atom:link href="${xmlEscape(`${config.origin}/blog/rss.xml`)}" rel="self" type="application/rss+xml" />
+${posts.map(post => {
+  const url = xmlEscape(`${config.origin}/blog/${post.slug}`)
+  return `<item><title>${xmlEscape(`${post.draft ? 'Rascunho: ' : ''}${post.title}`)}</title><link>${url}</link><guid isPermaLink="true">${url}</guid><description>${xmlEscape(post.description)}</description><pubDate>${new Date(`${post.date}T00:00:00Z`).toUTCString()}</pubDate>${post.tags.map(tag => `<category>${xmlEscape(tag)}</category>`).join('')}</item>`
+}).join('\n')}
+</channel></rss>\n`
+await mkdir(path.join(outDir, 'blog'), { recursive: true })
+await writeFile(path.join(outDir, 'blog/rss.xml'), rss)
 await writeFile(path.join(outDir, 'robots.txt'), robots)
 await writeFile(path.join(outDir, 'sitemap.xml'), sitemap)
-console.log(`SEO: ${config.stage}; ${urls.length} public sitemap URLs; origin ${config.origin}`)
+console.log(`SEO: ${config.stage}; ${urls.length} public sitemap URLs; ${posts.length} RSS posts; origin ${config.origin}`)

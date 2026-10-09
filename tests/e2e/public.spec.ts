@@ -1,9 +1,12 @@
 import { mkdir, readFile } from 'node:fs/promises'
+import { readdirSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 
 // Checks for the public sales pages, run against the prerendered build (build/client).
 // Stage-specific assertions follow the stage the build was made for (robots.txt tells which).
 const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/ajuda', '/termos', '/privacidade', '/reembolsos', '/404']
+const blogRoutes = readdirSync('build/client/blog', { withFileTypes: true }).filter(file => file.isDirectory()).map(file => `/blog/${file.name}`)
+routes.push('/blog', ...blogRoutes)
 const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/404']
 const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao']
 const policyRoutes = ['/', '/ajuda', '/termos', '/reembolsos']
@@ -45,6 +48,7 @@ test.describe('links e botões', () => {
     for (const { from, href } of links) {
       if (href === '' || href === '#' || /^javascript:/i.test(href)) { problems.push(`${from}: href inválido "${href}"`); continue }
       if (/^(https?:|mailto:|tel:)/i.test(href)) continue
+      if (href === '/blog/rss.xml') continue // Static XML checked by blog.spec.ts.
       const url = new URL(href, `http://x${from}`)
       const target = url.pathname.replace(/\/$/, '') || '/'
       if (!known.has(target)) { problems.push(`${from}: ${href} aponta para rota inexistente`); continue }
@@ -175,7 +179,7 @@ test.describe('stage', () => {
       expect(robots).not.toMatch(/Sitemap:/)
       expect(locs).toEqual([])
     } else {
-      expect(locs.length).toBe(5)
+      expect(locs.length).toBe(6 + blogRoutes.length)
       for (const route of privateRoutes) expect(sitemap).not.toContain(`${route}</loc>`)
       expect(robots).toMatch(/Disallow: \/carrinho/)
     }
