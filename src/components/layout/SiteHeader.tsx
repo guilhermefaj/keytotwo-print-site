@@ -27,7 +27,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
       <img src="/media/hero/keytotwo-logo.webp" alt="KeyToTwo" width="420" height="97" fetchPriority="high" />
     </Link>
     <nav className="desktop-nav flex items-center gap-6" aria-label="Navegação principal">
-      {accountArea ? <><Link className="text-button" to="/meus-jogos">Meus jogos</Link><Link className="text-button" to="/ajuda">Ajuda</Link></> : visibleNavigation.map(item => <a className="text-button" key={item.href} href={item.href}>{item.label}</a>)}
+      {accountArea ? <><Link className="text-button" to="/meus-jogos">Meus jogos</Link><Link className="text-button" to="/ajuda">Ajuda</Link><Link className="text-button" to="/blog">Blog</Link></> : visibleNavigation.map(item => <a className="text-button" key={item.href} href={item.href}>{item.label}</a>)}
     </nav>
     <div className="desktop-action flex items-center gap-5">
       <Link className="text-button" to={accountHref}>{accountLabel}</Link>
@@ -59,6 +59,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
               {session && <SheetClose asChild><Link className="text-button" to="/meus-jogos">Meus jogos</Link></SheetClose>}
               {siteConfig.showCartAccess && <SheetClose asChild><Link className="text-button" to="/carrinho" aria-label={cartLabel}>Carrinho ({cart.loading || cart.error ? '…' : count})</Link></SheetClose>}
               <SheetClose asChild><Link className="text-button" to="/ajuda">Ajuda</Link></SheetClose>
+              <SheetClose asChild><Link className="text-button" to="/blog">Blog</Link></SheetClose>
             </> : <>
               {[...visibleNavigation, { label: 'Dúvidas', href: '/#duvidas' }, { label: 'Escolher nosso encontro', href: '/#comprar' }].map(item =>
                 <SheetClose asChild key={item.href}><a className={item.label === 'Escolher nosso encontro' ? 'button button-primary' : 'text-button'} href={item.href}

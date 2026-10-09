@@ -17,4 +17,10 @@ export default tseslint.config(
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
   },
+  {
+    files: ['src/routes/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true, allowExportNames: ['loader'] }],
+    },
+  },
 )

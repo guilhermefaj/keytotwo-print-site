@@ -30,6 +30,8 @@ jobs:
         run: npm run typecheck
       - name: Fixtures do bloqueio de release
         run: node scripts/check-release.mjs --self-test
+      - name: Testes unitários do blog
+        run: npm run test:unit
       - name: Build pré-renderizado
         run: npm run build
       - name: Validar conteúdo e preço para release

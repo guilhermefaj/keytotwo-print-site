@@ -8,6 +8,7 @@ RUN npm ci
 COPY react-router.config.ts vite.config.ts tsconfig.json site.config.json ./
 COPY scripts/seo-files.mjs scripts/check-release.mjs ./scripts/
 COPY src/ ./src/
+COPY content/ ./content/
 COPY public/ ./public/
 # Public build-time settings only; omitted values use site.config.json.
 ARG VITE_SITE_STAGE

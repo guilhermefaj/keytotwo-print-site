@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import { isRouteErrorResponse, Link, Links, Outlet, Scripts, ScrollRestoration, useLocation, useRouteError } from 'react-router'
+import { isRouteErrorResponse, Link, Links, Outlet, Scripts, ScrollRestoration, useLocation, useMatches, useRouteError } from 'react-router'
 import { SiteHeader } from './components/layout/SiteHeader'
 import { SiteFooter } from './components/layout/SiteFooter'
-import { pageSeo, siteConfig } from './lib/seo'
+import { blogPostingJsonLd, pageSeo, serializeJsonLd, siteConfig } from './lib/seo'
+import type { BlogPostSummary } from './lib/blog'
 import { AuthProvider } from './components/auth/AuthProvider'
 import { ShopProvider } from './components/account/ShopProvider'
 import { ConsentInvite } from './components/account/ConsentInvite'
@@ -13,7 +14,8 @@ import './styles.css'
 
 export function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
-  const seo = pageSeo(pathname)
+  const post = (useMatches().find(match => match.id === 'routes/blog.post')?.loaderData as { post?: BlogPostSummary } | undefined)?.post
+  const seo = pageSeo(pathname, post)
   return (
     <html lang="pt-BR">
       <head>
@@ -27,7 +29,10 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta property="og:title" content={seo.title} />
         <meta property="og:description" content={seo.description} />
         <meta property="og:url" content={seo.canonical} />
-        <meta property="og:type" content="website" />
+        <meta property="og:type" content={post ? 'article' : 'website'} />
+        {post?.cover && <><meta property="og:image" content={new URL(post.cover, siteConfig.origin).href} /><meta property="og:image:alt" content={post.coverAlt} /></>}
+        {post && <><meta property="article:published_time" content={post.date} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(blogPostingJsonLd(post)) }} /></>}
+        {pathname.startsWith('/blog') && <link rel="alternate" type="application/rss+xml" title="Blog KeyToTwo" href="/blog/rss.xml" />}
         <meta property="og:locale" content="pt_BR" />
         <meta property="og:site_name" content="KeyToTwo" />
         <meta name="theme-color" content="#ECFAF7" />

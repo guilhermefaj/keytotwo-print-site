@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { loadEnv } from 'vite'
+import { readBlogPosts } from '../src/lib/blog.server.ts'
 
 const script = fileURLToPath(import.meta.url)
 const marker = /\bPENDENTE\b/i
@@ -42,6 +43,8 @@ async function check(root, built) {
   const directory = path.join(root, 'src/content')
   const modules = {}
   const errors = []
+  const posts = await readBlogPosts({ root, stage })
+  inspect(posts, 'content/blog (publicados)', errors)
   for (const name of readdirSync(directory).filter(name => name.endsWith('.ts'))) {
     const exports = await import(pathToFileURL(path.join(directory, name)).href)
     modules[name] = exports
@@ -67,10 +70,19 @@ async function check(root, built) {
   if (built) {
     const pages = modules['site.ts']?.publicPages
     if (!pages || !Object.keys(pages).length) errors.push('Rotas públicas ausentes')
-    for (const route of Object.keys(pages || {})) {
+    for (const route of [...Object.keys(pages || {}), ...posts.map(post => `/blog/${post.slug}`)]) {
       const html = path.resolve(root, 'build/client', `.${route}`, 'index.html')
       if (!existsSync(html)) errors.push(`HTML público ausente: ${route}`)
       else if (marker.test(readFileSync(html, 'utf8'))) errors.push(`PENDENTE no HTML público: ${route}`)
+    }
+    for (const post of (await readBlogPosts({ root, stage: 'preview' })).filter(post => post.draft)) {
+      for (const artifact of [`blog/${post.slug}/index.html`, `blog/${post.slug}.data`]) {
+        if (existsSync(path.join(root, 'build/client', artifact))) errors.push(`Rascunho no build live: ${artifact}`)
+      }
+      for (const file of ['sitemap.xml', 'blog/rss.xml']) {
+        const artifact = path.join(root, 'build/client', file)
+        if (existsSync(artifact) && readFileSync(artifact, 'utf8').includes(`/blog/${post.slug}`)) errors.push(`Rascunho em ${file}: ${post.slug}`)
+      }
     }
   }
   if (errors.length) throw new Error(`Release live bloqueada (${errors.length} pendências):\n${errors.join('\n')}`)
@@ -104,6 +116,31 @@ function selfTest() {
       writeFileSync(path.join(root, 'build/client/index.html'), html)
       const result = spawnSync(process.execPath, [script, '--root', root, '--built'], {
         env: { ...process.env, VITE_SITE_STAGE: stage }, encoding: 'utf8',
+      })
+      assert.equal(result.status, status, `${name}: ${result.stderr || result.stdout}`)
+      if (status === 1) assert.match(result.stderr, /Release live bloqueada/)
+      console.log(`Fixture OK: ${name}`)
+    }
+    // Use approved test-only fixtures; no real commercial copy is rewritten.
+    writeFileSync(path.join(root, 'src/content/products.ts'), 'export const products = [{offer: {priceApproved: true, price: "FIXTURE"}}]')
+    writeFileSync(path.join(root, 'src/content/experience.ts'), 'export const experience = {}')
+    writeFileSync(path.join(root, 'build/client/index.html'), '<h1>Fixture</h1>')
+    mkdirSync(path.join(root, 'content/blog'), { recursive: true })
+    mkdirSync(path.join(root, 'build/client/blog/fixture'), { recursive: true })
+    for (const [name, draft, title, body, html, status] of [
+      ['post publicado limpo', false, 'Fixture', 'Texto', '<h1>Fixture</h1>', 0],
+      ['post com metadado pendente', false, 'PENDENTE', 'Texto', '<h1>Fixture</h1>', 1],
+      ['post com corpo pendente', false, 'Fixture', 'PENDENTE', '<h1>Fixture</h1>', 1],
+      ['post com HTML pendente', false, 'Fixture', 'Texto', '<p>PENDENTE</p>', 1],
+      ['rascunho indevido no build', true, 'Fixture', 'Texto', '<h1>Fixture</h1>', 1],
+      ['rascunho pendente excluído', true, 'PENDENTE', 'PENDENTE', '', 0],
+    ]) {
+      writeFileSync(path.join(root, 'content/blog/fixture.md'), `---\ntitle: ${title}\ndescription: Fixture\ndate: '2026-01-01'\ncoverAlt: ''\ndraft: ${draft}\n---\n${body}`)
+      const target = path.join(root, 'build/client/blog/fixture/index.html')
+      if (html) writeFileSync(target, html)
+      else rmSync(target, { force: true })
+      const result = spawnSync(process.execPath, [script, '--root', root, '--built'], {
+        env: { ...process.env, VITE_SITE_STAGE: 'live' }, encoding: 'utf8',
       })
       assert.equal(result.status, status, `${name}: ${result.stderr || result.stdout}`)
       if (status === 1) assert.match(result.stderr, /Release live bloqueada/)

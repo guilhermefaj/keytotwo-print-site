@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test'
 
-const port = 4174
+const port = Number(process.env.E2E_PORT || 4174)
 const baseURL = `http://127.0.0.1:${port}`
 
 // Smoke tests run against the prerendered build (build/client) served by `npm run preview`.
@@ -15,7 +15,7 @@ export default defineConfig({
   use: { baseURL, trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   webServer: {
-    command: 'npm run preview',
+    command: `node node_modules/sirv-cli/bin.js build/client --host 127.0.0.1 --port ${port} --single __spa-fallback.html`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
