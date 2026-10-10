@@ -103,8 +103,9 @@ test.describe('conteúdo', () => {
   test('experiência, um CTA na hero e prova social explicitamente reservada', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')
-    await expect(page.locator('.hero-copy a')).toHaveCount(1)
-    await expect(page.locator('.hero-benefits li')).toHaveCount(3)
+    await expect(page.locator('.hero-copy a')).toHaveText(['Quero o pacote', 'Ver a prévia'])
+    await expect(page.locator('.hero-copy mark')).toHaveText('encontro.')
+    await expect(page.locator('.hero-benefits')).toHaveCount(0)
     await expect(page.locator('.steps-list li')).toHaveCount(3)
     await expect(page.locator('.faq-item')).toHaveCount(4)
     await expect(page.locator('.social-card[data-placeholder="true"]')).toHaveCount(3)

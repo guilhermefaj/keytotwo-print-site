@@ -192,16 +192,13 @@ input, select, textarea { font: inherit; color: inherit; }
    Hero e cena do Kito (geometria da caminhada intacta; ver DESIGN.md › Kito)
    -------------------------------------------------------------------------- */
 .hero { background: var(--color-sky); min-height: min(800px, calc(100svh - 115px)); padding-top: var(--header-height); display: flex; flex-direction: column; isolation: isolate; }
-.hero-copy { width: calc(100% - 48px); max-width: 1080px; margin: 0 auto; padding-top: clamp(48px, 7vh, 82px); }
-.hero-copy .eyebrow { color: var(--color-deep-teal); }
-.hero h1 { max-width: 1020px; margin: 22px auto; }
-.hero h1 span { display: block; color: var(--color-deep-teal); }
-.hero-description { max-width: 545px; margin: 0 auto; font-size: var(--text-lead); line-height: 1.55; }
-.hero-benefits { list-style: none; padding: 0; margin: 24px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 28px; font-size: var(--text-label); }
-.hero-benefits li { display: flex; align-items: center; gap: 7px; }
-.hero-benefits svg { color: var(--color-deep-teal); flex-shrink: 0; }
-.hero-actions { margin-top: 28px; flex-wrap: wrap; }
+.hero-copy { width: min(var(--container), calc(100% - 80px)); margin: 0 auto; padding-top: clamp(40px, 6vh, 64px); }
+.hero h1 { max-width: 1000px; margin: 22px 0; }
+.hero h1 span { display: block; }
+.hero-description { max-width: 560px; margin: 0; font-size: var(--text-lead); line-height: 1.55; }
+.hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; margin-top: 28px; }
 .hero-cta { min-width: 178px; }
+.hero-secondary { padding-block: 10px; }
 .hero-scene-region { --floor-height: 48px; --sprite-size: 192px; --foot-padding: calc(var(--sprite-size) * 94 / 1254); position: relative; display: flex; flex-direction: column; flex: 1 0 260px; min-height: 260px; margin-top: 0; }
 .motion-controls { width: calc(100% - 40px); max-width: 1200px; margin: 0 auto; display: flex; justify-content: flex-end; }
 .motion-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 8px 12px; border: 1.5px solid transparent; border-radius: var(--radius-sm); color: var(--color-ink); background: transparent; font-size: var(--text-label); line-height: 1.5; font-weight: 600; max-width: 100%; }
@@ -250,12 +247,12 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 @media (max-width: 767px) {
   .hero { min-height: 0; }
-  .hero-copy { width: calc(100% - 40px); padding-top: 40px; }
-  .hero h1 { font-size: 2.625rem; margin: 20px auto; }
-  .hero-description { font-size: var(--text-body); max-width: 360px; }
-  .hero-benefits { display: grid; width: fit-content; margin: 22px auto 0; text-align: left; gap: 9px; }
-  .hero-actions { flex-direction: column; gap: 8px; margin-top: 24px; }
-  .hero-cta { width: min(100%, 340px); }
+  .hero-copy { width: calc(100% - 40px); padding-top: 36px; }
+  .hero h1 { font-size: var(--text-display-mobile); margin: 20px 0; }
+  .hero-description { font-size: var(--text-body); max-width: 420px; }
+  .hero-actions { flex-direction: column; align-items: stretch; gap: 10px; margin-top: 24px; }
+  .hero-cta { width: 100%; }
+  .hero-secondary { align-self: flex-start; }
   .hero-scene-region { --floor-height: 38px; --sprite-size: 128px; min-height: 228px; flex: 1 0 228px; margin-top: 12px; }
   .hero-scene { min-height: 180px; flex: 1 0 180px; }
   .cloud-left { left: 12%; top: 10px; width: 88px; }
@@ -267,7 +264,7 @@ input, select, textarea { font: inherit; color: inherit; }
 }
 @media (max-width: 359px) {
   .hero-copy { padding-top: 34px; }
-  .hero h1 { font-size: 2.25rem; }
+  .hero h1 { font-size: var(--text-display-xs); }
 }
 /* Reduced motion starts paused; only explicit user opt-in enables movement.
    No entrance animation or smooth scrolling. */
@@ -356,13 +353,13 @@ input, select, textarea { font: inherit; color: inherit; }
 
 /* --------------------------------------------------------------------------
    Rodapé
-.site-footer-rule { height: 0; margin-bottom: 56px; border-top: var(--line-rule); }
    -------------------------------------------------------------------------- */
 .site-footer { background: var(--color-paper); padding-block: 0 28px; }
-.footer-brand .brand img { width: 178px; height: auto; }
 .site-footer > .cut-line { margin-bottom: 24px; }
+.site-footer-rule { height: 0; margin-bottom: 56px; border-top: var(--line-rule); }
 .site-footer p { line-height: 1.6; }
 .footer-grid { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: var(--space-3xl); }
+.footer-brand .brand img { width: 178px; height: auto; }
 .footer-brand p { font-size: var(--text-body); line-height: 1.55; max-width: 260px; margin-top: 18px; }
 .footer-grid h2 { font-family: var(--font-sans); font-size: var(--text-label); letter-spacing: 0; margin: 0 0 12px; line-height: 1.5; font-weight: 600; }
 .site-footer nav a { display: block; padding-block: 10px; font-size: var(--text-label); line-height: 1.5; text-underline-offset: 4px; }
@@ -500,7 +497,7 @@ input, select, textarea { font: inherit; color: inherit; }
    Responsivo
    -------------------------------------------------------------------------- */
 @media (max-width: 1050px) {
-  .content-width { width: calc(100% - 48px); }
+  .content-width, .hero-copy { width: calc(100% - 48px); }
   .experience-layout { gap: 48px; }
   .pillars-grid, .steps-list { gap: 32px; }
   .offer-layout, .faq-layout { gap: 40px; }
@@ -530,10 +527,10 @@ input, select, textarea { font: inherit; color: inherit; }
   .offer-invitation { padding: 0; }
   .offer-summary { margin: 0; padding: 24px; }
   .faq-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
-  .footer-brand .brand img { width: 150px; }
   .site-footer > .cut-line { margin-bottom: 8px; }
   .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 20px; }
   .footer-brand { grid-column: 1 / -1; }
+  .footer-brand .brand img { width: 150px; }
   .footer-bottom { margin-top: 32px; }
   .footer-bottom nav { gap: 12px 20px; }
   .reading-page, .cart-page, .account-page { padding-block: 32px 56px; }

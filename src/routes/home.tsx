@@ -22,15 +22,16 @@ export default function Home() {
   const { menuOpen } = useOutletContext<{ menuOpen: boolean }>()
   const { posts } = useLoaderData<typeof loader>()
   const main = useRef<HTMLElement>(null)
+  // The highlight is the tail of the second headline line; the mark never changes the words.
+  const headlineRest = experience.headline[1].endsWith(experience.highlight) ? experience.headline[1].slice(0, -experience.highlight.length) : `${experience.headline[1]} `
   useScrollReveal(main)
   return <main id="conteudo" tabIndex={-1} ref={main}>
     <div className="hero">
-      <section className="hero-copy text-center" aria-labelledby="hero-title">
-        <p className="eyebrow">KeyToTwo · jogos para casais</p>
-        <h1 id="hero-title">{experience.headline[0]}{' '}<span>{experience.headline[1]}</span></h1>
+      <section className="hero-copy" aria-labelledby="hero-title">
+        <p className="tag">{experience.tag}</p>
+        <h1 id="hero-title">{experience.headline[0]}{' '}<span>{headlineRest}<mark>{experience.highlight}</mark></span></h1>
         <p className="hero-description">{experience.description}</p>
-        <ul className="hero-benefits">{experience.benefits.map(benefit => <li key={benefit}><svg aria-hidden="true" viewBox="0 0 20 20" width="20" height="20"><path d="m4 10 4 4 8-8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>{benefit}</li>)}</ul>
-        <div className="hero-actions flex items-center justify-center"><a className="button button-primary hero-cta" href="/#comprar">{experience.cta}</a></div>
+        <div className="hero-actions"><a className="button button-primary hero-cta" href={experience.cta.href}>{experience.cta.label}</a><a className="inline-link hero-secondary" href={experience.secondary.href}>{experience.secondary.label}</a></div>
       </section>
       <HeroScene obscured={menuOpen} />
     </div>
