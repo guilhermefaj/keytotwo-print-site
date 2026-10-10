@@ -13,7 +13,6 @@ export const offer = {
   updates: pending('direito a futuras versões e condições de atualização.'),
   license: pending('licença de uso e condições de atendimento.'),
   materials: pending('lista completa de materiais e instruções de impressão dos cinco jogos.'),
-  refund: 'Não há reembolso após a liberação do download.',
   legalReview: pending('texto final e validação jurídica da política de não reembolso.'),
 }
 
