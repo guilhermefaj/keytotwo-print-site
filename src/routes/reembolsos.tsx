@@ -1,4 +1,7 @@
-import { LegalPage } from '../components/legal/LegalPage'
-import { legal } from '../content/legal'
+import { redirect } from 'react-router'
 
-export default function Reembolsos() { return <LegalPage content={legal.reembolsos} /> }
+export async function loader() {
+  return redirect('/termos#reembolso')
+}
+
+export default function Reembolsos() { return null }

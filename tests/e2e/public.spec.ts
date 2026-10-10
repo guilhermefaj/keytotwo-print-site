@@ -4,12 +4,13 @@ import { expect, test, type Page } from '@playwright/test'
 
 // Checks for the public sales pages, run against the prerendered build (build/client).
 // Stage-specific assertions follow the stage the build was made for (robots.txt tells which).
-const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/ajuda', '/termos', '/privacidade', '/reembolsos', '/404']
+const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/ajuda', '/termos', '/privacidade', '/404']
+// A rota ainda existe, mas redireciona para /termos#reembolso; links internos continuam resolvendo.
+const redirectRoutes = ['/reembolsos']
 const blogRoutes = readdirSync('build/client/blog', { withFileTypes: true }).filter(file => file.isDirectory()).map(file => `/blog/${file.name}`)
 routes.push('/blog', ...blogRoutes)
 const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/404']
 const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao']
-const policyRoutes = ['/', '/ajuda', '/termos', '/reembolsos']
 const refundNotice = /N[ãa]o h[áa] reembolso ap[óo]s a libera[çc][ãa]o do download/i
 
 async function builtFile(name: string) {
@@ -24,7 +25,7 @@ async function visibleText(page: Page) {
 
 test.describe('links e botões', () => {
   test('todo link interno resolve para uma rota pré-renderizada e para um id existente', async ({ page }) => {
-    const known = new Set(routes)
+    const known = new Set([...routes, ...redirectRoutes])
     const ids = new Map<string, Set<string>>()
     const links: { from: string; href: string }[] = []
 
@@ -105,7 +106,7 @@ test.describe('conteúdo', () => {
     await expect(page.locator('.hero-copy a')).toHaveCount(1)
     await expect(page.locator('.hero-benefits li')).toHaveCount(3)
     await expect(page.locator('.steps-list li')).toHaveCount(3)
-    await expect(page.locator('.faq-item')).toHaveCount(5)
+    await expect(page.locator('.faq-item')).toHaveCount(4)
     await expect(page.locator('.social-card[data-placeholder="true"]')).toHaveCount(3)
     await expect(page.locator('.social-card blockquote')).toHaveCount(0)
     await expect(page.locator('.social-metrics')).toContainText('Nota a preencher')
@@ -119,29 +120,24 @@ test.describe('conteúdo', () => {
     expect((await visibleText(page)).match(/\bP\d{3}\b/g) ?? [], 'códigos de produto além de P001').toEqual([])
   })
 
-  test('aviso de sem reembolso: oferta, FAQ e políticas', async ({ page }) => {
-    for (const route of policyRoutes) {
+  test('condição de reembolso: nos termos de uso, não nas páginas de venda', async ({ page }) => {
+    // The refund condition belongs in the terms of use, not in the buyer's face.
+    for (const route of ['/', '/ajuda']) {
       await page.goto(route)
       await page.waitForLoadState('networkidle')
-      expect(await visibleText(page), `aviso em ${route}`).toMatch(refundNotice)
+      expect(await visibleText(page), `sem condição de reembolso em ${route}`).not.toMatch(refundNotice)
     }
+    await page.goto('/termos')
+    await page.waitForLoadState('networkidle')
+    expect(await visibleText(page), 'condição nos termos de uso').toMatch(refundNotice)
+    await expect(page.locator('#reembolso')).toHaveText('Reembolsos e contestações')
   })
 
-  // The conditions must come before the purchase action, not necessarily before the price.
-  test('home: aviso de sem reembolso na oferta e antes de qualquer botão de compra', async ({ page }) => {
+  // The refund condition must not appear on the offer anymore; it moved to the terms.
+  test('home: oferta sem linha de reembolso', async ({ page }) => {
     await page.goto('/')
-    const result = await page.evaluate(() => {
-      const offer = document.querySelector('section.offer-section')!
-      const notice = [...offer.querySelectorAll('*')].find(el => el.children.length === 0 && /N[ãa]o h[áa] reembolso/i.test(el.textContent ?? ''))
-      const actions = [...offer.querySelectorAll('button, a, [role="button"]')]
-        .filter(el => /adicionar|finalizar|comprar agora|carrinho/i.test(`${el.textContent} ${el.getAttribute('aria-label') ?? ''}`))
-      return {
-        noticeInOffer: !!notice,
-        actionsBeforeNotice: actions.filter(el => !!notice && !!(el.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING)).map(el => el.textContent?.trim()),
-      }
-    })
-    expect(result.noticeInOffer, 'aviso dentro da seção da oferta').toBe(true)
-    expect(result.actionsBeforeNotice, 'botões de compra antes do aviso').toEqual([])
+    await expect(page.locator('section.offer-section .refund-notice')).toHaveCount(0)
+    expect(await visibleText(page)).not.toMatch(refundNotice)
   })
 
   test('carrinho exige login e preserva o destino', async ({ page }) => {
@@ -179,7 +175,7 @@ test.describe('stage', () => {
       expect(robots).not.toMatch(/Sitemap:/)
       expect(locs).toEqual([])
     } else {
-      expect(locs.length).toBe(6 + blogRoutes.length)
+      expect(locs.length).toBe(5 + blogRoutes.length)
       for (const route of privateRoutes) expect(sitemap).not.toContain(`${route}</loc>`)
       expect(robots).toMatch(/Disallow: \/carrinho/)
     }

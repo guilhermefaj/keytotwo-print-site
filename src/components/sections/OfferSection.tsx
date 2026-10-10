@@ -1,5 +1,4 @@
-﻿import { Link } from 'react-router'
-import { products, packageContents, type Product } from '../../content/products'
+﻿import { products, packageContents, type Product } from '../../content/products'
 import { siteConfig } from '../../lib/seo'
 import { useShop } from '../../lib/shop-context'
 import { money } from '../../lib/api'
@@ -24,7 +23,6 @@ function ProductOffer({ product }: { product: Product }) {
       {price && siteConfig.stage === 'test' && <p className="test-price-label">Valor de teste</p>}
       <p className="offer-delivery">Download após a confirmação da compra.<br />Acesso sem prazo de expiração.</p>
       <TrustLine />
-      <div className="refund-notice"><p><span>{product.offer.refund}</span> <Link to="/reembolsos">Ver política</Link></p></div>
       {siteConfig.showCartAccess ? <ProductPurchaseAction code={product.code} /> : <p className="offer-coming">Estamos preparando este encontro. Compra disponível em breve.</p>}
     </div>
   </article>

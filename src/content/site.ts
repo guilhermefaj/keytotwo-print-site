@@ -18,7 +18,6 @@ export const publicPages = {
   '/ajuda': { title: 'Ajuda com jogos, impressão e acesso — KeyToTwo', description: 'Encontre orientações sobre os jogos para imprimir, materiais, acesso às compras e atendimento da KeyToTwo.' },
   '/termos': { title: 'Termos de uso — KeyToTwo', description: 'Consulte o estado dos termos de uso da KeyToTwo, incluindo licença dos jogos, condições de acesso e validações pendentes.' },
   '/privacidade': { title: 'Privacidade e dados pessoais — KeyToTwo', description: 'Veja o estado da política de privacidade da KeyToTwo e as informações sobre dados pessoais que aguardam validação.' },
-  '/reembolsos': { title: 'Política de reembolsos — KeyToTwo', description: 'Conheça a condição de não reembolso após a liberação do download e o estado da validação jurídica da política da KeyToTwo.' },
 } as const
 
 export const otherPages = {

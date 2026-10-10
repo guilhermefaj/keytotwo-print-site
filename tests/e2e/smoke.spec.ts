@@ -14,7 +14,6 @@ const routes = [
   '/ajuda',
   '/termos',
   '/privacidade',
-  '/reembolsos',
   '/404',
 ]
 
@@ -81,6 +80,15 @@ for (const route of routes) {
     }
   })
 }
+
+test('rota /reembolsos redireciona para /termos#reembolso', async ({ page }) => {
+  const errors = trackErrors(page)
+  await page.goto('/reembolsos')
+  await page.waitForURL(/\/termos#reembolso$/)
+  await expect(page.getByRole('heading', { name: 'Termos de uso', exact: true })).toBeVisible()
+  await expect(page.locator('#reembolso')).toBeVisible()
+  expect(errors, 'erros no redirecionamento de /reembolsos').toEqual([])
+})
 
 test('H1 da hero em /', async ({ page }) => {
   await page.goto('/')
