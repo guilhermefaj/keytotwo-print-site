@@ -7,10 +7,14 @@ import { FaqSection } from '../components/sections/FaqSection'
 import { ClosingCta } from '../components/sections/ClosingCta'
 import { ExperienceSections, ProductExperience } from '../components/sections/ExperienceSections'
 import { experience } from '../content/experience'
+import { useRef } from 'react'
+import { useScrollReveal } from '../lib/use-scroll-reveal'
 
 export default function Home() {
   const { menuOpen } = useOutletContext<{ menuOpen: boolean }>()
-  return <main id="conteudo" tabIndex={-1}>
+  const main = useRef<HTMLElement>(null)
+  useScrollReveal(main)
+  return <main id="conteudo" tabIndex={-1} ref={main}>
     <div className="hero">
       <section className="hero-copy text-center" aria-labelledby="hero-title">
         <p className="eyebrow">KeyToTwo · jogos para casais</p>

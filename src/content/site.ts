@@ -1,6 +1,6 @@
 // Sources: Site — Estrutura e taxonomia; Site — Direção visual (draft copy).
 export const navigation = [
-  { label: 'A experiência', href: '/#experiencia' },
+  { label: 'O pacote', href: '/#experiencia' },
   { label: 'Como funciona', href: '/#como-funciona' },
   { label: 'Blog', href: '/blog' },
 ] as const

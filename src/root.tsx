@@ -11,6 +11,7 @@ import '@fontsource/bricolage-grotesque/latin-700.css'
 import '@fontsource/dm-sans/latin-400.css'
 import '@fontsource/dm-sans/latin-600.css'
 import './styles.css'
+import './navigation.css'
 
 export function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()

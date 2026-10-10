@@ -14,7 +14,7 @@ export function ProductPurchaseAction({ code, compact = false }: { code: string;
   async function addProduct() {
     if (!session) { await navigate(loginDestination('/carrinho', code)); return }
     setError('')
-    try { await add(code); await navigate('/carrinho') }
+    try { await add(code) }
     catch (cause) { setError(apiErrorMessage(cause)) }
   }
   return <div className={`offer-cart-action${compact ? ' purchase-compact' : ''}`}>
