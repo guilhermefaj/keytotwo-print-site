@@ -70,7 +70,9 @@ test('portal: real preview, existing art, stagger and keyboard navigation betwee
   await expect(page.locator('.portal-greeting')).toHaveText('Olá, Pessoa!')
   await expect(page.locator('.portal-game')).toHaveCount(5)
   await expect(page.locator('.game-cover img').first()).toHaveAttribute('src', '/media/experience/j001-page-1-720.webp')
-  await expect(page.locator('.game-cover img').nth(2)).toHaveAttribute('src', '/media/experience/kito-tabuleiro-240.webp')
+  // Capa tipográfica para jogos sem prévia aprovada (P0-2): nome do jogo, sem arte do Kito.
+  await expect(page.locator('.game-cover img')).toHaveCount(1)
+  await expect(page.locator('.game-cover-type').nth(1)).toContainText('Jogo de teste 3')
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(5)
   for (const link of await page.getByRole('link', { name: 'Como imprimir', exact: true }).all()) await expect(link).toHaveAttribute('href', '/ajuda#impressao')
   await expect(page.locator('.portal-game').nth(1)).toHaveCSS('animation-delay', '0.04s')

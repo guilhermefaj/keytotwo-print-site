@@ -82,20 +82,22 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await capture(page, `carrinho-vazio-${width}`); await axe(page)
 })
 
-test('five games and mobile testimonials move only by user action; keyboard reaches every card', async ({ page }) => {
+test('five games as a sheet on desktop; carousel and testimonials move only by user action on mobile', async ({ page }) => {
   await page.goto('/')
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(page.locator('.package-game')).toHaveCount(5)
-  await expect(page.locator('.package-game h3')).toHaveText(['Rabisque e Adivinhe', 'Hora dos Artistas', 'Boardgame', 'Em breve', 'Em breve'])
+  // Capas tipográficas: nome do jogo na carta; jogos indefinidos ficam "Em breve" sem h3 (P0-2, P2-1).
+  await expect(page.locator('.package-game h3')).toHaveText(['Rabisque e Adivinhe', 'Hora dos Artistas', 'Boardgame'])
+  await expect(page.locator('.game-cover-soon')).toHaveCount(2)
+  await expect(page.locator('.game-cover img')).toHaveCount(1)
+  await expect(page.locator('.game-number')).toHaveCount(0)
   await page.locator('.package-games').scrollIntoViewIfNeeded()
   const track = page.locator('.games-carousel .snap-track')
-  await expect(track).toHaveCSS('scroll-snap-type', 'x mandatory')
-  await track.focus(); await page.keyboard.press('End')
-  await expect.poll(() => track.evaluate(el => Math.abs(el.scrollWidth - el.clientWidth - el.scrollLeft))).toBeLessThan(3)
-  await expect(page.getByRole('button', { name: 'Próximo: Jogos do pacote' })).toBeDisabled()
-  await page.getByRole('button', { name: 'Anterior: Jogos do pacote' }).click()
-  await expect(page.getByRole('button', { name: 'Próximo: Jogos do pacote' })).toBeEnabled()
+  // Desktop: folha com os cinco visíveis, sem carrossel (P2-2).
+  await expect(track).toHaveCSS('scroll-snap-type', 'none')
+  await expect(page.getByRole('button', { name: 'Próximo: Jogos do pacote' })).toBeHidden()
   await page.setViewportSize({ width: 390, height: 844 })
+  await expect(track).toHaveCSS('scroll-snap-type', 'x mandatory')
   await track.focus(); await page.keyboard.press('Home')
   await expect(page.locator('.games-carousel .carousel-position')).toHaveText('1 de 5')
   await page.keyboard.press('ArrowRight')
@@ -106,7 +108,10 @@ test('five games and mobile testimonials move only by user action; keyboard reac
   const social = page.locator('.social-carousel .snap-track')
   await social.focus(); await page.keyboard.press('End')
   await expect(page.locator('.social-carousel .carousel-position')).toHaveText('3 de 3')
-  await expect(page.locator('.social-card blockquote')).toHaveCount(0)
+  // Relatos de exemplo só no stage test, sempre marcados; nunca nota ou contagem.
+  await expect(page.locator('.social-card blockquote')).toHaveCount(3)
+  await expect(page.locator('.social-card[data-placeholder="true"] .tag-solid')).toHaveCount(3)
+  await expect(page.locator('.social-metrics')).toHaveCount(0)
 })
 
 test('public newsletter is a truthful stage-only preview; published posts alone enter home', async ({ page }) => {

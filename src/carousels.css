@@ -9,13 +9,15 @@
 .carousel-arrows button:disabled { opacity: .35; cursor: default; }
 .carousel-arrows button:not(:disabled):hover { background: var(--color-ink-wash); }
 .package-games { background: var(--color-paper); }
-.package-games .section-heading { max-width: 650px; }
-.package-game { background: var(--color-paper); border: var(--line-card); border-radius: var(--radius-lg); overflow: clip; }
-.package-game-copy { padding: 24px; }
-.game-number { font-size: var(--text-caption); color: var(--color-ink-soft); font-variant-numeric: tabular-nums; }
-.package-game h3 { font-size: var(--text-title); margin: 12px 0; line-height: 1.2; }
-.package-game p { line-height: 1.6; color: var(--color-ink-soft); font-size: var(--text-small); margin: 0 0 16px; }
-.package-game a { display: inline-flex; align-items: center; min-height: 44px; font-size: var(--text-label); }
+/* Folha de cartas: os cinco jogos lado a lado com calhas tracejadas; carrossel só abaixo de 768 px. */
+.games-carousel .snap-track { grid-auto-flow: initial; grid-auto-columns: initial; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; overflow: visible; padding: 0; scroll-snap-type: none; }
+.games-carousel .carousel-controls { display: none; }
+.package-game { margin: 0; padding: 14px; min-width: 0; border-right: var(--line-cut); }
+.package-game:last-child { border-right: 0; }
+.package-game-copy { padding: 12px 0 0; }
+.package-game h3 { font-size: var(--text-title-sm); margin: 0 0 6px; }
+.package-game p { line-height: 1.5; color: var(--color-ink-soft); font-size: var(--text-label); margin: 0; }
+.package-game a { display: inline-flex; align-items: center; min-height: 44px; margin-top: 4px; font-size: var(--text-label); }
 .social-carousel .snap-track { grid-auto-flow: initial; grid-auto-columns: initial; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; padding: 0; }
 .social-carousel .carousel-controls { display: none; }
 .from-blog-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 20px; margin-bottom: 32px; }
@@ -26,15 +28,20 @@
 .home-posts h3 { font-size: var(--text-title); line-height: 1.2; margin: 12px 0; }
 .home-posts h3 a { text-decoration: underline; text-underline-offset: 4px; }
 .home-posts p { line-height: 1.6; margin: 0; }
-@media (max-width: 1000px) { .snap-track { grid-auto-columns: calc((100% - 24px) / 2); } }
-@media (max-width: 640px) {
-  .snap-track, .social-carousel .snap-track { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 88%; gap: 16px; overflow-x: auto; padding-block: 8px 20px; }
-  .social-carousel .carousel-controls { display: flex; }
-  .carousel-arrows { display: none; }
-  .package-game-copy { padding: 20px; }
-  .home-posts { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1050px) {
+  .games-carousel .snap-track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .package-game { border-right: 0; }
+  .package-game:nth-child(-n+3) { border-bottom: var(--line-cut); }
+  .package-game:nth-child(even) { border-right: var(--line-cut); }
+  .package-game:first-child { grid-column: 1 / -1; display: grid; grid-template-columns: 40% minmax(0, 1fr); gap: 16px; align-items: center; }
+  .package-game:first-child .package-game-copy { padding: 0; }
 }
-@media (prefers-reduced-motion: no-preference) and (hover: hover) {
-  .package-game { transition: transform 200ms var(--ease-out); transform-origin: bottom center; }
-  .package-game:hover { transform: translateY(-4px) rotate(-.5deg); }
+@media (max-width: 1000px) { .snap-track { grid-auto-columns: calc((100% - 24px) / 2); } }
+@media (max-width: 767px) {
+  .games-carousel .snap-track, .social-carousel .snap-track { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 78%; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-block: 8px 20px; }
+  .games-carousel .carousel-controls, .social-carousel .carousel-controls { display: flex; }
+  .carousel-arrows { display: none; }
+  .package-game, .package-game:first-child { display: block; grid-column: auto; padding: 0; border: 0; }
+  .package-game:first-child .package-game-copy, .package-game-copy { padding: 12px 0 0; }
+  .home-posts { grid-template-columns: minmax(0, 1fr); }
 }

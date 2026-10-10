@@ -86,8 +86,8 @@
 @media (prefers-reduced-motion: no-preference) {
   .button { transition: transform var(--duration-press) var(--ease-out), background-color var(--duration-press), border-color var(--duration-press); }
   .button:not(:disabled):active { transform: scale(.98); }
-  [data-reveal] { transition: opacity 400ms var(--ease-out) var(--reveal-delay, 0ms), transform 400ms var(--ease-out) var(--reveal-delay, 0ms); }
-  [data-reveal="pending"] { opacity: 0; transform: translateY(16px); transition: none; }
+  [data-reveal] { transition: opacity var(--duration-reveal) var(--ease-out) var(--reveal-delay, 0ms), transform var(--duration-reveal) var(--ease-out) var(--reveal-delay, 0ms); }
+  [data-reveal="pending"] { opacity: 0; transform: translateY(8px); transition: none; }
   [data-reveal="visible"] { opacity: 1; transform: none; }
   .sheet-overlay[data-state="open"] { animation: d1-fade 200ms ease-out; }
   .sheet-overlay[data-state="closed"] { animation: d1-fade 160ms ease-in reverse; }

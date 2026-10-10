@@ -14,21 +14,26 @@ export const experience = {
     { title: 'Imprimam.', text: 'Depois da compra, os arquivos ficam em Meus jogos e chegam por e-mail.' },
     { title: 'Divirtam-se.', text: 'Preparem os materiais e escolham quem começa.' },
   ],
-  pillars: [
-    { icon: 'connection', title: 'A curiosidade é mútua.', text: 'Um convite para conversar, descobrir e se surpreender com quem está do outro lado da mesa.' },
-    { icon: 'play', title: 'Vale rir de si mesmo.', text: 'Entrem na brincadeira. O talento pode faltar; a vontade de tentar já rende assunto.' },
-    { icon: 'time', title: 'Um momento de vocês.', text: 'Uma ideia para dar espaço ao encontro, no ritmo e no cantinho de vocês.' },
-  ],
+  // Portão 1: relatos de exemplo na voz da marca, marcados placeholder: true. Aparecem só no stage
+  // test; em live só entram relatos reais (placeholder: false) e, sem nenhum, a seção não renderiza.
+  // Sem nota, número de avaliações ou estrelas. O responsável substitui pelos relatos autorizados.
   social: {
     heading: 'Cada dupla, uma história.',
     description: 'Este espaço está reservado para as histórias de quem jogou junto.',
-    rating: null as number | null,
-    reviewCount: null as number | null,
+    placeholderLabel: 'Relato de exemplo',
     testimonials: [
-      { id: 'first', quote: null as string | null, author: null as string | null },
-      { id: 'second', quote: null as string | null, author: null as string | null },
-      { id: 'third', quote: null as string | null, author: null as string | null },
-    ],
-    placeholders: { quote: 'Em breve, histórias de quem levou os jogos para a mesa.', author: 'Relato ainda não publicado', label: 'Espaço reservado' },
+      { id: 'exemplo-1', placeholder: true, quote: 'A gente demorou mais para escolher quem desenhava do que para jogar. Valeu a pena: rimos até das cartas erradas.', author: 'Marina e Léo' },
+      { id: 'exemplo-2', placeholder: true, quote: 'Imprimi no trabalho, recortei no ônibus e, à noite, a mesa da cozinha virou arena. Fazia tempo que não ríamos tanto.', author: 'Bia e Caio' },
+      { id: 'exemplo-3', placeholder: true, quote: 'Descobri que ele desenha um cachorro igual a uma batata. Dez rodadas depois, já queríamos outra partida.', author: 'Júlia e Renan' },
+    ] as ReadonlyArray<{ id: string; placeholder: boolean; quote: string; author: string }>,
+  },
+  // Portão 1: haverá um freebie resgatado ao criar a conta; o resgate é backend e vem depois.
+  // Esta copy é PROPOSTA (vai ao Portão 2) e o bloco só aparece no stage test.
+  freebie: {
+    proposal: true,
+    tag: 'Em preparação · copy em proposta',
+    title: 'Um jogo para começar, por nossa conta.',
+    text: 'Ao criar sua conta, vocês ganham um jogo para conhecer a proposta antes do pacote.',
+    cta: { label: 'Criar conta', href: '/entrar' },
   },
 }

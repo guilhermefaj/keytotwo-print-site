@@ -86,9 +86,7 @@ try {
     for (const width of [320, 390, 1440]) {
       const routePage = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: 'reduce' })
       routePage.on('pageerror', error => report.runtimeErrors.push(`${routePath}: ${error.message}`))
-      // Dev-only React hydration notice caused by Playwright's screenshot caret hiding (style injected before hydration); not a product error.
-      const screenshotArtifact = text => /caret-color/.test(text)
-      routePage.on('console', message => { if (message.type() === 'error' && !screenshotArtifact(message.text())) report.consoleErrors.push(`${routePath}: ${message.text()}`) })
+      routePage.on('console', message => { if (message.type() === 'error') report.consoleErrors.push(`${routePath}: ${message.text()}`) })
       const response = await routePage.goto(new URL(routePath, url).href)
       expect(response.status()).toBe(200)
       const servedHtml = await response.text()

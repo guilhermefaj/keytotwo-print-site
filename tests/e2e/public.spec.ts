@@ -109,7 +109,7 @@ test.describe('conteúdo', () => {
     await expect(page.locator('.steps-list li')).toHaveCount(3)
     await expect(page.locator('.faq-item')).toHaveCount(4)
     await expect(page.locator('.social-card[data-placeholder="true"]')).toHaveCount(3)
-    await expect(page.locator('.social-card blockquote')).toHaveCount(0)
+    await expect(page.locator('.social-card blockquote')).toHaveCount(3)
     await expect(page.locator('.social-metrics')).toHaveCount(0)
     await expect(page.locator('[data-product-code]')).toHaveCount(1)
     await expect(page.locator('[data-product-code]')).toHaveAttribute('data-product-code', 'P001')

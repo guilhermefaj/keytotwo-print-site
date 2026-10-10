@@ -5,7 +5,7 @@ import { HowItWorks } from '../components/sections/HowItWorks'
 import { OfferSection } from '../components/sections/OfferSection'
 import { FaqSection } from '../components/sections/FaqSection'
 import { ClosingCta } from '../components/sections/ClosingCta'
-import { ExperienceSections, ProductExperience } from '../components/sections/ExperienceSections'
+import { ProductExperience, Testimonials } from '../components/sections/ExperienceSections'
 import { experience } from '../content/experience'
 import { useRef } from 'react'
 import { useScrollReveal } from '../lib/use-scroll-reveal'
@@ -24,7 +24,8 @@ export default function Home() {
   const main = useRef<HTMLElement>(null)
   // The highlight is the tail of the second headline line; the mark never changes the words.
   const headlineRest = experience.headline[1].endsWith(experience.highlight) ? experience.headline[1].slice(0, -experience.highlight.length) : `${experience.headline[1]} `
-  useScrollReveal(main)
+  // Plano 001: o reveal anima o conteúdo de cada folha, nunca o fundo da seção.
+  useScrollReveal(main, '.page-section > .content-width')
   return <main id="conteudo" tabIndex={-1} ref={main}>
     <div className="hero">
       <section className="hero-copy" aria-labelledby="hero-title">
@@ -35,6 +36,6 @@ export default function Home() {
       </section>
       <HeroScene obscured={menuOpen} />
     </div>
-    <ProductExperience /><PackageGames /><HowItWorks /><ExperienceSections /><OfferSection /><FaqSection /><FromBlog posts={posts} /><ClosingCta /><MobilePurchaseBar menuOpen={menuOpen} />
+    <PackageGames /><ProductExperience /><HowItWorks /><Testimonials /><OfferSection /><FaqSection /><FromBlog posts={posts} /><ClosingCta /><MobilePurchaseBar menuOpen={menuOpen} />
   </main>
 }

@@ -28,7 +28,7 @@ export default function MeusJogos() {
       {library.data.games.length === 0 ? <div className="portal-empty"><KitoEmpty /><div><h2>Seus próximos jogos começam aqui</h2><p>Você ainda não tem jogos liberados.</p><Link className="button button-primary" to="/#comprar">Conhecer o pacote</Link></div></div> : <ul className="library-grid portal-library">{library.data.games.map((game, index) => {
         const pdf = game.files.find(file => file.kind === 'pdf')
         return <li className="portal-game" key={game.code} id={`jogo-${game.code}`} tabIndex={-1} style={{ '--game-order': Math.min(index, 5) } as CSSProperties}>
-          <GameCover code={game.code} />
+          <GameCover code={game.code} name={game.name} />
           <div className="portal-game-body"><h2>{game.name}</h2><p className="game-collection">{game.products.map(product => productName(product.code, product.name)).join(', ')}</p><p className="file-meta">PDF{pdf && fileSize(pdf.size_bytes) && ` · ${fileSize(pdf.size_bytes)}`}</p>
             <DownloadButton fileId={pdf?.id} gameCode={game.code} onRefresh={library.reload} />
             <Link className="game-print-link" to="/ajuda#impressao">Como imprimir</Link>
