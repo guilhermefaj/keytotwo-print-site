@@ -39,7 +39,7 @@ export function CartDrawer() {
               <button className="text-button drawer-remove" disabled={busy} onClick={() => removeItem(item.code)} aria-label={`Remover ${productName(item.code, item.name)}`}>Remover</button>
             </div>
           </li>)}</ul> : <div className="drawer-empty"><KitoEmpty /><h3>Seu carrinho está vazio</h3><p>Vamos encontrar uma ideia para vocês dois?</p>
-            <SheetClose asChild><Link className="button button-primary" to="/#comprar" onClick={navigateAway}>Conhecer o pacote</Link></SheetClose>
+            <SheetClose asChild><Link className="button button-primary" to="/#comprar" onClick={navigateAway}>Quero o pacote</Link></SheetClose>
             {!session && <SheetClose asChild><Link className="inline-link" to="/entrar?next=%2Fcarrinho" onClick={navigateAway}>Entrar para ver meu carrinho</Link></SheetClose>}
           </div>}
         <p className="form-error" role="alert">{error}</p>

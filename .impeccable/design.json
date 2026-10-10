@@ -17,13 +17,19 @@
     },
     "typographyMeta": {
       "display": { "displayName": "Display", "purpose": "Só o H1 da hero." },
-      "headline": { "displayName": "Headline", "purpose": "H2 de cada folha, à esquerda." },
+      "display-mobile": { "displayName": "Display (celular)", "purpose": "H1 da hero até 767 px." },
+      "display-xs": { "displayName": "Display (320 px)", "purpose": "H1 da hero até 359 px." },
+      "headline": { "displayName": "Headline", "purpose": "H2 de cada folha e H1 das páginas internas, à esquerda." },
+      "headline-sm": { "displayName": "Headline small", "purpose": "Preço real, título do menu móvel e dos vazios, newsletter, lista do blog." },
+      "title-lg": { "displayName": "Title large", "purpose": "H2 de cards e painéis, saudação da área privada, subtotal." },
       "title": { "displayName": "Title", "purpose": "Nome do jogo na carta, títulos de painel." },
-      "title-sm": { "displayName": "Title small", "purpose": "H3 de legendas e blocos." },
-      "lead": { "displayName": "Lead", "purpose": "Apoio da hero e primeira frase de uma folha." },
+      "title-sm": { "displayName": "Title small", "purpose": "H3 de legendas, blocos e itens de lista." },
+      "lead": { "displayName": "Lead", "purpose": "Apoio da hero, primeira frase de uma folha, total a pagar." },
       "body": { "displayName": "Body", "purpose": "Texto corrido, 60–70ch." },
-      "label": { "displayName": "Label", "purpose": "Botões, etiquetas, nomes de campo, abas. Caixa normal." },
-      "caption": { "displayName": "Caption", "purpose": "Legendas, ajuda de campo, meta." }
+      "small": { "displayName": "Small", "purpose": "Links de navegação, abas, texto de cards e fichas." },
+      "label": { "displayName": "Label", "purpose": "Botões, etiquetas, nomes de campo. Caixa normal." },
+      "caption": { "displayName": "Caption", "purpose": "Legendas, ajuda de campo, meta." },
+      "micro": { "displayName": "Micro", "purpose": "Selo, contagem do carrinho, etapas no celular. Nunca em texto corrido." }
     },
     "shadows": [
       { "name": "shadow-panel", "value": "-12px 0 48px rgb(18 58 61 / 0.12)", "purpose": "Gaveta do carrinho e menu móvel." },

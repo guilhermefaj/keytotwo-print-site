@@ -21,12 +21,36 @@ typography:
     fontWeight: 700
     lineHeight: 1
     letterSpacing: "-0.04em"
+  display-mobile:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "2.625rem"
+    fontWeight: 700
+    lineHeight: 1
+    letterSpacing: "-0.04em"
+  display-xs:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "2.25rem"
+    fontWeight: 700
+    lineHeight: 1
+    letterSpacing: "-0.04em"
   headline:
     fontFamily: "Bricolage Grotesque, Arial, sans-serif"
     fontSize: "clamp(2.125rem, 1.5rem + 2.6vw, 3.25rem)"
     fontWeight: 700
     lineHeight: 1.05
     letterSpacing: "-0.03em"
+  headline-sm:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "1.75rem"
+    fontWeight: 700
+    lineHeight: 1.12
+    letterSpacing: "-0.03em"
+  title-lg:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "1.5rem"
+    fontWeight: 700
+    lineHeight: 1.2
+    letterSpacing: "-0.02em"
   title:
     fontFamily: "Bricolage Grotesque, Arial, sans-serif"
     fontSize: "1.375rem"
@@ -49,6 +73,11 @@ typography:
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.6
+  small:
+    fontFamily: "DM Sans, Arial, sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 400
+    lineHeight: 1.5
   label:
     fontFamily: "DM Sans, Arial, sans-serif"
     fontSize: "0.875rem"
@@ -59,6 +88,11 @@ typography:
     fontFamily: "DM Sans, Arial, sans-serif"
     fontSize: "0.8125rem"
     fontWeight: 400
+    lineHeight: 1.5
+  micro:
+    fontFamily: "DM Sans, Arial, sans-serif"
+    fontSize: "0.6875rem"
+    fontWeight: 600
     lineHeight: 1.5
 rounded:
   sm: "6px"
@@ -179,13 +213,19 @@ A paisagem da hero tem a própria paleta de cena (terra `#684839`, grama `#77A85
 **Character:** títulos largos, pesados e apertados como o nome de um jogo impresso na carta; corpo neutro e legível como as instruções da folha. Só os dois pesos de DM Sans e o 700 de Bricolage são carregados (subset latin, `@fontsource`, importados em `src/root.tsx`). A fonte pixel do PDF do J001 não entra enquanto não houver licença web confirmada.
 
 ### Hierarchy
-- **Display** (700, `{typography.display}`, entrelinha 1, tracking −0,04em): só o H1 da hero. No celular desce para 42 px e, em 320 px, 36 px. Nunca em outra seção.
-- **Headline** (700, `{typography.headline}`, 1,05, −0,03em): H2 de cada folha, alinhado à esquerda, largura máxima de 18ch, `text-wrap: balance`.
-- **Title** (700, `{typography.title}` e `{typography.title-sm}`, 1,15–1,2, −0,02em): nome do jogo na carta (22 px), H3 de legendas e de blocos (19 px), títulos de painéis.
-- **Lead** (400, `{typography.lead}`, 1,55): apoio da hero e primeira frase de uma folha; largura máxima 560 px.
+- **Display** (700, `{typography.display}`, entrelinha 1, tracking −0,04em): só o H1 da hero. No celular usa `{typography.display-mobile}` (42 px) e, em 320 px, `{typography.display-xs}` (36 px). Nunca em outra seção.
+- **Headline** (700, `{typography.headline}`, 1,05, −0,03em): H2 de cada folha e H1 das páginas internas, alinhado à esquerda, largura máxima de 18ch, `text-wrap: balance`.
+- **Headline small** (700, `{typography.headline-sm}`, 1,12): preço real na oferta, título do menu móvel e dos vazios, título da newsletter, H2 da lista do blog, links do menu móvel.
+- **Title large** (700, `{typography.title-lg}`, 1,2): H2 de cards e painéis (conta, carrinho, pagamento, gaveta), saudação da área privada, subtotal.
+- **Title** (700, `{typography.title}` e `{typography.title-sm}`, 1,15–1,2, −0,02em): nome do jogo na carta (22 px), H3 de legendas, de blocos e de itens de lista (19 px).
+- **Lead** (400, `{typography.lead}`, 1,55): apoio da hero, primeira frase de uma folha, total a pagar; largura máxima 560 px.
 - **Body** (400, `{typography.body}`, 1,6): texto corrido; medida de 60–70ch.
-- **Label** (600, `{typography.label}`, caixa normal, sem tracking): botões, etiquetas, nomes de campo, abas, meta em negrito. Caixa alta não existe no sistema.
+- **Small** (400, `{typography.small}`, 1,5): links de navegação, abas, texto de cards e fichas.
+- **Label** (600, `{typography.label}`, caixa normal, sem tracking): botões, etiquetas, nomes de campo, meta em negrito. Caixa alta não existe no sistema.
 - **Caption** (400, `{typography.caption}`, 1,5, Tinta suave): legendas de figura, ajuda de campo, meta de pedido, rodapé legal.
+- **Micro** (600, `{typography.micro}`): selo "No pacote", contagem do carrinho e etapas da compra no celular. Único tamanho abaixo de 13 px; nunca em texto corrido.
+
+Toda `font-size` do CSS referencia um destes tokens (`--text-*`); não há valores literais fora da escala.
 
 Números (preço, contagem, data) usam `font-variant-numeric: tabular-nums`. O preço é Headline em Bricolage apenas quando é um preço real; qualquer texto no lugar do preço ("Preço em breve", erro) é Body em Tinta suave.
 
