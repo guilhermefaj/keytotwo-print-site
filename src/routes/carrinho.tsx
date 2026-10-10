@@ -4,12 +4,14 @@ import { productName, packageContents } from '../content/products'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { DataStatus } from '../components/account/AccountUi'
+import { useAuth } from '../lib/auth-context'
 import { apiErrorMessage, money } from '../lib/api'
 import { useShop } from '../lib/shop-context'
 import { canCheckout, checkoutMock } from '../lib/checkout'
 
 export default function Carrinho() {
   const { cart, add, remove, busy } = useShop()
+  const { session } = useAuth()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const [error, setError] = useState('')
@@ -38,7 +40,7 @@ export default function Carrinho() {
     try { await remove(code); setMessage('Produto removido do carrinho.') }
     catch (cause) { setError(apiErrorMessage(cause)) }
   }
-  return <main id="conteudo" tabIndex={-1} className="cart-page purchase-page content-width"><CheckoutSteps current={1} />
+  return <main id="conteudo" tabIndex={-1} className="cart-page purchase-page content-width"><CheckoutSteps current={1} signedIn={Boolean(session)} />
     <h1>Carrinho</h1><p>Uma boa ideia para a próxima noite de vocês.</p>
     <p className="form-message" role="status">{message}</p><p className="form-error" role="alert">{error}</p>
     {error && pending && <button className="button button-secondary" disabled={busy} onClick={() => addPending(pending)}>Tentar adicionar novamente</button>}

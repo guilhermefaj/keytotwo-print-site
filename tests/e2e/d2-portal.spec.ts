@@ -90,7 +90,7 @@ test('portal: real preview, existing art, stagger and keyboard navigation betwee
   expect(errors).toEqual([])
 })
 
-test('newsletter exists only in Conta; keyboard saves the existing preference contract', async ({ page }) => {
+test('newsletter preference in Conta: one click subscribes, discreet link unsubscribes', async ({ page }) => {
   const writes = await fixture(page)
   for (const path of ['/meus-jogos/', '/pedidos/', '/conta/']) {
     await page.goto(path)
@@ -99,13 +99,18 @@ test('newsletter exists only in Conta; keyboard saves the existing preference co
     await expect(page.getByText('Quer receber novidades?', { exact: true })).toHaveCount(0)
     await expect(page.locator('.marketing-form')).toHaveCount(path === '/conta/' ? 1 : 0)
   }
-  const checkbox = page.getByRole('checkbox')
-  await expect(checkbox).not.toBeChecked()
-  await checkbox.focus(); await page.keyboard.press('Space')
-  await page.getByRole('button', { name: 'Salvar preferência', exact: true }).focus(); await page.keyboard.press('Enter')
-  await expect(page.locator('.marketing-form').getByRole('status')).toContainText('Preferência salva.')
+  const form = page.locator('.marketing-form')
+  await expect(form.getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeVisible()
+  await expect(form).toContainText('Dá para sair quando quiser.')
+  await expect(form.getByRole('link', { name: 'Privacidade', exact: true })).toHaveAttribute('href', '/privacidade')
+  await form.getByRole('button', { name: 'Quero receber ideias', exact: true }).focus(); await page.keyboard.press('Enter')
+  await expect(form).toContainText('Você recebe nossas ideias')
   expect(writes).toEqual([expect.objectContaining({ granted: true, source: 'account', text_version: expect.any(String) })])
-  await page.reload(); await expect(checkbox).toBeChecked()
+  await form.getByRole('button', { name: 'Parar de receber', exact: true }).focus(); await page.keyboard.press('Enter')
+  await expect(form.getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeVisible()
+  expect(writes[1]).toEqual(expect.objectContaining({ granted: false, source: 'account' }))
+  await page.reload()
+  await expect(page.locator('.marketing-form').getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeVisible()
 })
 
 test('library error retries and reduced motion removes card entrance', async ({ page }) => {

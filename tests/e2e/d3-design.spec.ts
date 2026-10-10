@@ -35,6 +35,8 @@ test('cart loads as a skeleton, not an unavailable price or an empty cart', asyn
   } finally { release() }
   await expect(page.locator('[data-cart-product] .purchase-thumbnail')).toBeVisible()
   await expect(page.locator('.checkout-steps [aria-current]')).toContainText('Carrinho')
+  await expect(page.locator('.checkout-steps li').filter({ hasText: 'Entrar' })).toHaveAttribute('data-complete', 'true')
+  await expect(page.locator('.checkout-steps li').filter({ hasText: 'Entrar' })).not.toHaveAttribute('aria-current')
 })
 
 for (const width of [390, 1440]) test(`purchase states, focused payment, keyboard and axe at ${width}`, async ({ page }) => {
@@ -137,14 +139,16 @@ test('logged-in newsletter uses existing consent API, stays out of checkout and 
   await page.route('**/api/account/marketing', route => { const body = route.request().postDataJSON(); writes.push(body); optedIn = body.granted; return route.fulfill({ json: { opted_in: optedIn } }) })
   await page.goto('/')
   const newsletter = page.locator('footer .newsletter')
-  await expect(newsletter.getByRole('checkbox')).not.toBeChecked()
-  await expect(newsletter.getByRole('button', { name: 'Salvar minha escolha' })).toBeDisabled()
-  await newsletter.getByRole('checkbox').focus(); await page.keyboard.press('Space')
-  await newsletter.getByRole('button', { name: 'Salvar minha escolha' }).focus(); await page.keyboard.press('Enter')
+  await expect(newsletter.getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeEnabled()
+  await expect(newsletter).toContainText('Dá para sair quando quiser.')
+  await expect(newsletter.getByRole('link', { name: 'Privacidade', exact: true })).toHaveAttribute('href', '/privacidade')
+  await newsletter.getByRole('button', { name: 'Quero receber ideias', exact: true }).focus(); await page.keyboard.press('Enter')
   await expect(newsletter).toContainText('Você já recebe nossas ideias.')
   expect(writes).toEqual([expect.objectContaining({ granted: true, source: 'signup_prompt', text_version: expect.any(String) })])
   for (const path of ['/carrinho', '/pagamento', '/conta']) { await page.goto(path); await expect(page.locator('main')).toBeVisible(); await expect(page.locator('.newsletter')).toHaveCount(0) }
-  await expect(page.locator('.marketing-form')).not.toContainText('em Conta')
+  // Em Conta, quem já está inscrito vê o estado com o link discreto de descadastro.
+  await expect(page.locator('.marketing-form')).toContainText('Você recebe nossas ideias')
+  await expect(page.locator('.marketing-form').getByRole('button', { name: 'Parar de receber', exact: true })).toBeVisible()
   await page.goto('/blog/exemplo-como-publicar')
   await expect(page.locator('.blog-post > .newsletter')).toHaveCount(1)
   await expect(page.locator('footer .newsletter')).toHaveCount(0)
