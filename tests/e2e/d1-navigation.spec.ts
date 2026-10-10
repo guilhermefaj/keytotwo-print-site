@@ -113,15 +113,23 @@ test('checkout focus header agrees in server HTML and hydration, with or without
   }
 })
 
-test('account menu and owned package CTA share the public structure', async ({ page }) => {
+test('account menu, owned package CTA and the simplified private header', async ({ page }) => {
   await fixture(page, { owned: true })
-  await page.goto('/conta')
+  await page.goto('/')
   await expect(page.locator('.desktop-nav a')).toHaveText(['O pacote', 'Como funciona', 'Blog'])
+  await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('href', '/#comprar')
   await expect(page.locator('.desktop-action > .button')).toHaveText(/Meus jogos/)
+  await page.goto('/conta')
+  // Minha área: logo, Meus jogos, Minha conta, Ajuda; sem CTA comercial nem carrinho.
+  await expect(page.locator('header')).toHaveAttribute('data-private', 'true')
+  await expect(page.locator('.desktop-nav a')).toHaveText(['Meus jogos', 'Minha conta', 'Ajuda'])
+  await expect(page.locator('.desktop-nav a').nth(1)).toHaveAttribute('aria-current', 'page')
+  await expect(page.locator('.desktop-action > .button')).toHaveCount(0)
+  await expect(page.locator('header .cart-trigger')).toHaveCount(0)
   const trigger = page.getByRole('button', { name: 'Abrir opções da conta' })
   await trigger.click()
   const account = page.locator('header').getByRole('navigation', { name: 'Sua conta' })
-  await expect(account.getByRole('link')).toHaveText(['Meus jogos', 'Conta'])
+  await expect(account.getByRole('link')).toHaveText(['Meus jogos', 'Minha conta'])
   await expect(account.getByRole('button', { name: 'Sair', exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(trigger).toBeFocused()

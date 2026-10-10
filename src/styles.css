@@ -352,7 +352,8 @@ input, select, textarea { font: inherit; color: inherit; }
 /* --------------------------------------------------------------------------
    Rodapé
    -------------------------------------------------------------------------- */
-.site-footer { background: var(--color-paper); border-top: var(--line-cut); padding-block: 56px 28px; }
+.site-footer { background: var(--color-paper); padding-block: 0 28px; }
+.site-footer > .cut-line { margin-bottom: 24px; }
 .site-footer p { line-height: 1.6; }
 .footer-grid { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: var(--space-3xl); }
 .footer-brand p { font-size: var(--text-body); line-height: 1.55; max-width: 260px; margin-top: 18px; }
@@ -522,7 +523,7 @@ input, select, textarea { font: inherit; color: inherit; }
   .offer-invitation { padding: 0; }
   .offer-summary { margin: 0; padding: 24px; }
   .faq-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
-  .site-footer { padding-top: 40px; }
+  .site-footer > .cut-line { margin-bottom: 8px; }
   .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 20px; }
   .footer-brand { grid-column: 1 / -1; }
   .footer-bottom { margin-top: 32px; }

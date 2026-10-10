@@ -40,18 +40,22 @@ async function capture(page: Page, name: string) {
   await page.screenshot({ path: `.maestri/design-review/d2/${name}.png`, fullPage: true, animations: 'disabled' })
 }
 
-test('D1 touchups: zero badge hidden, secondary help and internal arrows', async ({ page }) => {
+test('D1 touchups: zero badge hidden, help link and the private mobile menu', async ({ page }) => {
   await fixture(page)
-  await page.goto('/meus-jogos')
+  await page.goto('/')
   await expect(page.locator('.desktop-action .cart-trigger')).toHaveAttribute('aria-label', 'Carrinho, 0 itens')
   await expect(page.locator('.cart-count')).toHaveCount(0)
   await expect(page.locator('.desktop-action').getByRole('link', { name: 'Ajuda', exact: true })).toHaveAttribute('href', '/ajuda')
+  await page.goto('/meus-jogos')
+  await expect(page.locator('.desktop-nav').getByRole('link', { name: 'Ajuda', exact: true })).toHaveAttribute('href', '/ajuda')
+  await expect(page.locator('header .cart-trigger')).toHaveCount(0)
   await page.setViewportSize({ width: 320, height: 800 })
   const trigger = page.getByRole('button', { name: 'Abrir menu' })
   await expect(trigger).toBeEnabled()
   await trigger.focus(); await page.keyboard.press('Enter')
-  await expect(page.locator('.sheet-nav .nav-link')).toHaveCount(4)
+  await expect(page.locator('.sheet-nav .nav-link')).toHaveText(['Meus jogos', 'Minha conta', 'Ajuda'])
   await expect(page.locator('.sheet-nav .nav-link > span')).toHaveCount(0)
+  await expect(page.getByRole('dialog').locator('.button')).toHaveCount(0)
   const help = page.getByRole('dialog').getByRole('link', { name: 'Ajuda', exact: true })
   await help.focus(); await page.keyboard.press('Enter')
   await expect(page).toHaveURL(/\/ajuda$/)

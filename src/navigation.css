@@ -18,6 +18,8 @@
 .site-header .cart-trigger { position: relative; gap: 4px; }
 .site-header .cart-count { position: static; display: grid; place-items: center; min-width: 19px; height: 19px; padding-inline: 4px; border-radius: var(--radius-sm); font-size: .6875rem; line-height: 1; font-weight: 600; color: var(--color-paper); background: var(--color-deep-teal); font-variant-numeric: tabular-nums; }
 .site-header .mobile-navigation { display: none; }
+.site-header-shell[data-private="true"] .desktop-action { gap: 12px; }
+.site-header-shell[data-private="true"] .sheet-nav { margin-top: 24px; }
 .site-header .menu-trigger { gap: 6px; font-size: var(--text-label); font-weight: 600; }
 .account-menu { position: relative; }
 .account-trigger { display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 4px; border: 0; border-radius: var(--radius-sm); color: var(--color-ink); background: transparent; }
