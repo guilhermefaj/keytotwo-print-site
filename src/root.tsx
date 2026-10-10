@@ -6,7 +6,6 @@ import { blogPostingJsonLd, pageSeo, serializeJsonLd, siteConfig } from './lib/s
 import type { BlogPostSummary } from './lib/blog'
 import { AuthProvider } from './components/auth/AuthProvider'
 import { ShopProvider } from './components/account/ShopProvider'
-import { ConsentInvite } from './components/account/ConsentInvite'
 import '@fontsource/bricolage-grotesque/latin-700.css'
 import '@fontsource/dm-sans/latin-400.css'
 import '@fontsource/dm-sans/latin-600.css'
@@ -50,13 +49,11 @@ export function Layout({ children }: { children: ReactNode }) {
 
 export default function Root() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { pathname } = useLocation()
   return <AuthProvider><ShopProvider>
     <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
     {siteConfig.stage === 'test' && <aside aria-label="Aviso de ambiente"><p className="stage-banner">Ambiente de teste — sem cobranças reais.</p></aside>}
     <SiteHeader onMenuOpenChange={setMenuOpen} />
     <Outlet context={{ menuOpen }} />
-    {!['/email/preferencias', '/meus-jogos', '/pedidos', '/conta'].includes(pathname.replace(/\/+$/, '')) && <ConsentInvite />}
     <SiteFooter />
   </ShopProvider></AuthProvider>
 }

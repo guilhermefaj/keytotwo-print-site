@@ -3,6 +3,7 @@ import { readBlogPosts } from '../lib/blog.server'
 import { formatBlogDate } from '../lib/blog'
 import { siteConfig } from '../lib/seo'
 import { site } from '../content/site'
+import { Newsletter } from '../components/newsletter/Newsletter'
 import '../blog.css'
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -14,6 +15,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function BlogPost() {
   const { post } = useLoaderData<typeof loader>()
   return <main id="conteudo" tabIndex={-1} className="blog-page blog-post content-width">
+    <Newsletter />
     <Link to="/blog" className="inline-link">Voltar ao blog</Link>
     <article>
       <header className="blog-post-heading">
