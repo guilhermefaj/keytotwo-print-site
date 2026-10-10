@@ -25,13 +25,13 @@ export default function MeusJogos() {
     <DataStatus {...library} retry={library.reload} />
     {library.data && <>
       {library.data.pending.length > 0 && <section className="portal-pending"><h2>Aguardando confirmação</h2><p>Seus jogos aparecerão aqui quando o pagamento for confirmado.</p><Link className="inline-link" to="/pedidos">Acompanhar pedidos</Link></section>}
-      {library.data.games.length === 0 ? <div className="portal-empty"><KitoEmpty /><div><h2>Seus próximos jogos começam aqui</h2><p>Você ainda não tem jogos liberados.</p><Link className="button button-primary" to="/#comprar">Conhecer o pacote <span aria-hidden="true">→</span></Link></div></div> : <ul className="library-grid portal-library">{library.data.games.map((game, index) => {
+      {library.data.games.length === 0 ? <div className="portal-empty"><KitoEmpty /><div><h2>Seus próximos jogos começam aqui</h2><p>Você ainda não tem jogos liberados.</p><Link className="button button-primary" to="/#comprar">Conhecer o pacote</Link></div></div> : <ul className="library-grid portal-library">{library.data.games.map((game, index) => {
         const pdf = game.files.find(file => file.kind === 'pdf')
         return <li className="portal-game" key={game.code} id={`jogo-${game.code}`} tabIndex={-1} style={{ '--game-order': Math.min(index, 5) } as CSSProperties}>
           <GameCover code={game.code} />
           <div className="portal-game-body"><h2>{game.name}</h2><p className="game-collection">{game.products.map(product => productName(product.code, product.name)).join(', ')}</p><p className="file-meta">PDF{pdf && fileSize(pdf.size_bytes) && ` · ${fileSize(pdf.size_bytes)}`}</p>
             <DownloadButton fileId={pdf?.id} gameCode={game.code} onRefresh={library.reload} />
-            <Link className="game-print-link" to="/ajuda#impressao">Como imprimir <span aria-hidden="true">→</span></Link>
+            <Link className="game-print-link" to="/ajuda#impressao">Como imprimir</Link>
             <p className="game-acquired">Adquirido em {dateLabel(game.acquired_at)}.</p>
           </div>
         </li>

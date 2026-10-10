@@ -12,7 +12,7 @@ function BrandIllustration({ kind }: { kind: string }) {
 export function ProductExperience() {
   return <section className="page-section experience-section" aria-labelledby="experiencia"><div className="content-width experience-layout">
     <ProductPreview />
-    <div className="experience-copy"><p className="eyebrow">Pode puxar uma cadeira</p><h2 id="experiencia" tabIndex={-1}>A próxima rodada sai da impressora.</h2><p>Cartas na mesa, uma tentativa duvidosa e aquela vontade de jogar de novo.</p><p>Esta é uma prévia de Rabisque e Adivinhe, um dos jogos do pacote. Imprimam, recortem as cartas e vejam quem entende o desenho de quem.</p><a className="button button-light" href="/#comprar">Escolher nosso encontro<span aria-hidden="true">→</span></a></div>
+    <div className="experience-copy"><p className="eyebrow">Pode puxar uma cadeira</p><h2 id="experiencia" tabIndex={-1}>A próxima rodada sai da impressora.</h2><p>Cartas na mesa, uma tentativa duvidosa e aquela vontade de jogar de novo.</p><p>Esta é uma prévia de Rabisque e Adivinhe, um dos jogos do pacote. Imprimam, recortem as cartas e vejam quem entende o desenho de quem.</p><a className="button button-light" href="/#comprar">Escolher nosso encontro</a></div>
   </div></section>
 }
 

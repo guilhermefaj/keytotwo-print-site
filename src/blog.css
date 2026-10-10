@@ -1,37 +1,37 @@
-/* Blog extends the existing proposed site palette and typography. */
+/* Blog: lista, artigo e prosa. Tokens em styles.css. */
 .blog-page { padding-block: clamp(40px, 7vw, 88px); min-height: 60svh; }
-.blog-page h1 { margin: 0 0 24px; font-size: clamp(2.25rem, 5vw, 4rem); line-height: 1.08; letter-spacing: -.03em; text-wrap: balance; }
-.blog-page h2 { font-family: var(--font-display); font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; letter-spacing: -.025em; text-wrap: balance; }
+.blog-page h1 { margin: 0 0 24px; font-size: var(--text-headline); line-height: 1.05; }
+.blog-page h2 { font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.2; letter-spacing: var(--tracking-title); }
 .blog-page p { line-height: 1.75; }
 .blog-intro { max-width: 70ch; margin-bottom: 48px; }
-.blog-intro p, .blog-description { font-size: 1.125rem; }
+.blog-intro p, .blog-description { font-size: var(--text-lead); }
 .blog-list { list-style: none; padding: 0; margin: 0; }
-.blog-entry { padding-block: 32px; border-top: 1px solid var(--color-deep-teal); max-width: 960px; }
+.blog-entry { padding-block: 32px; border-top: var(--line-cut); max-width: 960px; }
 .blog-entry-with-cover { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 32px; align-items: start; }
 .blog-entry > div { min-width: 0; }
 .blog-entry h2 { margin: 16px 0 12px; }
 .blog-entry h2 a { color: var(--color-ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 6px; }
 .blog-entry h2 a:hover { color: var(--color-deep-teal); text-decoration-thickness: 2px; }
 .blog-entry p { max-width: 65ch; margin: 0; }
-.blog-list-cover { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 12px; }
-.blog-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; font-size: .875rem; line-height: 1.6; color: var(--color-ink); }
-.blog-draft { padding: 3px 10px; border-radius: 6px; background: var(--color-apricot); color: var(--color-ink); font-weight: 600; }
-.blog-tags { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 0; margin: 20px 0 0; font-size: .875rem; color: var(--color-deep-teal); }
+.blog-list-cover { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--radius-md); }
+.blog-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; font-size: var(--text-label); line-height: 1.6; color: var(--color-ink-soft); }
+.blog-draft { padding: 2px 8px; border: 1.5px solid var(--color-ink); border-radius: var(--radius-sm); color: var(--color-ink); font-weight: 600; }
+.blog-tags { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 0; margin: 20px 0 0; font-size: var(--text-label); color: var(--color-deep-teal); }
 .blog-tags li { max-width: 100%; overflow-wrap: anywhere; }
-.blog-empty { max-width: 70ch; padding-block: 32px; border-top: 1px solid var(--color-deep-teal); }
+.blog-empty { max-width: 70ch; padding-block: 32px; border-top: var(--line-cut); }
 .blog-empty h2 { margin: 0 0 16px; }
 .blog-empty p { max-width: 56ch; margin: 0 0 16px; }
 .blog-rss { margin-top: 32px; }
-.blog-post { max-width: 70ch; font-size: 1.125rem; }
+.blog-post { max-width: 70ch; font-size: var(--text-lead); }
 .blog-post-heading { margin-block: 32px 40px; }
 .blog-post-heading .blog-meta { margin-bottom: 24px; }
 .blog-post-heading h1 { font-size: clamp(2rem, 4.5vw, 3.25rem); }
 .blog-description { margin: 0; }
-.blog-post-cover { width: 100%; height: auto; border-radius: 12px; margin-bottom: 32px; }
-.blog-prose { font-size: 1.125rem; line-height: 1.8; overflow-wrap: anywhere; }
+.blog-post-cover { width: 100%; height: auto; border-radius: var(--radius-md); margin-bottom: 32px; }
+.blog-prose { font-size: var(--text-lead); line-height: 1.8; overflow-wrap: anywhere; }
 .blog-prose > :first-child { margin-top: 0; }
-.blog-prose :is(h2, h3, h4, h5, h6) { font-family: var(--font-display); line-height: 1.25; margin: 2em 0 .75em; letter-spacing: -.02em; }
-.blog-prose h3 { font-size: 1.375rem; }
+.blog-prose :is(h2, h3, h4, h5, h6) { font-family: var(--font-display); line-height: 1.25; margin: 2em 0 .75em; letter-spacing: var(--tracking-title); }
+.blog-prose h3 { font-size: var(--text-title); }
 .blog-prose :is(p, ul, ol, blockquote, pre) { margin-block: 0 1.5em; }
 .blog-prose :is(ul, ol) { padding-left: 1.5em; }
 .blog-prose ul { list-style: disc; }
@@ -40,14 +40,14 @@
 .blog-prose li > :is(ul, ol) { margin-block: .5em 0; }
 .blog-prose a { color: var(--color-deep-teal); text-decoration: underline; text-underline-offset: 4px; }
 .blog-prose a:hover { text-decoration-thickness: 2px; }
-.blog-prose blockquote { padding: 20px 24px; margin-inline: 0; border-block: 1px solid var(--color-deep-teal); }
+.blog-prose blockquote { padding: 20px 24px; margin-inline: 0; border-block: var(--line-cut); }
 .blog-prose blockquote > :last-child { margin-bottom: 0; }
-.blog-prose img { display: block; max-width: 100%; height: auto; border-radius: 12px; margin-block: 24px; }
-.blog-prose pre { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; padding: 20px; background: var(--color-paper); border-radius: 12px; }
+.blog-prose img { display: block; max-width: 100%; height: auto; border-radius: var(--radius-md); margin-block: 24px; }
+.blog-prose pre { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; padding: 20px; border: var(--line-rule); border-radius: var(--radius-md); }
 .blog-prose code { font-size: .875em; }
 .blog-prose table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-bottom: 24px; }
-.blog-prose :is(th, td) { padding: 8px; border: 1px solid var(--color-deep-teal); text-align: left; }
-.blog-package { margin-block: 48px 24px; padding: clamp(20px, 4vw, 32px); background: var(--color-sky); border-radius: 12px; }
+.blog-prose :is(th, td) { padding: 8px; border: var(--line-rule); text-align: left; }
+.blog-package { margin-block: 48px 24px; padding: clamp(20px, 4vw, 32px); border: var(--line-card); border-radius: var(--radius-lg); }
 .blog-package h2 { margin: 0 0 12px; font-size: 1.5rem; }
 .blog-package p { margin: 0 0 24px; }
 .blog-package .button { max-width: 100%; }

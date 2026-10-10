@@ -39,14 +39,14 @@ export function CartDrawer() {
               <button className="text-button drawer-remove" disabled={busy} onClick={() => removeItem(item.code)} aria-label={`Remover ${productName(item.code, item.name)}`}>Remover</button>
             </div>
           </li>)}</ul> : <div className="drawer-empty"><KitoEmpty /><h3>Seu carrinho está vazio</h3><p>Vamos encontrar uma ideia para vocês dois?</p>
-            <SheetClose asChild><Link className="button button-primary" to="/#comprar" onClick={navigateAway}>Conhecer o pacote <span aria-hidden="true">→</span></Link></SheetClose>
+            <SheetClose asChild><Link className="button button-primary" to="/#comprar" onClick={navigateAway}>Conhecer o pacote</Link></SheetClose>
             {!session && <SheetClose asChild><Link className="inline-link" to="/entrar?next=%2Fcarrinho" onClick={navigateAway}>Entrar para ver meu carrinho</Link></SheetClose>}
           </div>}
         <p className="form-error" role="alert">{error}</p>
       </div>
       {items.length > 0 && !cart.error && <div className="drawer-summary">
         <p className="drawer-total">Total <strong>{cart.data?.subtotal ? money(cart.data.subtotal.amount, cart.data.subtotal.currency) : 'Preço em atualização'}</strong></p>
-        {canCheckout(cart.data) && !cart.loading && !busy ? <SheetClose asChild><Link className="button button-primary" to="/pagamento" onClick={navigateAway}>Finalizar compra <span aria-hidden="true">→</span></Link></SheetClose>
+        {canCheckout(cart.data) && !cart.loading && !busy ? <SheetClose asChild><Link className="button button-primary" to="/pagamento" onClick={navigateAway}>Finalizar compra</Link></SheetClose>
           : <><button className="button button-primary" disabled>Finalizar compra</button><p className="field-help">{cart.loading || busy ? 'Atualizando seu carrinho…' : 'Confira os itens no carrinho para continuar.'}</p></>}
         <SheetClose asChild><Link className="text-button" to="/carrinho" onClick={navigateAway}>Ver carrinho</Link></SheetClose>
       </div>}

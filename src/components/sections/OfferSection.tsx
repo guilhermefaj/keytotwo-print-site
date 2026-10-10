@@ -19,7 +19,7 @@ function ProductOffer({ product }: { product: Product }) {
   return <article className="offer-layout" aria-labelledby={`product-${product.code}`} data-product-code={product.code}>
     <div className="offer-invitation"><p className="eyebrow">Para imprimir · para vocês</p><h3 className="product-title" id={`product-${product.code}`}>{product.title}</h3><ProductPreview compact /></div>
     <div className="offer-summary"><h4>5 jogos. Muitas próximas rodadas.</h4><ul className="package-contents">{packageContents.map(item => <li key={item}>{item}</li>)}</ul>
-      <p className="offer-price">{price ? money(price.unit_amount, price.currency) : siteConfig.stage === 'preview' ? 'Preço em breve' : catalog.loading ? 'Consultando preço…' : 'Não conseguimos carregar o preço.'}</p>
+      <p className="offer-price" data-state={price ? undefined : 'pending'}>{price ? money(price.unit_amount, price.currency) : siteConfig.stage === 'preview' ? 'Preço em breve' : catalog.loading ? 'Consultando preço…' : 'Não conseguimos carregar o preço.'}</p>
       <p className="offer-delivery">Download após a confirmação da compra.<br />Acesso sem prazo de expiração.</p>
       <TrustLine />
       {siteConfig.showCartAccess ? <ProductPurchaseAction code={product.code} /> : <p className="offer-coming">Estamos preparando este encontro. Compra disponível em breve.</p>}
