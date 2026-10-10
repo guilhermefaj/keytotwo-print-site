@@ -49,6 +49,11 @@ Status desta revisão: ver [revisoes/fatia-1.md](revisoes/fatia-1.md).
 
 ## Fatia 2 — Cabeçalho e rodapé
 
+Status da revisão de `67c66c5` ([revisoes/fatia-2.md](revisoes/fatia-2.md)):
+- RESOLVIDO: F2.2, F2.3, F2.5, F2.6, F2.9, F2.10
+- PARCIAL: F2.1
+- ABERTO: F2.4, F2.7, F2.8
+
 | ID | Critério | Origem | Como verifico |
 | --- | --- | --- | --- |
 | F2.1 | Um nome por ação: "Quero o pacote" → `/#comprar` no header, no menu, no rodapé e no vazio da gaveta; o item "O pacote" → `/#comprar`; somem "Escolher nosso encontro", "Conhecer o pacote" e "Conhecer o pacote de jogos" nessas superfícies | P1-2; PT1 "Um nome por ação" | grep dos rótulos; `href` |
