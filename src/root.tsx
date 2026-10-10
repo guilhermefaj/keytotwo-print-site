@@ -56,7 +56,7 @@ export default function Root() {
     {siteConfig.stage === 'test' && <aside aria-label="Aviso de ambiente"><p className="stage-banner">Ambiente de teste — sem cobranças reais.</p></aside>}
     <SiteHeader onMenuOpenChange={setMenuOpen} />
     <Outlet context={{ menuOpen }} />
-    {pathname !== '/email/preferencias' && <ConsentInvite />}
+    {!['/email/preferencias', '/meus-jogos', '/pedidos', '/conta'].includes(pathname.replace(/\/+$/, '')) && <ConsentInvite />}
     <SiteFooter />
   </ShopProvider></AuthProvider>
 }

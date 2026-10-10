@@ -6,7 +6,7 @@ const routes = [
   '/preview/hero',
   '/entrar',
   '/carrinho', '/pagamento',
-  '/meus-jogos',
+  '/meus-jogos', '/pedidos',
   '/conta',
   '/pedido/confirmacao',
   '/jogo-gratuito',
@@ -22,7 +22,7 @@ const viewports = [
   { name: '320', width: 320, height: 640 },
   { name: '1440', width: 1440, height: 900 },
 ]
-const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao']
+const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao']
 
 // Collects anything that signals a runtime or hydration failure.
 function trackErrors(page: Page) {

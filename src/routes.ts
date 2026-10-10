@@ -11,8 +11,11 @@ export default [
   layout('routes/private.tsx', [
     route('carrinho', 'routes/carrinho.tsx'),
     route('pagamento', 'routes/pagamento.tsx'),
-    route('meus-jogos', 'routes/meus-jogos.tsx'),
-    route('conta', 'routes/conta.tsx'),
+    layout('routes/minha-area.tsx', [
+      route('meus-jogos', 'routes/meus-jogos.tsx'),
+      route('pedidos', 'routes/pedidos.tsx'),
+      route('conta', 'routes/conta.tsx'),
+    ]),
     route('pedido/confirmacao', 'routes/pedido.confirmacao.tsx'),
   ]),
   route('ajuda', 'routes/ajuda.tsx'),
