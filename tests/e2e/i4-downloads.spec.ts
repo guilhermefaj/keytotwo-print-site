@@ -117,7 +117,7 @@ test('no published PDF: preparation message, retained game and disabled download
 test('free game unavailable: no navigation, download button or invented game', async ({ page }) => {
   await page.goto('/jogo-gratuito')
   await expect(page.getByRole('heading', { name: 'Jogo gratuito', exact: true })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Jogo gratuito', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: /Jogo gr(átis|atuito)/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(0)
 })
 
@@ -126,7 +126,7 @@ test('free game available: public download uses free endpoint', async ({ page })
   await page.route('**/api/free-game', route => route.fulfill({ json: { available: true, game: { name: 'Gratuito de TESTE' }, file } }))
   await page.goto('/jogo-gratuito')
   await expect(page.getByRole('heading', { name: 'Gratuito de TESTE' })).toBeVisible()
-  await expect(page.locator('header .desktop-nav').getByRole('link', { name: 'Jogo gratuito' })).toBeVisible()
+  await expect(page.locator('header .desktop-nav').getByRole('link', { name: 'Jogo grátis' })).toBeVisible()
   const response = page.waitForResponse(result => result.url().endsWith('/api/free-download'))
   const downloaded = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Baixar PDF' }).click()

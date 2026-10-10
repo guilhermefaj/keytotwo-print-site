@@ -56,8 +56,10 @@ test('guest add → Mailpit code → persistent cart; consent once; marketing an
   await noOverflow(page)
   await loginWithCode(page, email)
   await expect(page).toHaveURL(/\/carrinho$/)
+  await expect(page.getByRole('dialog', { name: 'Seu carrinho' })).toBeVisible()
+  await page.getByRole('button', { name: 'Fechar carrinho' }).click()
   await expect(page.locator('[data-cart-product="P001"]')).toBeVisible()
-  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Carrinho, 1 item', exact: true })).toBeVisible()
+  await expect(page.locator('.desktop-action').getByRole('button', { name: 'Carrinho, 1 item', exact: true })).toBeVisible()
   // I3 enables checkout only when the real catalog supplies a price.
   const checkout = page.getByRole('button', { name: 'Finalizar compra', exact: true })
   if (await page.getByText('Preço indisponível', { exact: true }).count()) await expect(checkout).toBeDisabled()
