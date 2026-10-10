@@ -46,7 +46,7 @@ async function noOverflow(page: Page) {
   }
 }
 
-test('guest add → Mailpit code → persistent cart; consent once; marketing and private views', async ({ page }) => {
+test('guest add → Mailpit code → persistent cart; marketing and private views', async ({ page }) => {
   const email = `qa-cart-${randomUUID()}@example.test`
   const runtimeErrors: string[] = []
   page.on('pageerror', error => runtimeErrors.push(error.message))
@@ -62,19 +62,10 @@ test('guest add → Mailpit code → persistent cart; consent once; marketing an
   await expect(page.locator('.desktop-action').getByRole('button', { name: 'Carrinho, 1 item', exact: true })).toBeVisible()
   // I3 enables checkout only when the real catalog supplies a price.
   const checkout = page.getByRole('button', { name: 'Finalizar compra', exact: true })
-  if (await page.getByText('Preço indisponível', { exact: true }).count()) await expect(checkout).toBeDisabled()
+  if (await page.getByText('Não conseguimos carregar o preço.', { exact: true }).count()) await expect(checkout).toBeDisabled()
   else await expect(checkout).toBeEnabled()
-  expect(await page.evaluate(() => {
-    const notice = document.querySelector('.cart-summary .refund-notice')!
-    const button = document.querySelector('.cart-summary button')!
-    return Boolean(notice.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING)
-  })).toBe(true)
-  await expect(page.locator('.consent-invite')).toBeVisible()
-  await expect(page.locator('.consent-invite input[type="checkbox"]')).not.toBeChecked()
-  await page.getByRole('button', { name: 'Agora não', exact: true }).click()
-  await expect(page.locator('.consent-invite')).toHaveCount(0)
-  // Also clear the temporary browser marker: prompted_at must survive server-side.
-  await page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith('ktt-marketing-prompt:')).forEach(key => localStorage.removeItem(key)))
+  await expect(page.locator('.refund-notice')).toHaveCount(0)
+  await expect(page.locator('.newsletter')).toHaveCount(0)
   await page.reload()
   await expect(page.locator('[data-cart-product="P001"]')).toBeVisible()
   await page.waitForLoadState('networkidle')

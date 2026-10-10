@@ -27,6 +27,8 @@ async function layoutCheck(page) {
     const note = document.querySelector('.hero-copy').getBoundingClientRect()
     const clipped = [...document.querySelectorAll('h1,h2,p,button,a,li')].filter(el => {
       if (!el.checkVisibility() || el.classList.contains('skip-link')) return false
+      const track = el.closest('.snap-track')
+      if (track && getComputedStyle(track).overflowX === 'auto') return el.scrollWidth > el.clientWidth + 2
       const r = el.getBoundingClientRect()
       const clipsY = ['hidden', 'clip'].includes(getComputedStyle(el).overflowY)
       return r.left < -1 || r.right > innerWidth + 1 || el.scrollWidth > el.clientWidth + 2 || (clipsY && el.scrollHeight > el.clientHeight + 2)
@@ -62,9 +64,14 @@ try {
     ['/entrar', 'Entrar'], ['/carrinho', 'Carrinho'], ['/meus-jogos', 'Meus jogos'], ['/conta', 'Conta'],
     ['/pedido/confirmacao', 'Confirmação do pedido'], ['/ajuda', 'Ajuda'],
     ['/termos', 'Termos de uso'], ['/privacidade', 'Privacidade'],
-    ['/reembolsos', 'Reembolsos'], ['/404', 'Página não encontrada'],
+    ['/404', 'Página não encontrada'],
   ]
   const protectedRoutes = ['/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao']
+  const redirectPage = await browser.newPage()
+  await redirectPage.goto(new URL('/reembolsos', url).href)
+  await expect(redirectPage).toHaveURL(/\/termos#reembolso$/)
+  await expect(redirectPage.locator('#reembolso')).toBeVisible()
+  await redirectPage.close()
   for (const [routePath, title] of staticRoutes) {
     const file = new URL(`../build/client${routePath === '/' ? '' : routePath}/index.html`, import.meta.url)
     const html = await readFile(file, 'utf8')
