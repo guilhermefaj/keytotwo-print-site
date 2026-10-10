@@ -1,5 +1,5 @@
 import { MobilePurchaseBar } from '../components/sections/MobilePurchaseBar'
-import { useOutletContext } from 'react-router'
+import { useLoaderData, useOutletContext } from 'react-router'
 import { HeroScene } from '../components/HeroScene'
 import { HowItWorks } from '../components/sections/HowItWorks'
 import { OfferSection } from '../components/sections/OfferSection'
@@ -9,9 +9,18 @@ import { ExperienceSections, ProductExperience } from '../components/sections/Ex
 import { experience } from '../content/experience'
 import { useRef } from 'react'
 import { useScrollReveal } from '../lib/use-scroll-reveal'
+import { readBlogPosts, summarizeBlogPost } from '../lib/blog.server'
+import { PackageGames } from '../components/sections/PackageGames'
+import { FromBlog } from '../components/sections/FromBlog'
+
+export async function loader() {
+  // Only published posts reach the home, including in stage=test.
+  return { posts: (await readBlogPosts({ stage: 'live' })).slice(0, 3).map(summarizeBlogPost) }
+}
 
 export default function Home() {
   const { menuOpen } = useOutletContext<{ menuOpen: boolean }>()
+  const { posts } = useLoaderData<typeof loader>()
   const main = useRef<HTMLElement>(null)
   useScrollReveal(main)
   return <main id="conteudo" tabIndex={-1} ref={main}>
@@ -25,6 +34,6 @@ export default function Home() {
       </section>
       <HeroScene obscured={menuOpen} />
     </div>
-    <ProductExperience /><HowItWorks /><ExperienceSections /><OfferSection /><FaqSection /><ClosingCta /><MobilePurchaseBar menuOpen={menuOpen} />
+    <ProductExperience /><PackageGames /><HowItWorks /><ExperienceSections /><OfferSection /><FaqSection /><FromBlog posts={posts} /><ClosingCta /><MobilePurchaseBar menuOpen={menuOpen} />
   </main>
 }

@@ -1,6 +1,7 @@
 import { experience } from '../../content/experience'
 
 import { ProductPreview } from './ProductPreview'
+import { SnapCarousel } from '../ui/SnapCarousel'
 
 function BrandIllustration({ kind }: { kind: string }) {
   if (kind === 'time') return <span className="pillar-kito-walk" aria-hidden="true" />
@@ -24,10 +25,10 @@ export function ExperienceSections() {
     </div></section>
     <section className="page-section social-section" aria-labelledby="social-title"><div className="content-width">
       <div className="section-heading centered-heading"><p className="eyebrow">Histórias a dois</p><h2 id="social-title">{social.heading}</h2><p>{social.description}</p></div>
-      <div className="social-metrics"><p><strong>{social.rating === null ? '—' : social.rating.toLocaleString('pt-BR')}</strong><span>{social.rating === null ? social.placeholders.rating : 'Nota dos casais'}</span></p><p><strong>{social.reviewCount === null ? '—' : social.reviewCount.toLocaleString('pt-BR')}</strong><span>{social.reviewCount === null ? social.placeholders.count : 'Relatos recebidos'}</span></p></div>
-      <div className="social-grid">{social.testimonials.map(item => <figure key={item.id} className="social-card" data-placeholder={!item.quote || !item.author ? 'true' : undefined}>
+      {(social.rating !== null || social.reviewCount !== null) && <div className="social-metrics">{social.rating !== null && <p><strong>{social.rating.toLocaleString('pt-BR')}</strong><span>Nota dos casais</span></p>}{social.reviewCount !== null && <p><strong>{social.reviewCount.toLocaleString('pt-BR')}</strong><span>Relatos recebidos</span></p>}</div>}
+      <SnapCarousel label="Relatos dos casais" className="social-carousel">{social.testimonials.map(item => <figure key={item.id} className="social-card" data-placeholder={!item.quote || !item.author ? 'true' : undefined}>
         {item.quote && item.author ? <><blockquote>{item.quote}</blockquote><figcaption>{item.author}</figcaption></> : <><span className="placeholder-label">{social.placeholders.label}</span><p className="placeholder-quote">{social.placeholders.quote}</p><span className="placeholder-lines" aria-hidden="true" /><figcaption>{social.placeholders.author}</figcaption></>}
-      </figure>)}</div>
+      </figure>)}</SnapCarousel>
     </div></section>
   </>
 }

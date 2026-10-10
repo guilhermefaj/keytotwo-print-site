@@ -25,6 +25,6 @@ export const experience = {
       { id: 'second', quote: null as string | null, author: null as string | null },
       { id: 'third', quote: null as string | null, author: null as string | null },
     ],
-    placeholders: { rating: 'Nota a preencher', count: 'Total de relatos a preencher', quote: 'Um relato vem aqui.', author: 'Nome do casal a preencher', label: 'Espaço reservado' },
+    placeholders: { quote: 'Em breve, histórias de quem levou os jogos para a mesa.', author: 'Relato ainda não publicado', label: 'Espaço reservado' },
   },
 }

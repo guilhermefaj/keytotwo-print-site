@@ -1,3 +1,4 @@
+import './game-cover.css'
 import { siteConfig } from '../../lib/seo'
 
 // J001 is the only approved game preview. Other covers use existing brand art,

@@ -109,12 +109,11 @@ test.describe('conteúdo', () => {
     await expect(page.locator('.faq-item')).toHaveCount(4)
     await expect(page.locator('.social-card[data-placeholder="true"]')).toHaveCount(3)
     await expect(page.locator('.social-card blockquote')).toHaveCount(0)
-    await expect(page.locator('.social-metrics')).toContainText('Nota a preencher')
-    await expect(page.locator('.social-metrics')).toContainText('Total de relatos a preencher')
+    await expect(page.locator('.social-metrics')).toHaveCount(0)
     await expect(page.locator('[data-product-code]')).toHaveCount(1)
     await expect(page.locator('[data-product-code]')).toHaveAttribute('data-product-code', 'P001')
-    await expect(page.locator('.games-section')).toHaveCount(0)
-    expect(await visibleText(page)).not.toMatch(/PENDENTE|Hora dos Artistas|Boardgame/)
+    await expect(page.locator('.package-game')).toHaveCount(5)
+    expect(await visibleText(page)).not.toMatch(/PENDENTE|Jogo a definir/)
     const offer = page.locator('section.offer-section')
     await expect(offer.locator('.offer-price')).not.toBeEmpty()
     expect((await visibleText(page)).match(/\bP\d{3}\b/g) ?? [], 'códigos de produto além de P001').toEqual([])
@@ -145,7 +144,7 @@ test.describe('conteúdo', () => {
     await expect(page).toHaveURL(/\/entrar\?next=%2Fcarrinho$/)
     await expect(page.getByRole('heading', { name: 'Entrar', exact: true })).toBeVisible()
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
-    // The refund-before-checkout assertion is in the authenticated I2b suite.
+    // Authenticated checkout content is checked by the D3 suite.
   })
 })
 
@@ -242,6 +241,11 @@ test('home: matriz responsiva, texto 200%, cena preservada e capturas', async ({
       const overflow = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('body *')].filter(el => {
         if (!el.checkVisibility() || el.closest('[aria-hidden="true"]') || el.classList.contains('skip-link')) return false
         const rect = el.getBoundingClientRect()
+        // Cards outside a scroll-snap viewport are intentional; text must still fit each card.
+        const track = el.closest('.snap-track')
+        if (track && getComputedStyle(track).overflowX === 'auto') {
+          return el === track ? rect.left < -1 || rect.right > innerWidth + 1 : el.scrollWidth > el.clientWidth + 2
+        }
         return rect.left < -1 || rect.right > innerWidth + 1 || el.scrollWidth > el.clientWidth + 2
       }).map(el => ({ tag: el.tagName, class: el.className, width: el.clientWidth, scroll: el.scrollWidth })))
       expect(overflow, `home ${width}px, text ${zoom}%`).toEqual([])
