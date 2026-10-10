@@ -37,7 +37,7 @@ Status desta revisão: ver [revisoes/fatia-1.md](revisoes/fatia-1.md).
 | --- | --- | --- | --- | --- |
 | F1.1 | Tokens únicos em `@theme` e `:root`, iguais ao DESIGN.md (cores, tipo, espaço, raios, linhas, sombras, movimento); nenhum token declarado e sem uso | P2-9; DS | grep de `var(--…)` × declarações | PARCIAL |
 | F1.2 | Hex solto só na cena da hero e no botão do Google | P2-9 | grep de `#[0-9a-f]` fora de `@theme` | PARCIAL (`#d1e9e5` ×2) |
-| F1.3 | Tamanhos de fonte só da escala do DESIGN.md: Display só no H1 da hero; H2 em Headline; Title e Title-sm; Lead; Body; Label; Caption. Nenhum `font-size` literal fora da escala | P1-3; P2-9; DS Typography | grep de `font-size` sem `var(--text-…)`; tamanhos computados por página | PARCIAL |
+| F1.3 | Tamanhos de fonte só da escala do DESIGN.md: Display só no H1 da hero; H2 em Headline; Title e Title-sm; Lead; Body; Label; Caption. Nenhum `font-size` literal fora da escala | P1-3; P2-9; DS Typography | grep de `font-size` sem `var(--text-…)`; tamanhos computados por página | RESOLVIDO em `3979931` |
 | F1.4 | Nenhum texto em caixa alta ou com tracking positivo | P1-3; PT1 hero | `text-transform` computado | RESOLVIDO |
 | F1.5 | Botões retos de 6 px, sem sombra, sem glifo de seta; `.button-secondary` definido | P2-3; P1-6 | estilo computado de `.button` e `.icon-button` | RESOLVIDO |
 | F1.6 | `.step-number` escopado (38 px na home mesmo depois de `/carrinho`); título da newsletter do rodapé com estilo próprio | P1-7 | navegação SPA `/carrinho` → `/`; `font-size` do h2 | RESOLVIDO |
@@ -45,14 +45,12 @@ Status desta revisão: ver [revisoes/fatia-1.md](revisoes/fatia-1.md).
 | F1.8 | Tokens de movimento criados e plano 005 aplicado (240 ms, 40 ms, 8 px em Meus jogos e no pagamento) | A005 | `animation-*` computado em `/meus-jogos` | RESOLVIDO |
 | F1.9 | Código morto removido sem perder estilo em uso (`GamesSection.tsx`, classes órfãs) | P2-9; Anexo D | classes no TSX × CSS | PARCIAL |
 | F1.10 | Avisos sem barra lateral (`side-tab`) | P2-7 | `/termos` | RESOLVIDO |
-| F1.11 | A consolidação não retirou regra genérica que ainda estiliza algo, como o tamanho do logo | R1 | antes × depois por componente | ABERTO (logo do rodapé) |
+| F1.11 | A consolidação não retirou regra genérica que ainda estiliza algo, como o tamanho do logo | R1 | antes × depois por componente | RESOLVIDO em `3979931` |
 
 ## Fatia 2 — Cabeçalho e rodapé
 
-Status da revisão de `67c66c5` ([revisoes/fatia-2.md](revisoes/fatia-2.md)):
-- RESOLVIDO: F2.2, F2.3, F2.5, F2.6, F2.9, F2.10
-- PARCIAL: F2.1
-- ABERTO: F2.4, F2.7, F2.8
+Status depois de `67c66c5` e do commit de ajustes `3979931` ([revisoes/fatia-2.md](revisoes/fatia-2.md), [revisoes/fatia-3.md](revisoes/fatia-3.md)):
+- RESOLVIDO: todos (F2.1–F2.10). Os ajustes F2.1, F2.4, F2.7 e F2.8 foram conferidos no build.
 
 | ID | Critério | Origem | Como verifico |
 | --- | --- | --- | --- |
@@ -68,6 +66,11 @@ Status da revisão de `67c66c5` ([revisoes/fatia-2.md](revisoes/fatia-2.md)):
 | F2.10 | Escape fecha menu e gaveta e devolve o foco ao gatilho; `overscroll-behavior: contain` nos painéis | DS Navigation; WIG | teclado |
 
 ## Fatia 3 — Hero
+
+Status da revisão de `7a5e926` ([revisoes/fatia-3.md](revisoes/fatia-3.md)):
+- RESOLVIDO: F3.1–F3.7, F3.9, F3.11
+- PARCIAL: F3.10 (falta registrar na base a exceção do atlas)
+- ABERTO: F3.8, transferido para F4.16
 
 | ID | Critério | Origem | Como verifico |
 | --- | --- | --- | --- |
@@ -102,7 +105,7 @@ Status da revisão de `67c66c5` ([revisoes/fatia-2.md](revisoes/fatia-2.md)):
 | F4.13 | Papel dominante: a seção da prévia sai do fundo Tinta e da bolha Marca-texto; o Marca-texto não é cor de texto nem fundo de bloco | PT1 paleta; DS Colors e One Highlight | G7 + captura |
 | F4.14 | Lugar do freebie preparado (carta ou etiqueta "por recortar"), sem copy nova, promessa ou data | PT1 "Haverá um freebie"; DS Tags | componente renderizado com dado fictício só em `test` |
 | F4.15 | "Como funciona" pode manter 01/02/03, porque é uma sequência real | P1-3 | — |
-| F4.16 | Linha de recorte com tesoura entre folhas, e só aí | DS Linha de recorte | contagem de `.cut-line` |
+| F4.16 | Linha de recorte com tesoura entre folhas, e só aí, incluindo a que fica logo abaixo do chão da hero (F3.8, transferido) | DS Linha de recorte | contagem de `.cut-line` |
 | F4.17 | O contador do carrossel não anuncia a cada rolagem, só depois das setas | P2-2; WIG `aria-live` | leitor de tela / `aria-live` |
 
 ## Fatia 5 — Páginas secundárias
@@ -118,7 +121,7 @@ Status da revisão de `67c66c5` ([revisoes/fatia-2.md](revisoes/fatia-2.md)):
 | F5.7 | Pedidos e conta: régua de Tinta nas listas; selos de status legíveis (AA) | DS Elevation | G4 |
 | F5.8 | Confirmação de compra: celebração com `kito-hi` e confete, o único momento longo | PT1 "Kito"; DS Kito | estado simulado (sem pagar) |
 | F5.9 | Tracejado só onde "se corta" (cartas, entre folhas, etiqueta); listas, painéis e divisórias de gaveta e menu usam a régua de Tinta | DS Elevation; risco anotado na direção B | grep de `--line-cut` |
-| F5.10 | Nenhum texto abaixo de 13 px (Caption), inclusive as etapas do checkout no celular (hoje 11 px) e o `.tag-solid` (11 px) | DS Typography; WIG | tamanhos computados |
+| F5.10 | Nenhum texto abaixo de 13 px (Caption) fora dos três usos do `micro` (11 px) que o DESIGN.md registrou em `3979931`: selo "No pacote", contagem do carrinho e etapas da compra no celular. Recomendação: reavaliar as etapas no celular, que são rótulos lidos | DS Typography; WIG | tamanhos computados |
 
 ## Fatia 6 — Estados
 
