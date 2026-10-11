@@ -88,10 +88,10 @@ Status da revisão de `7a5e926` ([revisoes/fatia-3.md](revisoes/fatia-3.md)):
 
 ## Fatia 4 — Seções da home
 
-Status da revisão de `55d7b9d` ([revisoes/fatia-4.md](revisoes/fatia-4.md)):
-- RESOLVIDO: F4.1–F4.6, F4.8, F4.10, F4.12–F4.15
-- PARCIAL: F4.7, F4.9, F4.11, F4.16
-- ABERTO: F4.17
+Status depois de `55d7b9d` e dos ajustes `0e24c32` ([revisoes/fatia-4.md](revisoes/fatia-4.md), [revisoes/fatia-5.md](revisoes/fatia-5.md)):
+- RESOLVIDO: F4.1–F4.8, F4.10–F4.16
+- PARCIAL: F4.9 (repetição de texto; vai como proposta ao Portão 2)
+- ABERTO: F4.17 (P2; pode ir para a fatia 6)
 
 | ID | Critério | Origem | Como verifico |
 | --- | --- | --- | --- |
@@ -114,6 +114,11 @@ Status da revisão de `55d7b9d` ([revisoes/fatia-4.md](revisoes/fatia-4.md)):
 | F4.17 | O contador do carrossel não anuncia a cada rolagem, só depois das setas | P2-2; WIG `aria-live` | leitor de tela / `aria-live` |
 
 ## Fatia 5 — Páginas secundárias
+
+Status da revisão de `f174f15` ([revisoes/fatia-5.md](revisoes/fatia-5.md)):
+- RESOLVIDO: F5.1–F5.4, F5.6–F5.10
+- PARCIAL: F5.5 (conteúdo do pacote escondido no carrinho e ausente no pagamento)
+- Novo ajuste de catálogo: a miniatura do produto deve vir de `products.ts`
 
 | ID | Critério | Origem | Como verifico |
 | --- | --- | --- | --- |
