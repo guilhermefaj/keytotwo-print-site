@@ -73,7 +73,7 @@ test('guest add → Mailpit code → persistent cart; marketing and private view
   await noOverflow(page)
   await page.goto('/conta')
   await expect(page.getByText(email, { exact: true })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Conta', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Minha conta', exact: true })).toBeVisible()
   const form = page.locator('.marketing-form')
   await expect(form.getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeVisible()
   await form.getByRole('button', { name: 'Quero receber ideias', exact: true }).click()

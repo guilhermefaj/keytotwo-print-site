@@ -16,7 +16,7 @@ export default function Conta() {
       if (error) throw error
     } catch (cause) { setError(authErrorMessage(cause)); setBusy(false) }
   }
-  return <section aria-labelledby="portal-title"><div className="portal-heading"><h1 id="portal-title" tabIndex={-1}>Conta</h1><p>Seu acesso e suas preferências, no mesmo lugar.</p></div>
+  return <section aria-labelledby="portal-title"><div className="portal-heading"><h1 id="portal-title" tabIndex={-1}>Minha conta</h1><p>Seu acesso e suas preferências, no mesmo lugar.</p></div>
     <DataStatus {...account} retry={account.reload} />
     {account.data && <div className="portal-settings">
       <section className="portal-setting" aria-labelledby="account-access"><div><h2 id="account-access">Seu acesso</h2><p>Use este e-mail para encontrar suas compras.</p></div><div className="portal-setting-fields"><dl className="account-details"><div><dt>E-mail</dt><dd>{account.data.email}</dd></div><div><dt>Senha</dt><dd><Link className="inline-link" to="/entrar?mode=recover&next=%2Fconta">Definir ou alterar senha</Link></dd></div></dl></div></section>

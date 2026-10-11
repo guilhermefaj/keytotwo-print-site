@@ -366,7 +366,7 @@ input, select, textarea { font: inherit; color: inherit; }
    -------------------------------------------------------------------------- */
 .reading-page { max-width: 780px; min-height: 65vh; padding-block: 40px 88px; }
 .reading-page > .eyebrow { margin-top: 36px; }
-.reading-page h1 { font-size: var(--text-headline); line-height: 1.05; margin: 16px 0 24px; }
+.reading-page h1 { font-size: var(--text-headline); line-height: 1.05; margin: 24px 0 24px; }
 .reading-page section { margin-block: 40px; }
 .reading-page h2 { font-size: var(--text-title-lg); margin: 0 0 20px; }
 .reading-page p { margin-block: 0 16px; line-height: 1.65; }
@@ -418,7 +418,7 @@ input, select, textarea { font: inherit; color: inherit; }
 .download-action p { overflow-wrap: anywhere; }
 .library-notice { margin-bottom: var(--space-lg); }
 @font-face { font-family: 'Google Sign In'; font-weight: 500; font-style: normal; font-display: swap; src: url('/media/auth/google-sans-medium.ttf') format('truetype'); }
-.google-sign-in { display: flex; justify-content: center; align-items: center; gap: 10px; min-height: 44px; padding: 12px; max-width: 100%; background: #fff; color: #1f1f1f; border: 1px solid #747775; border-radius: 999px; font: 500 14px/20px 'Google Sign In', Arial, sans-serif; cursor: pointer; }
+.google-sign-in { display: flex; justify-content: center; align-items: center; gap: 10px; min-height: 44px; padding: 12px; max-width: 100%; background: #fff; color: #1f1f1f; border: 1px solid #747775; border-radius: var(--radius-sm); font: 500 14px/20px 'Google Sign In', Arial, sans-serif; cursor: pointer; }
 .google-sign-in img { flex: 0 0 20px; }
 .google-sign-in:hover { background: #f8faff; box-shadow: 0 1px 3px rgb(60 64 67 / .3); }
 .google-sign-in:active { background: #edf3fe; }

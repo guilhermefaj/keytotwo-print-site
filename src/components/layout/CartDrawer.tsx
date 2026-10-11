@@ -33,7 +33,7 @@ export function CartDrawer() {
         {cart.loading && !cart.data ? <div className="drawer-loading" role="status"><div className="drawer-skeleton" aria-hidden="true" />Carregando seu carrinho…</div>
           : cart.error ? <div className="drawer-feedback"><p role="alert">{cart.error}</p><button className="button button-secondary" onClick={cart.reload}>Tentar novamente</button></div>
           : items.length ? <ul className="drawer-items">{items.map(item => <li key={item.code}>
-            <img className="drawer-thumbnail" src="/media/experience/kito-tabuleiro-240.webp" width="96" height="96" alt="" />
+            <img className="drawer-thumbnail" src="/media/experience/j001-page-1-720.webp" width="720" height="1019" alt="" />
             <div><h3>{productName(item.code, item.name)}</h3><p>{item.games.length} jogos para imprimir</p><strong>{item.price ? money(item.price.unit_amount, item.price.currency) : 'Preço em atualização'}</strong>
               {item.status !== 'ok' && <p className="field-help">{item.status === 'already_owned' ? 'Você já tem estes jogos.' : 'Este item não está à venda no momento.'}</p>}
               <button className="text-button drawer-remove" disabled={busy} onClick={() => removeItem(item.code)} aria-label={`Remover ${productName(item.code, item.name)}`}>Remover</button>

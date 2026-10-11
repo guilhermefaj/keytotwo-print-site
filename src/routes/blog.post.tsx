@@ -15,7 +15,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function BlogPost() {
   const { post } = useLoaderData<typeof loader>()
   return <main id="conteudo" tabIndex={-1} className="blog-page blog-post content-width">
-    <Newsletter />
     <Link to="/blog" className="inline-link">Voltar ao blog</Link>
     <article>
       <header className="blog-post-heading">
@@ -35,8 +34,9 @@ export default function BlogPost() {
     <aside className="blog-package" aria-labelledby="blog-package-title">
       <h2 id="blog-package-title">{site.closing}</h2>
       <p>{site.description}</p>
-      <a className="button button-primary" href="/#comprar">Escolher nosso encontro</a>
+      <a className="button button-primary" href="/#comprar">Quero o pacote</a>
     </aside>
+    <Newsletter />
     <Link to="/blog" className="inline-link">Voltar ao blog</Link>
   </main>
 }

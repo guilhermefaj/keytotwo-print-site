@@ -12,7 +12,7 @@ export function Newsletter() {
   const id = useId()
   if (!session && !guestNewsletterPreview) return null
   return <section className="newsletter" aria-labelledby={`${id}-title`}>
-    <div className="newsletter-intro"><p className="eyebrow">Mais tempo a dois</p><h2 id={`${id}-title`}>Ideias de encontro no seu e-mail</h2><p>Um jogo, uma conversa, uma boa desculpa para ficarem juntos.</p></div>
+    <div className="newsletter-intro"><h2 id={`${id}-title`}>Ideias de encontro no seu e-mail</h2><p>Um jogo, uma conversa, uma boa desculpa para ficarem juntos.</p></div>
     <div className="newsletter-form">
       {session ? account.data ? account.data.marketing.opted_in
         ? <div className="newsletter-subscribed"><p>Você já recebe nossas ideias. A próxima pode virar um encontro.</p><Link className="inline-link" to="/conta">Minha preferência de e-mail</Link></div>

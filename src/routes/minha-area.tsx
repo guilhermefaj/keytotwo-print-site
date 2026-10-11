@@ -19,7 +19,7 @@ export default function MinhaArea() {
   return <main id="conteudo" tabIndex={-1} className="portal-page">
     <div className="portal-welcome content-width"><div><p className="portal-greeting">Olá{name ? `, ${name}` : ''}!</p><p className="portal-area-name">Minha área</p></div><img src="/media/experience/kito-hi-128.webp" width="64" height="64" alt="" /></div>
     <div className="portal-tabs-bar"><nav className="portal-tabs content-width" aria-label="Minha área" ref={tabs}>
-      <NavLink to="/meus-jogos">Meus jogos</NavLink><NavLink to="/pedidos">Pedidos</NavLink><NavLink to="/conta">Conta</NavLink>
+      <NavLink to="/meus-jogos">Meus jogos</NavLink><NavLink to="/pedidos">Pedidos</NavLink><NavLink to="/conta">Minha conta</NavLink>
     </nav></div>
     <div className="portal-content content-width"><Outlet /></div>
   </main>

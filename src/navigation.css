@@ -40,7 +40,7 @@
 .sheet-content .sheet-title { margin: 0 0 12px; font-family: var(--font-display); font-weight: 700; font-size: var(--text-headline-sm); line-height: 1.15; letter-spacing: var(--tracking-headline); }
 .sheet-content .sheet-description { margin: 0; color: var(--color-ink-soft); font-size: var(--text-small); line-height: 1.6; }
 .mobile-menu-sheet { width: min(100%, 480px); }
-.sheet-account { padding-bottom: 24px; border-bottom: var(--line-cut); }
+.sheet-account { padding-bottom: 24px; border-bottom: var(--line-rule); }
 .sheet-account-links { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
 .sheet-account-links a { display: inline-flex; align-items: center; min-height: 44px; gap: 12px; }
 .sheet-account-links .text-button { margin-left: auto; }
@@ -66,12 +66,12 @@
 .drawer-feedback p { margin: 0; }
 .drawer-items { list-style: none; padding: 0; margin: 0; }
 .drawer-items li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 20px; padding-block: 24px; border-bottom: var(--line-rule); }
-.drawer-thumbnail { width: 96px; height: 96px; object-fit: contain; border: var(--line-card); border-radius: var(--radius-md); background: var(--color-paper); }
+.drawer-thumbnail { width: 96px; height: 96px; object-fit: cover; object-position: top; border: var(--line-card); border-radius: var(--radius-md); background: var(--color-paper); }
 .drawer-items h3 { margin: 0; font-size: var(--text-title-sm); line-height: 1.2; }
 .drawer-items p { margin: 8px 0; font-size: var(--text-label); color: var(--color-ink-soft); }
 .drawer-items strong, .drawer-total { font-variant-numeric: tabular-nums; }
 .drawer-remove { display: flex; padding: 6px 0; min-height: 44px; font-size: var(--text-caption); }
-.drawer-summary { padding-top: 24px; margin-top: 32px; border-top: var(--line-cut); }
+.drawer-summary { padding-top: 24px; margin-top: 32px; border-top: var(--line-rule); }
 .drawer-total { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: var(--text-lead); margin: 0 0 24px; }
 .drawer-summary > .button, .drawer-summary > .text-button { width: 100%; }
 .drawer-summary > .text-button { margin-top: 8px; font-size: var(--text-label); }

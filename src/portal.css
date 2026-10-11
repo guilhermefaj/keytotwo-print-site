@@ -19,6 +19,9 @@
 .portal-library { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin: 0; }
 .portal-library > .portal-game { display: flex; flex-direction: column; min-width: 0; border: var(--line-card); border-radius: var(--radius-lg); overflow: clip; scroll-margin-top: calc(var(--header-height) + 100px); }
 .portal-game:focus { outline: 3px solid var(--color-ink); outline-offset: 4px; }
+/* Dentro do card o quadro já é o card: capa 16:10, sem borda própria, separada por régua. */
+.portal-game .game-cover { aspect-ratio: 16 / 10; border: 0; border-bottom: var(--line-rule); border-radius: 0; }
+.portal-game .game-cover-preview img { object-position: top; }
 .portal-game-body { display: flex; flex-direction: column; flex: 1; padding: 24px; }
 .portal-game h2 { margin: 0 0 8px; }
 .game-collection { margin: 0 0 18px; font-size: var(--text-label); color: var(--color-ink-soft); line-height: 1.5; }
@@ -30,7 +33,7 @@
 .game-acquired { margin: 12px 0 0; text-align: center; color: var(--color-ink-soft); font-size: var(--text-caption); line-height: 1.5; }
 .portal-pending { padding: 24px; margin-bottom: 32px; border: 1.5px solid var(--color-ink-soft); border-radius: var(--radius-md); }
 .portal-pending h2 { margin: 0 0 12px; }
-.portal-empty { display: flex; align-items: center; justify-content: center; gap: 48px; min-height: 360px; padding: 32px; border: var(--line-cut); border-radius: var(--radius-lg); }
+.portal-empty { display: flex; align-items: center; justify-content: center; gap: 48px; min-height: 360px; padding: 32px; border: var(--line-card); border-radius: var(--radius-lg); }
 .portal-empty > div { max-width: 360px; min-width: 0; }
 .portal-empty h2 { font-size: var(--text-headline-sm); margin: 0 0 16px; }
 .portal-empty p { margin: 0 0 24px; line-height: 1.6; }
@@ -66,7 +69,7 @@
 .portal-setting .marketing-form > * + * { margin-top: 16px; }
 .portal-setting .marketing-form .form-actions { margin-top: 24px; }
 .portal-setting .marketing-form [role]:empty { display: none; }
-.portal-signout { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; padding: 28px; margin-top: 24px; border: var(--line-cut); border-radius: var(--radius-lg); }
+.portal-signout { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; padding: 28px; margin-top: 24px; border: var(--line-rule); border-radius: var(--radius-lg); }
 .portal-signout p { margin: 0; }
 .portal-signout .form-error:empty { display: none; }
 @media (prefers-reduced-motion: no-preference) {
