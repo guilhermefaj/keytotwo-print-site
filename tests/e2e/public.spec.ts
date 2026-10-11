@@ -108,8 +108,14 @@ test.describe('conteúdo', () => {
     await expect(page.locator('.hero-benefits')).toHaveCount(0)
     await expect(page.locator('.steps-list li')).toHaveCount(3)
     await expect(page.locator('.faq-item')).toHaveCount(4)
-    await expect(page.locator('.social-card[data-placeholder="true"]')).toHaveCount(3)
-    await expect(page.locator('.social-card blockquote')).toHaveCount(3)
+    if (await isPreview() || await isLive()) {
+      // Sem relato real autorizado a seção de relatos não renderiza (P0-1).
+      await expect(page.locator('.social-section')).toHaveCount(0)
+      await expect(page.locator('.social-card')).toHaveCount(0)
+    } else {
+      await expect(page.locator('.social-card[data-placeholder="true"]')).toHaveCount(3)
+      await expect(page.locator('.social-card blockquote')).toHaveCount(3)
+    }
     await expect(page.locator('.social-metrics')).toHaveCount(0)
     await expect(page.locator('[data-product-code]')).toHaveCount(1)
     await expect(page.locator('[data-product-code]')).toHaveAttribute('data-product-code', 'P001')

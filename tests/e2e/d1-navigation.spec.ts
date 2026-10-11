@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { mkdir } from 'node:fs/promises'
 import { readFileSync } from 'node:fs'
+import { builtStage } from './fixtures/stage'
 
 // Synthetic API boundary fixtures, confined to this browser; no backend writes or credentials.
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
@@ -53,7 +54,9 @@ test('desktop header: shared navigation, active page, transparent top and sticky
   await expect(page.locator('.desktop-nav a')).toHaveText(['O pacote', 'Como funciona', 'Blog'])
   await expect(page.locator('.desktop-action')).toContainText('Quero o pacote')
   await expect(page.locator('header')).toHaveAttribute('data-scrolled', 'false')
-  await expect(page.locator('.desktop-action .cart-trigger')).toBeEnabled()
+  // O carrinho existe nos stages test e live; em preview o header não o mostra.
+  if (builtStage() === 'preview') await expect(page.locator('.desktop-action .cart-trigger')).toHaveCount(0)
+  else await expect(page.locator('.desktop-action .cart-trigger')).toBeEnabled()
   await page.evaluate(() => document.fonts.ready)
   await capture(page, 'header-desktop-topo')
   expect(requested.some(url => url.includes('kito-caixa'))).toBe(false)

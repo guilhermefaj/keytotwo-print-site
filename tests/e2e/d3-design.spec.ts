@@ -3,6 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { fixture } from './fixtures/checkout'
+import { builtStage } from './fixtures/stage'
 
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 const stageTest = readFileSync('build/client/index.html', 'utf8').includes('Ambiente de teste')
@@ -107,12 +108,18 @@ test('five games as a sheet on desktop; carousel and testimonials move only by u
   const position = await track.evaluate(el => el.scrollLeft)
   await page.waitForTimeout(600)
   expect(await track.evaluate(el => el.scrollLeft)).toBe(position)
-  const social = page.locator('.social-carousel .snap-track')
-  await social.focus(); await page.keyboard.press('End')
-  await expect(page.locator('.social-carousel .carousel-position')).toHaveText('3 de 3')
-  // Relatos de exemplo só no stage test, sempre marcados; nunca nota ou contagem.
-  await expect(page.locator('.social-card blockquote')).toHaveCount(3)
-  await expect(page.locator('.social-card[data-placeholder="true"] .tag-solid')).toHaveCount(3)
+  if (builtStage() === 'test') {
+    // Relatos de exemplo só no stage test, sempre marcados; nunca nota ou contagem.
+    const social = page.locator('.social-carousel .snap-track')
+    await social.focus(); await page.keyboard.press('End')
+    await expect(page.locator('.social-carousel .carousel-position')).toHaveText('3 de 3')
+    await expect(page.locator('.social-card blockquote')).toHaveCount(3)
+    await expect(page.locator('.social-card[data-placeholder="true"] .tag-solid')).toHaveCount(3)
+  } else {
+    // Em preview e live só relatos reais aparecem; sem nenhum, a seção não existe (P0-1).
+    await expect(page.locator('.social-section')).toHaveCount(0)
+    await expect(page.locator('.social-card')).toHaveCount(0)
+  }
   await expect(page.locator('.social-metrics')).toHaveCount(0)
 })
 
