@@ -17,7 +17,7 @@ export function Newsletter() {
       {session ? account.data ? account.data.marketing.opted_in
         ? <div className="newsletter-subscribed"><p>Você já recebe nossas ideias. A próxima pode virar um encontro.</p><Link className="inline-link" to="/conta">Minha preferência de e-mail</Link></div>
         : <MarketingPreference key={session.user.id} marketing={account.data.marketing} source="signup_prompt" onSaved={account.reload} />
-        : account.error ? <><p>Não conseguimos abrir sua preferência agora.</p><button className="text-button" onClick={account.reload}>Tentar novamente</button></> : <p role="status">Carregando sua preferência…</p>
+        : account.error ? <div className="data-error"><p role="alert">Não conseguimos abrir sua preferência agora.</p><button type="button" className="button button-secondary" onClick={account.reload}>Tentar novamente</button></div> : <p role="status">Carregando sua preferência…</p>
       : <form onSubmit={event => event.preventDefault()} aria-describedby={`${id}-notice`}>
         <label htmlFor={`${id}-email`}>Seu e-mail</label><div className="newsletter-fields"><input id={`${id}-email`} name="email" type="email" autoComplete="email" placeholder="voce@exemplo.com" disabled={!ready} /><button className="button button-primary" disabled>Receber ideias</button></div>
         {/* PENDENTE: endpoint para visitantes. Não enviar, armazenar ou simular inscrição. */}

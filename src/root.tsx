@@ -59,13 +59,15 @@ export default function Root() {
 }
 
 // Temporary shared I0 shell. Individual journeys/content arrive in later increments.
-export function PendingPage({ title, children }: { title: string; children: ReactNode }) {
+// Apresentação (DESIGN.md › Estados): título com token, sem rótulo; no erro, Kito em pose neutra,
+// mensagem anunciada e "Tentar novamente" como botão secundário ao lado do caminho de volta.
+export function PendingPage({ title, children, error = false, retry = false }: { title: string; children: ReactNode; error?: boolean; retry?: boolean }) {
   return (
-    <main id="conteudo" tabIndex={-1} className="mx-auto flex min-h-svh w-full max-w-3xl flex-col items-start justify-center gap-6 px-5 py-12">
-      <p className="eyebrow">KeyToTwo</p>
-      <h1 style={{ margin: 0, fontSize: 'clamp(2rem, 6vw, 3rem)', lineHeight: 1.12, letterSpacing: '-.03em' }}>{title}</h1>
-      <p className="m-0 text-base leading-relaxed">{children}</p>
-      <Link to="/" className="button button-primary">Voltar ao início</Link>
+    <main id="conteudo" tabIndex={-1} className="pending-page">
+      {error && <span className="kito-still" aria-hidden="true" />}
+      <h1>{title}</h1>
+      <p role={error ? 'alert' : undefined}>{children}</p>
+      <div className="form-actions"><Link to="/" className="button button-primary">Voltar ao início</Link>{retry && <button type="button" className="button button-secondary" onClick={() => window.location.reload()}>Tentar novamente</button>}</div>
     </main>
   )
 }
@@ -77,7 +79,7 @@ export function HydrateFallback() {
 export function ErrorBoundary() {
   const error = useRouteError()
   const notFound = isRouteErrorResponse(error) && error.status === 404
-  return <PendingPage title={notFound ? 'Página não encontrada' : 'Não foi possível abrir esta página'}>
+  return <PendingPage title={notFound ? 'Página não encontrada' : 'Não foi possível abrir esta página'} error retry={!notFound}>
     {notFound ? 'O endereço solicitado não está disponível.' : 'Tente voltar ao início e abrir a página novamente.'}
   </PendingPage>
 }

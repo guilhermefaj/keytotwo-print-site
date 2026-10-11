@@ -104,6 +104,10 @@ main:focus, [tabindex='-1']:focus { outline: none; }
 .skip-link:focus { transform: translateY(0); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .break-anywhere { overflow-wrap: anywhere; }
+.pending-page { width: min(var(--container), calc(100% - 80px)); max-width: 48rem; min-height: 65svh; margin-inline: auto; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: var(--space-md); padding-block: 48px; }
+.pending-page h1 { font-size: var(--text-headline); line-height: 1.05; }
+.pending-page p { max-width: 60ch; }
+.pending-page .form-actions { margin-top: var(--space-sm); }
 .stage-banner { margin: 0; padding: 6px 20px; border-bottom: var(--line-rule); background: var(--color-paper); color: var(--color-ink-soft); text-align: center; font-size: var(--text-label); line-height: 1.5; }
 
 /* --------------------------------------------------------------------------
@@ -489,7 +493,7 @@ input, select, textarea { font: inherit; color: inherit; }
    Responsivo
    -------------------------------------------------------------------------- */
 @media (max-width: 1050px) {
-  .content-width, .hero-copy { width: calc(100% - 48px); }
+  .content-width, .hero-copy, .pending-page { width: calc(100% - 48px); }
   .experience-layout { gap: 48px; }
   .steps-list { gap: 32px; }
   .folha-topo { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); align-items: start; }
