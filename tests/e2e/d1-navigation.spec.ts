@@ -167,6 +167,16 @@ test('adding opens drawer without navigation; API remove, total, keyboard and ch
   await expect(page.locator('header').getByRole('link')).toHaveCount(2)
 })
 
+test('returning from login to /carrinho adds the pending item without opening the drawer', async ({ page }) => {
+  await fixture(page)
+  // The login flow lands on /carrinho?add=P001: the page shows the cart itself, so the drawer must stay closed.
+  await page.goto('/carrinho?add=P001')
+  await expect(page.locator('[data-cart-product="P001"]')).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Finalizar compra' })).toBeVisible()
+  await expect(page).toHaveURL(/\/carrinho$/)
+})
+
 test('cart failure offers retry without presenting an empty cart', async ({ page }) => {
   await fixture(page, { failCart: true })
   await page.goto('/')
