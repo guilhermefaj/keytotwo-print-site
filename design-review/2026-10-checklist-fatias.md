@@ -36,7 +36,7 @@ Status desta revisão: ver [revisoes/fatia-1.md](revisoes/fatia-1.md).
 | ID | Critério | Origem | Como verifico | Status |
 | --- | --- | --- | --- | --- |
 | F1.1 | Tokens únicos em `@theme` e `:root`, iguais ao DESIGN.md (cores, tipo, espaço, raios, linhas, sombras, movimento); nenhum token declarado e sem uso | P2-9; DS | grep de `var(--…)` × declarações | PARCIAL |
-| F1.2 | Hex solto só na cena da hero e no botão do Google | P2-9 | grep de `#[0-9a-f]` fora de `@theme` | PARCIAL (`#d1e9e5` ×2) |
+| F1.2 | Hex solto só na cena da hero e no botão do Google | P2-9 | grep de `#[0-9a-f]` fora de `@theme` | RESOLVIDO em `55d7b9d` (o `#d1e9e5` saiu com a seção escura) |
 | F1.3 | Tamanhos de fonte só da escala do DESIGN.md: Display só no H1 da hero; H2 em Headline; Title e Title-sm; Lead; Body; Label; Caption. Nenhum `font-size` literal fora da escala | P1-3; P2-9; DS Typography | grep de `font-size` sem `var(--text-…)`; tamanhos computados por página | RESOLVIDO em `3979931` |
 | F1.4 | Nenhum texto em caixa alta ou com tracking positivo | P1-3; PT1 hero | `text-transform` computado | RESOLVIDO |
 | F1.5 | Botões retos de 6 px, sem sombra, sem glifo de seta; `.button-secondary` definido | P2-3; P1-6 | estilo computado de `.button` e `.icon-button` | RESOLVIDO |
@@ -70,7 +70,7 @@ Status depois de `67c66c5` e do commit de ajustes `3979931` ([revisoes/fatia-2.m
 Status da revisão de `7a5e926` ([revisoes/fatia-3.md](revisoes/fatia-3.md)):
 - RESOLVIDO: F3.1–F3.7, F3.9, F3.11
 - PARCIAL: F3.10 (falta registrar na base a exceção do atlas)
-- ABERTO: F3.8, transferido para F4.16
+- F3.8 transferido para a F4.16 e resolvido em `55d7b9d` (linha sob o chão da hero)
 
 | ID | Critério | Origem | Como verifico |
 | --- | --- | --- | --- |
@@ -87,6 +87,11 @@ Status da revisão de `7a5e926` ([revisoes/fatia-3.md](revisoes/fatia-3.md)):
 | F3.11 | A paleta da cena não sai de `.hero-scene` | DS Colors | G7 |
 
 ## Fatia 4 — Seções da home
+
+Status da revisão de `55d7b9d` ([revisoes/fatia-4.md](revisoes/fatia-4.md)):
+- RESOLVIDO: F4.1–F4.6, F4.8, F4.10, F4.12–F4.15
+- PARCIAL: F4.7, F4.9, F4.11, F4.16
+- ABERTO: F4.17
 
 | ID | Critério | Origem | Como verifico |
 | --- | --- | --- | --- |
