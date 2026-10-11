@@ -236,7 +236,7 @@ Números (preço, contagem, data) usam `font-variant-numeric: tabular-nums`. O p
 
 ## Layout
 
-A página é uma pilha de folhas. Cada seção é uma folha de Papel com `padding-block: {spacing.section}`; entre duas folhas passa a **linha de recorte** (2 px tracejada Turquesa J001, largura total, com a tesoura encostada na margem esquerda do contêiner). A tesoura aparece só entre seções, nunca dentro delas.
+A página é uma pilha de folhas. Cada seção é uma folha de Papel com `padding-block: {spacing.section}`. A **linha de recorte** (2 px tracejada Turquesa J001, largura total, com a tesoura encostada na margem esquerda do contêiner) corta a página em **três lugares**: depois da hero (entra a folha dos jogos), antes da oferta (entra a folha de compra) e antes do rodapé. Seções do mesmo assunto (prévia, como funciona, relatos; dúvidas, blog, fechamento) separam-se só por espaço. A tesoura nunca aparece dentro de uma seção.
 
 Contêiner de conteúdo: `min(1140px, 100% − 80px)` no desktop, `100% − 48px` até 1050 px, `100% − 40px` até 767 px. O cabeçalho usa `min(1280px, 100% − 64px)`. Hero e cena ocupam a largura total; o chão vai até as bordas da janela.
 
@@ -247,6 +247,9 @@ Ritmo vertical em múltiplos de 8: `{spacing.sm}` entre rótulo e campo, `{spaci
 No celular tudo empilha: título, apoio, ação; na oferta, **o preço e o botão vêm antes da prévia**. A barra fixa de compra (`.mobile-purchase-bar`) só existe abaixo de 768 px e se recolhe quando hero, oferta ou rodapé estão à vista.
 
 Pontos de quebra: 360, 480, 600, 767, 1050 e 1120 (70rem) px, já usados pelo código. Sem rolagem horizontal de 320 a 1440 px com texto a 200 %.
+
+### Named Rules
+**The Three Cuts Rule.** A tesoura corta a página em três lugares: depois da hero (folha dos jogos), antes da oferta (folha de compra) e antes do rodapé público. Seções do mesmo assunto separam-se só por espaço; nunca há tesoura dentro de uma seção nem em páginas privadas.
 
 ## Elevation & Depth
 
@@ -293,7 +296,7 @@ A cena do Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelat
 - **Aviso** (`.notice`): Papel, borda 1,5 px Tinta suave, `{rounded.md}`, padding 16–20 px, sem barra lateral. Variante de demonstração usa a mesma caixa com texto "Demonstração".
 
 ### Linha de recorte (`.cut-line`)
-Elemento decorativo (`aria-hidden`) de 40 px de altura entre duas folhas: linha tracejada 2 px Turquesa J001 de borda a borda da janela e a tesoura (SVG de 28 × 24, traço 2 px Turquesa profundo, dois círculos e duas lâminas) sobre um retângulo de Papel na margem esquerda do contêiner. Usa-se entre a hero e a primeira folha e entre folhas; não dentro de uma folha, não em páginas privadas.
+Elemento decorativo (`aria-hidden`) de 40 px de altura entre duas folhas: linha tracejada 2 px Turquesa J001 de borda a borda da janela e a tesoura (SVG de 28 × 24, traço 2 px Turquesa profundo, dois círculos e duas lâminas) sobre um retângulo de Papel na margem esquerda do contêiner. Usa-se em três cortes: hero → folha dos jogos, antes da oferta e antes do rodapé (só no rodapé público). Não dentro de uma folha, não entre seções do mesmo assunto, não em páginas privadas.
 
 ### Marcas de corte (`.crop-marks`)
 Dois L de 18 px em Tinta 2 px nos cantos superior esquerdo e inferior direito do contêiner marcado. Só na folha de cartas e no card de oferta.
@@ -343,7 +346,7 @@ Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direit
 - Momentos raros (celebração) podem passar de 300 ms; tudo o mais fica abaixo.
 
 ### Named Rules
-**The Catalog Rule.** Nenhum componente desenha "5" ou "P001". Cartas, fichas, lista de conteúdo, preço e botão são preenchidos por dados de produto; a folha de cartas aceita de 1 a N cartas (5 por linha no desktop, quebrando em linhas novas), a capa tipográfica é o padrão de qualquer jogo sem prévia aprovada, e a oferta renderiza um card por produto do catálogo. Um freebie ou um segundo pacote entra sem CSS novo.
+**The Catalog Rule.** Nenhum componente desenha "5" ou "P001". Título, chamada, conteúdo e entrega da oferta vêm de `src/content/products.ts`; código, nome, resumo, prévia aprovada e fatos de cada carta vêm de `src/content/games.ts`. A folha de cartas aceita de 1 a N cartas (5 por linha no desktop, quebrando em linhas novas), a capa tipográfica é o padrão de qualquer jogo sem prévia aprovada, e a oferta renderiza um card por produto do catálogo. Um freebie ou um segundo pacote entra sem CSS novo.
 
 **The Kito Acts Rule.** Se o Kito não está caminhando, acolhendo, celebrando ou convidando, ele não está na tela.
 

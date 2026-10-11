@@ -103,7 +103,7 @@
     {
       "name": "Linha de recorte",
       "kind": "custom",
-      "description": "Assinatura entre folhas: tracejado turquesa e tesoura na margem.",
+      "description": "Assinatura dos três cortes da página (hero → jogos, antes da oferta, rodapé): tracejado turquesa e tesoura na margem.",
       "html": "<div class=\"ds-cut\" aria-hidden=\"true\"><svg width=\"28\" height=\"24\" viewBox=\"0 0 28 24\"><g fill=\"none\" stroke=\"#006970\" stroke-width=\"2\"><circle cx=\"6\" cy=\"6\" r=\"4\"/><circle cx=\"6\" cy=\"18\" r=\"4\"/><path d=\"M9.5 8 26 18M9.5 16 26 6\"/></g></svg></div>",
       "css": ".ds-cut { position: relative; height: 40px; width: 100%; } .ds-cut::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 2px dashed #1bb8c4; } .ds-cut svg { position: absolute; left: 24px; top: 8px; padding: 0 8px; background: #fff; box-sizing: content-box; }"
     },
@@ -158,7 +158,8 @@
       { "name": "The Print Tracking Rule", "body": "O tracking negativo para em −0,04em no Display e em −0,02em nos títulos pequenos; o corpo não leva tracking.", "section": "typography" },
       { "name": "The Flat Sheet Rule", "body": "O que está impresso na folha não tem sombra. Só painéis que cobrem a folha têm.", "section": "elevation" },
       { "name": "The One Edge Rule", "body": "Um elemento declara sua borda uma vez: tracejada, sólida ou nenhuma. Borda mais sombra é proibido; barra lateral colorida também.", "section": "elevation" },
-      { "name": "The Catalog Rule", "body": "Nenhum componente desenha \"5\" ou \"P001\". Cartas, fichas, lista de conteúdo, preço e botão são preenchidos por dados de produto; a folha de cartas aceita de 1 a N cartas, a capa tipográfica é o padrão de qualquer jogo sem prévia aprovada, e a oferta renderiza um card por produto do catálogo.", "section": "components" },
+      { "name": "The Catalog Rule", "body": "Nenhum componente desenha \"5\" ou \"P001\". Título, chamada, conteúdo e entrega da oferta vêm de src/content/products.ts; código, nome, resumo, prévia aprovada e fatos de cada carta vêm de src/content/games.ts. A folha de cartas aceita de 1 a N cartas, a capa tipográfica é o padrão de qualquer jogo sem prévia aprovada, e a oferta renderiza um card por produto do catálogo.", "section": "components" },
+      { "name": "The Three Cuts Rule", "body": "A tesoura corta a página em três lugares: depois da hero (folha dos jogos), antes da oferta (folha de compra) e antes do rodapé público. Seções do mesmo assunto separam-se só por espaço; nunca há tesoura dentro de uma seção nem em páginas privadas.", "section": "layout" },
       { "name": "The Kito Acts Rule", "body": "Se o Kito não está caminhando, acolhendo, celebrando ou convidando, ele não está na tela.", "section": "components" }
     ],
     "dos": [

@@ -19,7 +19,6 @@ export const experience = {
   // Sem nota, número de avaliações ou estrelas. O responsável substitui pelos relatos autorizados.
   social: {
     heading: 'Cada dupla, uma história.',
-    description: 'Este espaço está reservado para as histórias de quem jogou junto.',
     placeholderLabel: 'Relato de exemplo',
     testimonials: [
       { id: 'exemplo-1', placeholder: true, quote: 'A gente demorou mais para escolher quem desenhava do que para jogar. Valeu a pena: rimos até das cartas erradas.', author: 'Marina e Léo' },
