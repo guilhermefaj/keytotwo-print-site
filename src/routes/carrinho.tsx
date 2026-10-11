@@ -1,6 +1,6 @@
 import { CheckoutSteps } from '../components/checkout/CheckoutSteps'
 import { EmptyCart, PurchaseSkeleton, PurchaseThumbnail } from '../components/checkout/PurchaseUi'
-import { productName, packageContents } from '../content/products'
+import { productName, packageContents, products } from '../content/products'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { DataStatus } from '../components/account/AccountUi'
@@ -46,7 +46,7 @@ export default function Carrinho() {
     {error && pending && <button className="button button-secondary" disabled={busy} onClick={() => addPending(pending)}>Tentar adicionar novamente</button>}
     <DataStatus loading={false} error={cart.error} retry={cart.reload} />
     {cart.loading && !cart.data ? <PurchaseSkeleton /> : items?.length === 0 ? <EmptyCart /> : Boolean(items?.length) && <div className="cart-layout"><section aria-labelledby="cart-items-title"><h2 id="cart-items-title">Sua escolha</h2>
-      <ul className="cart-items">{items!.map(item => <li key={item.code} data-cart-product={item.code}><PurchaseThumbnail /><div><h3>{productName(item.code, item.name)}</h3><p className="cart-item-price">{item.price ? money(item.price.unit_amount, item.price.currency) : 'Não conseguimos carregar o preço.'}</p><details className="cart-composition"><summary>O que está incluído</summary><ul>{item.code === 'P001' ? packageContents.map(text => <li key={text}>{text}</li>) : item.games.map(game => <li key={game.code}>{game.name}</li>)}</ul></details>
+      <ul className="cart-items">{items!.map(item => <li key={item.code} data-cart-product={item.code}><PurchaseThumbnail code={item.code} name={item.name} /><div><h3>{productName(item.code, item.name)}</h3>{products.find(product => product.code === item.code)?.tagline && <p className="cart-item-tagline">{products.find(product => product.code === item.code)!.tagline}</p>}<p className="cart-item-price">{item.price ? money(item.price.unit_amount, item.price.currency) : 'Não conseguimos carregar o preço.'}</p><details className="cart-composition"><summary>O que está incluído</summary><ul>{item.code === 'P001' ? packageContents.map(text => <li key={text}>{text}</li>) : item.games.map(game => <li key={game.code}>{game.name}</li>)}</ul></details>
         {item.status === 'unavailable' && <p className="form-error">Este produto não está disponível para compra.</p>}
         {item.status === 'already_owned' && <p>Você já tem todos os jogos deste produto. <Link className="inline-link" to="/meus-jogos">Ver Meus jogos</Link></p>}
         {(item.owned_games.length > 0 || item.shared_with.length > 0) && item.status !== 'already_owned' && <p>Há jogos que você já tem ou que também estão em outro item do carrinho. Confira a composição antes de comprar; o valor não é reduzido.</p>}

@@ -17,12 +17,16 @@
 .purchase-page .cart-items > li { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 24px; padding-block: 0 28px; }
 .purchase-thumbnail { width: 128px; height: 128px; object-fit: cover; object-position: top; border: var(--line-card); border-radius: var(--radius-md); background: var(--color-paper); flex-shrink: 0; }
 .purchase-page .cart-items h3 { font-size: var(--text-title-lg); margin: 0 0 12px; }
+.purchase-page .cart-item-tagline { margin: 0 0 8px; color: var(--color-ink-soft); font-size: var(--text-small); }
 .purchase-page .cart-item-price { font-weight: 600; margin: 0 0 20px; }
+.purchase-thumbnail-type { display: grid; place-items: center; padding: 8px; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: var(--text-label); line-height: 1.15; letter-spacing: var(--tracking-title); color: var(--color-ink); text-wrap: balance; overflow-wrap: anywhere; }
 .purchase-page .cart-composition summary { min-height: 44px; cursor: pointer; }
 .purchase-page .cart-composition ul { padding-left: 20px; }
 .purchase-page .payment-items > li { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; gap: 16px; }
 .payment-items .purchase-thumbnail { width: 72px; height: 72px; }
-.payment-item-copy { display: grid; gap: 8px; min-width: 0; }
+.payment-item-copy { display: grid; gap: 6px; min-width: 0; }
+.payment-item-tagline { font-size: var(--text-caption); color: var(--color-ink-soft); }
+.payment-delivery { margin: 0 0 16px; font-size: var(--text-caption); line-height: 1.6; color: var(--color-ink-soft); }
 .purchase-page .payment-terms { margin-bottom: 16px; }
 .payment-reveal { min-width: 0; }
 .stripe-payment #checkout-form { opacity: 0; transform: translateY(8px); }

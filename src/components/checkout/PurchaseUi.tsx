@@ -1,9 +1,13 @@
 import { Link } from 'react-router'
+import { productName, products } from '../../content/products'
 import { KitoEmpty } from '../ui/KitoEmpty'
 
-export function PurchaseThumbnail() {
-  // Página real do J001: a pessoa vê o que está comprando, não um enfeite (DESIGN.md › Kito).
-  return <img className="purchase-thumbnail" src="/media/experience/j001-page-1-720.webp" width="720" height="1019" alt="" decoding="async" />
+// Miniatura do produto: imagem real de products.ts quando existe; sem ela, capa tipográfica com o título
+// (DESIGN.md › The Catalog Rule). Nunca um enfeite com o Kito.
+export function PurchaseThumbnail({ code, name = '', className = 'purchase-thumbnail' }: { code: string; name?: string; className?: string }) {
+  const thumbnail = products.find(product => product.code === code)?.thumbnail
+  if (thumbnail) return <img className={className} src={thumbnail.src} width="720" height="1019" alt={thumbnail.alt} decoding="async" />
+  return <span className={`${className} purchase-thumbnail-type`} aria-hidden="true"><span>{productName(code, name)}</span></span>
 }
 export function PurchaseSkeleton() {
   return <div className="purchase-skeleton" role="status" aria-label="Carregando seu carrinho"><span className="sr-only">Carregando seu carrinho…</span><div aria-hidden="true" className="skeleton-item"><span /><div><span /><span /><span /></div></div><div aria-hidden="true" className="skeleton-summary"><span /><span /><span /></div></div>

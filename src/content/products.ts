@@ -10,6 +10,8 @@ export type Product = {
   delivery: readonly string[]
   games: readonly Game[]
   offer: typeof offer
+  /** Imagem real do produto para miniaturas; sem ela, a capa tipográfica com o título. */
+  thumbnail?: { src: string; alt: string }
 }
 
 export const packageContents = ['5 jogos para imprimir', 'Instruções para preparar e jogar', 'Arquivos digitais em PDF']
@@ -17,7 +19,7 @@ export const packageContents = ['5 jogos para imprimir', 'Instruções para prep
 // P2: the page consumes a product list. P001 is the only confirmed product.
 // Regra de catálogo: título, chamada, conteúdo e entrega vêm daqui; a oferta renderiza um card por produto.
 export const products: readonly Product[] = [
-  { code: offer.code, kind: 'bundle', title: 'Pacote KeyToTwo', tagline: '5 jogos. Muitas próximas rodadas.', contents: packageContents, delivery: ['Download após a confirmação da compra.', 'Acesso sem prazo de expiração.'], games, offer },
+  { code: offer.code, kind: 'bundle', title: 'Pacote KeyToTwo', tagline: '5 jogos. Muitas próximas rodadas.', contents: packageContents, delivery: ['Download após a confirmação da compra.', 'Acesso sem prazo de expiração.'], thumbnail: { src: '/media/experience/j001-page-1-720.webp', alt: '' }, games, offer },
 ]
 
 // Editorial display name; commercial approval remains tracked in offer.name.
