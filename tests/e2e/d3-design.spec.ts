@@ -72,7 +72,9 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await page.route('**/api/order-status?*', route => route.fulfill({ json: { state: 'failed' } }))
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Vamos tentar de novo?' })).toBeVisible()
-  await expect(page.locator('.kito-empty')).toBeVisible()
+  // Falha de pagamento: Kito em pose neutra (quadro 01 do atlas), nunca a caixa com lágrima.
+  await expect(page.locator('.kito-still')).toBeVisible()
+  await expect(page.locator('.kito-empty')).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Baixar agora', exact: true })).toHaveCount(0)
   await capture(page, `falha-${width}`); await axe(page)
   await page.route('**/api/cart', route => route.fulfill({ json: { version: 1, items: [], subtotal: null, warnings: [] } }))

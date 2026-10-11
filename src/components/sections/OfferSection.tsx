@@ -24,7 +24,7 @@ function ProductOffer({ product }: { product: Product }) {
   return <article className="offer-layout" aria-labelledby={`product-${product.code}`} data-product-code={product.code}>
     <div className="offer-invitation"><h3 className="product-title" id={`product-${product.code}`}>{product.title}</h3><ul className="package-contents">{product.contents.map(item => <li key={item}>{item}</li>)}</ul></div>
     <div className="offer-summary crop-marks"><h4>{product.tagline}</h4>
-      <p className="offer-price" data-state={price ? undefined : 'pending'}>{price ? money(price.unit_amount, price.currency) : siteConfig.stage === 'preview' ? 'Preço em breve' : catalog.loading ? 'Consultando preço…' : 'Não conseguimos carregar o preço.'}</p>
+      <p className="offer-price" data-state={price ? undefined : 'pending'} aria-live="polite">{price ? money(price.unit_amount, price.currency) : siteConfig.stage === 'preview' ? 'Preço em breve' : catalog.loading ? 'Consultando preço…' : 'Não conseguimos carregar o preço.'}</p>
       <p className="offer-delivery">{product.delivery.map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</p>
       <TrustLine />
       {siteConfig.showCartAccess ? <ProductPurchaseAction code={product.code} /> : <p className="offer-coming">Estamos preparando este encontro. Compra disponível em breve.</p>}
