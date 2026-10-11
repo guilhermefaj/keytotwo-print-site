@@ -117,8 +117,7 @@ Status depois de `55d7b9d` e dos ajustes `0e24c32` ([revisoes/fatia-4.md](reviso
 
 Status da revisão de `f174f15` ([revisoes/fatia-5.md](revisoes/fatia-5.md)):
 - RESOLVIDO: F5.1–F5.4, F5.6–F5.10
-- PARCIAL: F5.5 (conteúdo do pacote escondido no carrinho e ausente no pagamento)
-- Novo ajuste de catálogo: a miniatura do produto deve vir de `products.ts`
+- F5.5 e a miniatura nos dados: RESOLVIDOS em `1e157d8` ([revisoes/fatia-6.md](revisoes/fatia-6.md))
 
 | ID | Critério | Origem | Como verifico |
 | --- | --- | --- | --- |
@@ -134,6 +133,13 @@ Status da revisão de `f174f15` ([revisoes/fatia-5.md](revisoes/fatia-5.md)):
 | F5.10 | Nenhum texto abaixo de 13 px (Caption) fora dos três usos do `micro` (11 px) que o DESIGN.md registrou em `3979931`: selo "No pacote", contagem do carrinho e etapas da compra no celular. Recomendação: reavaliar as etapas no celular, que são rótulos lidos | DS Typography; WIG | tamanhos computados |
 
 ## Fatia 6 — Estados
+
+Status da revisão de `485292f` ([revisoes/fatia-6.md](revisoes/fatia-6.md)):
+- RESOLVIDO: F6.2, F6.4, F6.5, F6.7–F6.10
+- PARCIAL: F6.1 (erros de rota e newsletter), F6.3 (caixa com lágrima nos vazios: decisão do responsável)
+- ABERTO: F6.6 (P2)
+
+Balanço final de todos os achados: [2026-10-balanco-final.md](2026-10-balanco-final.md).
 
 | ID | Critério | Origem | Como verifico |
 | --- | --- | --- | --- |
