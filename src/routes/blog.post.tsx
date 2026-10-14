@@ -1,4 +1,4 @@
-import { Link, isRouteErrorResponse, useLoaderData, useRouteError, type LoaderFunctionArgs } from 'react-router'
+import { Link, isRouteErrorResponse, useLoaderData, useRouteError, type ClientLoaderFunctionArgs, type LoaderFunctionArgs } from 'react-router'
 import { readBlogPosts } from '../lib/blog.server'
 import { formatBlogDate } from '../lib/blog'
 import { siteConfig } from '../lib/seo'
@@ -11,6 +11,21 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (!post) throw new Response('Artigo não encontrado', { status: 404 })
   return { post }
 }
+
+// Prerender só grava .data dos slugs publicados; no runtime (SPA com fallback) o
+// router relata a ausência como um erro interno de rota. Traduzimos esse sinal
+// em um 404 de verdade para o ErrorBoundary; erros reais seguem inalterados.
+export async function clientLoader(args: ClientLoaderFunctionArgs) {
+  try {
+    return await args.serverLoader()
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('No result found for routeId')) {
+      throw new Response('Artigo não encontrado', { status: 404 })
+    }
+    throw error
+  }
+}
+clientLoader.hydrate = true
 
 export default function BlogPost() {
   const { post } = useLoaderData<typeof loader>()

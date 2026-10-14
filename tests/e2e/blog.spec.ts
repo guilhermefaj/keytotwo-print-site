@@ -59,6 +59,16 @@ test('navega da lista ao post e volta com metadados próprios e foco visível', 
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0)
 })
 
+test('slug inexistente mostra "Artigo não encontrado" com o link de volta ao blog', async ({ page }) => {
+  // Live sem artigos publicados nem registra a rota dinâmica; o catch-all responde.
+  test.skip(live && !exampleExists, 'Somente quando a rota dinâmica do blog existe')
+  await page.goto('/blog/slug-que-nao-existe')
+  await expect(page.getByRole('heading', { name: 'Artigo não encontrado', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Voltar ao blog', exact: true })).toHaveAttribute('href', '/blog')
+  await page.getByRole('link', { name: 'Voltar ao blog', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Blog', exact: true })).toBeVisible()
+})
+
 test('link Blog está no cabeçalho, menu mobile e rodapé', async ({ page }) => {
   await page.goto('/blog')
   await expect(page.getByRole('navigation', { name: 'Navegação principal', exact: true }).getByRole('link', { name: 'Blog', exact: true })).toBeVisible()
