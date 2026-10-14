@@ -4,12 +4,13 @@ import { expect, test, type Page } from '@playwright/test'
 
 // Checks for the public sales pages, run against the prerendered build (build/client).
 // Stage-specific assertions follow the stage the build was made for (robots.txt tells which).
-const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/ajuda', '/termos', '/privacidade', '/reembolsos', '/404']
+const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/ajuda', '/termos', '/privacidade', '/404']
+// A rota ainda existe, mas redireciona para /termos#reembolso; links internos continuam resolvendo.
+const redirectRoutes = ['/reembolsos']
 const blogRoutes = readdirSync('build/client/blog', { withFileTypes: true }).filter(file => file.isDirectory()).map(file => `/blog/${file.name}`)
 routes.push('/blog', ...blogRoutes)
-const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/404']
-const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao']
-const policyRoutes = ['/', '/ajuda', '/termos', '/reembolsos']
+const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/404']
+const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao']
 const refundNotice = /N[ãa]o h[áa] reembolso ap[óo]s a libera[çc][ãa]o do download/i
 
 async function builtFile(name: string) {
@@ -24,7 +25,7 @@ async function visibleText(page: Page) {
 
 test.describe('links e botões', () => {
   test('todo link interno resolve para uma rota pré-renderizada e para um id existente', async ({ page }) => {
-    const known = new Set(routes)
+    const known = new Set([...routes, ...redirectRoutes])
     const ids = new Map<string, Set<string>>()
     const links: { from: string; href: string }[] = []
 
@@ -102,46 +103,47 @@ test.describe('conteúdo', () => {
   test('experiência, um CTA na hero e prova social explicitamente reservada', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')
-    await expect(page.locator('.hero-copy a')).toHaveCount(1)
-    await expect(page.locator('.hero-benefits li')).toHaveCount(3)
+    await expect(page.locator('.hero-copy a')).toHaveText(['Quero o pacote', 'Ver a prévia'])
+    await expect(page.locator('.hero-copy mark')).toHaveText('encontro.')
+    await expect(page.locator('.hero-benefits')).toHaveCount(0)
     await expect(page.locator('.steps-list li')).toHaveCount(3)
-    await expect(page.locator('.faq-item')).toHaveCount(5)
-    await expect(page.locator('.social-card[data-placeholder="true"]')).toHaveCount(3)
-    await expect(page.locator('.social-card blockquote')).toHaveCount(0)
-    await expect(page.locator('.social-metrics')).toContainText('Nota a preencher')
-    await expect(page.locator('.social-metrics')).toContainText('Total de relatos a preencher')
+    await expect(page.locator('.faq-item')).toHaveCount(4)
+    if (await isPreview() || await isLive()) {
+      // Sem relato real autorizado a seção de relatos não renderiza (P0-1).
+      await expect(page.locator('.social-section')).toHaveCount(0)
+      await expect(page.locator('.social-card')).toHaveCount(0)
+    } else {
+      await expect(page.locator('.social-card[data-placeholder="true"]')).toHaveCount(3)
+      await expect(page.locator('.social-card blockquote')).toHaveCount(3)
+    }
+    await expect(page.locator('.social-metrics')).toHaveCount(0)
     await expect(page.locator('[data-product-code]')).toHaveCount(1)
     await expect(page.locator('[data-product-code]')).toHaveAttribute('data-product-code', 'P001')
-    await expect(page.locator('.games-section')).toHaveCount(0)
-    expect(await visibleText(page)).not.toMatch(/PENDENTE|Hora dos Artistas|Boardgame/)
+    await expect(page.locator('.package-game')).toHaveCount(5)
+    expect(await visibleText(page)).not.toMatch(/PENDENTE|Jogo a definir/)
     const offer = page.locator('section.offer-section')
     await expect(offer.locator('.offer-price')).not.toBeEmpty()
     expect((await visibleText(page)).match(/\bP\d{3}\b/g) ?? [], 'códigos de produto além de P001').toEqual([])
   })
 
-  test('aviso de sem reembolso: oferta, FAQ e políticas', async ({ page }) => {
-    for (const route of policyRoutes) {
+  test('condição de reembolso: nos termos de uso, não nas páginas de venda', async ({ page }) => {
+    // The refund condition belongs in the terms of use, not in the buyer's face.
+    for (const route of ['/', '/ajuda']) {
       await page.goto(route)
       await page.waitForLoadState('networkidle')
-      expect(await visibleText(page), `aviso em ${route}`).toMatch(refundNotice)
+      expect(await visibleText(page), `sem condição de reembolso em ${route}`).not.toMatch(refundNotice)
     }
+    await page.goto('/termos')
+    await page.waitForLoadState('networkidle')
+    expect(await visibleText(page), 'condição nos termos de uso').toMatch(refundNotice)
+    await expect(page.locator('#reembolso')).toHaveText('Reembolsos e contestações')
   })
 
-  // The conditions must come before the purchase action, not necessarily before the price.
-  test('home: aviso de sem reembolso na oferta e antes de qualquer botão de compra', async ({ page }) => {
+  // The refund condition must not appear on the offer anymore; it moved to the terms.
+  test('home: oferta sem linha de reembolso', async ({ page }) => {
     await page.goto('/')
-    const result = await page.evaluate(() => {
-      const offer = document.querySelector('section.offer-section')!
-      const notice = [...offer.querySelectorAll('*')].find(el => el.children.length === 0 && /N[ãa]o h[áa] reembolso/i.test(el.textContent ?? ''))
-      const actions = [...offer.querySelectorAll('button, a, [role="button"]')]
-        .filter(el => /adicionar|finalizar|comprar agora|carrinho/i.test(`${el.textContent} ${el.getAttribute('aria-label') ?? ''}`))
-      return {
-        noticeInOffer: !!notice,
-        actionsBeforeNotice: actions.filter(el => !!notice && !!(el.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING)).map(el => el.textContent?.trim()),
-      }
-    })
-    expect(result.noticeInOffer, 'aviso dentro da seção da oferta').toBe(true)
-    expect(result.actionsBeforeNotice, 'botões de compra antes do aviso').toEqual([])
+    await expect(page.locator('section.offer-section .refund-notice')).toHaveCount(0)
+    expect(await visibleText(page)).not.toMatch(refundNotice)
   })
 
   test('carrinho exige login e preserva o destino', async ({ page }) => {
@@ -149,7 +151,7 @@ test.describe('conteúdo', () => {
     await expect(page).toHaveURL(/\/entrar\?next=%2Fcarrinho$/)
     await expect(page.getByRole('heading', { name: 'Entrar', exact: true })).toBeVisible()
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
-    // The refund-before-checkout assertion is in the authenticated I2b suite.
+    // Authenticated checkout content is checked by the D3 suite.
   })
 })
 
@@ -179,7 +181,7 @@ test.describe('stage', () => {
       expect(robots).not.toMatch(/Sitemap:/)
       expect(locs).toEqual([])
     } else {
-      expect(locs.length).toBe(6 + blogRoutes.length)
+      expect(locs.length).toBe(5 + blogRoutes.length)
       for (const route of privateRoutes) expect(sitemap).not.toContain(`${route}</loc>`)
       expect(robots).toMatch(/Disallow: \/carrinho/)
     }
@@ -246,6 +248,11 @@ test('home: matriz responsiva, texto 200%, cena preservada e capturas', async ({
       const overflow = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('body *')].filter(el => {
         if (!el.checkVisibility() || el.closest('[aria-hidden="true"]') || el.classList.contains('skip-link')) return false
         const rect = el.getBoundingClientRect()
+        // Cards outside a scroll-snap viewport are intentional; text must still fit each card.
+        const track = el.closest('.snap-track')
+        if (track && getComputedStyle(track).overflowX === 'auto') {
+          return el === track ? rect.left < -1 || rect.right > innerWidth + 1 : el.scrollWidth > el.clientWidth + 2
+        }
         return rect.left < -1 || rect.right > innerWidth + 1 || el.scrollWidth > el.clientWidth + 2
       }).map(el => ({ tag: el.tagName, class: el.className, width: el.clientWidth, scroll: el.scrollWidth })))
       expect(overflow, `home ${width}px, text ${zoom}%`).toEqual([])

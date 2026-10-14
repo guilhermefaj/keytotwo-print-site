@@ -1,0 +1,173 @@
+<!doctype html>
+<!--
+  Esboço estático — Direção B "Folha de recorte" (redesign abaixo da hero).
+  Auditoria Prumo 2026-10. Não é código de produção; serve só para renderizar a direção em PNG.
+  Copy: somente textos já existentes no site (src/content/*.ts, src/components/**).
+  Imagens: assets reais de public/media (caminhos relativos ao repositório).
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direção B — Folha de recorte</title>
+<style>
+@font-face { font-family: 'Bricolage Grotesque'; font-weight: 700; src: url('../../../node_modules/@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'DM Sans'; font-weight: 400; src: url('../../../node_modules/@fontsource/dm-sans/files/dm-sans-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'DM Sans'; font-weight: 600; src: url('../../../node_modules/@fontsource/dm-sans/files/dm-sans-latin-600-normal.woff2') format('woff2'); }
+
+/* Paleta B: papel branco dominante, linhas turquesa do J001, marca-texto damasco. Céu só na hero. */
+:root {
+  --papel: #FFFFFF; --tinta: #123A3D; --turquesa: #006970; --linha-j001: #1BB8C4; --marca: #FFB866; --ceu: #ECFAF7;
+  --terra: #684839; --grama: #77A85B; --grama-clara: #ACD475; --grama-escura: #3F7957;
+  --display: 'Bricolage Grotesque', Arial, sans-serif; --texto: 'DM Sans', Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--texto); color: var(--tinta); background: var(--papel); }
+a { color: inherit; }
+.wrap { width: min(1140px, calc(100% - 80px)); margin-inline: auto; }
+
+.header { background: var(--ceu); }
+.header .wrap { width: min(1280px, calc(100% - 64px)); display: flex; align-items: center; gap: 24px; min-height: 72px; }
+.logo { width: 146px; height: auto; }
+.nav { display: flex; gap: 8px; margin-inline: auto; }
+.nav a, .acoes a.link { text-decoration: none; padding: 10px 14px; font-size: 15px; }
+.acoes { display: flex; align-items: center; gap: 8px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 22px; border-radius: 6px; background: var(--turquesa); color: var(--papel); font-weight: 600; text-decoration: none; font-size: 16px; }
+.btn-sm { min-height: 44px; padding: 10px 18px; font-size: 14px; }
+.menu { display: none; font-weight: 600; font-size: 14px; }
+
+/* Hero: cena do Kito preservada; texto à esquerda, como numa folha de rosto */
+.hero { background: var(--ceu); }
+.hero .wrap { padding-top: 64px; }
+.etiqueta { display: inline-block; margin: 0; padding: 6px 12px; border: 2px dashed var(--linha-j001); border-radius: 8px; background: var(--papel); font-size: 14px; font-weight: 600; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(40px, 6.4vw, 88px); line-height: 1; letter-spacing: -.05em; margin: 22px 0 22px; max-width: 900px; }
+h1 span { display: block; }
+mark { background: linear-gradient(transparent 58%, var(--marca) 58% 92%, transparent 92%); color: inherit; padding: 0 .04em; }
+.apoio { max-width: 560px; margin: 0; font-size: 18px; line-height: 1.55; }
+.cta { margin-top: 28px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+.cta .sec { font-weight: 600; text-underline-offset: 6px; }
+.cena { position: relative; height: 230px; margin-top: 8px; overflow: hidden; }
+.cena img { position: absolute; image-rendering: pixelated; }
+.nuvem1 { width: 132px; right: 9%; top: 0; opacity: .7; }
+.mato-e { width: 320px; left: -22px; bottom: 36px; }
+.mato-d { width: 440px; right: -28px; bottom: 28px; }
+.kito { position: absolute; width: 176px; height: 176px; left: 58%; bottom: 35px; background: url('../../../public/media/hero/kito-walk-v31-right-atlas.webp') 0 0 / 600% 200% no-repeat; image-rendering: pixelated; }
+.chao { position: absolute; left: 0; right: 0; bottom: 0; height: 48px; background: var(--terra); }
+.chao::before { content: ''; position: absolute; inset: 0 0 auto; height: 14px; background: var(--grama); border-top: 5px solid var(--grama-clara); border-bottom: 4px solid var(--grama-escura); }
+
+/* Assinatura: linha de recorte com tesoura separa as seções */
+.recorte { position: relative; height: 40px; margin-top: 28px; }
+.recorte::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 2px dashed var(--linha-j001); }
+.recorte svg { position: absolute; left: max(40px, calc(50% - 570px)); top: 8px; background: var(--papel); padding: 0 8px; box-sizing: content-box; }
+
+.jogos { padding: 48px 0 88px; }
+.topo { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); gap: 64px; align-items: end; }
+h2 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 4vw, 52px); line-height: 1.05; letter-spacing: -.04em; margin: 0 0 16px; }
+.topo p { margin: 0; font-size: 18px; line-height: 1.6; }
+.ficha { margin: 0; font-size: 15px; }
+.ficha-titulo { font-weight: 600; margin: 0 0 8px; }
+.ficha div { display: flex; gap: 8px; padding: 6px 0; }
+.ficha dt { white-space: nowrap; }
+.ficha div::after { content: ''; order: 1; flex: 1; border-bottom: 2px dotted #9EC9C3; margin-bottom: 5px; }
+.ficha dd { order: 2; margin: 0; font-weight: 600; white-space: nowrap; }
+
+/* Folha de cartas: grade com calhas tracejadas, como a folha de recortar do J001 */
+.folha { position: relative; margin-top: 48px; padding: 18px; }
+.folha::before, .folha::after { content: ''; position: absolute; width: 18px; height: 18px; border-color: var(--tinta); border-style: solid; }
+.folha::before { left: -2px; top: -2px; border-width: 2px 0 0 2px; }
+.folha::after { right: -2px; bottom: -2px; border-width: 0 2px 2px 0; }
+.cartas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background-image: linear-gradient(90deg, transparent calc(100% - 1px), transparent 0); }
+.carta { margin: 0; padding: 14px; border-right: 2px dashed var(--linha-j001); min-width: 0; }
+.carta:last-child { border-right: 0; }
+.carta .face { aspect-ratio: 3 / 4; border: 2px solid var(--linha-j001); border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 14px; gap: 10px; overflow: hidden; position: relative; }
+.carta .face.prev { padding: 0; }
+.carta .face.prev img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.carta .selo { font-size: 11px; font-weight: 600; color: var(--turquesa); border: 1.5px solid var(--linha-j001); border-radius: 6px; padding: 2px 8px; }
+.carta .nome { font-family: var(--display); font-weight: 700; font-size: 22px; line-height: 1.08; letter-spacing: -.02em; }
+.carta .face.breve { border-style: dashed; color: #345B5D; }
+.carta figcaption { padding-top: 12px; }
+.carta h3 { font-family: var(--display); font-size: 19px; letter-spacing: -.02em; margin: 0 0 6px; }
+.carta p { margin: 0; font-size: 14px; line-height: 1.5; color: #345B5D; }
+.carta a { display: inline-block; margin-top: 8px; font-weight: 600; font-size: 14px; color: var(--turquesa); text-underline-offset: 4px; }
+.nota { margin-top: 40px; font-size: 13px; color: #345B5D; }
+
+@media (max-width: 767px) {
+  .wrap { width: calc(100% - 40px); }
+  .header .wrap { width: calc(100% - 32px); min-height: 60px; }
+  .logo { width: 118px; }
+  .nav, .acoes { display: none; }
+  .menu { display: inline-flex; margin-left: auto; }
+  .hero .wrap { padding-top: 36px; }
+  .etiqueta { font-size: 13px; }
+  h1 { font-size: 42px; }
+  .apoio { font-size: 16px; }
+  .cta { flex-direction: column; align-items: stretch; gap: 10px; }
+  .cta .sec { align-self: flex-start; }
+  .cena { height: 190px; }
+  .nuvem1 { width: 88px; right: 12%; }
+  .mato-e { width: 190px; left: -48px; bottom: 28px; }
+  .mato-d { width: 226px; right: -74px; bottom: 26px; }
+  .kito { width: 120px; height: 120px; left: 38%; bottom: 30px; }
+  .chao { height: 38px; }
+  .jogos { padding: 28px 0 56px; }
+  .topo { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .topo p { font-size: 16px; }
+  .folha { margin-top: 32px; padding: 10px; }
+  .cartas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .carta { padding: 10px; border-right: 0; border-bottom: 2px dashed var(--linha-j001); }
+  .carta:nth-child(odd):not(:first-child) { border-right: 2px dashed var(--linha-j001); }
+  .carta:first-child { grid-column: 1 / -1; display: grid; grid-template-columns: 44% minmax(0, 1fr); gap: 14px; align-items: center; }
+  .carta:last-child { border-bottom: 0; }
+  .carta:nth-last-child(2) { border-bottom: 0; }
+  .carta .nome { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+<header class="header"><div class="wrap">
+  <img class="logo" src="../../../public/media/hero/keytotwo-logo.webp" alt="KeyToTwo" width="420" height="97">
+  <nav class="nav"><a href="#">O pacote</a><a href="#">Como funciona</a><a href="#">Blog</a></nav>
+  <div class="acoes"><a class="link" href="#">Ajuda</a><a class="link" href="#">Entrar</a><a class="btn btn-sm" href="#">Quero o pacote</a></div>
+  <span class="menu">☰ Menu</span>
+</div></header>
+
+<section class="hero">
+  <div class="wrap">
+    <p class="etiqueta">KeyToTwo · jogos para casais</p>
+    <h1>A rotina pode esperar. <span>Vocês têm um <mark>encontro.</mark></span></h1>
+    <p class="apoio">Um pacote com 5 jogos para imprimir, preparar e jogar juntos em casa. O Kito traz a ideia. Vocês fazem a noite acontecer.</p>
+    <div class="cta"><a class="btn" href="#">Quero o pacote</a><a class="sec" href="#">Ver a prévia</a></div>
+  </div>
+  <div class="cena" aria-hidden="true">
+    <img class="nuvem1" src="../../../public/media/hero/cloud-a.webp" alt="">
+    <img class="mato-e" src="../../../public/media/hero/foliage-left.webp" alt="">
+    <img class="mato-d" src="../../../public/media/hero/foliage-right.webp" alt="">
+    <div class="kito"></div>
+    <div class="chao"></div>
+  </div>
+</section>
+<div class="recorte" aria-hidden="true"><svg width="28" height="24" viewBox="0 0 28 24"><g fill="none" stroke="#006970" stroke-width="2"><circle cx="6" cy="6" r="4"/><circle cx="6" cy="18" r="4"/><path d="M9.5 8 26 18M9.5 16 26 6"/></g></svg></div>
+
+<section class="jogos"><div class="wrap">
+  <div class="topo">
+    <div><h2>Cinco jogos para puxar uma cadeira.</h2><p>Uma prévia do que vai para a mesa de vocês.</p></div>
+    <div><p class="ficha-titulo">Rabisque e Adivinhe</p><dl class="ficha">
+      <div><dt>Pessoas</dt><dd>2, em equipe</dd></div><div><dt>Partida</dt><dd>10 rodadas de 60 segundos</dd></div>
+      <div><dt>Arquivo</dt><dd>PDF de 4 páginas A4</dd></div><div><dt>Conteúdo</dt><dd>Instruções e 50 cartas</dd></div></dl></div>
+  </div>
+  <div class="folha"><div class="cartas">
+    <figure class="carta"><div class="face prev"><img src="../../../public/media/experience/j001-page-1-720.webp" alt="Página real de Rabisque e Adivinhe, com instruções e cartas para recortar."></div>
+      <figcaption><h3>Rabisque e Adivinhe</h3><p>Um desenha, o outro adivinha. Os acertos são da dupla.</p><a href="#">Ver a prévia</a></figcaption></figure>
+    <figure class="carta"><div class="face"><span class="selo">No pacote</span><span class="nome">Hora dos Artistas</span></div>
+      <figcaption><h3>Hora dos Artistas</h3><p>Detalhes e prévia em breve.</p></figcaption></figure>
+    <figure class="carta"><div class="face"><span class="selo">No pacote</span><span class="nome">Boardgame</span></div>
+      <figcaption><h3>Boardgame</h3><p>Detalhes e prévia em breve.</p></figcaption></figure>
+    <figure class="carta"><div class="face breve"><span class="nome">Em breve</span></div>
+      <figcaption><p>Estamos preparando este jogo para o pacote.</p></figcaption></figure>
+    <figure class="carta"><div class="face breve"><span class="nome">Em breve</span></div>
+      <figcaption><p>Estamos preparando este jogo para o pacote.</p></figcaption></figure>
+  </div></div>
+  <p class="nota">Esboço da Direção B · copy existente do site · cartas tipográficas no lugar da arte do Kito (achado P0-2).</p>
+</div></section>
+</body>
+</html>

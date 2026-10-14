@@ -46,7 +46,7 @@ async function noOverflow(page: Page) {
   }
 }
 
-test('guest add → Mailpit code → persistent cart; consent once; marketing and private views', async ({ page }) => {
+test('guest add → Mailpit code → persistent cart; marketing and private views', async ({ page }) => {
   const email = `qa-cart-${randomUUID()}@example.test`
   const runtimeErrors: string[] = []
   page.on('pageerror', error => runtimeErrors.push(error.message))
@@ -56,23 +56,16 @@ test('guest add → Mailpit code → persistent cart; consent once; marketing an
   await noOverflow(page)
   await loginWithCode(page, email)
   await expect(page).toHaveURL(/\/carrinho$/)
+  await expect(page.getByRole('dialog', { name: 'Seu carrinho' })).toBeVisible()
+  await page.getByRole('button', { name: 'Fechar carrinho' }).click()
   await expect(page.locator('[data-cart-product="P001"]')).toBeVisible()
-  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Carrinho, 1 item', exact: true })).toBeVisible()
+  await expect(page.locator('.desktop-action').getByRole('button', { name: 'Carrinho, 1 item', exact: true })).toBeVisible()
   // I3 enables checkout only when the real catalog supplies a price.
   const checkout = page.getByRole('button', { name: 'Finalizar compra', exact: true })
-  if (await page.getByText('Preço indisponível', { exact: true }).count()) await expect(checkout).toBeDisabled()
+  if (await page.getByText('Não conseguimos carregar o preço.', { exact: true }).count()) await expect(checkout).toBeDisabled()
   else await expect(checkout).toBeEnabled()
-  expect(await page.evaluate(() => {
-    const notice = document.querySelector('.cart-summary .refund-notice')!
-    const button = document.querySelector('.cart-summary button')!
-    return Boolean(notice.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING)
-  })).toBe(true)
-  await expect(page.locator('.consent-invite')).toBeVisible()
-  await expect(page.locator('.consent-invite input[type="checkbox"]')).not.toBeChecked()
-  await page.getByRole('button', { name: 'Agora não', exact: true }).click()
-  await expect(page.locator('.consent-invite')).toHaveCount(0)
-  // Also clear the temporary browser marker: prompted_at must survive server-side.
-  await page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith('ktt-marketing-prompt:')).forEach(key => localStorage.removeItem(key)))
+  await expect(page.locator('.refund-notice')).toHaveCount(0)
+  await expect(page.locator('.newsletter')).toHaveCount(0)
   await page.reload()
   await expect(page.locator('[data-cart-product="P001"]')).toBeVisible()
   await page.waitForLoadState('networkidle')
@@ -80,19 +73,15 @@ test('guest add → Mailpit code → persistent cart; consent once; marketing an
   await noOverflow(page)
   await page.goto('/conta')
   await expect(page.getByText(email, { exact: true })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Pedidos', exact: true })).toBeVisible()
-  const checkbox = page.locator('.marketing-form input[type="checkbox"]')
-  await expect(checkbox).not.toBeChecked()
-  await checkbox.check()
-  await page.getByRole('button', { name: 'Salvar preferência', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Minha conta', exact: true })).toBeVisible()
+  const form = page.locator('.marketing-form')
+  await expect(form.getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeVisible()
+  await form.getByRole('button', { name: 'Quero receber ideias', exact: true }).click()
   await page.waitForLoadState('networkidle')
-  await page.reload()
-  await expect(checkbox).toBeChecked()
-  await checkbox.uncheck()
-  await page.getByRole('button', { name: 'Salvar preferência', exact: true }).click()
+  await expect(form).toContainText('Você recebe nossas ideias')
+  await form.getByRole('button', { name: 'Parar de receber', exact: true }).click()
   await page.waitForLoadState('networkidle')
-  await page.reload()
-  await expect(checkbox).not.toBeChecked()
+  await expect(form.getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeVisible()
   await noOverflow(page)
   await page.goto('/meus-jogos')
   await expect(page.getByText('Você ainda não tem jogos liberados.')).toBeVisible()
@@ -173,7 +162,7 @@ test('seed account has library by game and orders; full ownership prevents addin
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(library.games.length)
   await noOverflow(page)
   const accountResponse = page.waitForResponse(response => response.url().endsWith('/api/account') && response.status() === 200)
-  await page.goto('/conta')
+  await page.goto('/pedidos')
   const account = await (await accountResponse).json()
   expect(account.orders.length).toBeGreaterThan(0)
   await expect(page.locator('.order-list > li')).toHaveCount(account.orders.length)

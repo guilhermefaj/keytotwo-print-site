@@ -1,0 +1,371 @@
+---
+name: KeyToTwo
+description: Jogos para casais imprimirem e jogarem juntos. Direção visual B, "Folha de recorte" (Portão 1, 2026-10-10).
+colors:
+  paper: "#FFFFFF"
+  ink: "#123A3D"
+  ink-soft: "#345B5D"
+  deep-teal: "#006970"
+  deep-teal-hover: "#00565D"
+  deep-teal-active: "#00454B"
+  line: "#1BB8C4"
+  highlight: "#FFB866"
+  sky: "#ECFAF7"
+  error: "#993518"
+  ink-wash: "rgb(18 58 61 / 0.06)"
+  ink-rule: "rgb(18 58 61 / 0.18)"
+typography:
+  display:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "clamp(2.625rem, 1.5rem + 4.9vw, 5.5rem)"
+    fontWeight: 700
+    lineHeight: 1
+    letterSpacing: "-0.04em"
+  display-mobile:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "2.625rem"
+    fontWeight: 700
+    lineHeight: 1
+    letterSpacing: "-0.04em"
+  display-xs:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "2.25rem"
+    fontWeight: 700
+    lineHeight: 1
+    letterSpacing: "-0.04em"
+  headline:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "clamp(2.125rem, 1.5rem + 2.6vw, 3.25rem)"
+    fontWeight: 700
+    lineHeight: 1.05
+    letterSpacing: "-0.03em"
+  headline-sm:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "1.75rem"
+    fontWeight: 700
+    lineHeight: 1.12
+    letterSpacing: "-0.03em"
+  title-lg:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "1.5rem"
+    fontWeight: 700
+    lineHeight: 1.2
+    letterSpacing: "-0.02em"
+  title:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "1.375rem"
+    fontWeight: 700
+    lineHeight: 1.15
+    letterSpacing: "-0.02em"
+  title-sm:
+    fontFamily: "Bricolage Grotesque, Arial, sans-serif"
+    fontSize: "1.1875rem"
+    fontWeight: 700
+    lineHeight: 1.2
+    letterSpacing: "-0.02em"
+  lead:
+    fontFamily: "DM Sans, Arial, sans-serif"
+    fontSize: "1.125rem"
+    fontWeight: 400
+    lineHeight: 1.55
+  body:
+    fontFamily: "DM Sans, Arial, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.6
+  small:
+    fontFamily: "DM Sans, Arial, sans-serif"
+    fontSize: "0.9375rem"
+    fontWeight: 400
+    lineHeight: 1.5
+  label:
+    fontFamily: "DM Sans, Arial, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 600
+    lineHeight: 1.5
+    letterSpacing: "normal"
+  caption:
+    fontFamily: "DM Sans, Arial, sans-serif"
+    fontSize: "0.8125rem"
+    fontWeight: 400
+    lineHeight: 1.5
+  micro:
+    fontFamily: "DM Sans, Arial, sans-serif"
+    fontSize: "0.6875rem"
+    fontWeight: 600
+    lineHeight: 1.5
+rounded:
+  sm: "6px"
+  md: "10px"
+  lg: "14px"
+  round: "50%"
+spacing:
+  xs: "4px"
+  sm: "8px"
+  md: "16px"
+  lg: "24px"
+  xl: "32px"
+  2xl: "48px"
+  3xl: "64px"
+  section: "clamp(48px, 7vw, 88px)"
+components:
+  button-primary:
+    backgroundColor: "{colors.deep-teal}"
+    textColor: "{colors.paper}"
+    typography: "{typography.label}"
+    rounded: "{rounded.sm}"
+    padding: "12px 22px"
+    height: "48px"
+  button-primary-hover:
+    backgroundColor: "{colors.deep-teal-hover}"
+  button-primary-active:
+    backgroundColor: "{colors.deep-teal-active}"
+  button-secondary:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.sm}"
+    padding: "12px 22px"
+    height: "48px"
+  button-secondary-hover:
+    backgroundColor: "{colors.ink-wash}"
+  tag:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.sm}"
+    padding: "6px 12px"
+  card-face:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.lg}"
+    padding: "14px"
+  input:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.sm}"
+    padding: "12px 14px"
+    height: "48px"
+  nav-link:
+    backgroundColor: "transparent"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    padding: "10px 12px"
+    height: "44px"
+---
+
+# Design System: KeyToTwo
+
+## Overview
+
+**Creative North Star: "Folha de recorte"**
+
+O que o casal compra é papel. A hero é a janela para o mundo do Kito: céu, horizonte baixo, chão até as bordas e um único pinguim caminhando. Logo abaixo do chão passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, linhas turquesa como nas cartas do J001, calhas tracejadas entre as cartas, fichas com pontilhado de índice e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
+
+A hero vende a marca e uma forma de pensar (sair do automático, fazer algo juntos), não um produto específico. A folha abaixo vende o catálogo: hoje o Pacote KeyToTwo com cinco jogos, amanhã outros pacotes e um freebie. Por isso o sistema é feito de cartas, fichas e folhas que aceitam qualquer quantidade de itens. O tom é adulto, divertido e direto; o acabamento é o de um objeto gráfico bem impresso, não o de um app.
+
+Anti-referências confirmadas na auditoria e no Portão 1: landing de template (rótulos em caixa alta sobre títulos, três colunas centralizadas, pílulas com seta, listas de ✓), sombra dura de arcade, cápsula em todo controle, Kito como ícone repetido, capa fictícia para jogo sem prévia.
+
+**Key Characteristics:**
+- Papel dominante abaixo da hero; o Céu existe só na primeira dobra.
+- Uma assinatura: linha de recorte tracejada com tesoura separando as seções.
+- Linhas turquesa J001 decorativas (recorte, cartas, pontilhado); o texto é sempre Tinta ou Turquesa profundo.
+- Tipografia à esquerda, com um marca-texto por página, no máximo.
+- Controles planos, retos (6 px), sem sombra; só painéis que saem da folha (menu, gaveta) ganham sombra.
+- Kito age: caminha na hero, acolhe em vazios, celebra a compra. Nunca decora.
+- Pronto para mais produtos: cartas, fichas e oferta vêm de dados, não de "5" ou "P001" desenhados.
+
+## Colors
+
+Uma folha branca com tinta verde-azulada escura, linhas de corte turquesa e um único marca-texto.
+
+### Primary
+- **Turquesa profundo** (`{colors.deep-teal}`): toda ação. Fundo do botão primário, cor de links e botões de texto, traço da tesoura. Hover `{colors.deep-teal-hover}`, pressionado `{colors.deep-teal-active}`. Sobre Papel dá 6,45:1; Papel sobre ele, 6,45:1.
+- **Tinta** (`{colors.ink}`): texto corrido, títulos, borda do botão secundário, contorno de foco. 12,37:1 sobre Papel, 11,53:1 sobre Céu.
+
+### Secondary
+- **Turquesa J001** (`{colors.line}`): **só linhas decorativas**: linha de recorte, calhas tracejadas da folha de cartas, borda das cartas, pontilhado da ficha. Dá 2,41:1 sobre Papel, por isso nunca é texto, nem borda única de um controle (input, botão), nem ícone que precise ser lido.
+- **Marca-texto** (`{colors.highlight}`): um traço atrás de uma palavra em Tinta (7,24:1), como caneta marca-texto. Aparece uma vez por página, na hero ("encontro."). Nunca é fundo de bloco, de seção ou de botão.
+
+### Neutral
+- **Papel** (`{colors.paper}`): fundo de toda a página abaixo da hero, de cards, inputs e do botão secundário.
+- **Céu** (`{colors.sky}`): fundo da hero e do cabeçalho enquanto ele está sobre a hero. Em nenhuma outra seção.
+- **Tinta suave** (`{colors.ink-soft}`): texto secundário (legendas, ajuda de campo, meta de pedidos). 7,50:1 sobre Papel.
+- **Aguada de tinta** (`{colors.ink-wash}`): superfície de hover e de desabilitado, Tinta a 6 %. Substitui qualquer cinza ou tom de céu em hover.
+- **Régua de tinta** (`{colors.ink-rule}`): divisórias sólidas de 1 px em listas, tabelas e rodapé (Tinta a 18 %). Quando a divisória "é da folha" (entre cartas, entre seções), usa-se a linha turquesa tracejada no lugar.
+- **Erro** (`{colors.error}`): mensagens de erro e borda de campo inválido. 7,30:1 sobre Papel.
+
+A paisagem da hero tem a própria paleta de cena (terra `#684839`, grama `#77A85B` / `#ACD475` / `#3F7957`, mato distante `#CFE6D7`, sulco `#A16C4E`), confinada ao bloco `.hero-scene`. Esses valores não saem da cena.
+
+### Named Rules
+**The Line-Not-Text Rule.** A Turquesa J001 nunca carrega significado sozinha: é linha de corte, calha ou borda de carta. Tudo o que precisa ser lido ou acionado é Tinta ou Turquesa profundo.
+
+**The One Highlight Rule.** Há um marca-texto por página, atrás de uma palavra ou duas. Um segundo traço vira decoração.
+
+**The Sky Stays Up Rule.** O Céu termina no chão do Kito. Abaixo da linha de recorte a página é Papel; hover e estados usam aguada de Tinta, não Céu.
+
+## Typography
+
+**Display Font:** Bricolage Grotesque 700 (com Arial, sans-serif)
+**Body Font:** DM Sans 400/600 (com Arial, sans-serif)
+
+**Character:** títulos largos, pesados e apertados como o nome de um jogo impresso na carta; corpo neutro e legível como as instruções da folha. Só os dois pesos de DM Sans e o 700 de Bricolage são carregados (subset latin, `@fontsource`, importados em `src/root.tsx`). A fonte pixel do PDF do J001 não entra enquanto não houver licença web confirmada.
+
+### Hierarchy
+- **Display** (700, `{typography.display}`, entrelinha 1, tracking −0,04em): só o H1 da hero. No celular usa `{typography.display-mobile}` (42 px) e, em 320 px, `{typography.display-xs}` (36 px). Nunca em outra seção.
+- **Headline** (700, `{typography.headline}`, 1,05, −0,03em): H2 de cada folha e H1 das páginas internas, alinhado à esquerda, largura máxima de 18ch, `text-wrap: balance`.
+- **Headline small** (700, `{typography.headline-sm}`, 1,12): preço real na oferta, título do menu móvel e dos vazios, título da newsletter, H2 da lista do blog, links do menu móvel.
+- **Title large** (700, `{typography.title-lg}`, 1,2): H2 de cards e painéis (conta, carrinho, pagamento, gaveta), saudação da área privada, subtotal.
+- **Title** (700, `{typography.title}` e `{typography.title-sm}`, 1,15–1,2, −0,02em): nome do jogo na carta (22 px), H3 de legendas, de blocos e de itens de lista (19 px).
+- **Lead** (400, `{typography.lead}`, 1,55): apoio da hero, primeira frase de uma folha, total a pagar; largura máxima 560 px.
+- **Body** (400, `{typography.body}`, 1,6): texto corrido; medida de 60–70ch.
+- **Small** (400, `{typography.small}`, 1,5): links de navegação, abas, texto de cards e fichas.
+- **Label** (600, `{typography.label}`, caixa normal, sem tracking): botões, etiquetas, nomes de campo, meta em negrito. Caixa alta não existe no sistema.
+- **Caption** (400, `{typography.caption}`, 1,5, Tinta suave): legendas de figura, ajuda de campo, meta de pedido, rodapé legal.
+- **Micro** (600, `{typography.micro}`): selo "No pacote", contagem do carrinho e etapas da compra no celular. Único tamanho abaixo de 13 px; nunca em texto corrido.
+
+Toda `font-size` do CSS referencia um destes tokens (`--text-*`); não há valores literais fora da escala.
+
+Números (preço, contagem, data) usam `font-variant-numeric: tabular-nums`. O preço é Headline em Bricolage apenas quando é um preço real; qualquer texto no lugar do preço ("Preço em breve", erro) é Body em Tinta suave.
+
+### Named Rules
+**The Heading Carries Itself Rule.** Não há rótulo, kicker ou eyebrow acima de um título. A única etiqueta do site é a da hero ("KeyToTwo · jogos para casais"), em caixa normal, e ela é um componente de etiqueta, não um pré-título.
+
+**The Print Tracking Rule.** O tracking negativo para em −0,04em no Display e em −0,02em nos títulos pequenos; o corpo não leva tracking.
+
+## Layout
+
+A página é uma pilha de folhas. Cada seção é uma folha de Papel com `padding-block: {spacing.section}`. A **linha de recorte** (2 px tracejada Turquesa J001, largura total, com a tesoura encostada na margem esquerda do contêiner) corta a página em **três lugares**: depois da hero (entra a folha dos jogos), antes da oferta (entra a folha de compra) e antes do rodapé. Seções do mesmo assunto (prévia, como funciona, relatos; dúvidas, blog, fechamento) separam-se só por espaço. A tesoura nunca aparece dentro de uma seção.
+
+Contêiner de conteúdo: `min(1140px, 100% − 80px)` no desktop, `100% − 48px` até 1050 px, `100% − 40px` até 767 px. O cabeçalho usa `min(1280px, 100% − 64px)`. Hero e cena ocupam a largura total; o chão vai até as bordas da janela.
+
+Grade: 12 colunas com divisões assimétricas. Título e apoio à esquerda em 7/12 (ou 1,2fr/0,8fr), ficha ou objeto à direita. A **folha de cartas** é uma grade de 5 colunas no desktop (todas visíveis, `repeat(5, minmax(0, 1fr))`), 2 colunas de 768 a 1050 px com a primeira carta ocupando a linha inteira, e um carrossel com rolagem por snap só abaixo de 768 px. As calhas entre cartas são tracejadas (2 px Turquesa J001).
+
+Ritmo vertical em múltiplos de 8: `{spacing.sm}` entre rótulo e campo, `{spacing.md}` entre parágrafos, `{spacing.lg}` entre grupos, `{spacing.xl}` entre título e conteúdo, `{spacing.2xl}` entre blocos de uma folha, `{spacing.section}` entre folhas. Mais espaço acima de um título do que abaixo.
+
+No celular tudo empilha: título, apoio, ação; na oferta, **o preço e o botão vêm antes da prévia**. A barra fixa de compra (`.mobile-purchase-bar`) só existe abaixo de 768 px e se recolhe quando hero, oferta ou rodapé estão à vista.
+
+Pontos de quebra: 360, 480, 600, 767, 1050 e 1120 (70rem) px, já usados pelo código. Sem rolagem horizontal de 320 a 1440 px com texto a 200 %.
+
+### Named Rules
+**The Three Cuts Rule.** A tesoura corta a página em três lugares: depois da hero (folha dos jogos), antes da oferta (folha de compra) e antes do rodapé público. Seções do mesmo assunto separam-se só por espaço; nunca há tesoura dentro de uma seção nem em páginas privadas.
+
+## Elevation & Depth
+
+Sem sombras na folha. A profundidade vem de linhas: tracejado para "aqui se corta", sólido para "aqui se separa", pontilhado para "aqui se liga". Cards e cartas são planos, com borda de 2 px; inputs têm borda de 1,5 px; nada tem sombra em repouso nem no hover.
+
+Só o que **sai da folha** flutua: a gaveta do carrinho, o menu móvel e o menu da conta são painéis sobre a página e carregam uma sombra suave com deslocamento. O cabeçalho fixo ganha a sombra de cabeçalho apenas quando já rolou e está sobre conteúdo.
+
+### Shadow Vocabulary
+- **Painel** (`box-shadow: -12px 0 48px rgb(18 58 61 / 0.12)`): gaveta do carrinho e menu móvel (Sheet).
+- **Menu** (`box-shadow: 0 12px 40px rgb(18 58 61 / 0.16)`): popover da conta no cabeçalho.
+- **Cabeçalho** (`box-shadow: 0 8px 24px rgb(18 58 61 / 0.08)`): cabeçalho fixo em estado rolado.
+
+### Named Rules
+**The Flat Sheet Rule.** O que está impresso na folha não tem sombra. Só painéis que cobrem a folha têm.
+
+**The One Edge Rule.** Um elemento declara sua borda uma vez: tracejada, sólida ou nenhuma. Borda mais sombra é proibido; barra lateral colorida também.
+
+## Shapes
+
+Cantos discretos, como papel cortado com cuidado: `{rounded.sm}` (6 px) em botões, inputs, etiquetas e selos; `{rounded.md}` (10 px) em miniaturas, avisos e popovers; `{rounded.lg}` (14 px) nas cartas de jogo e nos cards de oferta, conta e pagamento. Não existem cápsulas (999 px) em botões, links ou abas; o único círculo é o avatar com inicial e o número de etapa.
+
+A linguagem de forma é a da folha de recorte: retângulos com calha tracejada, uma etiqueta com borda tracejada (como um recorte ainda por fazer), tesoura de dois círculos e duas lâminas, e o traço de marca-texto que ocupa de 58 % a 92 % da altura da linha atrás da palavra.
+
+A cena do Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelated`, nenhum raio.
+
+## Components
+
+### Buttons
+- **Shape:** retângulo de cantos discretos (`{rounded.sm}`), altura mínima 48 px (44 px no cabeçalho), padding `12px 22px`, Label 600, sem ícone de seta, sem sombra.
+- **Primary:** Papel sobre Turquesa profundo; hover `{colors.deep-teal-hover}`; pressionado `{colors.deep-teal-active}` com `transform: scale(.98)` em 160 ms; desabilitado em aguada de Tinta com texto Tinta suave e `cursor: not-allowed`.
+- **Secondary:** Papel com borda de 1,5 px Tinta e texto Tinta; hover em aguada de Tinta; mesma altura e raio. É o botão de "Tentar novamente", "Atualizar status", "Sair da conta", cupom e voltar.
+- **Text button / link:** Turquesa profundo 600, sublinhado com `text-underline-offset: 4px`; no hover o sublinhado engrossa para 2 px. Usado para "Ver a prévia", "Remover", "Precisa de ajuda?".
+- **Focus:** `outline: 3px solid {colors.ink}; outline-offset: 3px` em todo controle, em qualquer fundo (sobre a hero o Céu mantém 11,5:1).
+- **Rótulos:** um nome por ação em todo o site: "Quero o pacote" leva à oferta (`/#comprar`); "Adicionar ao carrinho" compra; "Ver a prévia" abre a prévia; "Finalizar compra" paga.
+
+### Tags (etiqueta e selo)
+- **Etiqueta** (`.tag`): Papel, borda 2 px **tracejada** Turquesa J001, `{rounded.sm}`, padding `6px 12px`, Label 600 em Tinta. Só para a identificação da hero e para marcar algo "por recortar" (ex.: freebie em preparação).
+- **Selo** (`.tag-solid`): borda 1,5 px sólida Turquesa J001, texto Turquesa profundo em Caption 600, padding `2px 8px`. Só dentro da carta ("No pacote").
+
+### Cards / Containers
+- **Carta de jogo** (`.package-game` dentro de `.folha`): figura com face 3:4 (`.game-cover`) de Papel, borda 2 px Turquesa J001, `{rounded.lg}`, conteúdo centralizado; legenda abaixo com H3 Title-sm, Body em Tinta suave e, quando houver, um text button. Três faces: **prévia** (página real do jogo em `object-fit: cover`, topo alinhado), **tipográfica** (selo "No pacote" + nome do jogo em Title 22 px, sem imagem, sem Kito) e **em breve** (borda tracejada, "Em breve" em Tinta suave). A tipográfica é a padrão de qualquer jogo sem prévia aprovada. A carta não é clicável e não reage ao hover. Na biblioteca (Minha área) a mesma capa vai dentro do card do jogo: 16:10, sem borda própria, separada do corpo por uma régua de Tinta.
+- **Folha** (`.folha`): contêiner da grade de cartas com calhas tracejadas (`border-right`/`border-bottom` 2 px tracejado Turquesa J001 em cada carta, nunca duplicadas). Padding 18 px (10 px no celular).
+- **Card de oferta, conta e pagamento** (`.offer-summary`, `.account-card`, `.payment-card`, `.cart-summary`): Papel, borda 2 px Turquesa J001, `{rounded.lg}`, padding 32 px (24 px no celular), sem sombra. Dentro dele, a composição é uma ficha: nome, conteúdo, preço, ação.
+- **Item de compra** (carrinho, gaveta, pagamento): miniatura de 96–128 px com a imagem real do produto (`thumbnail` em `src/content/products.ts`) ou, sem imagem, a capa tipográfica com o título; ao lado, nome, chamada (`tagline`) e preço, e, no pagamento, as linhas de entrega (`delivery`). A pessoa vê o que compra em cada passo. Nunca o Kito como enfeite.
+- **Aviso** (`.notice`): Papel, borda 1,5 px Tinta suave, `{rounded.md}`, padding 16–20 px, sem barra lateral. Variante de demonstração usa a mesma caixa com texto "Demonstração".
+
+### Linha de recorte (`.cut-line`)
+Elemento decorativo (`aria-hidden`) de 40 px de altura entre duas folhas: linha tracejada 2 px Turquesa J001 de borda a borda da janela e a tesoura (SVG de 28 × 24, traço 2 px Turquesa profundo, dois círculos e duas lâminas) sobre um retângulo de Papel na margem esquerda do contêiner. Usa-se em três cortes: hero → folha dos jogos, antes da oferta e antes do rodapé (só no rodapé público). Não dentro de uma folha, não entre seções do mesmo assunto, não em páginas privadas.
+
+### Ficha (`.ficha`)
+Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direita, pontilhado de 2 px Turquesa J001 preenchendo o meio (`flex: 1; border-bottom: 2px dotted`). Usada para os fatos do J001, o resumo da oferta (conteúdo, formato, acesso) e os detalhes do pedido.
+
+### Marca-texto (`mark`)
+`background: linear-gradient(transparent 58%, {colors.highlight} 58% 92%, transparent 92%)`, `color: inherit`, `padding: 0 .04em`. Uma vez por página.
+
+### Inputs / Fields
+- **Style:** Papel, borda 1,5 px Tinta suave (`{colors.ink-soft}`, 7,5:1), `{rounded.sm}`, altura 48 px, padding `12px 14px`, Body; rótulo acima em Label 600 com `{spacing.sm}` de distância; ajuda em Caption.
+- **Focus:** mesmo contorno de 3 px Tinta com offset 2 px; a borda não muda de cor.
+- **Error:** borda `{colors.error}` e mensagem em Caption 600 na mesma cor, com `role="alert"`; a mensagem nomeia o problema e a saída.
+- **Disabled:** aguada de Tinta de fundo, texto Tinta suave.
+- **Checkbox:** 22 px, `accent-color: {colors.deep-teal}`, rótulo clicável com alvo ≥ 44 px.
+
+### Navigation
+- **Cabeçalho:** Céu sobre a hero, Papel nas demais páginas e quando rolado (Papel a 94 % com desfoque de 12 px e a sombra de cabeçalho). Logo à esquerda (146 px; 125 px no celular), links ao centro, ações à direita. Links em Body 15 px Tinta, padding `10px 12px`, alvo de 44 px; hover sublinha (2 px, offset 6 px); ativo sublinha em Turquesa profundo e Label 600. "Ajuda" tem o mesmo peso dos outros links. O CTA compacto é o botão primário de 44 px.
+- **Área privada** (`/meus-jogos`, `/pedidos`, `/conta`): o cabeçalho simplifica para logo, Meus jogos, Minha conta e Ajuda, sem CTA comercial nem carrinho.
+- **Modo foco** (`/pagamento`): logo, "Compra segura" com cadeado e "Voltar ao carrinho".
+- **Menu móvel (Sheet):** painel de Papel de até 480 px com a sombra de painel; links em Headline reduzida (Bricolage 700, 28 px) separados por régua de Tinta; entrada de 240 ms com 40 ms de escalonamento e 8 px de deslocamento; Escape fecha e devolve o foco.
+- **Abas da área privada:** sublinhado de 3 px Turquesa profundo na aba ativa, texto Tinta suave nas demais, barra fixa sob o cabeçalho.
+- **Etapas da compra** (`.checkout-steps`): quatro passos em Caption, número em círculo de 28 px com borda de régua; a etapa atual em Tinta 600 com o círculo em Turquesa profundo; concluída com ✓ em aguada de Tinta. Os números aqui são uma sequência real.
+
+### Kito (uso do personagem)
+- **Hero:** o único lugar onde o Kito se move. Atlas v3.1 RIGHT, 12 poses, 10 FPS, ciclo de 1,2 s, deslocamento `S × 520/1254 × FPS/12` px/s, chão em `S × 1160/1254`, duas camadas CSS (`.kito-track` desloca, `.kito-frames` troca a pose), volta só fora da tela, pausa fora de vista/aba oculta/menu aberto, `prefers-reduced-motion` começa parado com "Retomar animação". Parâmetros vêm de `src/kito-motion.ts` (gerado); nunca editar à mão, nunca regerar, recortar ou espelhar o atlas.
+- **Na home, fora da hero:** no máximo uma participação, parada, como anfitrião de um convite (ex.: ao lado do freebie ou do fechamento). Nunca como ícone de pilar, capa de jogo ou enfeite de prévia.
+- **Vazios** (carrinho, biblioteca, gaveta): Kito na caixa (`kito-caixa`, 240 px; 180 px no celular), com a entrada curta de 650 ms.
+- **Celebração** (pagamento confirmado): Kito acenando (`kito-hi`) com o confete de 1,1 s. Único lugar de delícia longa.
+- **Erro, falha de pagamento e 404:** pose neutra = **quadro 01 do atlas** (`.kito-still`, fundo `kito-walk-v31-right-atlas.webp` em `0 0 / 600% 200%`, 128–160 px), sem lágrima, sem aceno. Nenhuma imagem nova é gerada para isso.
+- **Área privada:** Kito acenando pequeno (56–64 px) na saudação. Só ali.
+
+### Estados
+- **Carregando:** esqueleto em aguada de Tinta com `role="status"` e texto visível ("Carregando seu carrinho…"); preço em "Consultando preço…" em Body Tinta suave, nunca em Display.
+- **Vazio:** Kito na caixa + título Title + uma frase + o botão primário com o nome real da ação ("Quero o pacote").
+- **Erro:** uma única mensagem em Body com `role="alert"`, em Tinta (não em cor de erro quando não há culpa da pessoa), seguida de **um** botão secundário "Tentar novamente". Sem título em Display, sem segunda mensagem genérica. Falha de pagamento e 404 usam o Kito neutro.
+- **Desabilitado:** aguada de Tinta + Tinta suave; sempre com a razão em Caption ao lado quando não for óbvia.
+- **Foco:** contorno de 3 px Tinta com offset em tudo que recebe foco, inclusive cartas com `tabindex`, abas e a trilha do carrossel.
+- **Movimento reduzido:** nenhuma entrada, nenhum deslocamento, carrossel instantâneo, Kito parado no quadro 01 com botão de retomar.
+
+### Movimento (tokens do plano 005)
+- `--ease-out: cubic-bezier(.16, 1, .3, 1)` para toda entrada e hover; nada usa `ease-in` em UI.
+- `--duration-press: 160ms` (pressão de botão, `scale(.98)`), `--duration-ui: 240ms` (entradas de UI: cards da biblioteca, bloco de pagamento, links do menu), `--duration-panel: 280ms` (abrir gaveta e menu; fechar em 180 ms), `--duration-reveal: 320ms` (reveal do conteúdo das folhas, 8 px), `--stagger: 40ms`.
+- O reveal aplica-se ao **conteúdo** da folha (`.page-section > .content-width`), nunca ao fundo da seção.
+- Hover com deslocamento só sob `(hover: hover) and (pointer: fine)` e sem movimento reduzido; cards não clicáveis não se movem.
+- Momentos raros (celebração) podem passar de 300 ms; tudo o mais fica abaixo.
+
+### Named Rules
+**The Catalog Rule.** Nenhum componente desenha "5" ou "P001". Título, chamada, conteúdo e entrega da oferta vêm de `src/content/products.ts`; código, nome, resumo, prévia aprovada e fatos de cada carta vêm de `src/content/games.ts`. A folha de cartas aceita de 1 a N cartas (5 por linha no desktop, quebrando em linhas novas), a capa tipográfica é o padrão de qualquer jogo sem prévia aprovada, e a oferta renderiza um card por produto do catálogo. Um freebie ou um segundo pacote entra sem CSS novo.
+
+**The Kito Acts Rule.** Se o Kito não está caminhando, acolhendo, celebrando ou convidando, ele não está na tela.
+
+## Do's and Don'ts
+
+### Do:
+- **Do** separar folhas com a linha de recorte e a tesoura, e só aí.
+- **Do** alinhar títulos e apoio à esquerda; usar o lado direito para ficha, preço ou objeto.
+- **Do** usar a capa tipográfica (nome do jogo sobre a carta) para qualquer jogo sem prévia aprovada.
+- **Do** manter botões retos (6 px), sem sombra, sem seta, com um nome por ação.
+- **Do** escrever preço só com um preço real; qualquer substituto é Body em Tinta suave.
+- **Do** dar a todo erro uma mensagem e um botão secundário de nova tentativa, e nada mais.
+- **Do** manter a hero exatamente como a coreografia do Kito pede e medir `verify:hero` após qualquer mudança nela.
+- **Do** medir contraste AA em cada estado novo antes de fechar uma fatia.
+
+### Don't:
+- **Don't** usar rótulo, kicker ou caixa alta com tracking acima de um título.
+- **Don't** usar Turquesa J001 em texto, ícone informativo ou borda única de controle.
+- **Don't** usar Céu, Marca-texto ou a paleta da paisagem fora da hero (o marca-texto só atrás de uma palavra).
+- **Don't** usar cápsula (999 px), sombra dura (`0 3px 0`), borda lateral colorida ou card com borda mais sombra.
+- **Don't** colocar o Kito como ícone, capa de jogo, enfeite de prévia ou em erro com expressão triste.
+- **Don't** animar fundo de seção, mover card não clicável no hover ou passar de 300 ms em UI (exceto a celebração).
+- **Don't** publicar relato, nota ou número de clientes que não exista; relatos `placeholder: true` só renderizam no stage `test`.
+- **Don't** apresentar um jogo ainda indefinido com arte, capa ou descrição que ele não tem.

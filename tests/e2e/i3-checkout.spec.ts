@@ -4,32 +4,13 @@ import { readFile } from 'node:fs/promises'
 // Synthetic boundary fixtures, never payment credentials. The separate opt-in local
 // integration test uses the real Auth/API/Stripe test-mode stack.
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
-const product = { code: 'P001', kind: 'bundle', name: 'Pacote de TESTE', games: [{ code: 'J001', name: 'Jogo de TESTE' }], price: { unit_amount: 1990, currency: 'brl' }, status: 'ok', available: true, owned_games: [], shared_with: [] }
-const cart = { version: 3, items: [product], subtotal: { amount: 1990, currency: 'brl' }, warnings: [] }
-const fakeSession = { access_token: 'synthetic-e2e-token', refresh_token: 'synthetic-e2e-refresh', expires_at: 4102444800, expires_in: 3600, token_type: 'bearer', user: { id: 'qa-synthetic', email: 'synthetic@example.test', email_confirmed_at: '2026-01-01T00:00:00Z', is_anonymous: false, aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: {} } }
-const stripeStub = `window.Stripe = (key, options) => ({ initCheckoutFormSdk({appearance}) {
-  if (options.betas[0] !== 'custom_checkout_payment_form_1' || appearance.variables.colorPrimary !== '#006970') throw Error('Studio settings changed');
-  let discount = 0; let change = () => {}; let handlers = {}; let button;
-  const session = () => ({id:'cs_test_synthetic123456', currency:'brl', livemode:false, status:{type:'open'}, total:{subtotal:{minorUnitsAmount:1990}, discount:{minorUnitsAmount:discount}, total:{minorUnitsAmount:1990-discount}}, discountAmounts: discount ? [{promotionCode:'TESTE10',displayName:'TESTE10'}] : []});
-  const actions = {getSession: session, async applyPromotionCode(code) { if(code !== 'TESTE10') return {type:'error',error:{code:'invalidCode'}}; discount=199; change(session()); return {type:'success',session:session()}; }, async removePromotionCode() { discount=0; change(session()); return {type:'success',session:session()}; }, async confirm({formConfirmEvent}) { if(!formConfirmEvent) throw Error('Missing form event'); return {type:'success',session:session()}; }};
-  return {on(event,handler) {change=handler}, async loadActions() {return {type:'success',actions}}, createForm(options) { if(options.layout!=='expanded') throw Error('Not expanded'); return {on(event,handler){handlers[event]=handler}, mount(host){button=document.createElement('button');button.textContent='Pagar (simulação de teste)';button.onclick=()=>handlers.confirm({source:'checkout-form-pay-button',paymentMethodType:'card'});host.append(button);handlers.ready()},destroy(){button?.remove()}}; }};
-}});`
+import { cart, product, fixture } from './fixtures/checkout'
 
-async function fixture(page: Page) {
-  await page.addInitScript(session => localStorage.setItem('sb-127-auth-token', JSON.stringify(session)), fakeSession)
-  await page.route('**/auth/v1/**', route => route.fulfill({ json: fakeSession.user }))
-  await page.route('**/functions/v1/api/**', route => {
-    const path = new URL(route.request().url()).pathname.split('/api')[1]
-    const data = path === '/cart' ? cart : path === '/catalog' ? { products: [product] } : path === '/account' ? { email: fakeSession.user.email, marketing: { opted_in: false, prompted_at: '2026-01-01', text_version: null }, orders: [] } : path === '/checkout' ? { client_secret: 'synthetic-only-no-stripe-secret' } : path === '/order-status' ? { state: 'paid', next: 'open_library', items: [{ code: 'P001', name: product.name }] } : { games: [], pending: [] }
-    return route.fulfill({ json: data })
-  })
-  await page.route('https://js.stripe.com/dahlia/stripe.js', route => route.fulfill({ contentType: 'application/javascript', body: stripeStub }))
-}
 async function start(page: Page) {
   await page.goto('/pagamento')
   test.skip(page.url().includes('/entrar'), 'Requires configured stage=test build')
   await expect(page.getByRole('heading', { name: 'Pagamento', exact: true })).toBeVisible()
-  await expect(page.getByRole('checkbox', { name: /Aceito os/ })).toBeVisible()
+  await expect(page.getByRole('checkbox', { name: /Li e aceito os/ })).toBeVisible()
 }
 async function stripeMode(page: Page) {
   await start(page)
@@ -47,8 +28,8 @@ test('explicit mock: acceptance, coupon and simulated confirmation without a che
   await start(page)
   test.skip(await page.getByText('Demonstração: o pagamento real ainda não está conectado neste ambiente.').count() === 0, 'Only applies to mock builds')
   await expect(page.locator('#checkout-form')).toHaveCount(0)
-  await page.getByRole('checkbox', { name: /Aceito os/ }).check()
-  await expect(page.getByText('Demonstração de pagamento (mock).', { exact: true })).toBeVisible()
+  await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
+  await expect(page.getByText('Demonstração de pagamento.', { exact: true })).toBeVisible()
   await page.getByLabel('Código do cupom').fill('TESTE10')
   await page.getByRole('button', { name: 'Aplicar cupom' }).click()
   await expect(page.locator('.payment-total')).toContainText('17,91')
@@ -64,7 +45,7 @@ test('acceptance gates API and form; coupon invalid/apply/remove; confirmation',
   await expect(page.locator('#checkout-form')).toHaveCount(0)
   expect(calls).toBe(0)
   await expect(page.locator('#checkout-form')).toHaveCount(0)
-  await page.getByRole('checkbox', { name: /Aceito os/ }).check()
+  await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
   await expect(page.getByRole('button', { name: 'Pagar (simulação de teste)' })).toBeVisible()
   expect(calls).toBe(1)
   await page.getByLabel('Código do cupom').fill('INVALIDO')
@@ -75,25 +56,25 @@ test('acceptance gates API and form; coupon invalid/apply/remove; confirmation',
   await expect(page.locator('.payment-total')).toContainText('17,91')
   await page.getByRole('button', { name: 'Remover cupom' }).click()
   await expect(page.locator('.payment-total')).toContainText('19,90')
-  await page.getByRole('checkbox', { name: /Aceito os/ }).uncheck()
+  await page.getByRole('checkbox', { name: /Li e aceito os/ }).uncheck()
   await expect(page.locator('#checkout-form')).toHaveCount(0)
-  await page.getByRole('checkbox', { name: /Aceito os/ }).check()
+  await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
   await page.getByRole('button', { name: 'Pagar (simulação de teste)' }).click()
   await expect(page.getByRole('heading', { name: 'O próximo encontro é de vocês!' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Ir para Meus jogos', exact: true })).toHaveAttribute('href', '/meus-jogos')
+  await expect(page.getByRole('link', { name: 'Baixar agora', exact: true })).toHaveAttribute('href', '/meus-jogos')
 })
 
 for (const [code, message] of [['CART_CHANGED', 'Seu carrinho mudou'], ['TERMS_CHANGED', 'Os termos foram atualizados'], ['PAYMENT_PROVIDER_ERROR', 'Não conseguimos abrir o pagamento']]) {
   test(`checkout error ${code} never mounts form or fabricates success`, async ({ page }) => {
     await page.route('**/api/checkout', route => route.fulfill({ status: 409, json: { error: { code } } }))
     await stripeMode(page)
-    await page.getByRole('checkbox', { name: /Aceito os/ }).check()
+    await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
     await expect(page.getByRole('alert')).toContainText(message)
-    await expect(page.getByRole('checkbox', { name: /Aceito os/ })).not.toBeChecked()
+    await expect(page.getByRole('checkbox', { name: /Li e aceito os/ })).not.toBeChecked()
     await expect(page.locator('#checkout-form')).toHaveCount(0)
   })
 }
-for (const [state, title] of [['paid', 'O próximo encontro é de vocês!'], ['processing', 'Estamos preparando seus jogos'], ['pending_payment', 'Aguardando o pagamento'], ['failed', 'Vamos tentar de novo?'], ['expired', 'O tempo para pagar terminou'], ['not_found', 'Não encontramos esse pedido'], ['other_account', 'Este pedido é de outra conta']]) {
+for (const [state, title] of [['paid', 'O próximo encontro é de vocês!'], ['processing', 'Estamos preparando seus jogos'], ['pending_payment', 'Aguardando o pagamento'], ['failed', 'Vamos tentar de novo?'], ['expired', 'Vamos tentar de novo?'], ['not_found', 'Não encontramos esse pedido'], ['other_account', 'Este pedido é de outra conta']]) {
   test(`confirmation ${state}`, async ({ page }) => {
     await page.route('**/api/order-status?*', route => route.fulfill({ json: state === 'other_account' ? { state: 'paid', next: 'other_account' } : { state, next: state === 'paid' ? 'open_library' : undefined } }))
     await page.goto('/pedido/confirmacao?session_id=cs_test_synthetic123456')
@@ -119,7 +100,7 @@ test('processing polls with backoff, then shows paid', async ({ page }) => {
 
 test('payment is responsive at 320, 390, 768, 1280 and 1440 with double text', async ({ page }) => {
   await start(page)
-  await page.getByRole('checkbox', { name: /Aceito os/ }).check()
+  await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
   for (const width of [320, 390, 768, 1280, 1440]) {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 900 })
     for (const size of ['16px', '32px']) {
@@ -144,7 +125,7 @@ test('unchecking terms cancels an in-flight checkout; accepting again creates a 
     await route.fulfill({ json: { client_secret: 'synthetic-only-no-stripe-secret' } }).catch(() => {})
   })
   await stripeMode(page)
-  const terms = page.getByRole('checkbox', { name: /Aceito os/ })
+  const terms = page.getByRole('checkbox', { name: /Li e aceito os/ })
   await terms.check()
   await expect.poll(() => calls).toBe(1)
   await terms.uncheck()

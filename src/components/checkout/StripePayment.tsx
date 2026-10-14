@@ -76,8 +76,8 @@ export function StripePayment({ clientSecret }: { clientSecret: string }) {
     finally { locked.current = false; setBusy(false) }
   }
   const applied = session?.discountAmounts?.find(discount => discount.promotionCode)
-  return <div className="stripe-payment">
-    {!ready && !fatal && <p role="status">Preparando seu pagamento seguro…</p>}
+  return <div className="stripe-payment" data-ready={ready}>
+    {!ready && !fatal && <p role="status">Preparando o formulário…</p>}
     {session && !fatal && <>
       <section className="coupon" aria-label="Tenho um cupom"><h3>Tenho um cupom</h3><form className="account-form coupon-form" onSubmit={event => { event.preventDefault(); void updateCoupon(false) }}><label htmlFor="promotion-code">Código do cupom</label><div><input id="promotion-code" autoComplete="off" maxLength={100} value={coupon} onChange={event => setCoupon(event.target.value)} disabled={busy} /><button className="button button-secondary" disabled={busy || !coupon.trim()}>Aplicar cupom</button></div></form></section>
       <dl className="payment-totals" aria-live="polite" aria-label="Total do pagamento"><div><dt>Subtotal</dt><dd>{money(session.total.subtotal.minorUnitsAmount, session.currency)}</dd></div>{session.total.discount.minorUnitsAmount > 0 && <div><dt>Desconto {applied?.promotionCode}</dt><dd>−{money(session.total.discount.minorUnitsAmount, session.currency)}</dd></div>}<div className="payment-total"><dt>Total a pagar</dt><dd>{money(session.total.total.minorUnitsAmount, session.currency)}</dd></div></dl>
@@ -85,7 +85,7 @@ export function StripePayment({ clientSecret }: { clientSecret: string }) {
     </>}
     <p role="status" className="form-message">{message}</p><p role="alert" className="form-error">{error}</p>
     {fatal && <button className="button button-secondary" onClick={() => { setFatal(false); setReady(false); setError(''); setAttempt(value => value + 1) }}>Recarregar formulário</button>}
-    <div id="checkout-form" ref={host} inert={busy} aria-label="Formulário seguro de pagamento" />
-    <p className="field-help payment-trust">Pagamento protegido pela Stripe. Seus dados de cartão são preenchidos diretamente no formulário seguro.</p>
+    <div id="checkout-form" ref={host} inert={busy || !ready} aria-busy={!ready} aria-label="Formulário de pagamento" />
+    {ready && !fatal && <p className="payment-trust"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="2" /></svg>Pagamento seguro</p>}
   </div>
 }

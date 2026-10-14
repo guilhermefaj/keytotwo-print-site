@@ -1,6 +1,6 @@
 // Sources: Site — Estrutura e taxonomia; Site — Direção visual (draft copy).
 export const navigation = [
-  { label: 'A experiência', href: '/#experiencia' },
+  { label: 'O pacote', href: '/#comprar' },
   { label: 'Como funciona', href: '/#como-funciona' },
   { label: 'Blog', href: '/blog' },
 ] as const
@@ -18,7 +18,6 @@ export const publicPages = {
   '/ajuda': { title: 'Ajuda com jogos, impressão e acesso — KeyToTwo', description: 'Encontre orientações sobre os jogos para imprimir, materiais, acesso às compras e atendimento da KeyToTwo.' },
   '/termos': { title: 'Termos de uso — KeyToTwo', description: 'Consulte o estado dos termos de uso da KeyToTwo, incluindo licença dos jogos, condições de acesso e validações pendentes.' },
   '/privacidade': { title: 'Privacidade e dados pessoais — KeyToTwo', description: 'Veja o estado da política de privacidade da KeyToTwo e as informações sobre dados pessoais que aguardam validação.' },
-  '/reembolsos': { title: 'Política de reembolsos — KeyToTwo', description: 'Conheça a condição de não reembolso após a liberação do download e o estado da validação jurídica da política da KeyToTwo.' },
 } as const
 
 export const otherPages = {
@@ -26,6 +25,7 @@ export const otherPages = {
   '/entrar': { title: 'Entrar — KeyToTwo', description: 'Página de entrada para acessar sua conta KeyToTwo.' },
   '/meus-jogos': { title: 'Meus jogos — KeyToTwo', description: 'Área reservada aos jogos adquiridos na KeyToTwo.' },
   '/conta': { title: 'Minha conta — KeyToTwo', description: 'Área reservada às informações da sua conta KeyToTwo.' },
+  '/pedidos': { title: 'Meus pedidos — KeyToTwo', description: 'Consulte os pedidos e acompanhe suas compras na KeyToTwo.' },
   '/pagamento': { title: 'Pagamento — KeyToTwo', description: 'Confira seu pedido e finalize o pagamento com segurança.' },
   '/jogo-gratuito': { title: 'Jogo gratuito — KeyToTwo', description: 'Confira a disponibilidade da experiência gratuita da KeyToTwo.' },
   '/email/preferencias': { title: 'Preferências de e-mail — KeyToTwo', description: 'Escolha se deseja receber novidades da KeyToTwo por e-mail.' },

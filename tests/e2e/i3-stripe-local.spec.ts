@@ -46,7 +46,7 @@ async function startPayment(page: Page) {
   await expect(page.locator('.checkout-demo')).toHaveCount(0)
   await expect(page.locator('#checkout-form')).toHaveCount(0)
   const checkoutResponse = page.waitForResponse(response => response.url().endsWith('/api/checkout'))
-  await page.getByRole('checkbox', { name: /Aceito os/ }).check()
+  await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
   const response = await checkoutResponse
   expect(response.status(), 'POST /checkout succeeds against real local backend').toBe(200)
   const body = await response.json()
@@ -102,7 +102,7 @@ test('Mailpit → cart → terms → TESTE10 → 4242 → paid → library and e
   await payWithCard(page, '4242424242424242')
   await expect(page.getByRole('heading', { name: 'O próximo encontro é de vocês!' })).toBeVisible({ timeout: 45000 })
   if (captureDir) await page.screenshot({ path: join(captureDir, 'confirmacao.png'), fullPage: true })
-  await page.getByRole('link', { name: 'Ir para Meus jogos', exact: true }).click()
+  await page.getByRole('link', { name: 'Baixar agora', exact: true }).click()
   await expect(page.locator('.library-grid > li')).toHaveCount(5)
   await expect(page.locator('.library-grid')).toContainText(productName)
   await page.goto('/carrinho')

@@ -29,7 +29,7 @@ test('public, noindex, no token: no mutation, private data or navigation entry',
   await expect(page.locator('meta[name="referrer"]')).toHaveAttribute('content', 'no-referrer')
   await expect(page.locator('main button')).toHaveCount(0)
   await expect(page.locator('header a[href="/email/preferencias"], footer a[href="/email/preferencias"]')).toHaveCount(0)
-  await page.getByRole('link', { name: 'Minha conta', exact: true }).click()
+  await page.locator('#conteudo').getByRole('link', { name: 'Minha conta', exact: true }).click()
   await expect(page).toHaveURL(/\/entrar\?next=%2Fconta$/)
   expect(posts).toBe(0)
 })
@@ -64,7 +64,7 @@ test('invalid link offers account without inventing an expiration state', async 
   await page.getByRole('button', { name: 'Parar de receber novidades' }).click()
   await expect(page.locator('main [role="alert"]')).toContainText('Este link não está funcionando')
   await expect(page.locator('main button')).toHaveCount(0)
-  await expect(page.getByRole('link', { name: 'Minha conta', exact: true })).toHaveAttribute('href', '/conta')
+  await expect(page.locator('#conteudo').getByRole('link', { name: 'Minha conta', exact: true })).toHaveAttribute('href', '/conta')
 })
 
 test('temporary failure permits retry, never fabricates success', async ({ page }) => {

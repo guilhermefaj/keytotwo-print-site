@@ -27,6 +27,8 @@ async function layoutCheck(page) {
     const note = document.querySelector('.hero-copy').getBoundingClientRect()
     const clipped = [...document.querySelectorAll('h1,h2,p,button,a,li')].filter(el => {
       if (!el.checkVisibility() || el.classList.contains('skip-link')) return false
+      const track = el.closest('.snap-track')
+      if (track && getComputedStyle(track).overflowX === 'auto') return el.scrollWidth > el.clientWidth + 2
       const r = el.getBoundingClientRect()
       const clipsY = ['hidden', 'clip'].includes(getComputedStyle(el).overflowY)
       return r.left < -1 || r.right > innerWidth + 1 || el.scrollWidth > el.clientWidth + 2 || (clipsY && el.scrollHeight > el.clientHeight + 2)
@@ -42,6 +44,11 @@ async function layoutCheck(page) {
 }
 
 async function axe(page, label) {
+  // Measure settled UI (staggered sheet links); leave the ambient walk loop alone.
+  await page.waitForLoadState('load')
+  await page.evaluate(() => Promise.allSettled(document.getAnimations()
+    .filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity)
+    .map(animation => animation.finished)))
   const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
   report.accessibility.push({ label, violations: result.violations })
   expect(result.violations).toEqual([])
@@ -62,9 +69,14 @@ try {
     ['/entrar', 'Entrar'], ['/carrinho', 'Carrinho'], ['/meus-jogos', 'Meus jogos'], ['/conta', 'Conta'],
     ['/pedido/confirmacao', 'Confirmação do pedido'], ['/ajuda', 'Ajuda'],
     ['/termos', 'Termos de uso'], ['/privacidade', 'Privacidade'],
-    ['/reembolsos', 'Reembolsos'], ['/404', 'Página não encontrada'],
+    ['/404', 'Página não encontrada'],
   ]
   const protectedRoutes = ['/carrinho', '/meus-jogos', '/conta', '/pedido/confirmacao']
+  const redirectPage = await browser.newPage()
+  await redirectPage.goto(new URL('/reembolsos', url).href)
+  await expect(redirectPage).toHaveURL(/\/termos#reembolso$/)
+  await expect(redirectPage.locator('#reembolso')).toBeVisible()
+  await redirectPage.close()
   for (const [routePath, title] of staticRoutes) {
     const file = new URL(`../build/client${routePath === '/' ? '' : routePath}/index.html`, import.meta.url)
     const html = await readFile(file, 'utf8')
@@ -81,6 +93,7 @@ try {
       const servedHeading = servedHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1].replace(/<[^>]+>/g, '')
       expect(servedHeading).toBe(protectedRoutes.includes(routePath) ? 'Verificando acesso' : title)
       await expect(routePage.locator('h1')).toHaveText(protectedRoutes.includes(routePath) ? 'Entrar' : title)
+      await routePage.waitForLoadState('load')
       await routePage.evaluate(() => document.fonts.ready)
       await expect(routePage.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow')
       expect(await routePage.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
@@ -119,20 +132,21 @@ try {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
   const page = await context.newPage()
   await page.goto(url)
+  // Header controls stay disabled until the auth provider is ready; wait before tabbing.
+  await expect(page.getByRole('button', { name: 'Abrir menu' })).toBeEnabled()
   await page.keyboard.press('Tab')
   await expect(page.getByText('Pular para o conteúdo')).toBeFocused()
   await page.keyboard.press('Tab')
   await expect(page.locator('.site-header .brand')).toBeFocused()
   await page.keyboard.press('Tab')
-  await expect(page.locator('.mobile-sign-in')).toBeFocused()
-  await page.keyboard.press('Tab')
   const menu = page.getByRole('button', { name: 'Abrir menu' })
-  if (await page.locator('.cart-trigger').isVisible()) await page.keyboard.press('Tab')
+  // D1 header: logo, (cart trigger when enabled), menu. The sign-in link lives inside the sheet.
+  if (await page.locator('.mobile-navigation .cart-trigger').isVisible()) await page.keyboard.press('Tab')
   await expect(menu).toBeFocused()
   const ring = await menu.evaluate(el => ({ width: getComputedStyle(el).outlineWidth, color: getComputedStyle(el).outlineColor }))
   expect(ring.width).toBe('3px')
   await page.keyboard.press('Enter')
-  await expect(page.getByRole('dialog', { name: 'Vamos conhecer?' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Entre e fique à vontade.' })).toBeVisible()
   for (let i = 0; i < 8; i++) {
     await page.keyboard.press('Tab')
     expect(await page.evaluate(() => Boolean(document.activeElement.closest('[role="dialog"]')))).toBe(true)
@@ -141,9 +155,9 @@ try {
   await page.screenshot({ path: path.join(output, 'menu-mobile.png'), fullPage: true })
   await page.keyboard.press('Escape')
   await expect(menu).toBeFocused()
-  report.keyboard.push('Tab through skip link, logo, Entrar, mobile menu; Enter opens; focus trapped; Escape closes and restores trigger; focus outline 3px.')
+  report.keyboard.push('Tab through skip link, logo, cart, mobile menu; Enter opens; focus trapped; Escape closes and restores trigger; focus outline 3px.')
 
-  for (const [name, target] of [['A experiência', 'experiencia'], ['Escolher nosso encontro', 'comprar']]) {
+  for (const [name, target] of [['Como funciona', 'como-funciona'], ['Quero o pacote', 'comprar']]) {
     await menu.focus()
     await page.keyboard.press('Enter')
     // Focus the item via actual Tab traversal, then activate via Enter.
@@ -166,13 +180,13 @@ try {
   await page.keyboard.press('Enter')
   expect(new URL(page.url()).hash).toBe('#comprar')
   await expect(page.locator('#comprar')).toBeInViewport()
-  const secondary = page.locator('.experience-copy .button')
+  const secondary = page.locator('.hero-secondary')
   await secondary.focus()
   await page.keyboard.press('Enter')
-  expect(new URL(page.url()).hash).toBe('#comprar')
-  await expect(page.locator('#comprar')).toBeInViewport()
+  expect(new URL(page.url()).hash).toBe('#experiencia')
+  await expect(page.locator('#experiencia')).toBeInViewport()
   await expect(page.locator('dialog')).toHaveCount(0)
-  report.keyboard.push('Hero and experience CTAs activate with Enter and reach the offer; no demonstration panels remain.')
+  report.keyboard.push('Hero CTA reaches the offer and the secondary link reaches the preview with Enter; no demonstration panels remain.')
 
   // Measure computed colors for each button family across actual normal/hover/active/focus states.
   function contrast(foreground, background) {
@@ -186,19 +200,24 @@ try {
   async function sample(locator, family, state) {
     const colors = await locator.evaluate(el => {
       const css = getComputedStyle(el)
-      let current = el
-      let background = css.backgroundColor
-      while (background === 'rgba(0, 0, 0, 0)' && current.parentElement) {
-        current = current.parentElement
-        background = getComputedStyle(current).backgroundColor
+      const parse = value => { const m = value.match(/[\d.]+/g) || ['0', '0', '0', '0']; return { r: +m[0], g: +m[1], b: +m[2], a: m.length > 3 ? +m[3] : 1 } }
+      // Composite translucent backgrounds (hover wash) over the first opaque ancestor.
+      const layers = []
+      for (let current = el; current; current = current.parentElement) {
+        const layer = parse(getComputedStyle(current).backgroundColor)
+        if (layer.a > 0) layers.unshift(layer)
+        if (layer.a >= 1) break
       }
+      let base = { r: 255, g: 255, b: 255 }
+      for (const layer of layers) base = { r: layer.r * layer.a + base.r * (1 - layer.a), g: layer.g * layer.a + base.g * (1 - layer.a), b: layer.b * layer.a + base.b * (1 - layer.a) }
+      const background = `rgb(${Math.round(base.r)}, ${Math.round(base.g)}, ${Math.round(base.b)})`
       return { foreground: css.color, background, outline: css.outlineColor, outlineWidth: css.outlineWidth }
     })
     const ratio = contrast(colors.foreground, colors.background)
     report.contrast.push({ family, state, ...colors, ratio: Number(ratio.toFixed(2)) })
     expect(ratio).toBeGreaterThanOrEqual(4.5)
   }
-  for (const [family, locator] of [['primary', primary], ['secondary', secondary], ['icon', menu], ['motion', page.locator('.motion-button')], ['text-on-white', page.locator('.desktop-nav .text-button').first()]]) {
+  for (const [family, locator] of [['primary', primary], ['secondary', secondary], ['icon', menu], ['motion', page.locator('.motion-button')], ['text-on-white', page.locator('.desktop-nav .nav-link').first()]]) {
     if (family === 'text-on-white') await page.setViewportSize({ width: 1280, height: 720 })
     await page.mouse.move(0, 0)
     await locator.evaluate(el => el.blur())
@@ -264,7 +283,8 @@ try {
     expect(initial.x + initial.width).toBeLessThan(width)
     expect(await button.evaluate(el => !!el.closest('[aria-hidden="true"]'))).toBe(false)
     // Reach pause through the keyboard from the last hero CTA.
-    await motionPage.locator('.hero-cta').focus()
+    // The secondary hero link is the last control before the motion button.
+    await motionPage.locator('.hero-secondary').focus()
     await motionPage.keyboard.press('Tab')
     await expect(button).toBeFocused()
     expect(await button.evaluate(el => getComputedStyle(el).outlineWidth)).toBe('3px')
@@ -313,12 +333,15 @@ try {
         measuredSpeed: forward.reduce((n, p) => n + p.dx, 0) / forward.reduce((n, p) => n + p.dt, 0) * 1000,
         maxClockDelta: Math.max(...samples.map(sample => sample.clockDelta)),
         maxHeldPoseTravel: Math.max(...heldPairs.map(pair => Math.abs(pair.after.x - pair.before.x))),
+        heldPoseTravelPairs: heldPairs.filter(pair => Math.abs(pair.after.x - pair.before.x) > 0.02).slice(0, 4),
         maxSupportDrift: Math.max(...supportPairs.map(pair => Math.abs(pair.after.supportX - pair.before.supportX))),
         sequence: transitions.slice(0, 24).map(pair => [pair.before.index + 1, pair.after.index + 1]),
         closes12to1: transitions.some(pair => pair.before.index === 11 && pair.after.index === 0),
         skippedPoses: transitions.filter(pair => (pair.before.index + 1) % 12 !== pair.after.index).length,
       }
     }, { cell, phases: walkSource.framesData })
+    // Record the measurement before asserting so a failure still leaves evidence in the report.
+    report.motion.push({ width, speed, ...loop })
     expect(loop.elapsed).toBeGreaterThanOrEqual(loop.duration)
     expect(loop.wraps.length).toBeGreaterThanOrEqual(1)
     for (const wrap of loop.wraps) {

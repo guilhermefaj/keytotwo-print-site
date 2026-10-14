@@ -1,0 +1,60 @@
+{
+  "slice": "6-estados",
+  "servers": {
+    "antes": {
+      "base": "http://127.0.0.1:5178",
+      "entries": [
+        {
+          "route": "/nao-existe",
+          "overflow": {
+            "320": 0,
+            "375": 0,
+            "768": 0,
+            "1280": 0,
+            "1440": 0
+          },
+          "errors": []
+        },
+        {
+          "route": "/pedido/confirmacao?session_id",
+          "overflow": {
+            "320": 0,
+            "375": 0,
+            "768": 0,
+            "1280": 0,
+            "1440": 0
+          },
+          "errors": []
+        }
+      ]
+    },
+    "depois": {
+      "base": "http://127.0.0.1:5180",
+      "entries": [
+        {
+          "route": "/nao-existe",
+          "overflow": {
+            "320": 0,
+            "375": 0,
+            "768": 0,
+            "1280": 0,
+            "1440": 0
+          },
+          "errors": []
+        },
+        {
+          "route": "/pedido/confirmacao?session_id",
+          "overflow": {
+            "320": 0,
+            "375": 0,
+            "768": 0,
+            "1280": 0,
+            "1440": 0
+          },
+          "errors": []
+        }
+      ]
+    }
+  },
+  "generatedAt": "2026-10-11T00:13:33.675Z"
+}

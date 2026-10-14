@@ -99,6 +99,6 @@ test('live sem artigos mostra estado vazio e mantém CTA útil', async ({ page }
   test.skip(!live || exampleExists, 'Somente para build live sem artigos publicados')
   await page.goto('/blog')
   await expect(page.getByRole('heading', { name: 'Ainda não há artigos publicados.' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Conhecer o pacote de jogos' })).toHaveAttribute('href', '/#comprar')
+  await expect(page.getByRole('link', { name: 'Quero o pacote' })).toHaveAttribute('href', '/#comprar')
   await expect(page.locator('.blog-draft')).toHaveCount(0)
 })

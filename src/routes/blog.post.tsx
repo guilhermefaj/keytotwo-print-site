@@ -3,6 +3,7 @@ import { readBlogPosts } from '../lib/blog.server'
 import { formatBlogDate } from '../lib/blog'
 import { siteConfig } from '../lib/seo'
 import { site } from '../content/site'
+import { Newsletter } from '../components/newsletter/Newsletter'
 import '../blog.css'
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -33,8 +34,9 @@ export default function BlogPost() {
     <aside className="blog-package" aria-labelledby="blog-package-title">
       <h2 id="blog-package-title">{site.closing}</h2>
       <p>{site.description}</p>
-      <a className="button button-primary" href="/#comprar">Escolher nosso encontro</a>
+      <a className="button button-primary" href="/#comprar">Quero o pacote</a>
     </aside>
+    <Newsletter />
     <Link to="/blog" className="inline-link">Voltar ao blog</Link>
   </main>
 }

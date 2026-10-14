@@ -59,7 +59,7 @@ export default function EmailPreferences() {
   const token = params.get('token') || ''
   const completed = state?.emailPreferenceResult === (emailPreferencesMock ? 'mock' : 'unsubscribed')
   return <main id="conteudo" tabIndex={-1} className="reading-page content-width">
-    <p className="eyebrow">No seu ritmo</p><h1>Preferências de e-mail</h1>
+    <h1>Preferências de e-mail</h1>
     {emailPreferencesMock && <p className="checkout-demo">Demonstração (mock): nenhuma preferência de e-mail será alterada.</p>}
     <PreferenceForm key={token} token={token} completed={completed} />
   </main>

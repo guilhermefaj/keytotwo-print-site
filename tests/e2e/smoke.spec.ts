@@ -6,7 +6,7 @@ const routes = [
   '/preview/hero',
   '/entrar',
   '/carrinho', '/pagamento',
-  '/meus-jogos',
+  '/meus-jogos', '/pedidos',
   '/conta',
   '/pedido/confirmacao',
   '/jogo-gratuito',
@@ -14,7 +14,6 @@ const routes = [
   '/ajuda',
   '/termos',
   '/privacidade',
-  '/reembolsos',
   '/404',
 ]
 
@@ -22,7 +21,7 @@ const viewports = [
   { name: '320', width: 320, height: 640 },
   { name: '1440', width: 1440, height: 900 },
 ]
-const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/conta', '/pedido/confirmacao']
+const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao']
 
 // Collects anything that signals a runtime or hydration failure.
 function trackErrors(page: Page) {
@@ -81,6 +80,15 @@ for (const route of routes) {
     }
   })
 }
+
+test('rota /reembolsos redireciona para /termos#reembolso', async ({ page }) => {
+  const errors = trackErrors(page)
+  await page.goto('/reembolsos')
+  await page.waitForURL(/\/termos#reembolso$/)
+  await expect(page.getByRole('heading', { name: 'Termos de uso', exact: true })).toBeVisible()
+  await expect(page.locator('#reembolso')).toBeVisible()
+  expect(errors, 'erros no redirecionamento de /reembolsos').toEqual([])
+})
 
 test('H1 da hero em /', async ({ page }) => {
   await page.goto('/')
