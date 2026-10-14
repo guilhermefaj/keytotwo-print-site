@@ -146,8 +146,8 @@ select pg_temp.assert('account_confirmed gravado para os 4 confirmados e não pa
 select pg_temp.assert('3 produtos: P001 (pacote de 5) e 2 avulsos TESTE', (select count(*) = 3 and count(*) filter (where kind = 'bundle') = 1 and count(*) filter (where kind = 'single') = 2 from seed_products));
 select pg_temp.assert('P001 com nome PENDENTE e rótulo TESTE; avulsos só TESTE', (select name = '[PENDENTE] Nome comercial do P001 [TESTE]' from public.products where code = 'P001')
   and (select bool_and(name like '[TESTE]%') from seed_products where kind = 'single'));
-select pg_temp.assert('todo nome de produto e de jogo leva TESTE ou PENDENTE', (select count(*) = 0 from seed_products where name !~ '(TESTE|PENDENTE)')
-  and (select count(*) = 0 from seed_games where name !~ '(TESTE|PENDENTE)'));
+select pg_temp.assert('todo produto leva TESTE ou PENDENTE no nome; todo jogo é identificável como teste pelo code e pelo slug (o nome pode ser limpo)', (select count(*) = 0 from seed_products where name !~ '(TESTE|PENDENTE)')
+  and (select count(*) = 0 from seed_games where code !~ '^TESTE-' or slug !~ '^teste-'));
 select pg_temp.assert('6 jogos: 5 pagos publicados + 1 grátis em draft', (select count(*) = 6 and count(*) filter (where access = 'paid' and status = 'published') = 5 and count(*) filter (where access = 'free' and status = 'draft') = 1 from seed_games));
 select pg_temp.assert('composição: P001 = 5 jogos; cada avulso = 1 (e os avulsos repetem jogos do P001)', (select count(*) = 7 from public.product_games pg where pg.product_id in (select id from seed_products))
   and (select count(*) = 5 from public.product_games pg join seed_products p on p.id = pg.product_id where p.code = 'P001'));
