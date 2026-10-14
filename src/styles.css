@@ -66,7 +66,6 @@
   --line-card: 2px solid var(--color-line);
   --line-dot: 2px dotted var(--color-line);
   --line-rule: 1px solid var(--color-ink-rule);
-  --crop-size: 18px;
   /* Sombras: só painéis que saem da folha. */
   --shadow-panel: -12px 0 48px rgb(18 58 61 / .12);
   --shadow-menu: 0 12px 40px rgb(18 58 61 / .16);
@@ -182,10 +181,6 @@ input, select, textarea { font: inherit; color: inherit; }
 .cut-line { position: relative; height: 40px; margin: 0; }
 .cut-line::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: var(--line-cut); }
 .cut-line svg { position: absolute; left: max(24px, calc(50% - var(--container) / 2)); top: 8px; padding: 0 8px; box-sizing: content-box; background: var(--color-paper); color: var(--color-deep-teal); }
-.crop-marks { position: relative; }
-.crop-marks::before, .crop-marks::after { content: ''; position: absolute; width: var(--crop-size); height: var(--crop-size); border-color: var(--color-ink); border-style: solid; pointer-events: none; }
-.crop-marks::before { left: -2px; top: -2px; border-width: 2px 0 0 2px; }
-.crop-marks::after { right: -2px; bottom: -2px; border-width: 0 2px 2px 0; }
 .ficha { margin: 0; font-size: var(--text-small); line-height: 1.5; }
 .ficha > div { display: flex; align-items: baseline; gap: 8px; padding: 6px 0; }
 .ficha dt { white-space: nowrap; }

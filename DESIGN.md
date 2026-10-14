@@ -161,7 +161,7 @@ components:
 
 **Creative North Star: "Folha de recorte"**
 
-O que o casal compra é papel. A hero é a janela para o mundo do Kito: céu, horizonte baixo, chão até as bordas e um único pinguim caminhando. Logo abaixo do chão passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, linhas turquesa como nas cartas do J001, calhas tracejadas entre as cartas, marcas de corte nos cantos, fichas com pontilhado de índice e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
+O que o casal compra é papel. A hero é a janela para o mundo do Kito: céu, horizonte baixo, chão até as bordas e um único pinguim caminhando. Logo abaixo do chão passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, linhas turquesa como nas cartas do J001, calhas tracejadas entre as cartas, fichas com pontilhado de índice e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
 
 A hero vende a marca e uma forma de pensar (sair do automático, fazer algo juntos), não um produto específico. A folha abaixo vende o catálogo: hoje o Pacote KeyToTwo com cinco jogos, amanhã outros pacotes e um freebie. Por isso o sistema é feito de cartas, fichas e folhas que aceitam qualquer quantidade de itens. O tom é adulto, divertido e direto; o acabamento é o de um objeto gráfico bem impresso, não o de um app.
 
@@ -182,7 +182,7 @@ Uma folha branca com tinta verde-azulada escura, linhas de corte turquesa e um �
 
 ### Primary
 - **Turquesa profundo** (`{colors.deep-teal}`): toda ação. Fundo do botão primário, cor de links e botões de texto, traço da tesoura. Hover `{colors.deep-teal-hover}`, pressionado `{colors.deep-teal-active}`. Sobre Papel dá 6,45:1; Papel sobre ele, 6,45:1.
-- **Tinta** (`{colors.ink}`): texto corrido, títulos, marcas de corte, borda do botão secundário, contorno de foco. 12,37:1 sobre Papel, 11,53:1 sobre Céu.
+- **Tinta** (`{colors.ink}`): texto corrido, títulos, borda do botão secundário, contorno de foco. 12,37:1 sobre Papel, 11,53:1 sobre Céu.
 
 ### Secondary
 - **Turquesa J001** (`{colors.line}`): **só linhas decorativas**: linha de recorte, calhas tracejadas da folha de cartas, borda das cartas, pontilhado da ficha. Dá 2,41:1 sobre Papel, por isso nunca é texto, nem borda única de um controle (input, botão), nem ícone que precise ser lido.
@@ -240,7 +240,7 @@ A página é uma pilha de folhas. Cada seção é uma folha de Papel com `paddin
 
 Contêiner de conteúdo: `min(1140px, 100% − 80px)` no desktop, `100% − 48px` até 1050 px, `100% − 40px` até 767 px. O cabeçalho usa `min(1280px, 100% − 64px)`. Hero e cena ocupam a largura total; o chão vai até as bordas da janela.
 
-Grade: 12 colunas com divisões assimétricas. Título e apoio à esquerda em 7/12 (ou 1,2fr/0,8fr), ficha ou objeto à direita. A **folha de cartas** é uma grade de 5 colunas no desktop (todas visíveis, `repeat(5, minmax(0, 1fr))`), 2 colunas de 768 a 1050 px com a primeira carta ocupando a linha inteira, e um carrossel com rolagem por snap só abaixo de 768 px. As calhas entre cartas são tracejadas (2 px Turquesa J001); as marcas de corte ficam nos cantos superior esquerdo e inferior direito da folha (18 px, Tinta 2 px).
+Grade: 12 colunas com divisões assimétricas. Título e apoio à esquerda em 7/12 (ou 1,2fr/0,8fr), ficha ou objeto à direita. A **folha de cartas** é uma grade de 5 colunas no desktop (todas visíveis, `repeat(5, minmax(0, 1fr))`), 2 colunas de 768 a 1050 px com a primeira carta ocupando a linha inteira, e um carrossel com rolagem por snap só abaixo de 768 px. As calhas entre cartas são tracejadas (2 px Turquesa J001).
 
 Ritmo vertical em múltiplos de 8: `{spacing.sm}` entre rótulo e campo, `{spacing.md}` entre parágrafos, `{spacing.lg}` entre grupos, `{spacing.xl}` entre título e conteúdo, `{spacing.2xl}` entre blocos de uma folha, `{spacing.section}` entre folhas. Mais espaço acima de um título do que abaixo.
 
@@ -271,7 +271,7 @@ Só o que **sai da folha** flutua: a gaveta do carrinho, o menu móvel e o menu 
 
 Cantos discretos, como papel cortado com cuidado: `{rounded.sm}` (6 px) em botões, inputs, etiquetas e selos; `{rounded.md}` (10 px) em miniaturas, avisos e popovers; `{rounded.lg}` (14 px) nas cartas de jogo e nos cards de oferta, conta e pagamento. Não existem cápsulas (999 px) em botões, links ou abas; o único círculo é o avatar com inicial e o número de etapa.
 
-A linguagem de forma é a da folha de recorte: retângulos com calha tracejada, marcas de corte em L nos cantos, uma etiqueta com borda tracejada (como um recorte ainda por fazer), tesoura de dois círculos e duas lâminas, e o traço de marca-texto que ocupa de 58 % a 92 % da altura da linha atrás da palavra.
+A linguagem de forma é a da folha de recorte: retângulos com calha tracejada, uma etiqueta com borda tracejada (como um recorte ainda por fazer), tesoura de dois círculos e duas lâminas, e o traço de marca-texto que ocupa de 58 % a 92 % da altura da linha atrás da palavra.
 
 A cena do Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelated`, nenhum raio.
 
@@ -291,16 +291,13 @@ A cena do Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelat
 
 ### Cards / Containers
 - **Carta de jogo** (`.package-game` dentro de `.folha`): figura com face 3:4 (`.game-cover`) de Papel, borda 2 px Turquesa J001, `{rounded.lg}`, conteúdo centralizado; legenda abaixo com H3 Title-sm, Body em Tinta suave e, quando houver, um text button. Três faces: **prévia** (página real do jogo em `object-fit: cover`, topo alinhado), **tipográfica** (selo "No pacote" + nome do jogo em Title 22 px, sem imagem, sem Kito) e **em breve** (borda tracejada, "Em breve" em Tinta suave). A tipográfica é a padrão de qualquer jogo sem prévia aprovada. A carta não é clicável e não reage ao hover. Na biblioteca (Minha área) a mesma capa vai dentro do card do jogo: 16:10, sem borda própria, separada do corpo por uma régua de Tinta.
-- **Folha** (`.folha`): contêiner da grade de cartas com calhas tracejadas (`border-right`/`border-bottom` 2 px tracejado Turquesa J001 em cada carta, nunca duplicadas) e marcas de corte nos cantos. Padding 18 px (10 px no celular).
+- **Folha** (`.folha`): contêiner da grade de cartas com calhas tracejadas (`border-right`/`border-bottom` 2 px tracejado Turquesa J001 em cada carta, nunca duplicadas). Padding 18 px (10 px no celular).
 - **Card de oferta, conta e pagamento** (`.offer-summary`, `.account-card`, `.payment-card`, `.cart-summary`): Papel, borda 2 px Turquesa J001, `{rounded.lg}`, padding 32 px (24 px no celular), sem sombra. Dentro dele, a composição é uma ficha: nome, conteúdo, preço, ação.
 - **Item de compra** (carrinho, gaveta, pagamento): miniatura de 96–128 px com a imagem real do produto (`thumbnail` em `src/content/products.ts`) ou, sem imagem, a capa tipográfica com o título; ao lado, nome, chamada (`tagline`) e preço, e, no pagamento, as linhas de entrega (`delivery`). A pessoa vê o que compra em cada passo. Nunca o Kito como enfeite.
 - **Aviso** (`.notice`): Papel, borda 1,5 px Tinta suave, `{rounded.md}`, padding 16–20 px, sem barra lateral. Variante de demonstração usa a mesma caixa com texto "Demonstração".
 
 ### Linha de recorte (`.cut-line`)
 Elemento decorativo (`aria-hidden`) de 40 px de altura entre duas folhas: linha tracejada 2 px Turquesa J001 de borda a borda da janela e a tesoura (SVG de 28 × 24, traço 2 px Turquesa profundo, dois círculos e duas lâminas) sobre um retângulo de Papel na margem esquerda do contêiner. Usa-se em três cortes: hero → folha dos jogos, antes da oferta e antes do rodapé (só no rodapé público). Não dentro de uma folha, não entre seções do mesmo assunto, não em páginas privadas.
-
-### Marcas de corte (`.crop-marks`)
-Dois L de 18 px em Tinta 2 px nos cantos superior esquerdo e inferior direito do contêiner marcado. Só na folha de cartas e no card de oferta.
 
 ### Ficha (`.ficha`)
 Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direita, pontilhado de 2 px Turquesa J001 preenchendo o meio (`flex: 1; border-bottom: 2px dotted`). Usada para os fatos do J001, o resumo da oferta (conteúdo, formato, acesso) e os detalhes do pedido.

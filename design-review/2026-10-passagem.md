@@ -13,7 +13,7 @@
 | Token | Valor | Onde usar |
 | --- | --- | --- |
 | `--color-paper` | `#FFFFFF` | fundo de tudo abaixo da hero, cards, inputs, botão secundário |
-| `--color-ink` | `#123A3D` | texto, títulos, marcas de corte, borda do secundário, contorno de foco |
+| `--color-ink` | `#123A3D` | texto, títulos, borda do secundário, contorno de foco |
 | `--color-ink-soft` | `#345B5D` | texto secundário, legendas, ajuda de campo, borda de input |
 | `--color-deep-teal` (+`-hover #00565D`, `-active #00454B`) | `#006970` | botão primário, links, tesoura, aba ativa |
 | `--color-line` | `#1BB8C4` | **só linhas**: recorte, calhas da folha, borda de carta e card, pontilhado da ficha; nunca texto nem borda única de controle (2,41:1) |
@@ -39,7 +39,7 @@ Tudo sob `@media (prefers-reduced-motion: no-preference)`; só a celebração da
 
 ## 3. Componentes criados e alterados
 
-- **Linha de recorte** `src/components/ui/CutLine.tsx` (`.cut-line`): tracejado de borda a borda com a tesoura na margem. Também `.crop-marks` (cantos em L) e `.folha` em `src/styles.css`.
+- **Linha de recorte** `src/components/ui/CutLine.tsx` (`.cut-line`): tracejado de borda a borda com a tesoura na margem. Também `.folha` em `src/styles.css`. As marcas de corte foram retiradas no Portão 2.
 - **Capa de jogo** `src/components/account/GameCover.tsx` + `game-cover.css`: prévia real só se `games.ts` tiver `preview`; senão tipográfica (`.game-cover-type`, selo `.tag-solid`); `soon` = "em breve" tracejado. Dentro do card da biblioteca vira 16:10 sem borda (`portal.css`).
 - **Folha de cartas** `src/components/sections/PackageGames.tsx` (`.games-carousel.folha`, `.package-game`, `src/carousels.css`): 5 colunas no desktop, 2 até 1050 px, carrossel por snap só ≤767 px (`SnapCarousel`, setas em SVG).
 - **Ficha** `.ficha` (dl com pontilhado) em `PackageGames.tsx`; **etiqueta** `.tag` e **marca-texto** `mark` na hero (`src/routes/home.tsx`).
@@ -58,7 +58,7 @@ Tudo sob `@media (prefers-reduced-motion: no-preference)`; só a celebração da
 2. **Tracejado só onde há cartas** (folha, calhas, etiqueta, "em breve", freebie); divisórias comuns usam `--line-rule`.
 3. **Kito age**: caminha na hero, acolhe nos vazios, celebra a compra, convida uma vez na home. Erro, falha e 404 usam `.kito-still`. Nunca ícone, capa ou enfeite; nunca gerar, recortar ou espelhar imagens.
 4. **Catálogo nos dados**: novo produto ou jogo entra por `products.ts` e `games.ts`, sem CSS novo. Nenhum componente desenha "5" ou "P001".
-5. **Stage**: relatos com `placeholder: true` e o bloco do freebie (`proposal: true`) só renderizam no stage `test`; em `preview` e `live` só relatos reais, e sem nenhum a seção não existe.
+5. **Stage**: relatos com `placeholder: true` e o bloco do freebie (copy aprovada no Portão 2) só renderizam no stage `test`; em `preview` e `live` só relatos reais, e sem nenhum a seção não existe.
 6. **Copy só aprovada**: a do Portão 1 e a já existente em `src/content`. Mudança de copy, preço, promessa ou navegação passa pelo responsável. Sem eyebrow, kicker ou caixa alta acima de títulos; um nome por ação ("Quero o pacote", "Adicionar ao carrinho", "Ver a prévia", "Tentar novamente").
 7. **Contraste AA medido** em todo estado novo (repouso, hover, foco, desabilitado, erro); pares atuais no DESIGN.md › Colors. Foco de 3 px Tinta em tudo.
 8. **`prefers-reduced-motion`**: nenhuma entrada, carrossel instantâneo, Kito parado com "Retomar animação".

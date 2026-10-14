@@ -26,11 +26,10 @@ export const experience = {
       { id: 'exemplo-3', placeholder: true, quote: 'Descobri que ele desenha um cachorro igual a uma batata. Dez rodadas depois, já queríamos outra partida.', author: 'Júlia e Renan' },
     ] as ReadonlyArray<{ id: string; placeholder: boolean; quote: string; author: string }>,
   },
-  // Portão 1: haverá um freebie resgatado ao criar a conta; o resgate é backend e vem depois.
-  // Esta copy é PROPOSTA (vai ao Portão 2) e o bloco só aparece no stage test.
+  // Freebie resgatado ao criar a conta (copy aprovada no Portão 2, 2026-10-14). O resgate é backend e
+  // vem depois; até lá o bloco só aparece no stage test.
   freebie: {
-    proposal: true,
-    tag: 'Em preparação · copy em proposta',
+    tag: 'Em preparação',
     title: 'Um jogo para começar, por nossa conta.',
     text: 'Ao criar sua conta, vocês ganham um jogo para conhecer a proposta antes do pacote.',
     cta: { label: 'Criar conta', href: '/entrar' },

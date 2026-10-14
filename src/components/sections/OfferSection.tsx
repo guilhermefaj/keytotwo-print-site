@@ -9,12 +9,12 @@ import { TrustLine } from '../checkout/TrustLine'
 import { CutLine } from '../ui/CutLine'
 
 // Oferta (DESIGN.md › The Catalog Rule): um card por produto do catálogo; no celular o preço e o
-// botão vêm antes da lista (P1-10). O freebie tem lugar reservado só no stage test, com copy em proposta.
+// botão vêm antes da lista (P1-10). O freebie (copy aprovada no Portão 2) só aparece no stage test até o resgate existir no backend.
 export function OfferSection() {
   return <section className="page-section offer-section" aria-labelledby="comprar"><CutLine /><div className="content-width">
     <div className="section-heading"><h2 id="comprar" tabIndex={-1}>O próximo encontro começa aqui.</h2></div>
     <div className="product-list">{products.map(product => <ProductOffer key={product.code} product={product} />)}</div>
-    {siteConfig.stage === 'test' && experience.freebie.proposal && <FreebieInvite />}
+    {siteConfig.stage === 'test' && <FreebieInvite />}
   </div></section>
 }
 
@@ -23,7 +23,7 @@ function ProductOffer({ product }: { product: Product }) {
   const price = siteConfig.stage === 'preview' ? null : catalog.data?.products.find(item => item.code === product.code)?.price
   return <article className="offer-layout" aria-labelledby={`product-${product.code}`} data-product-code={product.code}>
     <div className="offer-invitation"><h3 className="product-title" id={`product-${product.code}`}>{product.title}</h3><ul className="package-contents">{product.contents.map(item => <li key={item}>{item}</li>)}</ul></div>
-    <div className="offer-summary crop-marks"><h4>{product.tagline}</h4>
+    <div className="offer-summary"><h4>{product.tagline}</h4>
       <p className="offer-price" data-state={price ? undefined : 'pending'} aria-live="polite">{price ? money(price.unit_amount, price.currency) : siteConfig.stage === 'preview' ? 'Preço em breve' : catalog.loading ? 'Consultando preço…' : 'Não conseguimos carregar o preço.'}</p>
       <p className="offer-delivery">{product.delivery.map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</p>
       <TrustLine />
