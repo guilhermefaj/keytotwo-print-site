@@ -65,11 +65,11 @@ begin
   for v_i in 1..5 loop
     v_code := 'TESTE-J0' || v_i;
     v_name := case v_i
-                when 1 then 'Rabisque e Adivinhe [TESTE]'
-                when 2 then 'Hora dos Artistas [TESTE]'
-                when 3 then 'Boardgame (nome provisório) [TESTE]'
-                when 4 then 'Vaga 4 PENDENTE [TESTE]'
-                else        'Vaga 5 PENDENTE [TESTE]'
+                when 1 then 'Rabisque e Adivinhe'
+                when 2 then 'Hora dos Artistas'
+                when 3 then 'Boardgame'
+                when 4 then 'Jogo 4'
+                else        'Jogo 5'
               end;
     insert into public.games (code, slug, name, access, status)
     values (v_code, lower(v_code), v_name, 'paid', 'published')
