@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assert, assertEquals, assertMatch } from '@std/assert'
-import { BREVO_WEBHOOK_SECRET, captureErrors, externalCalls, onExternal, onRpc, request, rpcCalls, SECRET_KEY, contractTest } from './contract-helpers.ts'
+import { BREVO_WEBHOOK_SECRET, captureErrors, externalCalls, onExternal, onRpc, request, rpcCalls, SECRET_KEY, contractTest, tampered } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { handleBrevoWebhook } from '../brevo-webhook/handler.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
@@ -14,18 +14,6 @@ const USER = '66666666-6666-4666-8666-666666666666'
 const OUTBOX = '77777777-7777-4777-8777-777777777777'
 const SITE = 'http://127.0.0.1:5176'
 const API = 'http://127.0.0.1:54321/functions/v1/api'
-
-// Adultera o token de forma determinística: troca um caractere do meio da assinatura por outro
-// diferente dele, o que muda os bytes decodificados e derruba o HMAC sempre. (Mexer nos últimos
-// caracteres, como `${token.slice(0, -2)}AA`, nem sempre invalida: quando o penúltimo já é 'A' e
-// o último carrega 4 bits significativos já zerados, o token "adulterado" decodifica igual e
-// continua válido — era a causa do flake no CI, que às vezes recebia 200 em vez de 400.)
-const tampered = (token: string): string => {
-  const dot = token.lastIndexOf('.')
-  const signature = token.slice(dot + 1)
-  const i = signature.length >> 1
-  return `${token.slice(0, dot + 1)}${signature.slice(0, i)}${signature[i] === 'A' ? 'B' : 'A'}${signature.slice(i + 1)}`
-}
 
 // ---------- token e rotas de descadastro ----------
 
