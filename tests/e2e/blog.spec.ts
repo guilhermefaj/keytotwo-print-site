@@ -23,7 +23,7 @@ for (const width of [320, 390, 768, 1280]) {
         await expect(page.locator('.blog-draft')).toHaveText('Rascunho')
         await expect(page.locator('.blog-prose h2')).toHaveCount(3)
         await expect(page.locator('.blog-prose blockquote')).toBeVisible()
-        await expect(page.locator('.blog-package a')).toHaveAttribute('href', '/#comprar')
+        await expect(page.locator('.blog-package a')).toHaveAttribute('href', '/loja')
       }
       const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
       expect(result.violations).toEqual([])
@@ -109,6 +109,6 @@ test('live sem artigos mostra estado vazio e mantém CTA útil', async ({ page }
   test.skip(!live || exampleExists, 'Somente para build live sem artigos publicados')
   await page.goto('/blog')
   await expect(page.getByRole('heading', { name: 'Ainda não há artigos publicados.' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Quero o pacote' })).toHaveAttribute('href', '/#comprar')
+  await expect(page.getByRole('link', { name: 'Ver os jogos' })).toHaveAttribute('href', '/loja')
   await expect(page.locator('.blog-draft')).toHaveCount(0)
 })

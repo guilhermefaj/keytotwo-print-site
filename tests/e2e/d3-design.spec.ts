@@ -96,32 +96,20 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await capture(page, `carrinho-vazio-${width}`); await axe(page)
 })
 
-test('five games as a sheet on desktop; carousel and testimonials move only by user action on mobile', async ({ page }) => {
+test('vitrine curta com três jogos na home; carrossel e relatos só por ação do usuário no celular', async ({ page }) => {
   await page.goto('/')
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await expect(page.locator('.package-game')).toHaveCount(5)
+  // Vitrine (decisão 9): o pacote e até 3 jogos; a folha completa dos 5 ficou só na Loja.
+  await expect(page.locator('.shop-showcase .shop-game')).toHaveCount(3)
   // Capas tipográficas: nome do jogo na carta; jogos indefinidos ficam "Em breve" sem h3 (P0-2, P2-1).
-  await expect(page.locator('.package-game h3')).toHaveText(['Rabisque e Adivinhe', 'Hora dos Artistas', 'Tabuleiro da Sorte'])
-  await expect(page.locator('.package-game .game-cover-preview')).toHaveCount(1)
-  await expect(page.locator('.package-game .game-cover-type')).toHaveCount(2)
-  await expect(page.locator('.package-game .game-cover-soon')).toHaveCount(2)
-  await expect(page.locator('.game-cover-soon')).toHaveCount(2)
-  await expect(page.locator('.game-cover img')).toHaveCount(1)
+  await expect(page.locator('.shop-showcase .shop-game h3')).toHaveText(['Rabisque e Adivinhe', 'Hora dos Artistas', 'Tabuleiro da Sorte'])
+  await expect(page.locator('.shop-showcase .game-cover-preview')).toHaveCount(1)
+  await expect(page.locator('.shop-showcase .game-cover-type')).toHaveCount(2)
+  await expect(page.locator('.shop-showcase .game-cover-soon')).toHaveCount(0)
+  await expect(page.locator('.shop-showcase .game-cover img')).toHaveCount(1)
   await expect(page.locator('.game-number')).toHaveCount(0)
-  await page.locator('.package-games').scrollIntoViewIfNeeded()
-  const track = page.locator('.games-carousel .snap-track')
-  // Desktop: folha com os cinco visíveis, sem carrossel (P2-2).
-  await expect(track).toHaveCSS('scroll-snap-type', 'none')
-  await expect(page.getByRole('button', { name: 'Próximo: Jogos do pacote' })).toBeHidden()
+  await page.locator('.shop-showcase').scrollIntoViewIfNeeded()
   await page.setViewportSize({ width: 390, height: 844 })
-  await expect(track).toHaveCSS('scroll-snap-type', 'x mandatory')
-  await track.focus(); await page.keyboard.press('Home')
-  await expect(page.locator('.games-carousel .carousel-position')).toHaveText('1 de 5')
-  await page.keyboard.press('ArrowRight')
-  await expect(page.locator('.games-carousel .carousel-position')).toHaveText('2 de 5')
-  const position = await track.evaluate(el => el.scrollLeft)
-  await page.waitForTimeout(600)
-  expect(await track.evaluate(el => el.scrollLeft)).toBe(position)
   if (builtStage() === 'test') {
     // Relatos de exemplo só no stage test, sempre marcados; nunca nota ou contagem.
     const social = page.locator('.social-carousel .snap-track')
@@ -203,12 +191,12 @@ test('purchase, home and newsletter fit 320–1440 with doubled text', async ({ 
 for (const width of [390, 1440]) test(`home carousel and footer captures plus axe at ${width}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 1100 })
   await page.goto('/')
-  await page.locator('.package-games').scrollIntoViewIfNeeded()
+  await page.locator('.shop-showcase').scrollIntoViewIfNeeded()
   await settle(page)
   if (process.env.D3_CAPTURE === '1') {
     await mkdir('.maestri/design-review/d3', { recursive: true })
-    await page.locator('.package-games').evaluate(el => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 120))
-    await page.locator('.package-games').screenshot({ path: `.maestri/design-review/d3/carrossel-${width}.png`, animations: 'disabled' })
+    await page.locator('.shop-showcase').evaluate(el => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 120))
+    await page.locator('.shop-showcase').screenshot({ path: `.maestri/design-review/d3/vitrine-${width}.png`, animations: 'disabled' })
     await page.locator('.footer-newsletter').scrollIntoViewIfNeeded()
     await page.locator('.footer-newsletter').screenshot({ path: `.maestri/design-review/d3/newsletter-rodape-${width}.png`, animations: 'disabled' })
   }

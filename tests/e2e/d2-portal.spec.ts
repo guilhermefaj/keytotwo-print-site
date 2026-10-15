@@ -173,7 +173,7 @@ for (const width of [390, 1440]) test(`axe across three tabs and empty states at
   await page.route('**/api/library', route => route.fulfill({ json: { games: [], pending: [] } }))
   await page.goto('/meus-jogos')
   await expect(page.locator('.portal-empty .kito-empty')).toBeVisible()
-  await expect(page.locator('.portal-empty').getByRole('link', { name: 'Quero o pacote' })).toHaveAttribute('href', '/#comprar')
+  await expect(page.locator('.portal-empty').getByRole('link', { name: 'Ver os jogos' })).toHaveAttribute('href', '/loja')
   await capture(page, `vazio-${width}`)
   await axe(page)
   await page.setViewportSize({ width: 320, height: 900 })

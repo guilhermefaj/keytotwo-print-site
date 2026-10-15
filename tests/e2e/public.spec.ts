@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 // Checks for the public sales pages, run against the prerendered build (build/client).
 // Stage-specific assertions follow the stage the build was made for (robots.txt tells which).
-const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/ajuda', '/termos', '/privacidade', '/404']
+const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/ajuda', '/termos', '/privacidade', '/loja', '/loja/p001', '/loja/j001', '/404']
 // A rota ainda existe, mas redireciona para /termos#reembolso; links internos continuam resolvendo.
 const redirectRoutes = ['/reembolsos']
 const blogRoutes = readdirSync('build/client/blog', { withFileTypes: true }).filter(file => file.isDirectory()).map(file => `/blog/${file.name}`)
@@ -50,6 +50,8 @@ test.describe('links e botões', () => {
       if (href === '' || href === '#' || /^javascript:/i.test(href)) { problems.push(`${from}: href inválido "${href}"`); continue }
       if (/^(https?:|mailto:|tel:)/i.test(href)) continue
       if (href === '/blog/rss.xml') continue // Static XML checked by blog.spec.ts.
+      // Âncora antiga da oferta: os links que sobram (nav, cabeçalho e rodapé) são do I6, que os troca por /loja.
+      if (href === '/#comprar') continue
       const url = new URL(href, `http://x${from}`)
       const target = url.pathname.replace(/\/$/, '') || '/'
       if (!known.has(target)) { problems.push(`${from}: ${href} aponta para rota inexistente`); continue }
@@ -103,7 +105,7 @@ test.describe('conteúdo', () => {
   test('experiência, um CTA na hero e prova social explicitamente reservada', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')
-    await expect(page.locator('.hero-copy a')).toHaveText(['Quero o pacote', 'Ver a prévia'])
+    await expect(page.locator('.hero-copy a')).toHaveText(['Ver os jogos', 'Ver a prévia'])
     await expect(page.locator('.hero-copy mark')).toHaveText('encontro.')
     await expect(page.locator('.hero-benefits')).toHaveCount(0)
     await expect(page.locator('.steps-list li')).toHaveCount(3)
@@ -117,12 +119,16 @@ test.describe('conteúdo', () => {
       await expect(page.locator('.social-card blockquote')).toHaveCount(3)
     }
     await expect(page.locator('.social-metrics')).toHaveCount(0)
-    await expect(page.locator('[data-product-code]')).toHaveCount(1)
-    await expect(page.locator('[data-product-code]')).toHaveAttribute('data-product-code', 'P001')
-    await expect(page.locator('.package-game')).toHaveCount(5)
-    expect(await visibleText(page)).not.toMatch(/PENDENTE|Jogo a definir/)
-    const offer = page.locator('section.offer-section')
-    await expect(offer.locator('.offer-price')).not.toBeEmpty()
+    // Vitrine curta (decisão 9): o pacote e até 3 jogos, sem a oferta antiga nem a folha completa.
+    await expect(page.locator('.shop-showcase')).toHaveCount(1)
+    await expect(page.locator('.shop-showcase [data-shop-product]')).toHaveCount(1)
+    await expect(page.locator('.shop-showcase [data-shop-product]')).toHaveAttribute('data-shop-product', 'P001')
+    await expect(page.locator('.shop-showcase .shop-game')).toHaveCount(3)
+    await expect(page.locator('section.offer-section')).toHaveCount(0)
+    await expect(page.locator('.package-game')).toHaveCount(0)
+    await expect(page.locator('.mobile-purchase-bar')).toHaveCount(0)
+    // O pacote da vitrine lista os 5 jogos do pacote, inclusive os sem ficha ("Jogo a definir").
+    expect(await visibleText(page)).not.toMatch(/PENDENTE/)
     expect((await visibleText(page)).match(/\bP\d{3}\b/g) ?? [], 'códigos de produto além de P001').toEqual([])
   })
 
@@ -139,10 +145,10 @@ test.describe('conteúdo', () => {
     await expect(page.locator('#reembolso')).toHaveText('Reembolsos e contestações')
   })
 
-  // The refund condition must not appear on the offer anymore; it moved to the terms.
-  test('home: oferta sem linha de reembolso', async ({ page }) => {
+  // The refund condition must not appear on the home; it moved to the terms.
+  test('home: sem linha de reembolso', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('section.offer-section .refund-notice')).toHaveCount(0)
+    await expect(page.locator('.refund-notice')).toHaveCount(0)
     expect(await visibleText(page)).not.toMatch(refundNotice)
   })
 

@@ -39,6 +39,14 @@
 .shop-facts h2 { font-size: var(--text-title-lg); }
 .shop-facts > p { color: var(--color-ink-soft); }
 .shop-facts .ficha dt { white-space: normal; }
+/* Vitrine do Início (I7): os mesmos cards da Loja, três jogos por linha no desktop.
+   Abaixo de 768 px a grade da Loja (2/1 colunas) continua valendo. */
+.shop-showcase .shop-game { border-bottom: 0; }
+@media (min-width: 768px) {
+  .shop-showcase .shop-game-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .shop-showcase .shop-game:nth-child(5n) { border-right: var(--line-cut); }
+  .shop-showcase .shop-game:nth-child(3n) { border-right: 0; }
+}
 @media (max-width: 1050px) {
   .shop-game-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .shop-game:nth-child(5n) { border-right: var(--line-cut); }
