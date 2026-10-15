@@ -64,7 +64,7 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await expect(page.locator('main').getByRole('checkbox')).toHaveCount(1)
   const terms = page.getByRole('checkbox', { name: 'Li e aceito os termos de uso', exact: true })
   await expect(terms).not.toBeChecked()
-  await expect(page.getByRole('link', { name: 'Voltar ao carrinho', exact: true })).toHaveCount(1)
+  await expect(page.getByRole('link', { name: 'Voltar à sacola', exact: true })).toHaveCount(1)
   await expect(page.locator('#checkout-form')).toHaveCount(0)
   await expect(page.locator('main')).not.toContainText(/reembolso|Stripe|nova aba/i)
   await capture(page, `pagamento-antes-${width}`); await axe(page)

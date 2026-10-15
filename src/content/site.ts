@@ -2,8 +2,8 @@ import { productPages } from './products.ts'
 
 // Sources: Site — Estrutura e taxonomia; Site — Direção visual (draft copy).
 export const navigation = [
-  { label: 'O pacote', href: '/#comprar' },
-  { label: 'Como funciona', href: '/#como-funciona' },
+  { label: 'Início', href: '/' },
+  { label: 'Loja', href: '/loja' },
   { label: 'Blog', href: '/blog' },
 ] as const
 
