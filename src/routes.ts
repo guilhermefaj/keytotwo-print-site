@@ -1,11 +1,14 @@
 import { index, layout, route, type RouteConfig } from '@react-router/dev/routes'
 import { readBlogPosts } from './lib/blog.server'
 import { buildSiteConfig } from './lib/site-build.server'
+import { productPages } from './content/products'
 
 const hasBlogPosts = (await readBlogPosts({ stage: buildSiteConfig().stage })).length > 0
 
 export default [
   index('routes/home.tsx'),
+  route('loja', 'routes/loja.tsx'),
+  ...(productPages.length ? [route('loja/:slug', 'routes/loja.produto.tsx')] : []),
   route('preview/hero', 'routes/home.tsx', { id: 'preview-hero' }),
   route('entrar', 'routes/entrar.tsx'),
   layout('routes/private.tsx', [

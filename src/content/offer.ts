@@ -1,4 +1,4 @@
-import { pending } from '../lib/pending'
+import { pending } from '../lib/pending.ts'
 
 // P001 + subsequent responsible-owner decisions in Plano do site P1 (2026-10-08).
 export type ProductOffer = {

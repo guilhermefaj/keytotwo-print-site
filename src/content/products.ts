@@ -1,5 +1,6 @@
-import { games, type Game } from './games'
-import { packageOffer, type ProductOffer } from './offer'
+import { games, j001, type Game } from './games.ts'
+import { packageOffer, type ProductOffer } from './offer.ts'
+import { pending } from '../lib/pending.ts'
 
 export type Product = {
   code: string
@@ -9,6 +10,7 @@ export type Product = {
   availability: 'sale' | 'soon'
   title: string
   tagline: string
+  shopHeadline?: string
   contents: readonly string[]
   delivery: readonly string[]
   games: readonly Game[]
@@ -19,14 +21,35 @@ export type Product = {
 
 export const packageContents = ['5 jogos para imprimir', 'Instruções para preparar e jogar', 'Arquivos digitais em PDF']
 
-// P2: the page consumes a product list. P001 is the only confirmed product.
+const rabisque = games.find(game => game.code === 'J001')!
+
+// Produtos confirmados pelo responsável; preço e aprovação comercial são por oferta.
 // Regra de catálogo: título, chamada, conteúdo e entrega vêm daqui; a oferta renderiza um card por produto.
 export const products: readonly Product[] = [
-  { code: packageOffer.code, slug: 'p001', kind: 'bundle', availability: 'sale', title: 'Pacote KeyToTwo', tagline: '5 jogos. Muitas próximas rodadas.', contents: packageContents, delivery: ['Download após a confirmação da compra.', 'Acesso sem prazo de expiração.'], thumbnail: { src: '/media/experience/j001-page-1-720.webp', alt: '' }, games, offer: packageOffer },
+  { code: packageOffer.code, slug: 'p001', kind: 'bundle', availability: 'sale', title: 'Pacote KeyToTwo', tagline: '5 jogos. Muitas próximas rodadas.', shopHeadline: '5 jogos num só pedido', contents: packageContents, delivery: ['Download após a confirmação da compra.', 'Acesso sem prazo de expiração.'], thumbnail: { src: '/media/experience/j001-page-1-720.webp', alt: '' }, games, offer: packageOffer },
+  {
+    code: 'J001', slug: 'j001', kind: 'single', availability: 'sale',
+    title: rabisque.name, tagline: rabisque.summary,
+    contents: ['PDF de 4 páginas A4', 'Instruções e 50 cartas'],
+    delivery: ['Download após a confirmação da compra.', 'Acesso sem prazo de expiração.'],
+    games: [rabisque], thumbnail: { src: rabisque.preview!.src, alt: rabisque.preview!.alt },
+    offer: {
+      code: 'J001', name: rabisque.name, price: null, priceApproved: false, purchaseAction: 'cart',
+      payment: pending('preço real, moeda e formas de pagamento do J001.'),
+      access: packageOffer.access, delivery: packageOffer.delivery,
+      updates: pending('direito a futuras versões e condições de atualização do J001.'),
+      license: pending('licença de uso e condições de atendimento do J001.'),
+      materials: j001.materials,
+      legalReview: pending('texto final e validação jurídica da política de não reembolso do J001.'),
+    },
+  },
 ]
 
-// PENDENTE: jogos, códigos comerciais e preços dos avulsos dependem do responsável.
+// PENDENTE: preço real do J001; fichas, códigos comerciais e preços dos demais avulsos.
 // Um produto soon deve declarar offer.purchaseAction: null; não cadastrar exemplos públicos.
+
+// O prerender é editorial. A venda na tela exige também presença no /catalog em runtime.
+export const productPages = products.filter(product => product.availability === 'sale')
 
 // Editorial display name; commercial approval remains tracked in offer.name.
 export function productName(code: string, fallback = '') {

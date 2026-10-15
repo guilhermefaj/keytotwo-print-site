@@ -1,3 +1,5 @@
+import { productPages } from './products.ts'
+
 // Sources: Site — Estrutura e taxonomia; Site — Direção visual (draft copy).
 export const navigation = [
   { label: 'O pacote', href: '/#comprar' },
@@ -13,6 +15,8 @@ export const site = {
 
 // Only these routes may enter the sitemap in live. Private/preview shells never do.
 export const publicPages = {
+  ...Object.fromEntries(productPages.map(product => [`/loja/${product.slug}`, { title: `${product.title} — KeyToTwo`, description: product.tagline }])),
+  '/loja': { title: 'Loja — KeyToTwo', description: site.description },
   '/blog': { title: 'Blog — KeyToTwo', description: 'Acompanhe os artigos e as próximas ideias da KeyToTwo.' },
   '/': { title: 'Jogos para casais, para imprimir — KeyToTwo', description: 'Saiam do automático com jogos para imprimir e jogar a dois. Uma ideia da KeyToTwo para conversar, rir e fazer a noite acontecer.' },
   '/ajuda': { title: 'Ajuda com jogos, impressão e acesso — KeyToTwo', description: 'Encontre orientações sobre os jogos para imprimir, materiais, acesso às compras e atendimento da KeyToTwo.' },
