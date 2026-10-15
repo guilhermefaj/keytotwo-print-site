@@ -68,7 +68,7 @@ begin
     v_name := case v_i
                 when 1 then 'Rabisque e Adivinhe'
                 when 2 then 'Hora dos Artistas'
-                when 3 then 'Boardgame'
+                when 3 then 'Tabuleiro da Sorte'
                 when 4 then 'Jogo 4'
                 else        'Jogo 5'
               end;
