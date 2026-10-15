@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { IconLock } from '@tabler/icons-react'
 import { money } from '../../lib/api'
 import { stripePublishableKey } from '../../lib/checkout'
 import { siteConfig } from '../../lib/seo'
 import { loadStripe, studioAppearance, studioFonts, type CheckoutActions, type CheckoutForm, type CheckoutSession } from '../../lib/stripe'
+import { Icon } from '../ui/Icon'
 
 export function StripePayment({ clientSecret }: { clientSecret: string }) {
   const host = useRef<HTMLDivElement>(null)
@@ -86,6 +88,6 @@ export function StripePayment({ clientSecret }: { clientSecret: string }) {
     <p role="status" className="form-message">{message}</p><p role="alert" className="form-error">{error}</p>
     {fatal && <button className="button button-secondary" onClick={() => { setFatal(false); setReady(false); setError(''); setAttempt(value => value + 1) }}>Recarregar formulário</button>}
     <div id="checkout-form" ref={host} inert={busy || !ready} aria-busy={!ready} aria-label="Formulário de pagamento" />
-    {ready && !fatal && <p className="payment-trust"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="2" /></svg>Pagamento seguro</p>}
+    {ready && !fatal && <p className="payment-trust"><Icon component={IconLock} size={16} />Pagamento seguro</p>}
   </div>
 }

@@ -275,6 +275,16 @@ A linguagem de forma é a da folha de recorte: retângulos com calha tracejada, 
 
 A cena do Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelated`, nenhum raio.
 
+## Icons
+
+Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exata no `package.json`), sempre em importação nomeada; o carrinho é uma sacola (`IconShoppingBag`).
+
+- **Família:** outline. As variantes `Filled` só existem para play/pause do Kito (`IconPlayerPlayFilled`/`IconPlayerPauseFilled`).
+- **Traço:** 1,75 (`stroke`); cor sempre `currentColor` — Tinta ou Turquesa profundo conforme o controle. A Turquesa J001 nunca aparece em ícone que precise ser lido (regra existente).
+- **Tamanhos:** 20 px em controles e navegação (menu, chevrons do carrossel, gatilho da conta usa 16 px); 24 px na sacola, no fechar do painel e na tesoura; 16 px em selos inline ("Compra segura", "Pagamento seguro") e na etapa concluída da compra.
+- **Acessibilidade:** todo ícone é decorativo (`aria-hidden`) e o rótulo fica no controle — `aria-label` no botão/link ou texto visível ao lado.
+- **No código:** `<Icon component={IconShoppingBag} size={24} />` a partir de `src/components/ui/Icon.tsx`, que fixa os padrões (traço 1,75, `aria-hidden`, `currentColor`). Sem SVG inline para ícone, sem `import *` e sem o pacote `@tabler/icons` (SVG cru) — há regra de lint para as duas últimas.
+
 ## Components
 
 ### Buttons
@@ -297,7 +307,7 @@ A cena do Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelat
 - **Aviso** (`.notice`): Papel, borda 1,5 px Tinta suave, `{rounded.md}`, padding 16–20 px, sem barra lateral. Variante de demonstração usa a mesma caixa com texto "Demonstração".
 
 ### Linha de recorte (`.cut-line`)
-Elemento decorativo (`aria-hidden`) de 40 px de altura entre duas folhas: linha tracejada 2 px Turquesa J001 de borda a borda da janela e a tesoura (SVG de 28 × 24, traço 2 px Turquesa profundo, dois círculos e duas lâminas) sobre um retângulo de Papel na margem esquerda do contêiner. Usa-se em três cortes: hero → folha dos jogos, antes da oferta e antes do rodapé (só no rodapé público). Não dentro de uma folha, não entre seções do mesmo assunto, não em páginas privadas.
+Elemento decorativo (`aria-hidden`) de 40 px de altura entre duas folhas: linha tracejada 2 px Turquesa J001 de borda a borda da janela e a tesoura (ícone Tabler `IconScissors`, 24 px, traço 1,75 Turquesa profundo) sobre um retângulo de Papel na margem esquerda do contêiner. Usa-se em três cortes: hero → folha dos jogos, antes da oferta e antes do rodapé (só no rodapé público). Não dentro de uma folha, não entre seções do mesmo assunto, não em páginas privadas.
 
 ### Ficha (`.ficha`)
 Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direita, pontilhado de 2 px Turquesa J001 preenchendo o meio (`flex: 1; border-bottom: 2px dotted`). Usada para os fatos do J001, o resumo da oferta (conteúdo, formato, acesso) e os detalhes do pedido.
@@ -318,7 +328,7 @@ Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direit
 - **Modo foco** (`/pagamento`): logo, "Compra segura" com cadeado e "Voltar ao carrinho".
 - **Menu móvel (Sheet):** painel de Papel de até 480 px com a sombra de painel; links em Headline reduzida (Bricolage 700, 28 px) separados por régua de Tinta; entrada de 240 ms com 40 ms de escalonamento e 8 px de deslocamento; Escape fecha e devolve o foco.
 - **Abas da área privada:** sublinhado de 3 px Turquesa profundo na aba ativa, texto Tinta suave nas demais, barra fixa sob o cabeçalho.
-- **Etapas da compra** (`.checkout-steps`): quatro passos em Caption, número em círculo de 28 px com borda de régua; a etapa atual em Tinta 600 com o círculo em Turquesa profundo; concluída com ✓ em aguada de Tinta. Os números aqui são uma sequência real.
+- **Etapas da compra** (`.checkout-steps`): quatro passos em Caption, número em círculo de 28 px com borda de régua; a etapa atual em Tinta 600 com o círculo em Turquesa profundo; concluída com o ícone de conferir (`IconCheck`, 16 px) em aguada de Tinta. Os números aqui são uma sequência real.
 
 ### Kito (uso do personagem)
 - **Hero:** o único lugar onde o Kito se move. Atlas v3.1 RIGHT, 12 poses, 10 FPS, ciclo de 1,2 s, deslocamento `S × 520/1254 × FPS/12` px/s, chão em `S × 1160/1254`, duas camadas CSS (`.kito-track` desloca, `.kito-frames` troca a pose), volta só fora da tela, pausa fora de vista/aba oculta/menu aberto, `prefers-reduced-motion` começa parado com "Retomar animação". Parâmetros vêm de `src/kito-motion.ts` (gerado); nunca editar à mão, nunca regerar, recortar ou espelhar o atlas.

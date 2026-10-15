@@ -1,10 +1,12 @@
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
+import { IconChevronDown, IconLock, IconMenu2, IconShoppingBag } from '@tabler/icons-react'
 import { navigation } from '../../content/site'
 import { siteConfig } from '../../lib/seo'
 import { useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
 import { authErrorMessage, supabase } from '../../lib/supabase'
+import { Icon } from '../ui/Icon'
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '../ui/sheet'
 
 const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: module.CartDrawer })))
@@ -18,10 +20,6 @@ const privateNavigation = [
 ] as const
 // Seções da home vigiadas para marcar o link ativo; o id coincide com o destino do link.
 const homeSections = ['como-funciona', 'comprar']
-
-function CartIcon() {
-  return <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 3h2l3 12h11l2-8H6M10 20h.01M18 20h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-}
 
 export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boolean) => void }) {
   const { session, ready } = useAuth()
@@ -98,9 +96,9 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
   function current(href: string) { return active(href) ? (href.includes('#') ? 'location' : 'page') : undefined }
   function anchorFocus(href: string) { anchorDestination.current = home ? href.split('#')[1] ?? null : null }
 
-  const cartButton = <button className="icon-button cart-trigger" disabled={!ready} aria-label={cartLabel} aria-haspopup="dialog" onClick={() => setCartOpen(true)}><CartIcon />{(cart.loading || cart.error || count > 0) && <span className="cart-count" aria-hidden="true">{cart.loading || cart.error ? '…' : count}</span>}</button>
+  const cartButton = <button className="icon-button cart-trigger" disabled={!ready} aria-label={cartLabel} aria-haspopup="dialog" onClick={() => setCartOpen(true)}><Icon component={IconShoppingBag} size={24} />{(cart.loading || cart.error || count > 0) && <span className="cart-count" aria-hidden="true">{cart.loading || cart.error ? '…' : count}</span>}</button>
   const accountControl = session ? <div className="account-menu" ref={accountMenu} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setAccountOpen(false) }}>
-    <button className="account-trigger" ref={accountTrigger} aria-label="Abrir opções da conta" aria-expanded={accountOpen} aria-controls="account-options" onClick={() => setAccountOpen(value => !value)}><span className="account-initial" aria-hidden="true">{initial}</span><svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m2 4 4 4 4-4" stroke="currentColor" strokeWidth="1.5" /></svg></button>
+    <button className="account-trigger" ref={accountTrigger} aria-label="Abrir opções da conta" aria-expanded={accountOpen} aria-controls="account-options" onClick={() => setAccountOpen(value => !value)}><span className="account-initial" aria-hidden="true">{initial}</span><Icon component={IconChevronDown} size={16} /></button>
     {accountOpen && <div className="account-options" id="account-options"><nav aria-label="Sua conta"><Link className="nav-link" to="/meus-jogos" onClick={() => setAccountOpen(false)}>Meus jogos</Link><Link className="nav-link" to="/conta" onClick={() => setAccountOpen(false)}>Minha conta</Link><button className="text-button" disabled={signingOut} onClick={signOut}>{signingOut ? 'Saindo…' : 'Sair'}</button></nav><p className="form-error" role="alert">{error}</p></div>}
   </div> : <Link className="nav-link" aria-current={pathname === '/entrar' ? 'page' : undefined} to="/entrar">Entrar</Link>
 
@@ -108,7 +106,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
     <header className="site-header-shell" data-home={home} data-scrolled={scroll.scrolled || !home} data-hidden={scroll.hidden && !open && !cartOpen && !accountOpen} data-focus={focusMode} data-private={privateArea}>
       <div className="site-header">
         <Link className="brand" to="/" aria-label="KeyToTwo — início"><img src="/media/hero/keytotwo-logo.webp" alt="KeyToTwo" width="420" height="97" fetchPriority="high" /></Link>
-        {focusMode ? <><span className="checkout-secure"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="5" y="10" width="14" height="11" rx="2" stroke="currentColor" strokeWidth="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="2" /></svg>Compra segura</span><Link className="text-button checkout-back" to="/carrinho">Voltar ao carrinho</Link></> : <>
+        {focusMode ? <><span className="checkout-secure"><Icon component={IconLock} size={16} />Compra segura</span><Link className="text-button checkout-back" to="/carrinho">Voltar ao carrinho</Link></> : <>
           <nav className="desktop-nav" aria-label="Navegação principal">{visibleNavigation.map(item => <Link className="nav-link" aria-current={current(item.href)} key={item.href} to={item.href}>{item.label}</Link>)}</nav>
           <div className="desktop-action">
             {!privateArea && <Link className="nav-link" to="/ajuda" aria-current={pathname === '/ajuda' ? 'page' : undefined}>Ajuda</Link>}
@@ -119,7 +117,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
           <div className="mobile-navigation">
             {showCart && cartButton}
             <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger asChild><button className="icon-button menu-trigger" disabled={!ready} aria-label="Abrir menu"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>Menu</button></SheetTrigger>
+              <SheetTrigger asChild><button className="icon-button menu-trigger" disabled={!ready} aria-label="Abrir menu"><Icon component={IconMenu2} />Menu</button></SheetTrigger>
               <SheetContent className="mobile-menu-sheet" onCloseAutoFocus={event => {
                 if (anchorDestination.current) {
                   const target = document.getElementById(anchorDestination.current)

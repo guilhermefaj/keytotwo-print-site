@@ -15,6 +15,17 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'no-restricted-imports': ['error', {
+        paths: [{
+          name: '@tabler/icons',
+          message: 'Não importe o pacote de SVG cru. Use @tabler/icons-react com importação nomeada.',
+        }],
+        patterns: [{
+          group: ['@tabler/icons-react'],
+          importNames: ['*'],
+          message: 'Importe os ícones por nome (ex.: import { IconShoppingBag } from "@tabler/icons-react"), nunca com import *.',
+        }],
+      }],
     },
   },
   {
