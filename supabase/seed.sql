@@ -1,7 +1,8 @@
 -- Seed de TESTE (docs/data-contract.md v0.3.2, seção 8). Roda só no ambiente LOCAL (supabase start / db reset).
 -- Nunca aplicar em remoto sem autorização do orquestrador. Tudo é fictício e rotulado TESTE:
 -- o nome comercial, o preço e a composição de avulsos NÃO são decisões comerciais. Valores monetários são 0 (não são preço).
--- Avulsos (TESTE-AV1, TESTE-AV2) existem só aqui; o catálogo real começa no P001, com nome PENDENTE.
+-- Avulsos: J001 (Rabisque e Adivinhe; código do produto = código comercial do jogo, decisão do responsável) e TESTE-AV2 existem só aqui;
+-- o P001 segue com nome PENDENTE. Os jogos mantêm os códigos TESTE-J0n (chaves do B2 e PDFs de teste dependem deles).
 -- Sem senhas: os usuários entram por código de e-mail (Mailpit, porta 54324) ou criam outra conta de teste.
 -- As RPCs de pedido (checkout, fulfillment) chegam no I3: o seed grava direto, como dono, e as invariantes
 -- (CHECKs e triggers) validam a coerência. Cada pedido nasce open e chega ao estado final por arestas legais.
@@ -15,7 +16,7 @@ declare
   v_d constant uuid := '00000000-0000-4000-8000-00000000000d';   -- pendente, reembolsado e contestado
   v_e constant uuid := '00000000-0000-4000-8000-00000000000e';   -- contestação perdida, checkout expirado e abandonado
   v_p001 bigint;
-  v_av1  bigint;
+  v_j001 bigint;
   v_av2  bigint;
   v_game bigint;
   v_file uuid;
@@ -55,10 +56,10 @@ begin
   -- ===== Catálogo =====
   insert into public.products (code, slug, kind, name, status, stripe_price_id, games_expected) values
     ('P001',      'p001',      'bundle', '[PENDENTE] Nome comercial do P001 [TESTE]', 'active', 'price_TESTE_P001', 5),
-    ('TESTE-AV1', 'teste-av1', 'single', '[TESTE] Avulso Rabisque e Adivinhe',        'active', 'price_TESTE_AV1',  1),
+    ('J001',      'j001',      'single', '[TESTE] Rabisque e Adivinhe (avulso)',     'active', 'price_TESTE_J001', 1),
     ('TESTE-AV2', 'teste-av2', 'single', '[TESTE] Avulso Hora dos Artistas',          'active', 'price_TESTE_AV2',  1);
   select id into v_p001 from public.products where code = 'P001';
-  select id into v_av1  from public.products where code = 'TESTE-AV1';
+  select id into v_j001 from public.products where code = 'J001';
   select id into v_av2  from public.products where code = 'TESTE-AV2';
 
   -- Códigos de jogo são de teste: a base ainda não atribuiu J002 em diante. Vagas 4 e 5 não recebem título real.
@@ -77,7 +78,7 @@ begin
 
     insert into public.product_games (product_id, game_id, position) values (v_p001, v_game, v_i);
     if v_i = 1 then
-      insert into public.product_games (product_id, game_id, position) values (v_av1, v_game, 1);
+      insert into public.product_games (product_id, game_id, position) values (v_j001, v_game, 1);
     elsif v_i = 2 then
       insert into public.product_games (product_id, game_id, position) values (v_av2, v_game, 1);
     end if;
@@ -123,12 +124,12 @@ begin
   -- ===== Pedidos (ids fixos). Cada um nasce open (itens entram nesse estado) e chega ao estado final por arestas legais. =====
   for r in select * from (values
     (1, 'a1000001-0000-4000-8000-000000000001'::uuid, v_a, 'paid',         array['P001'],      72),
-    (2, 'a1000002-0000-4000-8000-000000000002'::uuid, v_b, 'paid',         array['TESTE-AV1'], 60),
+    (2, 'a1000002-0000-4000-8000-000000000002'::uuid, v_b, 'paid',         array['J001'], 60),
     (3, 'a1000003-0000-4000-8000-000000000003'::uuid, v_d, 'pending_payment', array['P001'],   48),
     (4, 'a1000004-0000-4000-8000-000000000004'::uuid, v_d, 'refunded',     array['TESTE-AV2'], 36),
-    (5, 'a1000005-0000-4000-8000-000000000005'::uuid, v_d, 'disputed',     array['TESTE-AV1'], 24),
+    (5, 'a1000005-0000-4000-8000-000000000005'::uuid, v_d, 'disputed',     array['J001'], 24),
     (6, 'a1000006-0000-4000-8000-000000000006'::uuid, v_e, 'dispute_lost', array['TESTE-AV2'], 18),
-    (7, 'a1000007-0000-4000-8000-000000000007'::uuid, v_e, 'expired',      array['TESTE-AV1'], 12),
+    (7, 'a1000007-0000-4000-8000-000000000007'::uuid, v_e, 'expired',      array['J001'], 12),
     (8, 'a1000008-0000-4000-8000-000000000008'::uuid, v_e, 'open',         array['P001'],       6)
   ) as t(n, id, uid, final, prods, hours_ago)
   loop
