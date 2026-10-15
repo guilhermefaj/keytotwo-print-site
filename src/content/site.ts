@@ -34,6 +34,6 @@ export const otherPages = {
   '/jogo-gratuito': { title: 'Jogo gratuito — KeyToTwo', description: 'Confira a disponibilidade da experiência gratuita da KeyToTwo.' },
   '/email/preferencias': { title: 'Preferências de e-mail — KeyToTwo', description: 'Escolha se deseja receber novidades da KeyToTwo por e-mail.' },
   '/pedido/confirmacao': { title: 'Status da compra — KeyToTwo', description: 'Acompanhe a confirmação do seu pedido KeyToTwo.' },
-  '/carrinho': { title: 'Carrinho de compras — KeyToTwo', description: 'Confira os itens do seu carrinho KeyToTwo. É preciso criar uma conta e entrar para finalizar a compra.' },
+  '/carrinho': { title: 'Sacola de compras — KeyToTwo', description: 'Confira os itens da sua sacola KeyToTwo. É preciso criar uma conta e entrar para finalizar a compra.' },
   '/404': { title: 'Página não encontrada — KeyToTwo', description: 'Este endereço não está disponível. Volte à página inicial da KeyToTwo.' },
 } as const

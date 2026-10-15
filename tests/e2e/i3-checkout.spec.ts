@@ -64,7 +64,7 @@ test('acceptance gates API and form; coupon invalid/apply/remove; confirmation',
   await expect(page.getByRole('link', { name: 'Baixar agora', exact: true })).toHaveAttribute('href', '/meus-jogos')
 })
 
-for (const [code, message] of [['CART_CHANGED', 'Seu carrinho mudou'], ['TERMS_CHANGED', 'Os termos foram atualizados'], ['PAYMENT_PROVIDER_ERROR', 'Não conseguimos abrir o pagamento']]) {
+for (const [code, message] of [['CART_CHANGED', 'Sua sacola mudou'], ['TERMS_CHANGED', 'Os termos foram atualizados'], ['PAYMENT_PROVIDER_ERROR', 'Não conseguimos abrir o pagamento']]) {
   test(`checkout error ${code} never mounts form or fabricates success`, async ({ page }) => {
     await page.route('**/api/checkout', route => route.fulfill({ status: 409, json: { error: { code } } }))
     await stripeMode(page)

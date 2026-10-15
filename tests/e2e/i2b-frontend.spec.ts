@@ -50,14 +50,13 @@ test('guest add → Mailpit code → persistent cart; marketing and private view
   const email = `qa-cart-${randomUUID()}@example.test`
   const runtimeErrors: string[] = []
   page.on('pageerror', error => runtimeErrors.push(error.message))
-  await page.goto('/')
+  await page.goto('/loja/p001')
   await page.getByRole('button', { name: 'Adicionar à sacola', exact: true }).click()
   await expect(page).toHaveURL(/\/entrar\?next=%2Fcarrinho&add=P001$/)
   await noOverflow(page)
   await loginWithCode(page, email)
   await expect(page).toHaveURL(/\/carrinho$/)
-  await expect(page.getByRole('dialog', { name: 'Sua sacola' })).toBeVisible()
-  await page.getByRole('button', { name: 'Fechar sacola' }).click()
+  // Na própria página da sacola o painel lateral não abre; o item entra direto na lista.
   await expect(page.locator('[data-cart-product="P001"]')).toBeVisible()
   await expect(page.locator('.desktop-action').getByRole('button', { name: 'Sacola, 1 item', exact: true })).toBeVisible()
   // I3 enables checkout only when the real catalog supplies a price.
@@ -148,7 +147,7 @@ test('password is created only after verified email; password login and recovery
 test('next cannot redirect to an external origin', async ({ page }) => {
   await page.goto('/entrar?next=https%3A%2F%2Fevil.invalid')
   await loginWithCode(page, `qa-next-${randomUUID()}@example.test`)
-  await expect(page).toHaveURL(/127\.0\.0\.1:4174\/conta$/)
+  await expect(page).toHaveURL(/127\.0\.0\.1:\d+\/conta$/)
 })
 
 test('seed account has library by game and orders; full ownership prevents adding again', async ({ page }) => {

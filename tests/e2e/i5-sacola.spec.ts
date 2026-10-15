@@ -46,6 +46,7 @@ function subtotal(items: typeof p001[]) {
   return amount ? { amount, currency: 'brl' } : null
 }
 async function capture(page: Page, name: string) {
+  if (process.env.I5_CAPTURE !== '1') return
   await mkdir('design-review/sacola', { recursive: true })
   await page.screenshot({ path: `design-review/sacola/${name}.webp`, fullPage: true, animations: 'disabled' })
 }
