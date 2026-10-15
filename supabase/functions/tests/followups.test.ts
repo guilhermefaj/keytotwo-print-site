@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assert, assertEquals, assertMatch } from '@std/assert'
-import { BREVO_WEBHOOK_SECRET, captureErrors, externalCalls, onExternal, onRpc, request, rpcCalls, SECRET_KEY, contractTest } from './contract-helpers.ts'
+import { BREVO_WEBHOOK_SECRET, captureErrors, externalCalls, onExternal, onRpc, request, rpcCalls, SECRET_KEY, contractTest, tampered } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { handleBrevoWebhook } from '../brevo-webhook/handler.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
@@ -23,7 +23,7 @@ contractTest('token de descadastro: não expira, e token de entrega não serve c
   assert(verified.ok)
   assertEquals(verified.claims.u, USER)
   assertEquals((await verifyUnsubscribeToken(await signDeliveryToken(USER, 1))).ok, false)
-  assertEquals((await verifyUnsubscribeToken(`${token.slice(0, -2)}AA`)).ok, false)
+  assertEquals((await verifyUnsubscribeToken(tampered(token))).ok, false)
 })
 
 contractTest('GET /email/unsubscribe não muda nada: leva à página de preferências', async () => {
@@ -58,7 +58,7 @@ contractTest('POST /email/unsubscribe: 1 clique (query + formulário), JSON, ide
   assertEquals(form.status, 200)
 
   onRpc(() => row({ outcome: 'applied', opted_in: false }))
-  for (const bad of [await signDeliveryToken(USER, 1), `${token.slice(0, -2)}AA`, '']) {
+  for (const bad of [await signDeliveryToken(USER, 1), tampered(token), '']) {
     const res = await handleRequest(request('/email/unsubscribe', { method: 'POST', body: { token: bad } }))
     assertEquals([res.status, (await res.json()).error.code], [400, 'INVALID_TOKEN'])
   }

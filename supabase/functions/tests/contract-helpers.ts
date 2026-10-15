@@ -64,6 +64,18 @@ export function userId(token: string): string {
   return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub
 }
 
+// Adultera um token <payload>.<assinatura> de forma determinística: troca um caractere do meio da
+// assinatura por outro diferente dele, o que muda os bytes decodificados e derruba o HMAC sempre.
+// (Mexer nos últimos caracteres, como `${token.slice(0, -2)}AA`, nem sempre invalida: quando o
+// penúltimo já é 'A' e o último carrega 4 bits significativos já zerados, o token "adulterado"
+// decodifica igual e continua válido — era a causa de flake no CI, resposta 200 em vez de 400.)
+export function tampered(token: string): string {
+  const dot = token.lastIndexOf('.')
+  const signature = token.slice(dot + 1)
+  const i = signature.length >> 1
+  return `${token.slice(0, dot + 1)}${signature.slice(0, i)}${signature[i] === 'A' ? 'B' : 'A'}${signature.slice(i + 1)}`
+}
+
 export interface RpcCall {
   fn: string
   args: Record<string, unknown>
