@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assert, assertEquals, assertMatch } from '@std/assert'
-import { captureErrors, externalCalls, LINK_SECRET, onExternal, onRpc, onStripe, request, rpcCalls, SECRET_KEY, sessionToken, userId, WEBHOOK_SECRET, contractTest } from './contract-helpers.ts'
+import { captureErrors, externalCalls, LINK_SECRET, onExternal, onRpc, onStripe, request, rpcCalls, SECRET_KEY, sessionToken, tampered, userId, WEBHOOK_SECRET, contractTest } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { attachment } from '../api/routes/downloads.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
@@ -30,7 +30,7 @@ contractTest('token de entrega: válido, adulterado, de outro segredo, vencido e
 
   const [payload, signature] = token.split('.')
   const forged = btoa(JSON.stringify({ t: 'd', e: ENTITLEMENT, g: 8, x: good.claims.x })).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
-  for (const bad of [`${forged}.${signature}`, `${payload}.${signature.slice(0, -2)}AA`, `${payload}`, 'nada', `${payload}.${signature}.extra`]) {
+  for (const bad of [`${forged}.${signature}`, tampered(token), `${payload}`, 'nada', `${payload}.${signature}.extra`]) {
     assertEquals(await verifyDeliveryToken(bad), { ok: false, reason: 'invalid' }, bad)
   }
 

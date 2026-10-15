@@ -8,7 +8,18 @@ import { builtStage } from './fixtures/stage'
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 const stageTest = readFileSync('build/client/index.html', 'utf8').includes('Ambiente de teste')
 async function settle(page: Page) {
-  await page.evaluate(async () => { await document.fonts.ready; await Promise.allSettled(document.getAnimations().filter(a => a.effect?.getComputedTiming().iterations !== Infinity).map(a => a.finished)) })
+  // Espera fontes e animações, com uma rodada de rAF entre verificações: transições disparadas por
+  // rolagem (ex.: o cabeçalho se escondendo) só entram em getAnimations() depois do flush de estilo,
+  // e o axe não pode medir contraste no meio do movimento (flaky sob carga).
+  await page.evaluate(async () => {
+    await document.fonts.ready
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const pending = document.getAnimations().filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity && animation.playState !== 'finished')
+      if (pending.length === 0 && attempt > 0) return
+      await Promise.allSettled(pending.map(animation => animation.finished))
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    }
+  })
 }
 async function axe(page: Page) {
   await settle(page)
@@ -30,8 +41,8 @@ test('cart loads as a skeleton, not an unavailable price or an empty cart', asyn
   await page.route('**/api/cart', async route => { await gate; await route.fallback() })
   await page.goto('/carrinho')
   try {
-    await expect(page.getByRole('status', { name: 'Carregando seu carrinho' })).toBeVisible()
-    await expect(page.locator('main')).not.toContainText(/indisponível|Seu carrinho está vazio/i)
+    await expect(page.getByRole('status', { name: 'Carregando sua sacola' })).toBeVisible()
+    await expect(page.locator('main')).not.toContainText(/indisponível|Sua sacola está vazia/i)
     await expect(page.locator('main').getByRole('button', { name: 'Finalizar compra' })).toHaveCount(0)
   } finally { release() }
   await expect(page.locator('[data-cart-product] .purchase-thumbnail')).toBeVisible()

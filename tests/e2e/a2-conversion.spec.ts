@@ -23,6 +23,6 @@ test('real previews and catalog price; mobile purchase bar yields to offer and k
   await page.evaluate(() => (document.activeElement as HTMLElement).blur())
   await page.locator('.how-section').scrollIntoViewIfNeeded()
   await expect(bar).toHaveAttribute('data-visible', 'true')
-  await bar.getByRole('button', { name: 'Adicionar ao carrinho' }).click()
+  await bar.getByRole('button', { name: 'Adicionar à sacola' }).click()
   await expect(page).toHaveURL(/\/entrar\?next=%2Fcarrinho&add=P001/)
 })
