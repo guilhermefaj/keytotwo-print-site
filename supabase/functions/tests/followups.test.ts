@@ -15,6 +15,18 @@ const OUTBOX = '77777777-7777-4777-8777-777777777777'
 const SITE = 'http://127.0.0.1:5176'
 const API = 'http://127.0.0.1:54321/functions/v1/api'
 
+// Adultera o token de forma determinística: troca um caractere do meio da assinatura por outro
+// diferente dele, o que muda os bytes decodificados e derruba o HMAC sempre. (Mexer nos últimos
+// caracteres, como `${token.slice(0, -2)}AA`, nem sempre invalida: quando o penúltimo já é 'A' e
+// o último carrega 4 bits significativos já zerados, o token "adulterado" decodifica igual e
+// continua válido — era a causa do flake no CI, que às vezes recebia 200 em vez de 400.)
+const tampered = (token: string): string => {
+  const dot = token.lastIndexOf('.')
+  const signature = token.slice(dot + 1)
+  const i = signature.length >> 1
+  return `${token.slice(0, dot + 1)}${signature.slice(0, i)}${signature[i] === 'A' ? 'B' : 'A'}${signature.slice(i + 1)}`
+}
+
 // ---------- token e rotas de descadastro ----------
 
 contractTest('token de descadastro: não expira, e token de entrega não serve como descadastro', async () => {
@@ -23,7 +35,7 @@ contractTest('token de descadastro: não expira, e token de entrega não serve c
   assert(verified.ok)
   assertEquals(verified.claims.u, USER)
   assertEquals((await verifyUnsubscribeToken(await signDeliveryToken(USER, 1))).ok, false)
-  assertEquals((await verifyUnsubscribeToken(`${token.slice(0, -2)}AA`)).ok, false)
+  assertEquals((await verifyUnsubscribeToken(tampered(token))).ok, false)
 })
 
 contractTest('GET /email/unsubscribe não muda nada: leva à página de preferências', async () => {
@@ -58,7 +70,7 @@ contractTest('POST /email/unsubscribe: 1 clique (query + formulário), JSON, ide
   assertEquals(form.status, 200)
 
   onRpc(() => row({ outcome: 'applied', opted_in: false }))
-  for (const bad of [await signDeliveryToken(USER, 1), `${token.slice(0, -2)}AA`, '']) {
+  for (const bad of [await signDeliveryToken(USER, 1), tampered(token), '']) {
     const res = await handleRequest(request('/email/unsubscribe', { method: 'POST', body: { token: bad } }))
     assertEquals([res.status, (await res.json()).error.code], [400, 'INVALID_TOKEN'])
   }
