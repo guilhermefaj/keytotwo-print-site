@@ -106,7 +106,7 @@ test('Mailpit → cart → terms → TESTE10 → 4242 → paid → library and e
   await expect(page.locator('.library-grid > li')).toHaveCount(5)
   await expect(page.locator('.library-grid')).toContainText(productName)
   await page.goto('/carrinho')
-  await expect(page.getByRole('heading', { name: 'Seu carrinho está vazio', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Sua sacola está vazia', exact: true })).toBeVisible()
 })
 
 test('declined test card stays unpaid, preserves cart and grants no games', async ({ page }) => {
