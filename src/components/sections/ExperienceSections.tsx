@@ -1,13 +1,17 @@
+import { Link } from 'react-router'
 import { experience } from '../../content/experience'
 import { siteConfig } from '../../lib/seo'
 import { ProductPreview } from './ProductPreview'
 import { SnapCarousel } from '../ui/SnapCarousel'
+import { CutLine } from '../ui/CutLine'
+import '../../carousels.css'
 
 // Prévia real do J001 sobre o Papel (direção B): nada de fundo em Tinta nem arco de Marca-texto.
+// A linha de recorte entra aqui, logo depois da hero (DESIGN.md › The Three Cuts Rule).
 export function ProductExperience() {
-  return <section className="page-section experience-section" aria-labelledby="experiencia"><div className="content-width experience-layout">
+  return <section className="page-section experience-section" aria-labelledby="experiencia"><CutLine /><div className="content-width experience-layout">
     <ProductPreview />
-    <div className="experience-copy"><h2 id="experiencia" tabIndex={-1}>A próxima rodada sai da impressora.</h2><p className="lead">Cartas na mesa, uma tentativa duvidosa e aquela vontade de jogar de novo.</p><p>Esta é uma prévia de Rabisque e Adivinhe, um dos jogos do pacote. Imprimam, recortem as cartas e vejam quem entende o desenho de quem.</p><a className="button button-primary" href="/#comprar">Quero o pacote</a></div>
+    <div className="experience-copy"><h2 id="experiencia" tabIndex={-1}>A próxima rodada sai da impressora.</h2><p className="lead">Cartas na mesa, uma tentativa duvidosa e aquela vontade de jogar de novo.</p><p>Esta é uma prévia de Rabisque e Adivinhe, um dos jogos do pacote. Imprimam, recortem as cartas e vejam quem entende o desenho de quem.</p><Link className="button button-primary" to="/loja">Ver os jogos</Link></div>
   </div></section>
 }
 

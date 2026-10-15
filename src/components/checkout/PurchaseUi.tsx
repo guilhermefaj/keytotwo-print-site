@@ -15,5 +15,5 @@ export function PurchaseSkeleton() {
   return <div className="purchase-skeleton" role="status" aria-label="Carregando sua sacola"><span className="sr-only">Carregando sua sacola…</span><div aria-hidden="true" className="skeleton-item"><span /><div><span /><span /><span /></div></div><div aria-hidden="true" className="skeleton-summary"><span /><span /><span /></div></div>
 }
 export function EmptyCart() {
-  return <div className="cart-empty purchase-empty"><KitoEmpty /><div><h2>Sua sacola está vazia</h2><p>Uma ideia para a próxima noite de vocês está logo ali.</p><Link className="button button-primary" to="/#comprar">Quero o pacote</Link></div></div>
+  return <div className="cart-empty purchase-empty"><KitoEmpty /><div><h2>Sua sacola está vazia</h2><p>Uma ideia para a próxima noite de vocês está logo ali.</p><Link className="button button-primary" to="/loja">Ver os jogos</Link></div></div>
 }

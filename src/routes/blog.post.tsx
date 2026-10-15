@@ -49,7 +49,7 @@ export default function BlogPost() {
     <aside className="blog-package" aria-labelledby="blog-package-title">
       <h2 id="blog-package-title">{site.closing}</h2>
       <p>{site.description}</p>
-      <a className="button button-primary" href="/#comprar">Quero o pacote</a>
+      <Link className="button button-primary" to="/loja">Ver os jogos</Link>
     </aside>
     <Newsletter />
     <Link to="/blog" className="inline-link">Voltar ao blog</Link>
