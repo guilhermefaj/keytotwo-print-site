@@ -6,7 +6,8 @@ import { pending } from '../lib/pending'
 export type GamePreview = { src: string; alt: string; href: string; label: string }
 export type Game = {
   id: string
-  code: string
+  /** Atribuído na criação da ficha, nunca pela posição no pacote; também identifica o avulso. */
+  code?: string
   name: string
   confirmed: boolean
   description: string
@@ -28,10 +29,12 @@ export const games: readonly Game[] = [
     preview: { src: '/media/experience/j001-page-1-720.webp', alt: 'Prévia real de Rabisque e Adivinhe.', href: '/#experiencia', label: 'Ver a prévia' },
     facts: j001Facts,
   },
-  { id: 'hora-dos-artistas', code: 'J002', name: 'Hora dos Artistas', confirmed: true, description: 'Inclusão confirmada no pacote.', pending: pending('ficha, regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.' },
-  { id: 'boardgame', code: 'J003', name: 'Boardgame', confirmed: true, description: 'Inclusão confirmada com este nome provisório.', pending: pending('nome final, ficha, regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.' },
-  { id: 'jogo-4', code: 'J004', name: 'Jogo a definir', confirmed: false, description: 'Quarta vaga do pacote.', pending: pending('definição do jogo e de seus materiais.'), summary: 'Estamos preparando este jogo para o pacote.' },
-  { id: 'jogo-5', code: 'J005', name: 'Jogo a definir', confirmed: false, description: 'Quinta vaga do pacote.', pending: pending('definição do jogo e de seus materiais.'), summary: 'Estamos preparando este jogo para o pacote.' },
+  // J002 pertence à ficha de O Sumiço do Rapadura, sem inclusão confirmada no P001.
+  // Os jogos sem ficha usam apenas id interno até receberem o próximo código livre.
+  { id: 'hora-dos-artistas', name: 'Hora dos Artistas', confirmed: true, description: 'Inclusão confirmada no pacote.', pending: pending('código, ficha, regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.' },
+  { id: 'tabuleiro-da-sorte', name: 'Tabuleiro da Sorte', confirmed: true, description: 'Inclusão confirmada no pacote.', pending: pending('código, ficha, regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.' },
+  { id: 'jogo-4', name: 'Jogo a definir', confirmed: false, description: 'Quarta vaga do pacote.', pending: pending('definição do jogo e de seus materiais.'), summary: 'Estamos preparando este jogo para o pacote.' },
+  { id: 'jogo-5', name: 'Jogo a definir', confirmed: false, description: 'Quinta vaga do pacote.', pending: pending('definição do jogo e de seus materiais.'), summary: 'Estamos preparando este jogo para o pacote.' },
 ]
 
 export const j001 = {
