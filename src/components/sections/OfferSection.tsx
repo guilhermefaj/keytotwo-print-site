@@ -13,7 +13,7 @@ import { CutLine } from '../ui/CutLine'
 export function OfferSection() {
   return <section className="page-section offer-section" aria-labelledby="comprar"><CutLine /><div className="content-width">
     <div className="section-heading"><h2 id="comprar" tabIndex={-1}>O próximo encontro começa aqui.</h2></div>
-    <div className="product-list">{products.map(product => <ProductOffer key={product.code} product={product} />)}</div>
+    <div className="product-list">{products.filter(product => product.kind === 'bundle').map(product => <ProductOffer key={product.code} product={product} />)}</div>
     {siteConfig.stage === 'test' && <FreebieInvite />}
   </div></section>
 }

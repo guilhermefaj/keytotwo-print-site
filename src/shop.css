@@ -1,0 +1,63 @@
+/* Loja: extensão da Folha de recorte, com cartas e fichas do DESIGN.md. */
+.shop-page { padding-block: var(--space-2xl) var(--space-section); }
+.shop-page h1 { font-size: var(--text-headline); }
+.shop-heading { margin-bottom: var(--space-2xl); max-width: 65ch; }
+.shop-heading h1 { margin: 0 0 var(--space-md); }
+.shop-heading > p { font-size: var(--text-lead); color: var(--color-ink-soft); margin: 0; }
+.shop-back { margin-bottom: var(--space-lg); }
+.shop-bundle { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-3xl); border: var(--line-card); border-radius: var(--radius-lg); padding: var(--space-xl); }
+.shop-bundle h2 { font-size: var(--text-headline-sm); margin: 0 0 var(--space-sm); }
+.shop-bundle-name { color: var(--color-ink-soft); margin: 0 0 var(--space-lg); }
+.shop-includes { padding-left: var(--space-lg); margin: 0 0 var(--space-lg); }
+.shop-includes li + li { margin-top: var(--space-xs); }
+.shop-bundle-games { list-style: none; padding: 0; margin: 0; align-self: center; }
+.shop-bundle-games li { font-family: var(--font-display); font-size: var(--text-title-sm); font-weight: 700; padding-block: var(--space-sm); border-bottom: var(--line-dot); }
+.shop-games { margin-top: var(--space-3xl); }
+.shop-games > h2 { font-size: var(--text-headline-sm); margin-bottom: var(--space-lg); }
+.shop-game-grid { list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 0; margin: 0; }
+.shop-game { min-width: 0; padding: var(--space-md); border-right: var(--line-cut); border-bottom: var(--line-cut); }
+.shop-game:nth-child(5n) { border-right: 0; }
+.shop-game h3 { font-size: var(--text-title-sm); margin: var(--space-md) 0 var(--space-sm); }
+.shop-summary { color: var(--color-ink-soft); font-size: var(--text-small); margin: 0 0 var(--space-md); }
+.shop-soon { color: var(--color-ink-soft); font-size: var(--text-body); margin: var(--space-md) 0 0; }
+.shop-price { font-family: var(--font-display); font-size: var(--text-headline-sm); font-weight: 700; letter-spacing: var(--tracking-headline); font-variant-numeric: tabular-nums; margin: 0; }
+.shop-price-note, .shop-cover-caption { font-size: var(--text-caption); color: var(--color-ink-soft); margin: var(--space-xs) 0 var(--space-md); }
+.shop-status { font-size: var(--text-body); color: var(--color-ink-soft); }
+.shop-status p { margin: 0 0 var(--space-sm); }
+.shop-product-layout { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); gap: var(--space-3xl); align-items: start; }
+.shop-product-cover { max-width: 360px; width: 100%; }
+.shop-product-cover .game-cover { max-height: 480px; }
+.shop-purchase { border: var(--line-card); border-radius: var(--radius-lg); padding: var(--space-xl); min-width: 0; }
+.shop-purchase h2 { font-size: var(--text-title-lg); margin: 0 0 var(--space-lg); }
+.shop-purchase .shop-availability { margin-top: var(--space-lg); }
+.shop-purchase .offer-cart-action { margin-top: var(--space-lg); }
+.shop-purchase .form-error:empty { display: none; }
+.shop-delivery { margin-top: var(--space-lg); font-size: var(--text-small); color: var(--color-ink-soft); }
+.shop-delivery p { margin: 0; }
+.shop-in-bundle { margin: var(--space-lg) 0 0; padding-top: var(--space-md); border-top: var(--line-rule); font-size: var(--text-small); }
+.shop-facts { margin-top: var(--space-3xl); max-width: 65ch; }
+.shop-facts h2 { font-size: var(--text-title-lg); }
+.shop-facts > p { color: var(--color-ink-soft); }
+.shop-facts .ficha dt { white-space: normal; }
+@media (max-width: 1050px) {
+  .shop-game-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .shop-game:nth-child(5n) { border-right: var(--line-cut); }
+  .shop-game:nth-child(3n) { border-right: 0; }
+  .shop-product-layout { gap: var(--space-xl); }
+}
+@media (max-width: 767px) {
+  .shop-bundle, .shop-product-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
+  .shop-bundle, .shop-purchase { padding: var(--space-lg); }
+  .shop-game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .shop-game { padding: var(--space-sm); }
+  .shop-game:nth-child(3n) { border-right: var(--line-cut); }
+  .shop-game:nth-child(2n) { border-right: 0; }
+  .shop-product-cover { max-width: 240px; margin-inline: auto; }
+  .shop-product-layout .shop-purchase { grid-row: 1; }
+  .shop-game .game-cover-name { font-size: var(--text-title-sm); }
+}
+@media (max-width: 359px) {
+  .shop-game-grid { grid-template-columns: minmax(0, 1fr); }
+  .shop-game:nth-child(n) { border-right: 0; }
+  .shop-game .game-cover { max-width: 240px; margin-inline: auto; }
+}

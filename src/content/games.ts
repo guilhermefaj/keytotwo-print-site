@@ -1,4 +1,4 @@
-import { pending } from '../lib/pending'
+import { pending } from '../lib/pending.ts'
 
 // P001 composition; only J001 has documented mechanics. Do not infer rules from names.
 // Regra de catálogo (DESIGN.md): tudo o que a carta mostra vem daqui (código, nome, resumo,
