@@ -1,4 +1,6 @@
 import { Children, useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
+import { Icon } from './Icon'
 
 export function SnapCarousel({ children, label, className = '' }: { children: ReactNode; label: string; className?: string }) {
   const track = useRef<HTMLDivElement>(null)
@@ -33,6 +35,6 @@ export function SnapCarousel({ children, label, className = '' }: { children: Re
       if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); move(event.key === 'ArrowRight' ? 1 : -1) }
       if (event.key === 'Home' || event.key === 'End') { event.preventDefault(); event.currentTarget.scrollTo({ left: event.key === 'Home' ? 0 : event.currentTarget.scrollWidth, behavior: 'instant' }) }
     }}>{children}</div>
-    <div className="carousel-controls"><p className="carousel-position" role="status" aria-live="polite" aria-atomic="true">{position.first === position.last ? position.first : `${position.first}–${position.last}`} de {count}</p><div className="carousel-arrows"><button className="icon-button" aria-label={`Anterior: ${label}`} aria-controls={id} disabled={position.start} onClick={() => move(-1)}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="m12.5 4.5-5.5 5.5 5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></button><button className="icon-button" aria-label={`Próximo: ${label}`} aria-controls={id} disabled={position.end} onClick={() => move(1)}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="m7.5 4.5 5.5 5.5-5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></button></div></div>
+    <div className="carousel-controls"><p className="carousel-position" role="status" aria-live="polite" aria-atomic="true">{position.first === position.last ? position.first : `${position.first}–${position.last}`} de {count}</p><div className="carousel-arrows"><button className="icon-button" aria-label={`Anterior: ${label}`} aria-controls={id} disabled={position.start} onClick={() => move(-1)}><Icon component={IconChevronLeft} /></button><button className="icon-button" aria-label={`Próximo: ${label}`} aria-controls={id} disabled={position.end} onClick={() => move(1)}><Icon component={IconChevronRight} /></button></div></div>
   </div>
 }

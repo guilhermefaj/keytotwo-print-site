@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { IconPlayerPauseFilled, IconPlayerPlayFilled } from '@tabler/icons-react'
 import { kitoMotion } from '../kito-motion'
+import { Icon } from './ui/Icon'
 
 function subscribeMotionPreference(onChange: () => void) {
   const query = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -88,9 +90,7 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
       data-visible={visible} data-in-view={inView}>
       <div className="motion-controls">
         <button type="button" className="motion-button" aria-controls="kito-scene" onClick={() => setManualPause(!userPaused)}>
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-            {userPaused ? <path d="M3 1.5 12 7l-9 5.5Z" /> : <path d="M3 2h3v10H3zm5 0h3v10H8z" />}
-          </svg>
+          <Icon component={userPaused ? IconPlayerPlayFilled : IconPlayerPauseFilled} size={16} />
           {userPaused ? 'Retomar animação' : 'Pausar animação'}
         </button>
       </div>

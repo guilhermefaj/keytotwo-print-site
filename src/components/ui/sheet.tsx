@@ -2,6 +2,8 @@
 // Radix supplies modal focus containment, Escape, and focus restoration.
 import type { ComponentProps } from 'react'
 import * as SheetPrimitive from '@radix-ui/react-dialog'
+import { IconX } from '@tabler/icons-react'
+import { Icon } from './Icon'
 
 export const Sheet = SheetPrimitive.Root
 export const SheetTrigger = SheetPrimitive.Trigger
@@ -15,9 +17,7 @@ export function SheetContent({ children, className = '', closeLabel = 'Fechar me
       <SheetPrimitive.Overlay className="sheet-overlay" />
       <SheetPrimitive.Content className={`sheet-content ${className}`} {...props}>
         <SheetPrimitive.Close className="icon-button sheet-close" aria-label={closeLabel}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" />
-          </svg>
+          <Icon component={IconX} size={24} />
         </SheetPrimitive.Close>
         {children}
       </SheetPrimitive.Content>
