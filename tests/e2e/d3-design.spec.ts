@@ -90,7 +90,10 @@ test('five games as a sheet on desktop; carousel and testimonials move only by u
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(page.locator('.package-game')).toHaveCount(5)
   // Capas tipográficas: nome do jogo na carta; jogos indefinidos ficam "Em breve" sem h3 (P0-2, P2-1).
-  await expect(page.locator('.package-game h3')).toHaveText(['Rabisque e Adivinhe', 'Hora dos Artistas', 'Boardgame'])
+  await expect(page.locator('.package-game h3')).toHaveText(['Rabisque e Adivinhe', 'Hora dos Artistas', 'Tabuleiro da Sorte'])
+  await expect(page.locator('.package-game .game-cover-preview')).toHaveCount(1)
+  await expect(page.locator('.package-game .game-cover-type')).toHaveCount(2)
+  await expect(page.locator('.package-game .game-cover-soon')).toHaveCount(2)
   await expect(page.locator('.game-cover-soon')).toHaveCount(2)
   await expect(page.locator('.game-cover img')).toHaveCount(1)
   await expect(page.locator('.game-number')).toHaveCount(0)

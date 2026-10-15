@@ -8,7 +8,7 @@ test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 const user = { id: 'qa-d2', email: 'd2@example.test', email_confirmed_at: '2026-01-01', is_anonymous: false, aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: { full_name: 'Pessoa de teste' } }
 const session = { access_token: 'synthetic-d2-token', refresh_token: 'synthetic-d2-refresh', expires_at: 4102444800, expires_in: 3600, token_type: 'bearer', user }
 const product = { code: 'P001', name: 'Pacote de teste', unit_amount: 1990, currency: 'brl' }
-const games = ['TESTE-J01', 'J002', 'J003', 'J004', 'J005'].map((code, i) => ({ code, name: `Jogo de teste ${i + 1}`, acquired_at: '2026-10-01T12:00:00Z', products: [product], files: [{ id: `pdf-${i}`, kind: 'pdf', version: '1.0', size_bytes: 3600000 }] }))
+const games = ['TESTE-J01', 'TESTE-J02', 'TESTE-J03', 'TESTE-J04', 'TESTE-J05'].map((code, i) => ({ code, name: `Jogo de teste ${i + 1}`, acquired_at: '2026-10-01T12:00:00Z', products: [product], files: [{ id: `pdf-${i}`, kind: 'pdf', version: '1.0', size_bytes: 3600000 }] }))
 async function fixture(page: Page, { empty = false, failLibrary = false } = {}) {
   test.skip(!readFileSync('build/client/index.html', 'utf8').includes('Ambiente de teste'), 'Requires configured stage=test build')
   let optedIn = false
