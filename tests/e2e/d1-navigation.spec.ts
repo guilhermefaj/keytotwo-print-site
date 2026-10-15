@@ -29,7 +29,7 @@ async function axe(page: Page) {
     .filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity)
     .map(animation => animation.finished)))
   const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
-  expect(result.violations.filter(issue => ['serious', 'critical'].includes(issue.impact ?? ''))).toEqual([])
+  expect(result.violations).toEqual([])
 }
 async function capture(page: Page, name: string) {
   if (process.env.D1_CAPTURE !== '1') return
@@ -51,8 +51,9 @@ test('desktop header: shared navigation, active page, transparent top and sticky
   const requested: string[] = []
   page.on('request', request => requested.push(request.url()))
   await page.goto('/')
-  await expect(page.locator('.desktop-nav a')).toHaveText(['O pacote', 'Como funciona', 'Blog'])
-  await expect(page.locator('.desktop-action')).toContainText('Quero o pacote')
+  await expect(page.locator('.desktop-nav a')).toHaveText(['Início', 'Loja', 'Blog'])
+  await expect(page.locator('.desktop-action')).toContainText('Ver os jogos')
+  await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('header')).toHaveAttribute('data-scrolled', 'false')
   // O carrinho existe nos stages test e live; em preview o header não o mostra.
   if (builtStage() === 'preview') await expect(page.locator('.desktop-action .cart-trigger')).toHaveCount(0)
@@ -60,16 +61,16 @@ test('desktop header: shared navigation, active page, transparent top and sticky
   await page.evaluate(() => document.fonts.ready)
   await capture(page, 'header-desktop-topo')
   expect(requested.some(url => url.includes('kito-caixa'))).toBe(false)
-  await page.locator('.desktop-nav').getByRole('link', { name: 'Como funciona' }).click()
+  await page.evaluate(() => window.scrollTo({ top: 800, behavior: 'instant' }))
   await expect(page.locator('header')).toHaveAttribute('data-scrolled', 'true')
-  await expect(page.locator('.desktop-nav').getByRole('link', { name: 'Como funciona' })).toHaveAttribute('aria-current', 'location')
+  await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('aria-current', 'page')
   await capture(page, 'header-desktop-rolado')
   await page.locator('.desktop-nav').getByRole('link', { name: 'Blog', exact: true }).click()
   await expect(page.locator('.desktop-nav').getByRole('link', { name: 'Blog', exact: true })).toHaveAttribute('aria-current', 'page')
   await axe(page)
 })
 
-test('mobile sheet: touch label, focus containment, Escape, anchors and scroll direction', async ({ page }) => {
+test('mobile sheet: touch label, focus containment, Escape, Loja and scroll direction', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
   const trigger = page.getByRole('button', { name: 'Abrir menu' })
@@ -85,24 +86,25 @@ test('mobile sheet: touch label, focus containment, Escape, anchors and scroll d
   await expect(page.getByRole('dialog')).toBeHidden()
   await expect(trigger).toBeFocused()
   await trigger.click()
-  await page.getByRole('dialog').getByRole('link', { name: 'Como funciona' }).click()
-  await expect(page.locator('#como-funciona')).toBeFocused()
+  await page.getByRole('dialog').getByRole('link', { name: 'Loja', exact: true }).click()
+  await expect(page).toHaveURL(/\/loja$/)
+  await expect(page.getByRole('dialog')).toBeHidden()
   await page.evaluate(() => (document.activeElement as HTMLElement).blur())
   await page.evaluate(async () => {
     window.scrollTo({ top: 0, behavior: 'instant' })
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
   })
-  await expect(page.locator('header')).toHaveAttribute('data-hidden', 'false')
+  await expect(page.getByRole('banner')).toHaveAttribute('data-hidden', 'false')
   await page.evaluate(async () => {
     window.scrollTo({ top: 800, behavior: 'instant' })
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
   })
-  await expect(page.locator('header')).toHaveAttribute('data-hidden', 'true')
+  await expect(page.getByRole('banner')).toHaveAttribute('data-hidden', 'true')
   await page.evaluate(async () => {
     window.scrollTo({ top: 500, behavior: 'instant' })
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
   })
-  await expect(page.locator('header')).toHaveAttribute('data-hidden', 'false')
+  await expect(page.getByRole('banner')).toHaveAttribute('data-hidden', 'false')
 })
 
 test('checkout focus header agrees in server HTML and hydration, with or without trailing slash', async ({ page }) => {
@@ -113,15 +115,17 @@ test('checkout focus header agrees in server HTML and hydration, with or without
     await expect(page.getByRole('heading', { name: 'Pagamento', exact: true })).toBeVisible()
     await expect(page.locator('header')).toHaveAttribute('data-focus', 'true')
     await expect(page.locator('header').getByRole('link')).toHaveCount(2)
+    await expect(page.locator('header').getByRole('link', { name: 'Voltar à sacola' })).toHaveAttribute('href', '/carrinho')
   }
 })
 
-test('account menu, owned package CTA and the simplified private header', async ({ page }) => {
+test('account menu, catalog CTA regardless of ownership and the simplified private header', async ({ page }) => {
   await fixture(page, { owned: true })
   await page.goto('/')
-  await expect(page.locator('.desktop-nav a')).toHaveText(['O pacote', 'Como funciona', 'Blog'])
-  await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('href', '/#comprar')
-  await expect(page.locator('.desktop-action > .button')).toHaveText(/Meus jogos/)
+  await expect(page.locator('.desktop-nav a')).toHaveText(['Início', 'Loja', 'Blog'])
+  await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('href', '/')
+  await expect(page.locator('.desktop-action > .button')).toHaveText('Ver os jogos')
+  await expect(page.locator('.desktop-action > .button')).toHaveAttribute('href', '/loja')
   await page.goto('/conta')
   // Minha área: logo, Meus jogos, Minha conta, Ajuda; sem CTA comercial nem carrinho.
   await expect(page.locator('header')).toHaveAttribute('data-private', 'true')
@@ -251,7 +255,7 @@ for (const width of [390, 1440]) test(`captures and axe: cart states, 404 and pa
   await expect(trigger).toBeFocused()
   await page.goto('/404')
   await expect(page.getByRole('heading', { name: 'Página não encontrada' })).toBeVisible()
-  await expect(trigger).toHaveAttribute('aria-label', 'Carrinho, 0 itens')
+  await expect(trigger).toHaveAttribute('aria-label', 'Sacola, 0 itens')
   await expect(page.locator('.cart-count')).toHaveCount(0)
   await capture(page, `404-${width}`)
   await axe(page)

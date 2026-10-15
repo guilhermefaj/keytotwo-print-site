@@ -4,6 +4,8 @@ import { SiteHeader } from './components/layout/SiteHeader'
 import { SiteFooter } from './components/layout/SiteFooter'
 import { blogPostingJsonLd, pageSeo, serializeJsonLd, siteConfig } from './lib/seo'
 import type { BlogPostSummary } from './lib/blog'
+import { readBlogPosts } from './lib/blog.server'
+import { buildSiteConfig } from './lib/site-build.server'
 import { AuthProvider } from './components/auth/AuthProvider'
 import { ShopProvider } from './components/account/ShopProvider'
 import '@fontsource/bricolage-grotesque/latin-700.css'
@@ -11,6 +13,11 @@ import '@fontsource/dm-sans/latin-400.css'
 import '@fontsource/dm-sans/latin-600.css'
 import './styles.css'
 import './navigation.css'
+
+// eslint-disable-next-line react-refresh/only-export-components -- React Router removes this prerender-only loader from the client.
+export async function loader() {
+  return { hasBlogPosts: (await readBlogPosts({ stage: buildSiteConfig().stage })).length > 0 }
+}
 
 export function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
