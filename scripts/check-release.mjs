@@ -54,8 +54,12 @@ async function check(root, built) {
   if (!Array.isArray(products) || !products.length) errors.push('Catálogo público ausente ou vazio')
   for (const [index, product] of (products || []).entries()) {
     const offer = product.offer
-    if (offer?.priceApproved !== true) errors.push(`Preço não aprovado em products[${index}]`)
-    if (typeof offer?.price !== 'string' || !offer.price.trim()) errors.push(`Preço ausente em products[${index}]`)
+    if (product.availability === 'sale') {
+      if (offer?.priceApproved !== true) errors.push(`Preço não aprovado em products[${index}]`)
+      if (typeof offer?.price !== 'string' || !offer.price.trim()) errors.push(`Preço ausente em products[${index}]`)
+    } else if (product.availability === 'soon') {
+      if (offer?.purchaseAction != null) errors.push(`Produto em breve com ação de compra em products[${index}]`)
+    } else errors.push(`Disponibilidade inválida em products[${index}]`)
   }
   const social = modules['experience.ts']?.experience?.social
   if (social) {
@@ -63,6 +67,7 @@ async function check(root, built) {
     if (!Number.isInteger(social.reviewCount) || social.reviewCount < 1) errors.push('Placeholder: contagem da prova social')
     if (!Array.isArray(social.testimonials) || !social.testimonials.length) errors.push('Placeholder: relatos ausentes')
     for (const [index, item] of (social.testimonials || []).entries()) {
+      if (item.placeholder === true) errors.push(`Placeholder: relato de exemplo ${index + 1}`)
       if (!item.quote?.trim() || !item.author?.trim()) errors.push(`Placeholder: relato ${index + 1}`)
     }
   }
@@ -109,20 +114,28 @@ function selfTest() {
       ['preview com pendências', 'preview', 'pending("fixture")', false, '', '<h1>PENDENTE</h1>', 0],
       ['test com pendências', 'test', 'pending("fixture")', false, '', '<h1>PENDENTE</h1>', 0],
       ['prova social incompleta', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1],
+      ['relato de exemplo', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1],
+      ['soon sem preço nem compra', 'live', '"Fixture"', false, null, '<h1>Fixture</h1>', 0, 'soon', null],
+      ['soon com compra', 'live', '"Fixture"', false, null, '<h1>Fixture</h1>', 1, 'soon', 'cart', /Produto em breve com ação de compra/],
+      ['soon ainda com pendência', 'live', 'pending("fixture")', false, null, '<h1>Fixture</h1>', 1, 'soon', null, /PENDENTE em/],
+      ['sale sem oferta', 'live', '"Fixture"', false, null, '<h1>Fixture</h1>', 1, 'sale', null, /Preço não aprovado/],
+      ['disponibilidade desconhecida', 'live', '"Fixture"', true, 'FIXTURE', '<h1>Fixture</h1>', 1, 'invalid', null, /Disponibilidade inválida/],
     ]
-    for (const [name, stage, copy, approved, price, html, status] of cases) {
+    for (const [name, stage, copy, approved, price, html, status, availability = 'sale', purchaseAction = 'cart', diagnostic = /Release live bloqueada/] of cases) {
       writeFileSync(path.join(root, 'src/content/experience.ts'), `export const experience = { social: ${name === 'prova social incompleta' ? '{rating:null,reviewCount:null,testimonials:[{quote:null,author:null}]}' : '{rating:4,reviewCount:1,testimonials:[{quote:"FIXTURE de teste",author:"FIXTURE"}]}' } }`)
-      writeFileSync(path.join(root, 'src/content/products.ts'), `import { pending } from '../lib/pending'\nexport const products = [{ title: ${copy}, offer: {priceApproved: ${approved}, price: ${JSON.stringify(price)}} }]`)
+      if (name === 'relato de exemplo') writeFileSync(path.join(root, 'src/content/experience.ts'), 'export const experience = {social: {rating:4,reviewCount:1,testimonials:[{quote:"FIXTURE",author:"FIXTURE",placeholder:true}]}}')
+      // Um primeiro produto aprovado garante que a trava avalia também as ofertas seguintes.
+      writeFileSync(path.join(root, 'src/content/products.ts'), `import { pending } from '../lib/pending'\nexport const products = [{availability:'sale',offer:{priceApproved:true,price:'FIXTURE',purchaseAction:'cart'}}, { title: ${copy}, availability: ${JSON.stringify(availability)}, offer: ${name === 'sale sem oferta' ? 'null' : `{priceApproved: ${approved}, price: ${JSON.stringify(price)}, purchaseAction: ${JSON.stringify(purchaseAction)}}`} }]`)
       writeFileSync(path.join(root, 'build/client/index.html'), html)
       const result = spawnSync(process.execPath, [script, '--root', root, '--built'], {
         env: { ...process.env, VITE_SITE_STAGE: stage }, encoding: 'utf8',
       })
       assert.equal(result.status, status, `${name}: ${result.stderr || result.stdout}`)
-      if (status === 1) assert.match(result.stderr, /Release live bloqueada/)
+      if (status === 1) assert.match(result.stderr, diagnostic)
       console.log(`Fixture OK: ${name}`)
     }
     // Use approved test-only fixtures; no real commercial copy is rewritten.
-    writeFileSync(path.join(root, 'src/content/products.ts'), 'export const products = [{offer: {priceApproved: true, price: "FIXTURE"}}]')
+    writeFileSync(path.join(root, 'src/content/products.ts'), 'export const products = [{availability: "sale", offer: {priceApproved: true, price: "FIXTURE", purchaseAction: "cart"}}]')
     writeFileSync(path.join(root, 'src/content/experience.ts'), 'export const experience = {}')
     writeFileSync(path.join(root, 'build/client/index.html'), '<h1>Fixture</h1>')
     mkdirSync(path.join(root, 'content/blog'), { recursive: true })
