@@ -1,4 +1,4 @@
-import { productName } from '../content/products'
+import { itemName } from '../components/checkout/purchase-names'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { api } from '../lib/api'
@@ -15,8 +15,8 @@ const copy = {
   paid: { title: 'O próximo encontro é de vocês!', text: 'Pagamento confirmado. Escolham um jogo e preparem a mesa.', cta: 'Baixar agora', to: '/meus-jogos' },
   processing: { title: 'Estamos preparando seus jogos', text: 'O pagamento está sendo conferido. Não é preciso pagar novamente; a confirmação pode levar alguns instantes.', cta: 'Ver Meus jogos', to: '/meus-jogos' },
   pending_payment: { title: 'Aguardando o pagamento', text: 'Assim que o pagamento for confirmado, seus jogos aparecem em Meus jogos. Você pode voltar para acompanhar.', cta: 'Ver Meus jogos', to: '/meus-jogos' },
-  failed: { title: 'Vamos tentar de novo?', text: 'Este pagamento não foi concluído. Volte ao carrinho para conferir sua escolha e tentar novamente.', cta: 'Voltar ao carrinho', to: '/carrinho' },
-  expired: { title: 'Vamos tentar de novo?', text: 'O tempo para pagar terminou. Sua escolha continua no carrinho.', cta: 'Voltar ao carrinho', to: '/carrinho' },
+  failed: { title: 'Vamos tentar de novo?', text: 'Este pagamento não foi concluído. Volte à sacola para conferir sua escolha e tentar novamente.', cta: 'Voltar à sacola', to: '/carrinho' },
+  expired: { title: 'Vamos tentar de novo?', text: 'O tempo para pagar terminou. Sua escolha continua na sacola.', cta: 'Voltar à sacola', to: '/carrinho' },
   not_found: { title: 'Não encontramos esse pedido', text: 'Confira o link recebido ou veja suas compras em Pedidos.', cta: 'Ver meus pedidos', to: '/pedidos' },
   other_account: { title: 'Este pedido é de outra conta', text: 'Entre com a conta usada na compra para acessar os jogos.', cta: 'Entrar com outra conta', to: '/entrar' },
 } as const
@@ -70,7 +70,7 @@ function Status({ sessionId }: { sessionId: string }) {
     {state === 'paid' && !demo && !deliveryMock && <p className="confirmation-email">Também enviamos para o seu e-mail.</p>}
     {checking && <p role="status">Conferindo seu pedido…</p>}
     <p role="alert" className="form-error">{error}</p>
-    {state === 'paid' && !demo && Boolean(result?.items?.length) && <ul className="confirmation-items">{result!.items!.map(item => <li key={item.code}>{productName(item.code, item.name)}</li>)}</ul>}
+    {state === 'paid' && !demo && Boolean(result?.items?.length) && <ul className="confirmation-items">{result!.items!.map(item => <li key={item.code}>{itemName(item.code, item.name)}</li>)}</ul>}
     <div className="form-actions">{content && (state === 'other_account' ? <button className="button button-primary" disabled={signingOut} onClick={switchAccount}>{content.cta}</button> : <Link className="button button-primary" to={content.to}>{content.cta}</Link>)}
       {(error || state === 'processing' || state === 'pending_payment') && <button className="button button-secondary" disabled={checking} onClick={() => { setChecking(true); setError(''); setRevision(value => value + 1) }}>Atualizar status</button>}
       <Link className="inline-link" to="/ajuda">Preciso de ajuda</Link>

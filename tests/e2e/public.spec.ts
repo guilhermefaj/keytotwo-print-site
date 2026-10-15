@@ -156,7 +156,7 @@ test.describe('conteúdo', () => {
 })
 
 test.describe('stage', () => {
-  test('preview: sem Adicionar ao carrinho e sem acesso ao carrinho', async ({ page }) => {
+  test('preview: sem Adicionar à sacola e sem acesso ao carrinho', async ({ page }) => {
     test.skip(!(await isPreview()), 'build test/live has an authenticated cart')
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 900 })
@@ -167,7 +167,7 @@ test.describe('stage', () => {
         expect(await page.locator('a[href^="/carrinho"]').count(), `link de carrinho em ${route} @${width}`).toBe(0)
         expect(await page.getByRole('link', { name: /carrinho/i }).count(), `link "carrinho" em ${route} @${width}`).toBe(0)
         expect(await page.getByRole('button', { name: /adicionar|carrinho|comprar/i }).count(), `botão de compra em ${route} @${width}`).toBe(0)
-        expect(await visibleText(page), `texto Adicionar ao carrinho em ${route}`).not.toMatch(/Adicionar ao carrinho/i)
+        expect(await visibleText(page), `texto Adicionar à sacola em ${route}`).not.toMatch(/Adicionar à sacola/i)
       }
     }
   })
