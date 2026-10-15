@@ -43,7 +43,7 @@ async function capture(page: Page, name: string) {
 test('D1 touchups: zero badge hidden, help link and the private mobile menu', async ({ page }) => {
   await fixture(page)
   await page.goto('/')
-  await expect(page.locator('.desktop-action .cart-trigger')).toHaveAttribute('aria-label', 'Carrinho, 0 itens')
+  await expect(page.locator('.desktop-action .cart-trigger')).toHaveAttribute('aria-label', 'Sacola, 0 itens')
   await expect(page.locator('.cart-count')).toHaveCount(0)
   await expect(page.locator('.desktop-action').getByRole('link', { name: 'Ajuda', exact: true })).toHaveAttribute('href', '/ajuda')
   await page.goto('/meus-jogos')
