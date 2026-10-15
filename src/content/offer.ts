@@ -35,9 +35,3 @@ export const packageOffer: ProductOffer = {
 // Compatibilidade dos textos institucionais atuais, ainda referentes ao P001.
 // Novos produtos declaram sua própria ProductOffer e não reutilizam este alias.
 export const offer = packageOffer
-
-export const howItWorks = [
-  { title: 'Crie sua conta e escolha', description: 'É preciso ter cadastro para comprar. Adicione os itens ao carrinho e confira os preços e as condições antes de finalizar o pagamento.', note: 'Carrinho e compra ainda não estão disponíveis neste protótipo.' },
-  { title: 'Acesse e prepare', description: 'Os jogos ficam em Meus jogos e também são enviados por e-mail. Imprima e prepare os materiais conforme as instruções de cada jogo.', note: offer.access },
-  { title: 'Escolham e joguem', description: 'Com os materiais na mesa, sigam as instruções da experiência escolhida.', note: 'Materiais e preparação variam de jogo para jogo.' },
-]

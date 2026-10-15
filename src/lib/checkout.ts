@@ -14,8 +14,8 @@ export function canCheckout(cart?: Cart) {
 export function checkoutError(error: unknown) {
   if (error instanceof ApiError) {
     const messages: Record<string, string> = {
-      CART_CHANGED: 'Seu carrinho mudou. Confira os itens atualizados antes de continuar.',
-      CART_EMPTY: 'Seu carrinho está vazio. Escolha um encontro para continuar.',
+      CART_CHANGED: 'Sua sacola mudou. Confira os itens atualizados antes de continuar.',
+      CART_EMPTY: 'Sua sacola está vazia. Escolha um encontro para continuar.',
       TERMS_CHANGED: 'Os termos foram atualizados. Recarregue esta página para ler a versão atual e aceitar novamente.',
       TERMS_NOT_ACCEPTED: 'Leia e aceite os termos para continuar.',
       PAYMENT_PROVIDER_ERROR: 'Não conseguimos abrir o pagamento agora. Tente novamente em instantes.',

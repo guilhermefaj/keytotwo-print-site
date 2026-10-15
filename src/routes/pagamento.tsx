@@ -49,7 +49,7 @@ function Payment({ cart, refresh }: { cart: Cart; refresh: () => void }) {
         {!secret && !demo && <p className="field-help" role="status">{busy ? 'Preparando pagamento…' : 'Ao aceitar os termos, o formulário de pagamento aparece aqui.'}</p>}
       </div>
       <p role="alert" className="form-error">{error}</p>{termsChanged && <a className="inline-link" href="/pagamento">Recarregar e revisar os termos</a>}
-      {!canCheckout(cart) && !checkoutMock && <p>Revise os itens e os preços no <Link className="inline-link" to="/carrinho">carrinho</Link> antes de continuar.</p>}
+      {!canCheckout(cart) && !checkoutMock && <p>Revise os itens e os preços <Link className="inline-link" to="/carrinho">na sacola</Link> antes de continuar.</p>}
       {accepted && secret && <div className="payment-reveal"><StripePayment clientSecret={secret} /></div>}
       {accepted && demo && <div className="payment-reveal"><MockPayment cart={cart} /></div>}
     </section></div>

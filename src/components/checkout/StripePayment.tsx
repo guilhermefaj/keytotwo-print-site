@@ -27,7 +27,7 @@ export function StripePayment({ clientSecret }: { clientSecret: string }) {
       if (!active) return
       failed = true
       clearTimeout(timer); form?.destroy(); form = undefined; actions.current = null
-      setFatal(true); setError('O formulário não carregou. Tente novamente ou volte ao carrinho.')
+      setFatal(true); setError('O formulário não carregou. Tente novamente ou volte à sacola.')
     }
     async function mount() {
       try {

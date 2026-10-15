@@ -46,7 +46,7 @@ test('cart loads as a skeleton, not an unavailable price or an empty cart', asyn
     await expect(page.locator('main').getByRole('button', { name: 'Finalizar compra' })).toHaveCount(0)
   } finally { release() }
   await expect(page.locator('[data-cart-product] .purchase-thumbnail')).toBeVisible()
-  await expect(page.locator('.checkout-steps [aria-current]')).toContainText('Carrinho')
+  await expect(page.locator('.checkout-steps [aria-current]')).toContainText('Sacola')
   await expect(page.locator('.checkout-steps li').filter({ hasText: 'Entrar' })).toHaveAttribute('data-complete', 'true')
   await expect(page.locator('.checkout-steps li').filter({ hasText: 'Entrar' })).not.toHaveAttribute('aria-current')
 })

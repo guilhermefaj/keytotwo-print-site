@@ -10,7 +10,7 @@ export const experience = {
   cta: { label: 'Ver os jogos', href: '/loja' },
   secondary: { label: 'Ver a prévia', href: '/#experiencia' },
   steps: [
-    { title: 'Escolham.', text: 'Levem a ideia para o carrinho. Entrem na conta para seguir com a compra.' },
+    { title: 'Escolham.', text: 'Levem a ideia para a sacola. Entrem na conta para seguir com a compra.' },
     { title: 'Imprimam.', text: 'Depois da compra, os arquivos ficam em Meus jogos e chegam por e-mail.' },
     { title: 'Divirtam-se.', text: 'Preparem os materiais e escolham quem começa.' },
   ],
