@@ -129,7 +129,7 @@ end $$;
 -- total do banco; usuários extras (qa-* dos e2e, por exemplo) e a ordem de execução não alteram o resultado.
 -- As views existem só nesta transação (pg_temp) e somem no rollback.
 create temp view seed_users as select id, email from auth.users where email like 'teste-%@keytotwo.test';
-create temp view seed_products as select * from public.products where code in ('P001', 'TESTE-AV1', 'TESTE-AV2');
+create temp view seed_products as select * from public.products where code in ('P001', 'J001', 'TESTE-AV2');
 create temp view seed_games as select * from public.games where code in ('TESTE-J01', 'TESTE-J02', 'TESTE-J03', 'TESTE-J04', 'TESTE-J05', 'TESTE-GRATIS');
 create temp view seed_files as select * from public.files where game_id in (select id from seed_games) or product_id in (select id from seed_products);
 create temp view seed_orders as select * from public.orders where user_id in (select id from seed_users);
@@ -143,11 +143,16 @@ select pg_temp.assert('cada usuário do seed tem identidade de e-mail coerente (
 select pg_temp.assert('todo usuário do seed tem perfil criado pela trigger', (select count(*) = 5 from public.profiles p join auth.users u on u.id = p.user_id where u.email like 'teste-%@keytotwo.test'));
 select pg_temp.assert('account_confirmed gravado para os 4 confirmados e não para o C', (select count(*) = 4 from public.funnel_events f join auth.users u on u.id = f.user_id where f.type = 'account_confirmed' and u.email like 'teste-%@keytotwo.test')
   and (select count(*) = 0 from public.funnel_events f join auth.users u on u.id = f.user_id where f.type = 'account_confirmed' and u.email = 'teste-c@keytotwo.test'));
-select pg_temp.assert('3 produtos: P001 (pacote de 5) e 2 avulsos TESTE', (select count(*) = 3 and count(*) filter (where kind = 'bundle') = 1 and count(*) filter (where kind = 'single') = 2 from seed_products));
+select pg_temp.assert('3 produtos: P001 (pacote de 5), o avulso J001 e o avulso TESTE-AV2', (select count(*) = 3 and count(*) filter (where kind = 'bundle') = 1 and count(*) filter (where kind = 'single') = 2 from seed_products));
 select pg_temp.assert('P001 com nome PENDENTE e rótulo TESTE; avulsos só TESTE', (select name = '[PENDENTE] Nome comercial do P001 [TESTE]' from public.products where code = 'P001')
   and (select bool_and(name like '[TESTE]%') from seed_products where kind = 'single'));
 select pg_temp.assert('todo produto leva TESTE ou PENDENTE no nome; todo jogo é identificável como teste pelo code e pelo slug (o nome pode ser limpo)', (select count(*) = 0 from seed_products where name !~ '(TESTE|PENDENTE)')
   and (select count(*) = 0 from seed_games where code !~ '^TESTE-' or slug !~ '^teste-'));
+select pg_temp.assert('avulso J001: single ativo, 1 jogo esperado, ligado só ao jogo TESTE-J01 (Rabisque e Adivinhe), com Price price_TESTE_J001 ou o Price real de TESTE',
+  (select p.kind = 'single' and p.status = 'active' and p.games_expected = 1 and p.slug = 'j001'
+          and (p.stripe_price_id = 'price_TESTE_J001' or p.stripe_price_id ~ '^price_[A-Za-z0-9_]+$')
+          and (select array_agg(g.code) = array['TESTE-J01'] from public.product_games pg join public.games g on g.id = pg.game_id where pg.product_id = p.id)
+   from public.products p where p.code = 'J001'));
 select pg_temp.assert('6 jogos: 5 pagos publicados + 1 grátis em draft', (select count(*) = 6 and count(*) filter (where access = 'paid' and status = 'published') = 5 and count(*) filter (where access = 'free' and status = 'draft') = 1 from seed_games));
 select pg_temp.assert('composição: P001 = 5 jogos; cada avulso = 1 (e os avulsos repetem jogos do P001)', (select count(*) = 7 from public.product_games pg where pg.product_id in (select id from seed_products))
   and (select count(*) = 5 from public.product_games pg join seed_products p on p.id = pg.product_id where p.code = 'P001'));
@@ -157,8 +162,8 @@ select pg_temp.assert('7 arquivos e 7 objetos do B2, todos fictícios, sem URL',
   and (select bool_and(object_key !~ '(:|\?|\s)' and bucket = 'bucket-teste-pendente') from public.file_objects where file_id in (select id from seed_files)));
 select pg_temp.assert('ZIP do P001 e arquivo grátis em draft', (select count(*) = 2 from seed_files where status = 'draft' and (kind = 'zip' or access = 'free')));
 select pg_temp.assert('nenhum preço: valores 0 (e subtotal e desconto 0) nos pedidos do seed', (select bool_and(amount_total = 0 and amount_subtotal = 0 and amount_discount = 0 and promotion_code is null) from seed_orders where amount_total is not null));
-select pg_temp.assert('Prices: formato da Stripe em todos; os avulsos são price_TESTE_*; o P001 é price_TESTE_P001 ou o Price real de TESTE aplicado localmente',
-  (select bool_and(stripe_price_id ~ '^price_[A-Za-z0-9_]+$') from seed_products) and (select bool_and(stripe_price_id like 'price_TESTE_%') from seed_products where code <> 'P001'));
+select pg_temp.assert('Prices: formato da Stripe em todos; o TESTE-AV2 é price_TESTE_*; o P001 e o J001 são price_TESTE_<código> ou o Price real de TESTE aplicado localmente (aplicar-price-teste)',
+  (select bool_and(stripe_price_id ~ '^price_[A-Za-z0-9_]+$') from seed_products) and (select bool_and(stripe_price_id like 'price_TESTE_%') from seed_products where code not in ('P001', 'J001')));
 select pg_temp.assert('e-mails, ids da Stripe e termos rotulados como teste', (select count(*) = 8 and bool_and(email like '%@keytotwo.test' and terms_version = 'v1-TESTE') from seed_orders)
   and (select bool_and(coalesce(stripe_checkout_session_id, 'cs_test_TESTE_x') ~ 'TESTE' and coalesce(stripe_payment_intent_id, 'pi_TESTE_x') ~ 'TESTE') from seed_orders)
   and (select bool_and(stripe_customer_id ~ 'TESTE') from public.profiles where user_id in (select id from seed_users) and stripe_customer_id is not null));
@@ -177,10 +182,10 @@ select pg_temp.assert('termos aceitos em todos os pedidos', (select count(*) = 8
 
 -- ===== as RPCs sobre o seed ========================================================================
 select pg_temp.assert('A (dona do P001) tem os 5 jogos e nenhum pendente', (select jsonb_array_length(public.get_library(u.id)->'games') = 5 and jsonb_array_length(public.get_library(u.id)->'pending') = 0 from auth.users u where u.email = 'teste-a@keytotwo.test'));
-select pg_temp.assert('B (avulso 1) tem 1 jogo, via TESTE-AV1', (select jsonb_array_length(public.get_library(u.id)->'games') = 1 and public.get_library(u.id)->'games'->0->'products'->0->>'code' = 'TESTE-AV1' from auth.users u where u.email = 'teste-b@keytotwo.test'));
+select pg_temp.assert('B (avulso 1) tem 1 jogo, via J001', (select jsonb_array_length(public.get_library(u.id)->'games') = 1 and public.get_library(u.id)->'games'->0->'products'->0->>'code' = 'J001' from auth.users u where u.email = 'teste-b@keytotwo.test'));
 select pg_temp.assert('D só tem pedido em processamento, E nada ativo', (select jsonb_array_length(public.get_library(u.id)->'games') = 0 and jsonb_array_length(public.get_library(u.id)->'pending') = 1 from auth.users u where u.email = 'teste-d@keytotwo.test')
   and (select public.get_library(u.id) = '{"games": [], "pending": []}'::jsonb from auth.users u where u.email = 'teste-e@keytotwo.test'));
-select pg_temp.assert('cart_add(A, TESTE-AV1): already_owned (A já tem o jogo 1 inteiro)', (select outcome = 'already_owned' from auth.users u, lateral public.cart_add(u.id, 'TESTE-AV1') where u.email = 'teste-a@keytotwo.test'));
+select pg_temp.assert('cart_add(A, J001): already_owned (A já tem o jogo 1 inteiro)', (select outcome = 'already_owned' from auth.users u, lateral public.cart_add(u.id, 'J001') where u.email = 'teste-a@keytotwo.test'));
 select pg_temp.assert('carrinho de B: P001 com sobreposição parcial (já tem o jogo 1)', (select (public.get_cart(u.id)->>'version')::int = 1 and public.get_cart(u.id)->'items'->0->>'code' = 'P001'
   and public.get_cart(u.id)->'items'->0->'owned_games' = '["TESTE-J01"]'::jsonb and public.get_cart(u.id)->'items'->0->>'status' = 'ok' from auth.users u where u.email = 'teste-b@keytotwo.test'));
 select pg_temp.assert('o carrinho de A é vazio e isolado do de B', (select public.get_cart(u.id) = '{"version": 0, "items": []}'::jsonb from auth.users u where u.email = 'teste-a@keytotwo.test'));
@@ -189,7 +194,7 @@ select pg_temp.assert('get_account(D): pendente, reembolsado e contestado; sem c
 select pg_temp.assert('get_account(E): só a contestação perdida (expired e open ficam de fora)', (select jsonb_array_length(public.get_account(u.id)->'orders') = 1 and public.get_account(u.id)->'orders'->0->>'status' = 'dispute_lost' from auth.users u where u.email = 'teste-e@keytotwo.test'));
 select pg_temp.assert('consentimento: só A tem opt-in vigente (v1-TESTE)', (select (public.get_account(u.id)->'marketing'->>'opted_in')::boolean and public.get_account(u.id)->'marketing'->>'text_version' = 'v1-TESTE' from auth.users u where u.email = 'teste-a@keytotwo.test')
   and (select count(*) = 1 from public.profiles where marketing_opt_in and user_id in (select id from seed_users)));
-select pg_temp.assert('get_catalog: os 3 produtos do seed, todos vendáveis', (select count(*) = 3 and bool_and(coalesce(e->>'code', '') <> '') from jsonb_array_elements(public.get_catalog()) e where e->>'code' in ('P001', 'TESTE-AV1', 'TESTE-AV2')));
+select pg_temp.assert('get_catalog: os 3 produtos do seed, todos vendáveis', (select count(*) = 3 and bool_and(coalesce(e->>'code', '') <> '') from jsonb_array_elements(public.get_catalog()) e where e->>'code' in ('P001', 'J001', 'TESTE-AV2')));
 
 -- ===== fila de e-mail ==============================================================================
 select pg_temp.assert('as 2 entregas do seed (pedidos pagos de A e de B) estão na fila de e-mail, transacionais e sem token (em qualquer estado: o despacho pode já tê-las enviado)',
