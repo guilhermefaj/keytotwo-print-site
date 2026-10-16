@@ -9,7 +9,7 @@ test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 const stageTest = readFileSync('build/client/index.html', 'utf8').includes('Ambiente de teste')
 
 const p001 = {
-  code: 'P001', kind: 'bundle', name: 'Pacote KeyToTwo',
+  code: 'P001', kind: 'bundle', name: 'Coleção KeyToTwo: Fundadores',
   games: [
     { code: 'J001', name: 'Rabisque e Adivinhe' },
     { code: 'J002', name: 'O Sumiço de Rapadura' },
@@ -57,7 +57,7 @@ test('sacola com pacote e avulso: composição por item, sem suposição de paco
   await fixture(page, [p001, j001])
   await page.goto('/carrinho')
   const bag = page.locator('[data-cart-product="P001"]')
-  await expect(bag.locator('h3')).toHaveText('Pacote KeyToTwo')
+  await expect(bag.locator('h3')).toHaveText('Coleção KeyToTwo: Fundadores')
   await expect(bag.locator('.cart-composition')).toContainText('Rabisque e Adivinhe')
   await expect(bag.locator('.cart-composition')).toContainText('Tabuleiro da Sorte')
   await expect(bag.locator('.cart-composition')).toContainText('Arquivos digitais em PDF')

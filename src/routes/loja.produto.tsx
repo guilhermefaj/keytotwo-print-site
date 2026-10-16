@@ -28,7 +28,7 @@ export default function ShopProduct() {
     <Link className="inline-link shop-back" to="/loja">Loja</Link>
     <header className="shop-heading"><h1>{product.title}</h1><p>{product.shopHeadline || product.tagline}</p></header>
     <div className="shop-product-layout">
-      <div className="shop-product-cover"><GameCover code={game?.code} name={product.title} />
+      <div className="shop-product-cover"><GameCover code={game?.code} name={product.title} art={product.cover} />
         {game?.preview && <p className="shop-cover-caption"><Link className="inline-link" to={game.preview.href}>{game.preview.label}</Link></p>}
       </div>
       <section className="shop-purchase" aria-labelledby="shop-includes-title" data-shop-product={product.code}>

@@ -7,7 +7,7 @@ import { authStorageKey } from './fixtures/session'
 
 const stage = builtStage()
 const single = { code: 'J001', kind: 'single', name: 'Rabisque e Adivinhe', games: [{ code: 'J001', name: 'Rabisque e Adivinhe' }], price: { unit_amount: 990, currency: 'brl' } }
-const bundle = { ...single, code: 'P001', kind: 'bundle', name: 'Pacote KeyToTwo', price: { unit_amount: 1990, currency: 'brl' } }
+const bundle = { ...single, code: 'P001', kind: 'bundle', name: 'Coleção KeyToTwo: Fundadores', price: { unit_amount: 1990, currency: 'brl' } }
 
 async function catalog(page: Page, products = [single]) {
   await page.route('**/functions/v1/api/catalog', route => route.fulfill({ json: { products } }))
@@ -131,7 +131,7 @@ test('slugs sem produto e desconhecidos usam a 404 existente', async ({ page }) 
 })
 
 test('prerender e SEO: loja e produtos confirmados, sem páginas das vagas', async () => {
-  for (const [route, title] of [['loja', 'Loja'], ['loja/p001', 'Pacote KeyToTwo'], ['loja/j001', 'Rabisque e Adivinhe']]) {
+  for (const [route, title] of [['loja', 'Loja'], ['loja/p001', 'Coleção KeyToTwo: Fundadores'], ['loja/j001', 'Rabisque e Adivinhe']]) {
     const html = await readFile(`build/client/${route}/index.html`, 'utf8')
     expect(html).toContain(`<title>${title} — KeyToTwo</title>`)
     expect(html).toContain(`<h1>${title}</h1>`)

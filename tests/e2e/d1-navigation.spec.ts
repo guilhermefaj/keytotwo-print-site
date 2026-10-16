@@ -7,7 +7,7 @@ import { builtStage } from './fixtures/stage'
 
 // Synthetic API boundary fixtures, confined to this browser; no backend writes or credentials.
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
-const product = { code: 'P001', kind: 'bundle', name: 'Pacote KeyToTwo', games: Array.from({ length: 5 }, (_, i) => ({ code: `J00${i + 1}`, name: 'Fixture de teste' })), price: { unit_amount: 1990, currency: 'brl' }, status: 'ok', available: true, owned_games: [], shared_with: [] }
+const product = { code: 'P001', kind: 'bundle', name: 'Coleção KeyToTwo: Fundadores', games: Array.from({ length: 5 }, (_, i) => ({ code: `J00${i + 1}`, name: 'Fixture de teste' })), price: { unit_amount: 1990, currency: 'brl' }, status: 'ok', available: true, owned_games: [], shared_with: [] }
 const fakeSession = { access_token: 'synthetic-d1-token', refresh_token: 'synthetic-d1-refresh', expires_at: 4102444800, expires_in: 3600, token_type: 'bearer', user: { id: 'qa-d1', email: 'd1@example.test', email_confirmed_at: '2026-01-01T00:00:00Z', is_anonymous: false, aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: {} } }
 async function fixture(page: Page, { filled = false, owned = false, failCart = false } = {}) {
   test.skip(!readFileSync('build/client/index.html', 'utf8').includes('Ambiente de teste'), 'Authenticated fixtures require the configured local stage=test build')
@@ -152,7 +152,7 @@ test('adding opens drawer without navigation; API remove, total, keyboard and ch
   const add = page.getByRole('button', { name: 'Adicionar à sacola', exact: true })
   await add.click()
   const drawer = page.getByRole('dialog')
-  await expect(drawer).toContainText('Pacote KeyToTwo')
+  await expect(drawer).toContainText('Coleção KeyToTwo: Fundadores')
   await expect(page).toHaveURL(/\/loja\/p001$/)
   await expect(drawer.locator('.drawer-total')).toContainText('R$ 19,90')
   await trap(page, 'Fechar sacola')
@@ -160,7 +160,7 @@ test('adding opens drawer without navigation; API remove, total, keyboard and ch
   await page.keyboard.press('Escape')
   await expect(add).toBeFocused()
   await page.locator('.desktop-action .cart-trigger').click()
-  await drawer.getByRole('button', { name: 'Remover Pacote KeyToTwo' }).click()
+  await drawer.getByRole('button', { name: 'Remover Coleção KeyToTwo: Fundadores' }).click()
   await expect(drawer).toContainText('Sua sacola está vazia')
   await page.keyboard.press('Escape')
   await expect(page.locator('.desktop-action .cart-trigger')).toBeFocused()
@@ -243,11 +243,11 @@ for (const width of [390, 1440]) test(`captures and axe: cart states, 404 and pa
   await page.goto('/')
   const trigger = page.locator(width === 390 ? '.mobile-navigation .cart-trigger' : '.desktop-action .cart-trigger')
   await trigger.click()
-  await expect(page.getByRole('dialog')).toContainText('Pacote KeyToTwo')
+  await expect(page.getByRole('dialog')).toContainText('Coleção KeyToTwo: Fundadores')
   await trap(page, 'Fechar sacola')
   await capture(page, `gaveta-com-item-${width}`)
   await axe(page)
-  await page.getByRole('dialog').getByRole('button', { name: 'Remover Pacote KeyToTwo' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Remover Coleção KeyToTwo: Fundadores' }).click()
   await expect(page.getByRole('dialog')).toContainText('Sua sacola está vazia')
   await expect(page.locator('.kito-empty')).toBeVisible()
   await capture(page, `gaveta-vazia-${width}`)
@@ -264,7 +264,7 @@ for (const width of [390, 1440]) test(`captures and axe: cart states, 404 and pa
   await page.getByRole('button', { name: 'Adicionar à sacola', exact: true }).click()
   await page.getByRole('dialog').getByRole('link', { name: 'Finalizar compra' }).click()
   await expect(page.getByRole('heading', { name: 'Pagamento', exact: true })).toBeVisible()
-  await expect(page.locator('.payment-items')).toContainText('Pacote KeyToTwo')
+  await expect(page.locator('.payment-items')).toContainText('Coleção KeyToTwo: Fundadores')
   await expect(page.locator('header')).toContainText('Compra segura')
   await capture(page, `pagamento-${width}`)
   await axe(page)

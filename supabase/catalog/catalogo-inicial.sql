@@ -23,7 +23,7 @@ begin
   end if;
 
   insert into public.products (code, slug, kind, name, games_expected) values
-    ('P001', 'p001', 'bundle', 'Pacote KeyToTwo', 3),
+    ('P001', 'p001', 'bundle', 'Coleção KeyToTwo: Fundadores', 3),
     ('J001', 'j001', 'single', 'Rabisque e Adivinhe', 1);
   select id into v_p001 from public.products where code = 'P001';
   select id into v_j001 from public.products where code = 'J001';
