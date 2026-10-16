@@ -1,20 +1,27 @@
-// Sobe os PDFs REAIS dos jogos ao bucket do B2 em {paid|free}/{código}/{versão}/{código}-v{versão}.pdf
-// (docs/data-contract.md). Código J é pago (paid/), código F é grátis (free/) — decisão do responsável, 2026-10-16.
+// Sobe os PDFs REAIS dos jogos ao bucket do B2 em {paid|free}/{código}-{nome}.pdf, ex. paid/J001-rabisque-e-adivinhe.pdf
+// (docs/data-contract.md). Código J é pago (paid/), código F é grátis (free/); o nome do jogo fica no caminho e a
+// versão não, porque os jogos não devem ser versionados (decisões do responsável, 2026-10-16).
 // Uso:
 //   npx deno@2.9.6 run --no-lock --config supabase/functions/deno.json --allow-read --allow-net \
-//     supabase/functions/tests/upload-game-files.ts <modelo de segredos .env> <versão> "[J001] Nome.pdf"... [--pasta-free]
-// O código vem do nome do arquivo. Objeto existente nunca é sobrescrito (arquivo publicado é imutável).
+//     supabase/functions/tests/upload-game-files.ts <modelo de segredos .env> "[J001] Rabisque e Adivinhe.pdf"... [--versao=1.1] [--pasta-free]
+// Código e nome vêm do nome do arquivo. Objeto existente nunca é sobrescrito e a chave nunca é reaproveitada para
+// conteúdo diferente: um arquivo trocado sobe com --versao=X.Y, que vira o sufixo -vX.Y na chave (a 1.0 não tem sufixo).
 // --pasta-free cria free/.bzEmpty, o marcador de pasta do B2, enquanto não há jogo grátis no bucket.
 // Nada é impresso além de chave, tamanho, sha256 e o id do arquivo no B2; o registro no banco é outro passo.
 import { type B2Config, presignUrl } from '../_shared/b2.ts'
 
 const hex = (bytes: ArrayBuffer) => Array.from(new Uint8Array(bytes), (b) => b.toString(16).padStart(2, '0')).join('')
 const sha256 = async (bytes: ArrayBuffer) => hex(await crypto.subtle.digest('SHA-256', bytes))
+const slug = (name: string) => name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+// Mesmo formato do download (api/routes/downloads.ts): nome ASCII seguro e filename* em UTF-8.
+const attachment = (filename: string) =>
+  `attachment; filename="${filename.normalize('NFKD').replace(/[^\x20-\x7e]/g, '').replace(/["\\]/g, '_').trim()}"; filename*=UTF-8''${encodeURIComponent(filename)}`
 
-const [secretsPath, version, ...rest] = Deno.args
+const [secretsPath, ...rest] = Deno.args
 const createFreeFolder = rest.includes('--pasta-free')
-const files = rest.filter((arg) => arg !== '--pasta-free')
-if (!secretsPath || !/^\d+\.\d+(\.\d+)?$/.test(version ?? '')) throw new Error('Uso: <segredos .env> <versão, ex. 1.0> <arquivos...> [--pasta-free]')
+const version = rest.find((arg) => arg.startsWith('--versao='))?.slice('--versao='.length) ?? '1.0'
+const files = rest.filter((arg) => !arg.startsWith('--'))
+if (!secretsPath || !/^\d+\.\d+(\.\d+)?$/.test(version)) throw new Error('Uso: <segredos .env> <arquivos...> [--versao=X.Y] [--pasta-free]')
 
 const secrets: Record<string, string> = {}
 for (const line of (await Deno.readTextFile(secretsPath)).split(/\r?\n/)) {
@@ -41,24 +48,24 @@ async function put(key: string, body: ArrayBuffer, headers: Record<string, strin
 
 const result = []
 for (const path of files) {
-  const code = /^\[([JF]\d{3})\]/.exec(path.split(/[\\/]/).pop() ?? '')?.[1]
-  if (!code) throw new Error(`Nome sem código [J000] ou [F000]: ${path}`)
+  const match = /^\[([JF]\d{3})\]\s*(.+)\.pdf$/i.exec(path.split(/[\\/]/).pop() ?? '')
+  if (!match) throw new Error(`Nome fora do padrão "[J001] Nome do jogo.pdf": ${path}`)
+  const [, code, name] = match
   const access = code.startsWith('J') ? 'paid' : 'free'
-  const filename = `${code}-v${version}.pdf`
-  const key = `${access}/${code}/${version}/${filename}`
+  const key = `${access}/${code}-${slug(name)}${version === '1.0' ? '' : `-v${version}`}.pdf`
+  const filename = `${name.trim()}.pdf`
   const data = await Deno.readFile(path)
   const bytes = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer
   const digest = await sha256(bytes)
   if (await exists(key)) { result.push({ object_key: key, status: 'já existe, não sobrescrito' }); continue }
 
-  const b2FileId = await put(key, bytes, { 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${filename}"` })
-  // Conferência com a chave SÓ LEITURA: conteúdo, tipo e disposição.
+  const b2FileId = await put(key, bytes, { 'Content-Type': 'application/pdf', 'Content-Disposition': attachment(filename) })
+  // Conferência com a chave SÓ LEITURA: conteúdo e tamanho.
   const get = await fetch((await presignUrl(read, { key, expiresIn: 60 })).url)
   const back = await get.arrayBuffer()
   result.push({
-    code, access, object_key: key, filename, size_bytes: bytes.byteLength, sha256: digest, b2_file_id: b2FileId,
+    code, access, version, object_key: key, filename, size_bytes: bytes.byteLength, sha256: digest, b2_file_id: b2FileId,
     leitura_ok: get.status === 200 && back.byteLength === bytes.byteLength && await sha256(back) === digest,
-    content_type: get.headers.get('content-type'), content_disposition: get.headers.get('content-disposition'),
   })
 }
 if (createFreeFolder && !(await exists('free/.bzEmpty'))) {
