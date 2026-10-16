@@ -142,9 +142,9 @@ strong { font-weight: 600; }
 .text-button:hover { text-decoration-thickness: 2px; }
 .text-button:active { color: var(--color-deep-teal-active); }
 .text-button:disabled { color: var(--color-ink-soft); text-decoration: none; }
-.inline-link, .offer-links a, .legal-links a, .help-index a { color: var(--color-deep-teal); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.inline-link, .offer-links a, .legal-links a { color: var(--color-deep-teal); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 .inline-link { display: inline-block; padding-block: 8px; line-height: 1.6; }
-.inline-link:hover, .offer-links a:hover, .legal-links a:hover, .help-index a:hover { text-decoration-thickness: 2px; }
+.inline-link:hover, .offer-links a:hover, .legal-links a:hover { text-decoration-thickness: 2px; }
 /* Voltar (DESIGN.md › Voltar): chevron e destino; um só desenho em produto, ajuda, páginas legais e blog. */
 .back-link { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; margin-left: -4px; padding-right: 4px; color: var(--color-deep-teal); font-size: var(--text-label); font-weight: 600; line-height: 1.5; text-decoration: none; }
 .back-link:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
@@ -382,8 +382,37 @@ input, select, textarea { font: inherit; color: inherit; }
 .reading-page h2 { font-size: var(--text-title-lg); margin: 0 0 20px; }
 .reading-page p { margin-block: 0 16px; line-height: 1.65; }
 .reading-intro { font-size: var(--text-lead); }
-.help-index { display: flex; flex-wrap: wrap; gap: 12px 24px; padding-block: 20px; border-block: var(--line-rule); margin-block: 30px; }
-.help-index a { padding-block: 8px; }
+/* Central de ajuda: cards de tema, guia de impressão e atendimento (DESIGN.md › Ajuda). */
+.help-topics ul { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); padding: 0; margin: 32px 0 8px; }
+.help-topics a { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 4px var(--space-md); height: 100%; padding: var(--space-lg); border: var(--line-card); border-radius: var(--radius-lg); color: var(--color-ink); text-decoration: none; }
+.help-topics a:hover { background: var(--color-ink-wash); }
+.help-topics a:hover .help-topic-title { text-decoration: underline; text-underline-offset: 4px; }
+.help-topics svg { grid-row: span 2; color: var(--color-deep-teal); }
+.help-topic-title { font-family: var(--font-display); font-weight: 700; font-size: var(--text-title-sm); letter-spacing: var(--tracking-title); line-height: 1.2; }
+.help-topic-summary { color: var(--color-ink-soft); font-size: var(--text-small); line-height: 1.5; }
+.print-guide { list-style: none; padding: 0; margin: 0; border: var(--line-card); border-radius: var(--radius-lg); }
+.print-guide li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: var(--space-md); padding: var(--space-lg); }
+.print-guide li + li { border-top: var(--line-cut); }
+.print-guide svg { color: var(--color-deep-teal); margin-top: 2px; }
+.reading-page .print-guide h3 { font-size: var(--text-title-sm); margin: 0 0 4px; }
+.reading-page .print-guide p { margin: 0; font-size: var(--text-small); color: var(--color-ink-soft); }
+.reading-page .help-subtitle { font-size: var(--text-title); margin: 36px 0 16px; }
+.help-game-needs { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-md); }
+.help-game-needs li { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: var(--space-md); align-items: center; padding-bottom: var(--space-md); border-bottom: var(--line-dot); }
+.help-game-needs .game-cover { padding: 0; border-width: 1.5px; border-radius: var(--radius-sm); }
+.help-game-needs .game-cover[data-accent] { border-bottom: 4px solid var(--game-accent); }
+.help-game-needs h4 { font-family: var(--font-display); font-size: var(--text-title-sm); margin: 0 0 4px; }
+.reading-page .help-game-needs p { margin: 0; font-size: var(--text-small); color: var(--color-ink-soft); }
+.support-card { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: var(--space-md); padding: var(--space-lg); border: var(--line-card); border-radius: var(--radius-lg); margin-top: var(--space-lg); }
+.support-card > svg { color: var(--color-deep-teal); }
+.reading-page .support-copy p { margin: 0; font-size: var(--text-caption); color: var(--color-ink-soft); }
+.support-email { font-family: var(--font-display); font-weight: 700; font-size: var(--text-title); color: var(--color-deep-teal); overflow-wrap: anywhere; text-underline-offset: 4px; }
+@media (max-width: 599px) {
+  .help-topics ul { grid-template-columns: minmax(0, 1fr); }
+  .support-card { grid-template-columns: 24px minmax(0, 1fr); }
+  .support-card .button { grid-column: 1 / -1; }
+  .help-game-needs li { grid-template-columns: 88px minmax(0, 1fr); }
+}
 .legal-pending { margin-block: var(--space-md); }
 
 /* --------------------------------------------------------------------------
