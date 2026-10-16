@@ -69,8 +69,8 @@ test('portal: real preview, existing art, stagger and keyboard navigation betwee
   await page.goto('/meus-jogos')
   await expect(page.locator('.portal-greeting')).toHaveText('Olá, Pessoa!')
   await expect(page.locator('.portal-game')).toHaveCount(5)
-  await expect(page.locator('.game-cover img').first()).toHaveAttribute('src', '/media/experience/j001-page-1-720.webp')
-  // Capa tipográfica para jogos sem prévia aprovada (P0-2): nome do jogo, sem arte do Kito.
+  await expect(page.locator('.game-cover img').first()).toHaveAttribute('src', '/media/games/j001-capa-640.webp')
+  // Capa tipográfica para jogos sem capa oficial: nome do jogo. A fixture só mapeia TESTE-J01 para o J001.
   await expect(page.locator('.game-cover img')).toHaveCount(1)
   await expect(page.locator('.game-cover-type').nth(1)).toContainText('Jogo de teste 3')
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(5)

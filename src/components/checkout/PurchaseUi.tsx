@@ -7,7 +7,7 @@ import { KitoEmpty } from '../ui/KitoEmpty'
 // (DESIGN.md › The Catalog Rule). Nunca um enfeite com o Kito.
 export function PurchaseThumbnail({ code, name = '', className = 'purchase-thumbnail' }: { code: string; name?: string; className?: string }) {
   const thumbnail = products.find(product => product.code === code)?.thumbnail
-  if (thumbnail) return <img className={className} src={thumbnail.src} width="720" height="1019" alt={thumbnail.alt} decoding="async" />
+  if (thumbnail) return <img className={className} src={thumbnail.src} width="640" height="360" alt={thumbnail.alt} decoding="async" />
   return <span className={`${className} purchase-thumbnail-type`} aria-hidden="true"><span>{itemName(code, name)}</span></span>
 }
 

@@ -14,24 +14,39 @@
 .shop-bundle-games li { font-family: var(--font-display); font-size: var(--text-title-sm); font-weight: 700; padding-block: var(--space-sm); border-bottom: var(--line-dot); }
 .shop-games { margin-top: var(--space-3xl); }
 .shop-games > h2 { font-size: var(--text-headline-sm); margin-bottom: var(--space-lg); }
-.shop-game-grid { list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 0; margin: 0; }
-.shop-game { min-width: 0; padding: var(--space-md); border-right: var(--line-cut); border-bottom: var(--line-cut); }
-.shop-game:nth-child(5n) { border-right: 0; }
-.shop-game h3 { font-size: var(--text-title-sm); margin: var(--space-md) 0 var(--space-sm); }
-.shop-summary { color: var(--color-ink-soft); font-size: var(--text-small); margin: 0 0 var(--space-md); }
+/* Colunas pela quantidade de jogos (4 na Loja, 3 na vitrine do Início), nunca abaixo de 240 px. */
+.shop-game-grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--space-lg); padding: 0; margin: 0; }
+/* Card de produto: o quadro é o card (como na biblioteca); capa 16:9 sem borda própria, separada por
+   régua, e o rodapé de preço e compra alinhado no fim de cada card da linha. */
+.shop-game { display: flex; flex-direction: column; min-width: 0; border: var(--line-card); border-radius: var(--radius-lg); overflow: clip; background: var(--color-paper); }
+.shop-game .game-cover { border: 0; border-bottom: var(--line-rule); border-radius: 0; }
+.shop-game-body { display: flex; flex-direction: column; flex: 1; padding: var(--space-lg); }
+.shop-game h3 { font-size: var(--text-title); margin: 0 0 var(--space-sm); }
+.shop-summary { color: var(--color-ink-soft); font-size: var(--text-small); margin: 0 0 var(--space-lg); }
 .shop-soon { color: var(--color-ink-soft); font-size: var(--text-body); margin: var(--space-md) 0 0; }
+.shop-game .shop-availability, .shop-game .shop-status { margin-top: auto; }
+.shop-game .shop-soon { align-self: flex-start; margin: auto 0 0; padding: 6px 12px; border: var(--line-cut); border-radius: var(--radius-sm); font-size: var(--text-label); font-weight: 600; }
+/* Card de jogo indefinido (segundo freebie): o quadro tracejado diz "ainda não". */
+.shop-game-soon { border-style: dashed; }
+.shop-game-soon .game-cover { border-bottom-style: dashed; }
+/* Grátis: título à esquerda e cards à direita no desktop; empilha abaixo de 960 px. */
+.shop-freebies { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-xl); align-items: start; }
+.shop-page .shop-freebies { margin-top: var(--space-3xl); }
+.shop-freebies-heading h2 { font-size: var(--text-headline-sm); margin: var(--space-md) 0 var(--space-sm); }
+.shop-freebies-heading > p:last-child { color: var(--color-ink-soft); max-width: 40ch; margin: 0; }
+.shop-freebie-cta { width: 100%; margin-top: var(--space-md); }
+.shop-details { display: flex; align-items: center; justify-content: center; min-height: 44px; margin-top: var(--space-sm); font-size: var(--text-label); }
 .shop-price { font-family: var(--font-display); font-size: var(--text-headline-sm); font-weight: 700; letter-spacing: var(--tracking-headline); font-variant-numeric: tabular-nums; margin: 0; }
 .shop-price-note, .shop-cover-caption { font-size: var(--text-caption); color: var(--color-ink-soft); margin: var(--space-xs) 0 var(--space-md); }
 .shop-status { font-size: var(--text-body); color: var(--color-ink-soft); }
 .shop-status p { margin: 0 0 var(--space-sm); }
 .shop-product-layout { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); gap: var(--space-3xl); align-items: start; }
-.shop-product-cover { max-width: 360px; width: 100%; }
-.shop-product-cover .game-cover { max-height: 480px; }
+.shop-product-cover { width: 100%; }
 .shop-purchase { border: var(--line-card); border-radius: var(--radius-lg); padding: var(--space-xl); min-width: 0; }
 .shop-purchase h2 { font-size: var(--text-title-lg); margin: 0 0 var(--space-lg); }
 .shop-purchase .shop-availability { margin-top: var(--space-lg); }
 .shop-purchase .offer-cart-action { margin-top: var(--space-lg); }
-.shop-purchase .form-error:empty { display: none; }
+.shop-purchase .form-error:empty, .shop-availability .form-error:empty { display: none; }
 .shop-delivery { margin-top: var(--space-lg); font-size: var(--text-small); color: var(--color-ink-soft); }
 .shop-delivery p { margin: 0; }
 .shop-in-bundle { margin: var(--space-lg) 0 0; padding-top: var(--space-md); border-top: var(--line-rule); font-size: var(--text-small); }
@@ -39,33 +54,18 @@
 .shop-facts h2 { font-size: var(--text-title-lg); }
 .shop-facts > p { color: var(--color-ink-soft); }
 .shop-facts .ficha dt { white-space: normal; }
-/* Vitrine do Início (I7): os mesmos cards da Loja, três jogos por linha no desktop.
-   Abaixo de 768 px a grade da Loja (2/1 colunas) continua valendo. */
-.shop-showcase .shop-game { border-bottom: 0; }
-@media (min-width: 768px) {
-  .shop-showcase .shop-game-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .shop-showcase .shop-game:nth-child(5n) { border-right: var(--line-cut); }
-  .shop-showcase .shop-game:nth-child(3n) { border-right: 0; }
-}
+/* Vitrine do Início (I7): os mesmos cards da Loja, na mesma grade. */
 @media (max-width: 1050px) {
-  .shop-game-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .shop-game:nth-child(5n) { border-right: var(--line-cut); }
-  .shop-game:nth-child(3n) { border-right: 0; }
   .shop-product-layout { gap: var(--space-xl); }
+}
+@media (max-width: 960px) {
+  .shop-freebies { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
 }
 @media (max-width: 767px) {
   .shop-bundle, .shop-product-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
   .shop-bundle, .shop-purchase { padding: var(--space-lg); }
-  .shop-game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .shop-game { padding: var(--space-sm); }
-  .shop-game:nth-child(3n) { border-right: var(--line-cut); }
-  .shop-game:nth-child(2n) { border-right: 0; }
-  .shop-product-cover { max-width: 240px; margin-inline: auto; }
   .shop-product-layout .shop-purchase { grid-row: 1; }
-  .shop-game .game-cover-name { font-size: var(--text-title-sm); }
 }
-@media (max-width: 359px) {
-  .shop-game-grid { grid-template-columns: minmax(0, 1fr); }
-  .shop-game:nth-child(n) { border-right: 0; }
-  .shop-game .game-cover { max-width: 240px; margin-inline: auto; }
+@media (max-width: 599px) {
+  .shop-game-body { padding: var(--space-md) var(--space-lg) var(--space-lg); }
 }

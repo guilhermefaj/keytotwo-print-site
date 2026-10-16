@@ -29,7 +29,7 @@ export default function ShopProduct() {
     <header className="shop-heading"><h1>{product.title}</h1><p>{product.shopHeadline || product.tagline}</p></header>
     <div className="shop-product-layout">
       <div className="shop-product-cover"><GameCover code={game?.code} name={product.title} />
-        {game?.preview && <p className="shop-cover-caption">{game.preview.alt}</p>}
+        {game?.preview && <p className="shop-cover-caption"><Link className="inline-link" to={game.preview.href}>{game.preview.label}</Link></p>}
       </div>
       <section className="shop-purchase" aria-labelledby="shop-includes-title" data-shop-product={product.code}>
         <h2 id="shop-includes-title">O que está incluído</h2>

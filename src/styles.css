@@ -325,11 +325,6 @@ input, select, textarea { font: inherit; color: inherit; }
 .offer-coming { margin-top: 22px !important; font-size: var(--text-small); font-weight: 600; }
 .offer-links, .legal-links { display: flex; flex-wrap: wrap; gap: 12px 22px; margin-top: 24px; font-size: var(--text-label); }
 .offer-links a, .legal-links a { padding-block: 8px; }
-.freebie { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: var(--space-lg); align-items: center; margin-top: var(--space-3xl); padding: 24px 28px; border: var(--line-cut); border-radius: var(--radius-lg); }
-.freebie img { width: 112px; height: 112px; object-fit: contain; image-rendering: pixelated; }
-.freebie h3 { font-size: var(--text-title); margin: 12px 0 8px; }
-.freebie p { margin: 0 0 var(--space-md); max-width: 52ch; }
-.freebie .button { margin-top: 4px; }
 .faq-section { border: 0; }
 .faq-layout { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: var(--space-3xl); }
 .faq-item { border-bottom: var(--line-rule); }
@@ -509,8 +504,6 @@ input, select, textarea { font: inherit; color: inherit; }
   .offer-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
   .offer-summary { order: -1; padding: 24px; }
   .product-title { max-width: none; }
-  .freebie { grid-template-columns: minmax(0, 1fr); gap: var(--space-md); padding: 20px; }
-  .freebie img { width: 88px; height: 88px; }
   .folha { padding: 10px; }
   .faq-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .site-footer > .cut-line { margin-bottom: 8px; }

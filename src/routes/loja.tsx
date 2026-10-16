@@ -3,6 +3,7 @@ import { site } from '../content/site'
 import { BundleFeature } from '../components/shop/BundleFeature'
 import { GameGrid } from '../components/shop/GameGrid'
 import { CatalogFeedback } from '../components/shop/ProductAvailability'
+import { FreebieSection, showFreebies } from '../components/shop/FreebieSection'
 import '../shop.css'
 
 const games = [...new Map(products.flatMap(product => product.games).map(game => [game.id, game])).values()]
@@ -12,5 +13,6 @@ export default function Shop() {
     <header className="shop-heading"><h1>Loja</h1><p>{site.description}</p><CatalogFeedback /></header>
     {products.filter(product => product.kind === 'bundle').map(product => <BundleFeature key={product.code} product={product} />)}
     <section className="shop-games" aria-labelledby="shop-games-title"><h2 id="shop-games-title">Jogos para imprimir</h2><GameGrid games={games} /></section>
+    {showFreebies && <FreebieSection />}
   </main>
 }

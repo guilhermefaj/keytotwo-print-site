@@ -148,7 +148,7 @@ test('account menu, catalog CTA regardless of ownership and the simplified priva
 test('adding opens drawer without navigation; API remove, total, keyboard and checkout', async ({ page }) => {
   await fixture(page)
   await page.goto('/loja/p001')
-  const add = page.getByRole('button', { name: 'Adicionar à sacola' })
+  const add = page.getByRole('button', { name: 'Adicionar à sacola', exact: true })
   await add.click()
   const drawer = page.getByRole('dialog')
   await expect(drawer).toContainText('Pacote KeyToTwo')
@@ -260,7 +260,7 @@ for (const width of [390, 1440]) test(`captures and axe: cart states, 404 and pa
   await capture(page, `404-${width}`)
   await axe(page)
   await page.goto('/loja/p001')
-  await page.getByRole('button', { name: 'Adicionar à sacola' }).click()
+  await page.getByRole('button', { name: 'Adicionar à sacola', exact: true }).click()
   await page.getByRole('dialog').getByRole('link', { name: 'Finalizar compra' }).click()
   await expect(page.getByRole('heading', { name: 'Pagamento', exact: true })).toBeVisible()
   await expect(page.locator('.payment-items')).toContainText('Pacote KeyToTwo')
