@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { mkdir } from 'node:fs/promises'
 import { readFileSync } from 'node:fs'
+import { authStorageKey } from './fixtures/session'
 
 // Sacola com vários produtos (I5): composição por item, os três casos de sobreposição (D-16,
 // padrão provisório) e o nome do avulso na confirmação. Fixtures sintéticas por rota, sem banco.
@@ -27,7 +28,7 @@ const fakeSession = { access_token: 'synthetic-i5-token', refresh_token: 'synthe
 
 async function fixture(page: Page, initial: typeof p001[], { addFails = false } = {}) {
   let items = [...initial]
-  await page.addInitScript(session => localStorage.setItem('sb-127-auth-token', JSON.stringify(session)), fakeSession)
+  await page.addInitScript(([key, session]) => localStorage.setItem(key, JSON.stringify(session)), [authStorageKey, fakeSession] as const)
   await page.route('**/auth/v1/**', route => route.fulfill({ json: fakeSession.user }))
   await page.route('**/functions/v1/api/**', route => {
     const request = route.request()
