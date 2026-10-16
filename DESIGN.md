@@ -163,7 +163,7 @@ components:
 
 O que o casal compra é papel. A hero é a janela para o mundo do Kito: céu, horizonte baixo, chão até as bordas e um único pinguim caminhando. Logo abaixo do chão passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, linhas turquesa como nas cartas do J001, calhas tracejadas entre as cartas, fichas com pontilhado de índice e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
 
-A hero vende a marca e uma forma de pensar (sair do automático, fazer algo juntos), não um produto específico. A folha abaixo vende o catálogo: hoje o Pacote KeyToTwo com cinco jogos, amanhã outros pacotes e um freebie. Por isso o sistema é feito de cartas, fichas e folhas que aceitam qualquer quantidade de itens. O tom é adulto, divertido e direto; o acabamento é o de um objeto gráfico bem impresso, não o de um app.
+A hero vende a marca e uma forma de pensar (sair do automático, fazer algo juntos), não um produto específico. A folha abaixo vende o catálogo: hoje o Pacote KeyToTwo, amanhã outros pacotes e um freebie. Por isso o sistema é feito de cartas, fichas e folhas que aceitam qualquer quantidade de itens. O tom é adulto, divertido e direto; o acabamento é o de um objeto gráfico bem impresso, não o de um app.
 
 Anti-referências confirmadas na auditoria e no Portão 1: landing de template (rótulos em caixa alta sobre títulos, três colunas centralizadas, pílulas com seta, listas de ✓), sombra dura de arcade, cápsula em todo controle, Kito como ícone repetido, capa fictícia para jogo sem prévia.
 

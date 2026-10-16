@@ -8,7 +8,7 @@ export const legal: Record<'termos' | 'privacidade', LegalContent> = {
   termos: {
     title: 'Termos de uso', intro: pending('redação dos termos de uso e validação jurídica.'),
     sections: [
-      { title: 'Produto e operação', paragraphs: ['O produto proposto é um pacote digital de cinco jogos para imprimir.', pending('identificação do fornecedor, condições de compra e publicação dos materiais.')] },
+      { title: 'Produto e operação', paragraphs: ['O produto proposto é um pacote digital de jogos para imprimir.', pending('identificação do fornecedor, condições de compra e publicação dos materiais.')] },
       { title: 'Uso e acesso', paragraphs: [offer.delivery, offer.access, offer.license, offer.updates] },
       { title: 'Reembolsos e contestações', id: 'reembolso', paragraphs: ['Não há reembolso após a liberação do download.', 'Esta é a condição definida para a oferta de download. O texto final ainda depende de validação jurídica.', offer.legalReview, 'Uma contestação aberta revoga o acesso. Se a contestação for vencida pelo vendedor, o acesso é restabelecido. Um reembolso manual excepcional também revoga o acesso.', pending('redação jurídica dos procedimentos, exceções aplicáveis e direitos do consumidor.'), pending('canal de contato confirmado e procedimento de atendimento.')] },
     ],

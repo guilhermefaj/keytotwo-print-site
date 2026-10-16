@@ -18,6 +18,8 @@ curl.exe -I http://127.0.0.1:18080/rota-inexistente
 
 Resultados esperados: 200 nas três rotas existentes, 404 na inexistente, com o HTML de `build/client/404/index.html`. Depois do teste, `docker stop keytotwo-site-i0` e `docker rm keytotwo-site-i0` removem somente este contêiner. Os servidores de desenvolvimento em 5173/5174 são independentes.
 
+Para um build que fala com o backend, passe as chaves públicas do projeto Supabase hospedado (`keytotwo-print-db`) e da Stripe como argumentos de build: `--build-arg VITE_SUPABASE_URL=https://<ref>.supabase.co --build-arg VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_… --build-arg VITE_STRIPE_PUBLISHABLE_KEY=pk_… --build-arg VITE_CHECKOUT_MODE=stripe`, além de `VITE_SITE_STAGE`, `VITE_SITE_URL` e, se mudar, `VITE_TERMS_VERSION` (igual ao segredo `TERMS_VERSION` das funções). Só chaves publicáveis: nunca `sb_secret_` nem `sk_`.
+
 O Dockerfile faz `npm ci` e `npm run build` com Node 24; a etapa final usa Nginx e copia somente a saída pública. O contexto exclui `.env*`, chaves, arte original, dependências e saídas locais. Não passar segredos em argumentos de build: variáveis incorporadas no JavaScript público são visíveis ao navegador. O I0 não exige credenciais de backend.
 
 `nginx.conf` atende em HTTP na porta interna **8080**. `try_files` procura primeiro o HTML da rota; rotas privadas recebem sua própria casca pré-renderizada. URLs desconhecidas retornam HTTP 404, sem fallback 200 para a home. `/404` também responde 404. O arquivo interno de fallback SPA não é publicado como uma página navegável.

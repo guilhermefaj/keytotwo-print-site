@@ -9,7 +9,7 @@
 .carousel-arrows button:disabled { opacity: .35; cursor: default; }
 .carousel-arrows button:not(:disabled):hover { background: var(--color-ink-wash); }
 .package-games { background: var(--color-paper); }
-/* Folha de cartas: os cinco jogos lado a lado com calhas tracejadas; carrossel só abaixo de 768 px. */
+/* Folha de cartas: os jogos lado a lado com calhas tracejadas; carrossel só abaixo de 768 px. */
 .games-carousel .snap-track { grid-auto-flow: initial; grid-auto-columns: initial; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; overflow: visible; padding: 0; scroll-snap-type: none; }
 .games-carousel .carousel-controls { display: none; }
 .package-game { margin: 0; padding: 14px; min-width: 0; border-right: var(--line-cut); }
