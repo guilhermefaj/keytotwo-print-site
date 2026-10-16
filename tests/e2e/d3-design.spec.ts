@@ -102,7 +102,7 @@ test('vitrine curta com três jogos na home; carrossel e relatos só por ação 
   // Vitrine (decisão 9): o pacote e até 3 jogos; a folha completa dos 5 ficou só na Loja.
   await expect(page.locator('.shop-showcase .shop-game')).toHaveCount(3)
   // Capa oficial dos jogos confirmados (a tipográfica fica para quem não tem arte). Nunca a prévia do PDF.
-  await expect(page.locator('.shop-showcase .shop-game h3')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço do Rapadura'])
+  await expect(page.locator('.shop-showcase .shop-game h3')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura'])
   await expect(page.locator('.shop-showcase .game-cover-art img')).toHaveCount(3)
   await expect(page.locator('.shop-showcase .game-cover-type')).toHaveCount(0)
   await expect(page.locator('.shop-showcase img[src*="/media/experience/j001-page"]')).toHaveCount(0)

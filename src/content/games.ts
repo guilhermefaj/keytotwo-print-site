@@ -41,7 +41,7 @@ export const games: readonly Game[] = [
   // Códigos atribuídos nas fichas do Drive (capa e PDF por código); a vaga sem jogo usa apenas id interno.
   { id: 'tabuleiro-da-sorte', code: 'J003', name: 'Tabuleiro da Sorte', confirmed: true, description: 'Inclusão confirmada no pacote.', pending: pending('regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('j003') },
   // J002 (escape room) entra no P001 por decisão do responsável (2026-10-16).
-  { id: 'o-sumico-do-rapadura', code: 'J002', name: 'O Sumiço do Rapadura', confirmed: true, description: 'Inclusão confirmada no pacote.', pending: pending('regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('j002') },
+  { id: 'o-sumico-de-rapadura', code: 'J002', name: 'O Sumiço de Rapadura', confirmed: true, description: 'Inclusão confirmada no pacote.', pending: pending('regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('j002') },
   { id: 'jogo-4', name: 'Jogo a definir', confirmed: false, description: 'Quarta vaga do pacote.', pending: pending('definição do jogo e de seus materiais.'), summary: 'Estamos preparando este jogo para o pacote.' },
   { id: 'jogo-5', name: 'Jogo a definir', confirmed: false, description: 'Quinta vaga do pacote.', pending: pending('definição do jogo e de seus materiais.'), summary: 'Estamos preparando este jogo para o pacote.' },
   // Freebies: dois no início; o segundo ainda está em desenvolvimento.

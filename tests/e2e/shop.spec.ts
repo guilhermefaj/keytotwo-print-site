@@ -25,7 +25,7 @@ test('loja: pacote e jogos sem produto ficam em breve; apenas o avulso disponív
   await expect(paid).toHaveCount(3)
   await expect(page.locator('.shop-games [data-shop-game="jogo-4"], .shop-games [data-shop-game="jogo-5"]')).toHaveCount(0)
   await expect(page.locator('[data-shop-game="tabuleiro-da-sorte"]')).toContainText('Em breve')
-  await expect(page.locator('[data-shop-game="o-sumico-do-rapadura"]')).toContainText('Em breve')
+  await expect(page.locator('[data-shop-game="o-sumico-de-rapadura"]')).toContainText('Em breve')
   await expect(page.locator('.shop-games .game-cover-art img')).toHaveCount(3)
   await expect(page.locator('[data-shop-game] img[src*="/media/experience/j001-page"]')).toHaveCount(0)
   // Freebies: Hora dos Artistas grátis e o segundo em preparação; a seção só existe no stage test.
