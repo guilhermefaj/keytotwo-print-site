@@ -57,13 +57,24 @@ export class TransientEmailError extends Error {
 const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
+// Visual da marca (DESIGN.md › E-mails): Papel, Tinta, Turquesa profundo nas ações, a linha de recorte
+// tracejada em Turquesa J001 e o Céu só na faixa do topo. Estilos inline e tabelas, para os clientes de e-mail.
+const INK = '#123a3d'
+const INK_SOFT = '#345b5d'
+const ACTION = '#006970'
+const LINE = '#1bb8c4'
+const SKY = '#ecfaf7'
+const RULE = '#d1dbdb'
+const FONT = 'Arial,Helvetica,sans-serif'
+export const SUPPORT_EMAIL = 'contato@keytotwo.com.br'
+
 const button = (href: string, label: string) =>
-  `<p style="margin:0 0 12px;"><a href="${escapeHtml(href)}" style="display:inline-block;padding:12px 20px;background:#2b2622;color:#ffffff;text-decoration:none;border-radius:6px;font-size:16px;font-weight:bold;">${escapeHtml(label)}</a></p>`
+  `<p style="margin:0 0 12px;"><a href="${escapeHtml(href)}" style="display:inline-block;padding:14px 22px;background:${ACTION};color:#ffffff;text-decoration:none;border-radius:6px;font-family:${FONT};font-size:16px;font-weight:bold;">${escapeHtml(label)}</a></p>`
 
 const paragraph = (html: string, muted = false) =>
-  `<p style="margin:0 0 16px;font-size:${muted ? 14 : 16}px;line-height:1.5;${muted ? 'color:#5c534b;' : ''}">${html}</p>`
+  `<p style="margin:0 0 16px;font-family:${FONT};font-size:${muted ? 14 : 16}px;line-height:1.6;color:${muted ? INK_SOFT : INK};">${html}</p>`
 
-const link = (href: string, label: string) => `<a href="${escapeHtml(href)}" style="color:#2b2622;">${escapeHtml(label)}</a>`
+const link = (href: string, label: string) => `<a href="${escapeHtml(href)}" style="color:${ACTION};font-weight:bold;">${escapeHtml(label)}</a>`
 
 const displayName = (item: Named) => item.name ?? item.code
 
@@ -77,16 +88,30 @@ function layout(subject: string, heading: string, body: string, footer = ''): st
   return `<!doctype html>
 <html lang="pt-BR">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(subject)}</title></head>
-<body style="margin:0;padding:0;background:#f6f3ee;font-family:Arial,Helvetica,sans-serif;color:#2b2622;">
-  <div style="max-width:480px;margin:0 auto;padding:32px 24px;">
-    <p style="margin:0 0 24px;font-size:20px;font-weight:bold;">KeyToTwo</p>
-    <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;">${escapeHtml(heading)}</h1>
-    ${body}
-    ${footer}
-  </div>
+<body style="margin:0;padding:0;background:#ffffff;font-family:${FONT};color:${INK};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;"><tr><td align="center" style="padding:24px 12px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;border:2px solid ${LINE};border-radius:14px;">
+      <tr><td style="background:${SKY};padding:24px 28px 20px;border-radius:12px 12px 0 0;">
+        <p style="margin:0;font-family:${FONT};font-size:22px;font-weight:bold;letter-spacing:-0.5px;color:${INK};">KeyToTwo</p>
+        <p style="margin:2px 0 0;font-family:${FONT};font-size:13px;color:${INK_SOFT};">jogos para casais</p>
+      </td></tr>
+      <tr><td style="border-top:2px dashed ${LINE};padding:28px 28px 12px;">
+        <h1 style="margin:0 0 16px;font-family:${FONT};font-size:24px;line-height:1.2;letter-spacing:-0.3px;color:${INK};">${escapeHtml(heading)}</h1>
+        ${body}
+        ${footer}
+      </td></tr>
+      <tr><td style="padding:16px 28px 24px;border-top:1px solid ${RULE};">
+        <p style="margin:0 0 6px;font-family:${FONT};font-size:13px;line-height:1.5;color:${INK_SOFT};">Uma boa ideia. Vocês dois. O resto vira história.</p>
+        <p style="margin:0;font-family:${FONT};font-size:13px;line-height:1.5;color:${INK_SOFT};">Dúvidas? Escrevam para ${link(`mailto:${SUPPORT_EMAIL}`, SUPPORT_EMAIL)}.</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
 </body>
 </html>`
 }
+
+// Assinatura do texto puro, a mesma do rodapé em HTML.
+const textSignature = ['', '--', 'KeyToTwo: jogos para casais', `Dúvidas? ${SUPPORT_EMAIL}`]
 
 // Rodapé e headers de descadastro de todo e-mail de marketing (RFC 8058: POST em 1 clique pelo provedor;
 // o link do rodapé abre a página de preferências, que confirma e chama o POST).
@@ -95,7 +120,7 @@ async function unsubscribeParts(row: OutboxRow) {
   const token = encodeURIComponent(await signUnsubscribeToken(row.user_id))
   const page = `${env.siteUrl()}/email/preferencias?token=${token}`
   const account = `${env.siteUrl()}/conta`
-  const footer = `<hr style="margin:28px 0 16px;border:0;border-top:1px solid #ddd5cb;">
+  const footer = `<hr style="margin:24px 0 16px;border:0;border-top:2px dashed ${LINE};">
     ${paragraph(`Vocês recebem este e-mail porque aceitaram receber novidades da KeyToTwo. Não querem mais? ${link(page, 'Descadastrar')} (vale na hora) ou ajustem em ${link(account, 'Minha conta')}.`, true)}`
   const text = ['', '--', 'Vocês recebem este e-mail porque aceitaram receber novidades da KeyToTwo.', `Descadastrar (vale na hora): ${page}`, `Minha conta: ${account}`]
   const headers = {
@@ -132,6 +157,7 @@ export async function renderDelivery(row: OutboxRow, apiBase: string): Promise<M
     'Estes links valem por 30 dias. Os jogos ficam sempre em Meus jogos: é só entrar com este e-mail.',
     `Meus jogos: ${library}`, '',
     `Precisa de ajuda? ${help}`,
+    ...textSignature,
   ].join('\n')
   return { to: row.to_email, subject, html, text, tag: row.kind }
 }
@@ -155,6 +181,7 @@ export async function renderCartReminder(row: OutboxRow): Promise<Message> {
     `Voltar ao carrinho: ${cart}`, '',
     'Se já resolveram isso por outro caminho, pode ignorar este e-mail.',
     ...footerText,
+    ...textSignature,
   ].join('\n')
   return { to: row.to_email, subject, html, text, tag: row.kind, headers }
 }
@@ -179,6 +206,7 @@ export async function renderPostPurchase(row: OutboxRow): Promise<Message> {
     `Meus jogos: ${library}`,
     `Dicas para imprimir: ${printing}`,
     ...footerText,
+    ...textSignature,
   ].join('\n')
   return { to: row.to_email, subject, html, text, tag: row.kind, headers }
 }

@@ -339,6 +339,14 @@ Ordem fixa, com dados de `src/content/games.ts` e `products.ts`:
 6. **O que vocês precisam** (`needs`): ícone Tabler de 24 px em Turquesa profundo e o rótulo de `needLabels`, com régua pontilhada. No pacote, a lista junta o que todos os jogos pedem.
 7. **Também está no pacote** (só no avulso que faz parte de um pacote à venda): card tracejado com o argumento real, "todos num só pedido", as miniaturas dos jogos e "Ver o pacote". Nunca compara preços nem anuncia economia.
 
+### Ajuda (`/ajuda`)
+Central de ajuda em página de leitura. Logo abaixo do H1, quatro cards de tema (`.help-topics`, borda 2 px Turquesa, ícone Tabler de 24 px em Turquesa profundo, título em Title small e uma linha em Tinta suave) que levam às seções: Antes de comprar, Conta e acesso aos jogos, Impressão e preparação e Atendimento. O texto vem de `src/content/help.ts` e só traz fatos conferidos.
+- **Guia de impressão** (`.print-guide`): dicas gerais (papel A4, tamanho real, uma face, recorte, guardar) em lista com ícone, num card com calhas tracejadas. Depois, "O que cada jogo pede": miniatura da capa com a faixa da cor do jogo e os itens de `needs`. Nenhuma página do PDF ilustra o guia, e nenhuma dica promete um resultado de impressão que não foi testado.
+- **Atendimento** (`.support-card`): o e-mail `contato@keytotwo.com.br` em Title Turquesa profundo, selecionável, com link `mailto:` e o botão secundário "Copiar e-mail" (o `mailto:` pode não abrir em todo aparelho). A confirmação da cópia sai em `role="status"`.
+
+### E-mails (Auth e transacionais)
+O mesmo visual em `supabase/templates/*.html` (código de acesso, confirmação e senha) e em `supabase/functions/_shared/email.ts` (entrega, lembrete de sacola, pós-compra): Papel, um card de 520 px com borda 2 px Turquesa J001, faixa de Céu no topo com "KeyToTwo" e "jogos para casais", a linha de recorte tracejada logo abaixo, título em 24 px, botão em Turquesa profundo e um rodapé com a assinatura ("Uma boa ideia. Vocês dois. O resto vira história.") e o e-mail de atendimento. O código de acesso aparece num recorte tracejado. Tudo em estilo inline e tabela, com Arial: fonte web e imagem de logo não são confiáveis em e-mail.
+
 ### Como funciona (`.steps-list`)
 Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entre as cartas (em cima umas das outras no celular). Cada carta tem o número da etapa em círculo e o ícone Tabler de 32 px em Turquesa profundo na mesma linha, o título em Title e o texto em Small Tinta suave.
 

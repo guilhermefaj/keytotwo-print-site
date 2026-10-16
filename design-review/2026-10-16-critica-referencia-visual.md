@@ -231,3 +231,11 @@ O preço continua como está: o responsável vai adicionar mais jogos ao pacote.
   - ficha com pessoas, jeito de jogar, o que está em jogo e formato, sem contar páginas nem cartas;
   - "Como é jogar" em três momentos no lugar dos passos de regra;
   - "O que está incluído" também sem contagens.
+
+## 9. Execução da Fase 3 (2026-10-16, branch `design/fase-3`)
+
+- **Central de ajuda:** cards de tema; textos com fatos conferidos (cartão pela Stripe, conta para comprar, e-mail com botões de 30 dias, acesso sem prazo); fim do "o pagamento estará disponível em breve".
+- **Guia de impressão:** papel A4, tamanho real, uma face, recorte e guardar, mais "O que cada jogo pede", tirado de `needs`. Sem nenhuma página do PDF e sem prometer resultado de impressão que não foi testado.
+- **Atendimento:** `contato@keytotwo.com.br`, definido pelo responsável, com botão "Copiar e-mail".
+- **E-mails no visual da marca:** os 3 modelos de Auth e os 3 transacionais (entrega, lembrete e pós-compra) ganharam a faixa de Céu, a linha de recorte, o botão em Turquesa profundo e o rodapé com a assinatura e o atendimento. O texto não mudou. O responsável autorizou publicá-los no Supabase hospedado depois dos testes.
+- **Meus jogos:** "Como imprimir" já levava a `/ajuda#impressao`, que agora é o guia. Não há como oferecer "imprimir só as cartas", porque cada jogo é um PDF único.
