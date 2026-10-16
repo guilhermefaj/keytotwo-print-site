@@ -1,5 +1,6 @@
 import type { Product } from '../../content/products'
 import { ProductAvailability } from './ProductAvailability'
+import { GameCover } from '../account/GameCover'
 
 export function BundleFeature({ product }: { product: Product }) {
   return <article className="shop-bundle" aria-labelledby={`bundle-${product.slug}`} data-shop-product={product.code}>
@@ -7,6 +8,8 @@ export function BundleFeature({ product }: { product: Product }) {
       <ul className="shop-includes">{product.contents.map(line => <li key={line}>{line}</li>)}</ul>
       <ProductAvailability product={product} />
     </div>
-    <ol className="shop-bundle-games" aria-label="Jogos do pacote">{product.games.map(game => <li key={game.id}>{game.name}</li>)}</ol>
+    <div className="shop-bundle-side">{product.cover && <GameCover name={product.title} art={product.cover} />}
+      <ol className="shop-bundle-games" aria-label="Jogos do pacote">{product.games.map(game => <li key={game.id}>{game.name}</li>)}</ol>
+    </div>
   </article>
 }

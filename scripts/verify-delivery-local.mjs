@@ -38,7 +38,7 @@ try {
   report.checks.push('Login with real Mailpit code')
   step = 'library PDF'
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(5)
-  await expect(page.locator('main')).toContainText('Pacote KeyToTwo')
+  await expect(page.locator('main')).toContainText('Coleção KeyToTwo: Fundadores')
   await expect(page.locator('main')).not.toContainText('Demonstração')
   const response = page.waitForResponse(r => r.url().endsWith('/api/download-url'))
   const downloaded = page.waitForEvent('download')

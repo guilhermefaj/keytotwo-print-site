@@ -10,7 +10,8 @@
 .shop-bundle-name { color: var(--color-ink-soft); margin: 0 0 var(--space-lg); }
 .shop-includes { padding-left: var(--space-lg); margin: 0 0 var(--space-lg); }
 .shop-includes li + li { margin-top: var(--space-xs); }
-.shop-bundle-games { list-style: none; padding: 0; margin: 0; align-self: center; }
+.shop-bundle-side { display: grid; gap: var(--space-lg); align-self: center; }
+.shop-bundle-games { list-style: none; padding: 0; margin: 0; }
 .shop-bundle-games li { font-family: var(--font-display); font-size: var(--text-title-sm); font-weight: 700; padding-block: var(--space-sm); border-bottom: var(--line-dot); }
 .shop-games { margin-top: var(--space-3xl); }
 .shop-games > h2 { font-size: var(--text-headline-sm); margin-bottom: var(--space-lg); }
