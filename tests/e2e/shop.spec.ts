@@ -12,7 +12,7 @@ async function catalog(page: Page, products = [single]) {
   await page.route('**/functions/v1/api/catalog', route => route.fulfill({ json: { products } }))
 }
 
-test('loja: pacote e jogos sem produto ficam em breve; apenas o avulso disponível tem detalhes', async ({ page }) => {
+test('loja: pacote e jogos sem produto ficam em breve; apenas o avulso disponível tem compra e detalhes', async ({ page }) => {
   await catalog(page)
   await page.goto('/loja')
   await expect(page.getByRole('heading', { name: 'Loja', exact: true })).toBeVisible()
@@ -20,10 +20,24 @@ test('loja: pacote e jogos sem produto ficam em breve; apenas o avulso disponív
   await expect(pack).toContainText('5 jogos num só pedido')
   await expect(pack).toContainText('Em breve')
   await expect(pack.getByRole('link')).toHaveCount(0)
-  await expect(page.locator('[data-shop-game]')).toHaveCount(5)
-  await expect(page.locator('[data-shop-game="hora-dos-artistas"]')).toContainText('Em breve')
-  await expect(page.locator('[data-shop-game="tabuleiro-da-sorte"]')).toContainText('Tabuleiro da Sorte')
-  await expect(page.locator('[data-shop-game] .game-cover-preview')).toHaveCount(1)
+  // Jogos do pacote: vagas indefinidas não viram card; capas oficiais no lugar da prévia do PDF.
+  const paid = page.locator('.shop-games [data-shop-game]')
+  await expect(paid).toHaveCount(3)
+  await expect(page.locator('.shop-games [data-shop-game="jogo-4"], .shop-games [data-shop-game="jogo-5"]')).toHaveCount(0)
+  await expect(page.locator('[data-shop-game="tabuleiro-da-sorte"]')).toContainText('Em breve')
+  await expect(page.locator('[data-shop-game="o-sumico-de-rapadura"]')).toContainText('Em breve')
+  await expect(page.locator('.shop-games .game-cover-art img')).toHaveCount(3)
+  await expect(page.locator('[data-shop-game] img[src*="/media/experience/j001-page"]')).toHaveCount(0)
+  // Freebies: Hora dos Artistas grátis e o segundo em preparação; a seção só existe no stage test.
+  const freebies = page.locator('[data-shop-freebies]')
+  if (stage === 'test') {
+    await expect(freebies.locator('[data-shop-game]')).toHaveCount(2)
+    await expect(freebies.locator('[data-shop-game="hora-dos-artistas"]')).toContainText('Grátis')
+    await expect(freebies.getByRole('link', { name: 'Criar conta', exact: true })).toHaveAttribute('href', '/entrar')
+    await expect(freebies.locator('[data-shop-game="freebie-2"] .game-cover-soon')).toHaveText('Em breve')
+  } else {
+    await expect(freebies).toHaveCount(0)
+  }
   const details = page.getByRole('link', { name: 'Ver detalhes: Rabisque e Adivinhe', exact: true })
   if (stage === 'preview') {
     await expect(details).toHaveCount(0)
@@ -31,6 +45,7 @@ test('loja: pacote e jogos sem produto ficam em breve; apenas o avulso disponív
   } else {
     await expect(details).toHaveAttribute('href', '/loja/j001')
     await expect(page.locator('[data-shop-game="rabisque-e-adivinhe"] .shop-price')).toContainText('9,90')
+    await expect(page.getByRole('button', { name: 'Adicionar à sacola: Rabisque e Adivinhe', exact: true })).toBeEnabled()
     await details.focus()
     await page.keyboard.press('Enter')
     await expect(page).toHaveURL(/\/loja\/j001$/)

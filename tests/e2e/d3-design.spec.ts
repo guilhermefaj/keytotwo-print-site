@@ -101,12 +101,11 @@ test('vitrine curta com três jogos na home; carrossel e relatos só por ação 
   await page.emulateMedia({ reducedMotion: 'reduce' })
   // Vitrine (decisão 9): o pacote e até 3 jogos; a folha completa dos 5 ficou só na Loja.
   await expect(page.locator('.shop-showcase .shop-game')).toHaveCount(3)
-  // Capas tipográficas: nome do jogo na carta; jogos indefinidos ficam "Em breve" sem h3 (P0-2, P2-1).
-  await expect(page.locator('.shop-showcase .shop-game h3')).toHaveText(['Rabisque e Adivinhe', 'Hora dos Artistas', 'Tabuleiro da Sorte'])
-  await expect(page.locator('.shop-showcase .game-cover-preview')).toHaveCount(1)
-  await expect(page.locator('.shop-showcase .game-cover-type')).toHaveCount(2)
-  await expect(page.locator('.shop-showcase .game-cover-soon')).toHaveCount(0)
-  await expect(page.locator('.shop-showcase .game-cover img')).toHaveCount(1)
+  // Capa oficial dos jogos confirmados (a tipográfica fica para quem não tem arte). Nunca a prévia do PDF.
+  await expect(page.locator('.shop-showcase .shop-game h3')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura'])
+  await expect(page.locator('.shop-showcase .game-cover-art img')).toHaveCount(3)
+  await expect(page.locator('.shop-showcase .game-cover-type')).toHaveCount(0)
+  await expect(page.locator('.shop-showcase img[src*="/media/experience/j001-page"]')).toHaveCount(0)
   await expect(page.locator('.game-number')).toHaveCount(0)
   await page.locator('.shop-showcase').scrollIntoViewIfNeeded()
   await page.setViewportSize({ width: 390, height: 844 })

@@ -26,12 +26,12 @@ export const experience = {
       { id: 'exemplo-3', placeholder: true, quote: 'Descobri que ele desenha um cachorro igual a uma batata. Dez rodadas depois, já queríamos outra partida.', author: 'Júlia e Renan' },
     ] as ReadonlyArray<{ id: string; placeholder: boolean; quote: string; author: string }>,
   },
-  // Freebie resgatado ao criar a conta (copy aprovada no Portão 2, 2026-10-14). O resgate é backend e
-  // vem depois; até lá o bloco só aparece no stage test.
+  // Freebies resgatados ao criar a conta (Portão 2, 2026-10-14; dois jogos desde 2026-10-16). O resgate é
+  // backend e vem depois; até lá a seção só aparece no stage test.
   freebie: {
-    tag: 'Em preparação',
-    title: 'Um jogo para começar, por nossa conta.',
-    text: 'Ao criar sua conta, vocês ganham um jogo para conhecer a proposta antes do pacote.',
+    tag: 'Grátis',
+    title: 'Jogos para começar, por nossa conta.',
+    text: 'Ao criar sua conta, vocês ganham jogos para conhecer a proposta antes do pacote.',
     cta: { label: 'Criar conta', href: '/entrar' },
   },
 }

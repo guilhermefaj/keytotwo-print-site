@@ -65,8 +65,10 @@
 .drawer-feedback { display: grid; gap: 16px; justify-items: start; padding-top: 24px; line-height: 1.6; }
 .drawer-feedback p { margin: 0; }
 .drawer-items { list-style: none; padding: 0; margin: 0; }
-.drawer-items li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 20px; padding-block: 24px; border-bottom: var(--line-rule); }
-.drawer-thumbnail { width: 96px; height: 96px; object-fit: cover; object-position: top; border: var(--line-card); border-radius: var(--radius-md); background: var(--color-paper); }
+.drawer-items li { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: start; gap: 20px; padding-block: 24px; border-bottom: var(--line-rule); }
+.drawer-thumbnail { width: 96px; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border: var(--line-card); border-radius: var(--radius-md); background: var(--color-paper); }
+/* Face tipográfica das miniaturas (gaveta e páginas de compra). */
+.purchase-thumbnail-type { display: grid; place-items: center; padding: 8px; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: var(--text-label); line-height: 1.15; letter-spacing: var(--tracking-title); color: var(--color-ink); text-wrap: balance; overflow-wrap: anywhere; }
 .drawer-items h3 { margin: 0; font-size: var(--text-title-sm); line-height: 1.2; }
 .drawer-items p { margin: 8px 0; font-size: var(--text-label); color: var(--color-ink-soft); }
 .drawer-items strong, .drawer-total { font-variant-numeric: tabular-nums; }
@@ -112,8 +114,7 @@
   .mobile-menu-sheet { width: 100%; }
   .sheet-content { padding-inline: 24px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
   .kito-empty { width: 180px; }
-  .drawer-items li { grid-template-columns: 72px minmax(0, 1fr); gap: 16px; }
-  .drawer-thumbnail { width: 72px; height: 72px; }
+  .drawer-items li { gap: 16px; }
   .not-found-page { flex-direction: column; text-align: center; gap: 24px; padding-block: 40px; }
   .not-found-page h1 { margin-inline: auto; }
   .checkout-secure { font-size: var(--text-caption); gap: 6px; }

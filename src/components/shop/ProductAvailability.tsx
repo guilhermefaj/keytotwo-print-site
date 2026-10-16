@@ -28,6 +28,6 @@ export function ProductAvailability({ product, detail = false }: { product?: Pro
     {siteConfig.stage === 'test' && <p className="shop-price-note">Valor de teste</p>}
     {detail
       ? <ProductPurchaseAction code={product.code} />
-      : <Link className="inline-link" to={`/loja/${product.slug}`} aria-label={`Ver detalhes: ${product.title}`}>Ver detalhes</Link>}
+      : <><ProductPurchaseAction code={product.code} name={product.title} compact /><Link className="inline-link shop-details" to={`/loja/${product.slug}`} aria-label={`Ver detalhes: ${product.title}`}>Ver detalhes</Link></>}
   </div>
 }

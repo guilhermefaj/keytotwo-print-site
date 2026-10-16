@@ -11,7 +11,7 @@ const p001 = {
   code: 'P001', kind: 'bundle', name: 'Pacote KeyToTwo',
   games: [
     { code: 'J001', name: 'Rabisque e Adivinhe' },
-    { code: 'J002', name: 'Hora dos Artistas' },
+    { code: 'J002', name: 'O Sumiço de Rapadura' },
     { code: 'J003', name: 'Tabuleiro da Sorte' },
     { code: 'J004', name: 'Jogo 4' },
     { code: 'J005', name: 'Jogo 5' },

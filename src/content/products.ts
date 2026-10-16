@@ -1,4 +1,4 @@
-import { games, j001, type Game } from './games.ts'
+import { games, packageGames, j001, type Game } from './games.ts'
 import { packageOffer, type ProductOffer } from './offer.ts'
 import { pending } from '../lib/pending.ts'
 
@@ -15,7 +15,7 @@ export type Product = {
   delivery: readonly string[]
   games: readonly Game[]
   offer: ProductOffer
-  /** Imagem real do produto para miniaturas; sem ela, a capa tipográfica com o título. */
+  /** Capa oficial (16:9) para miniaturas; sem ela, a capa tipográfica com o título. Nunca a prévia do PDF. */
   thumbnail?: { src: string; alt: string }
 }
 
@@ -26,13 +26,13 @@ const rabisque = games.find(game => game.code === 'J001')!
 // Produtos confirmados pelo responsável; preço e aprovação comercial são por oferta.
 // Regra de catálogo: título, chamada, conteúdo e entrega vêm daqui; a oferta renderiza um card por produto.
 export const products: readonly Product[] = [
-  { code: packageOffer.code, slug: 'p001', kind: 'bundle', availability: 'sale', title: 'Pacote KeyToTwo', tagline: '5 jogos. Muitas próximas rodadas.', shopHeadline: '5 jogos num só pedido', contents: packageContents, delivery: ['Download após a confirmação da compra.', 'Acesso sem prazo de expiração.'], thumbnail: { src: '/media/experience/j001-page-1-720.webp', alt: '' }, games, offer: packageOffer },
+  { code: packageOffer.code, slug: 'p001', kind: 'bundle', availability: 'sale', title: 'Pacote KeyToTwo', tagline: '5 jogos. Muitas próximas rodadas.', shopHeadline: '5 jogos num só pedido', contents: packageContents, delivery: ['Download após a confirmação da compra.', 'Acesso sem prazo de expiração.'], games: packageGames, offer: packageOffer },
   {
     code: 'J001', slug: 'j001', kind: 'single', availability: 'sale',
     title: rabisque.name, tagline: rabisque.summary,
     contents: ['PDF de 4 páginas A4', 'Instruções e 50 cartas'],
     delivery: ['Download após a confirmação da compra.', 'Acesso sem prazo de expiração.'],
-    games: [rabisque], thumbnail: { src: rabisque.preview!.src, alt: rabisque.preview!.alt },
+    games: [rabisque], thumbnail: { src: rabisque.cover!.src, alt: '' },
     offer: {
       code: 'J001', name: rabisque.name, price: null, priceApproved: false, purchaseAction: 'cart',
       payment: pending('preço real, moeda e formas de pagamento do J001.'),

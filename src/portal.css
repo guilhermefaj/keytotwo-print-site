@@ -19,9 +19,8 @@
 .portal-library { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin: 0; }
 .portal-library > .portal-game { display: flex; flex-direction: column; min-width: 0; border: var(--line-card); border-radius: var(--radius-lg); overflow: clip; scroll-margin-top: calc(var(--header-height) + 100px); }
 .portal-game:focus { outline: 3px solid var(--color-ink); outline-offset: 4px; }
-/* Dentro do card o quadro já é o card: capa 16:10, sem borda própria, separada por régua. */
-.portal-game .game-cover { aspect-ratio: 16 / 10; border: 0; border-bottom: var(--line-rule); border-radius: 0; }
-.portal-game .game-cover-preview img { object-position: top; }
+/* Dentro do card o quadro já é o card: capa 16:9, sem borda própria, separada por régua. */
+.portal-game .game-cover { border: 0; border-bottom: var(--line-rule); border-radius: 0; }
 .portal-game-body { display: flex; flex-direction: column; flex: 1; padding: 24px; }
 .portal-game h2 { margin: 0 0 8px; }
 .game-collection { margin: 0 0 18px; font-size: var(--text-label); color: var(--color-ink-soft); line-height: 1.5; }

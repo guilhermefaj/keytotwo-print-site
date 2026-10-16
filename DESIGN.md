@@ -300,10 +300,12 @@ Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exa
 - **Selo** (`.tag-solid`): borda 1,5 px sólida Turquesa J001, texto Turquesa profundo em Caption 600, padding `2px 8px`. Só dentro da carta ("No pacote").
 
 ### Cards / Containers
-- **Carta de jogo** (`.package-game` dentro de `.folha`): figura com face 3:4 (`.game-cover`) de Papel, borda 2 px Turquesa J001, `{rounded.lg}`, conteúdo centralizado; legenda abaixo com H3 Title-sm, Body em Tinta suave e, quando houver, um text button. Três faces: **prévia** (página real do jogo em `object-fit: cover`, topo alinhado), **tipográfica** (selo "No pacote" + nome do jogo em Title 22 px, sem imagem, sem Kito) e **em breve** (borda tracejada, "Em breve" em Tinta suave). A tipográfica é a padrão de qualquer jogo sem prévia aprovada. A carta não é clicável e não reage ao hover. Na biblioteca (Minha área) a mesma capa vai dentro do card do jogo: 16:10, sem borda própria, separada do corpo por uma régua de Tinta.
+- **Capa de jogo** (`.game-cover`): face 16:9 de Papel, borda 2 px Turquesa J001, `{rounded.lg}`. Duas faces: **arte oficial** (a capa aprovada do jogo, `cover` em `src/content/games.ts`, gerada por `scripts/prepare-game-covers.mjs`, em `object-fit: cover`) e **tipográfica** (nome do jogo em Title 22 px, sem imagem), padrão de qualquer jogo sem capa. A prévia (página real do PDF) nunca é capa: ela fica na seção de experiência e no link "Ver a prévia" da página do produto (decisão do responsável, 2026-10-16).
+- **Card de produto** (`.shop-game`, Loja e vitrine do Início): o quadro é o card (borda 2 px Turquesa, `{rounded.lg}`), com a capa no topo sem borda própria, separada do corpo por uma régua de Tinta; abaixo, H3 Title, resumo em Tinta suave e, no rodapé alinhado entre os cards da linha, preço + botão primário "Adicionar à sacola" + "Ver detalhes", ou a etiqueta tracejada "Em breve" quando não há avulso à venda. A grade cria as colunas pela quantidade de jogos (mínimo 240 px). Vaga de jogo indefinido do pacote não vira card.
+- **Grátis** (`.shop-freebies`, Loja e Início): jogos entregues ao criar a conta (`freebie` em `src/content/games.ts`), fora do pacote. Etiqueta "Grátis", título e texto de `experience.freebie` à esquerda e os cards à direita (empilha abaixo de 960 px). O card mostra "Grátis" no lugar do preço e o botão "Criar conta". O freebie ainda em desenvolvimento aparece como card tracejado com a face "em breve". Até existir o resgate no backend, a seção só aparece no stage test. Na biblioteca (Minha área) a mesma capa vai dentro do card do jogo, também 16:9.
 - **Folha** (`.folha`): contêiner da grade de cartas com calhas tracejadas (`border-right`/`border-bottom` 2 px tracejado Turquesa J001 em cada carta, nunca duplicadas). Padding 18 px (10 px no celular).
 - **Card de oferta, conta e pagamento** (`.offer-summary`, `.account-card`, `.payment-card`, `.cart-summary`): Papel, borda 2 px Turquesa J001, `{rounded.lg}`, padding 32 px (24 px no celular), sem sombra. Dentro dele, a composição é uma ficha: nome, conteúdo, preço, ação.
-- **Item de compra** (carrinho, gaveta, pagamento): miniatura de 96–128 px com a imagem real do produto (`thumbnail` em `src/content/products.ts`) ou, sem imagem, a capa tipográfica com o título; ao lado, nome, chamada (`tagline`) e preço, e, no pagamento, as linhas de entrega (`delivery`). A pessoa vê o que compra em cada passo. Nunca o Kito como enfeite.
+- **Item de compra** (carrinho, gaveta, pagamento): miniatura 16:9 de 96–128 px de largura com a capa do produto (`thumbnail` em `src/content/products.ts`) ou, sem imagem, a capa tipográfica com o título; ao lado, nome, chamada (`tagline`) e preço, e, no pagamento, as linhas de entrega (`delivery`). A pessoa vê o que compra em cada passo. Nunca o Kito como enfeite.
 - **Aviso** (`.notice`): Papel, borda 1,5 px Tinta suave, `{rounded.md}`, padding 16–20 px, sem barra lateral. Variante de demonstração usa a mesma caixa com texto "Demonstração".
 
 ### Linha de recorte (`.cut-line`)
@@ -333,7 +335,7 @@ Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direit
 
 ### Kito (uso do personagem)
 - **Hero:** o único lugar onde o Kito se move. Atlas v3.1 RIGHT, 12 poses, 10 FPS, ciclo de 1,2 s, deslocamento `S × 520/1254 × FPS/12` px/s, chão em `S × 1160/1254`, duas camadas CSS (`.kito-track` desloca, `.kito-frames` troca a pose), volta só fora da tela, pausa fora de vista/aba oculta/menu aberto, `prefers-reduced-motion` começa parado com "Retomar animação". Parâmetros vêm de `src/kito-motion.ts` (gerado); nunca editar à mão, nunca regerar, recortar ou espelhar o atlas.
-- **Na home, fora da hero:** no máximo uma participação, parada, como anfitrião de um convite (ex.: ao lado do freebie ou do fechamento). Nunca como ícone de pilar, capa de jogo ou enfeite de prévia.
+- **Na home, fora da hero:** no máximo uma participação, parada, como anfitrião de um convite (ex.: ao lado do freebie ou do fechamento). Nunca como ícone de pilar ou enfeite de prévia. Na arte oficial das capas dos jogos ele é o protagonista (as capas são peças aprovadas, não enfeite).
 - **Vazios** (carrinho, biblioteca, gaveta): Kito na caixa (`kito-caixa`, 240 px; 180 px no celular), com a entrada curta de 650 ms.
 - **Celebração** (pagamento confirmado): Kito acenando (`kito-hi`) com o confete de 1,1 s. Único lugar de delícia longa.
 - **Erro, falha de pagamento e 404:** pose neutra = **quadro 01 do atlas** (`.kito-still`, fundo `kito-walk-v31-right-atlas.webp` em `0 0 / 600% 200%`, 128–160 px), sem lágrima, sem aceno. Nenhuma imagem nova é gerada para isso.
@@ -355,7 +357,7 @@ Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direit
 - Momentos raros (celebração) podem passar de 300 ms; tudo o mais fica abaixo.
 
 ### Named Rules
-**The Catalog Rule.** Nenhum componente desenha "5" ou "P001". Título, chamada, conteúdo e entrega da oferta vêm de `src/content/products.ts`; código, nome, resumo, prévia aprovada e fatos de cada carta vêm de `src/content/games.ts`. A folha de cartas aceita de 1 a N cartas (5 por linha no desktop, quebrando em linhas novas), a capa tipográfica é o padrão de qualquer jogo sem prévia aprovada, e a oferta renderiza um card por produto do catálogo. Um freebie ou um segundo pacote entra sem CSS novo.
+**The Catalog Rule.** Nenhum componente desenha "5" ou "P001". Título, chamada, conteúdo e entrega da oferta vêm de `src/content/products.ts`; código, nome, resumo, capa, prévia aprovada e fatos de cada carta vêm de `src/content/games.ts`. A grade de cards aceita de 1 a N jogos (colunas pela quantidade, quebrando em linhas novas), a capa tipográfica é o padrão de qualquer jogo sem capa oficial, e a oferta renderiza um card por produto do catálogo. Um freebie ou um segundo pacote entra sem CSS novo.
 
 **The Kito Acts Rule.** Se o Kito não está caminhando, acolhendo, celebrando ou convidando, ele não está na tela.
 
@@ -364,7 +366,7 @@ Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direit
 ### Do:
 - **Do** separar folhas com a linha de recorte e a tesoura, e só aí.
 - **Do** alinhar títulos e apoio à esquerda; usar o lado direito para ficha, preço ou objeto.
-- **Do** usar a capa tipográfica (nome do jogo sobre a carta) para qualquer jogo sem prévia aprovada.
+- **Do** usar a capa tipográfica (nome do jogo sobre a carta) para qualquer jogo sem capa oficial.
 - **Do** manter botões retos (6 px), sem sombra, sem seta, com um nome por ação.
 - **Do** escrever preço só com um preço real; qualquer substituto é Body em Tinta suave.
 - **Do** dar a todo erro uma mensagem e um botão secundário de nova tentativa, e nada mais.
@@ -376,7 +378,8 @@ Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direit
 - **Don't** usar Turquesa J001 em texto, ícone informativo ou borda única de controle.
 - **Don't** usar Céu, Marca-texto ou a paleta da paisagem fora da hero (o marca-texto só atrás de uma palavra).
 - **Don't** usar cápsula (999 px), sombra dura (`0 3px 0`), borda lateral colorida ou card com borda mais sombra.
-- **Don't** colocar o Kito como ícone, capa de jogo, enfeite de prévia ou em erro com expressão triste.
+- **Don't** colocar o Kito como ícone, enfeite de prévia ou em erro com expressão triste. A exceção é a arte oficial das capas.
+- **Don't** usar a prévia do PDF como capa ou miniatura de jogo.
 - **Don't** animar fundo de seção, mover card não clicável no hover ou passar de 300 ms em UI (exceto a celebração).
 - **Don't** publicar relato, nota ou número de clientes que não exista; relatos `placeholder: true` só renderizam no stage `test`.
 - **Don't** apresentar um jogo ainda indefinido com arte, capa ou descrição que ele não tem.
