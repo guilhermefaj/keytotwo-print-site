@@ -169,6 +169,9 @@ jobs:
       - name: Build stage=test ligado à stack efêmera
         env:
           VITE_SITE_STAGE: test
+          # Como o .env.local de desenvolvimento: checkout Stripe. Os specs trocam o Stripe.js por um stub; a chave é fictícia.
+          VITE_CHECKOUT_MODE: stripe
+          VITE_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
         run: VITE_SUPABASE_URL="$API_URL" VITE_SUPABASE_PUBLISHABLE_KEY="$PUBLISHABLE_KEY" npm run build
       - name: Instalar o Chromium do Playwright
         run: npx playwright install --with-deps chromium
