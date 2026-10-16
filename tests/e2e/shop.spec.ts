@@ -17,13 +17,13 @@ test('loja: pacote e jogos sem produto ficam em breve; apenas o avulso disponív
   await page.goto('/loja')
   await expect(page.getByRole('heading', { name: 'Loja', exact: true })).toBeVisible()
   const pack = page.locator('[data-shop-product="P001"]')
-  await expect(pack).toContainText('5 jogos num só pedido')
+  await expect(pack).toContainText('Pacote de jogos')
+  await expect(pack.locator('.shop-bundle-games li')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura'])
   await expect(pack).toContainText('Em breve')
   await expect(pack.getByRole('link')).toHaveCount(0)
-  // Jogos do pacote: vagas indefinidas não viram card; capas oficiais no lugar da prévia do PDF.
+  // Jogos do pacote: só os disponíveis; capas oficiais no lugar da prévia do PDF.
   const paid = page.locator('.shop-games [data-shop-game]')
   await expect(paid).toHaveCount(3)
-  await expect(page.locator('.shop-games [data-shop-game="jogo-4"], .shop-games [data-shop-game="jogo-5"]')).toHaveCount(0)
   await expect(page.locator('[data-shop-game="tabuleiro-da-sorte"]')).toContainText('Em breve')
   await expect(page.locator('[data-shop-game="o-sumico-de-rapadura"]')).toContainText('Em breve')
   await expect(page.locator('.shop-games .game-cover-art img')).toHaveCount(3)

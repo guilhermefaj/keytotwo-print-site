@@ -129,7 +129,6 @@ test.describe('conteúdo', () => {
     await expect(page.locator('section.offer-section')).toHaveCount(0)
     await expect(page.locator('.package-game')).toHaveCount(0)
     await expect(page.locator('.mobile-purchase-bar')).toHaveCount(0)
-    // O pacote da vitrine lista os 5 jogos do pacote, inclusive os sem ficha ("Jogo a definir").
     expect(await visibleText(page)).not.toMatch(/PENDENTE/)
     expect((await visibleText(page)).match(/\bP\d{3}\b/g) ?? [], 'códigos de produto além de P001').toEqual([])
   })

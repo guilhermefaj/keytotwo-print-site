@@ -13,6 +13,12 @@ COPY public/ ./public/
 # Public build-time settings only; omitted values use site.config.json.
 ARG VITE_SITE_STAGE
 ARG VITE_SITE_URL
+# Public keys of the hosted Supabase project and Stripe (they end up in the browser bundle; never secret keys).
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_PUBLISHABLE_KEY
+ARG VITE_STRIPE_PUBLISHABLE_KEY
+ARG VITE_CHECKOUT_MODE
+ARG VITE_TERMS_VERSION
 RUN node scripts/check-release.mjs \
     && npm run build \
     && node scripts/check-release.mjs --built

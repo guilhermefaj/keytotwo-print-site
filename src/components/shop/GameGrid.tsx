@@ -16,8 +16,7 @@ export function GameCard({ game, children }: { game: Game; children: ReactNode }
   </li>
 }
 
-// Grade de venda: preço e compra (ou "Em breve"). Vagas ainda indefinidas do pacote não viram card
-// (decisão do responsável, 2026-10-16).
+// Grade de venda: preço e compra (ou "Em breve"). Jogo ainda indefinido não vira card (decisão do responsável, 2026-10-16).
 export function GameGrid({ games }: { games: readonly Game[] }) {
   return <ul className="shop-game-grid">{games.filter(game => game.confirmed).map(game => {
     const single = game.code ? products.find(product => product.kind === 'single' && product.code === game.code) : undefined

@@ -6,7 +6,7 @@ import path from 'node:path'
 // e grava duas larguras em public/media/games; a prévia do PDF não é mais usada como capa.
 const root = path.resolve(import.meta.dirname, '..')
 const sourceDir = process.env.KTT_COVERS_SOURCE || 'G:/Meu Drive/05-Projetos/KeyToTwo/Print'
-const covers = { j001: '[J001 - CAPA] Rabisque e Adivinhe.png', j002: '[J002 - CAPA] O Sumiço do Rapadura.png', j003: '[J003 - CAPA] Tabuleiro da Sorte.png', f001: '[F001 - CAPA] Hora dos Artistas.png' }
+const covers = { j001: '[J001 - CAPA] Rabisque e Adivinhe.png', j002: '[J002 - CAPA] O Sumico do Rapadura.png', j003: '[J003 - CAPA] Tabuleiro da Sorte.png', f001: '[F001 - CAPA] Hora dos Artistas.png' }
 const output = path.join(root, 'public/media/games')
 
 await mkdir(output, { recursive: true })

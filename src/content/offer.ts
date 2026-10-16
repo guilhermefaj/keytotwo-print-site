@@ -28,7 +28,7 @@ export const packageOffer: ProductOffer = {
   delivery: 'É preciso criar uma conta para comprar. Os jogos ficam em Meus jogos e também são enviados por e-mail.',
   updates: pending('direito a futuras versões e condições de atualização.'),
   license: pending('licença de uso e condições de atendimento.'),
-  materials: pending('lista completa de materiais e instruções de impressão dos cinco jogos.'),
+  materials: pending('lista completa de materiais e instruções de impressão dos jogos do pacote.'),
   legalReview: pending('texto final e validação jurídica da política de não reembolso.'),
 }
 

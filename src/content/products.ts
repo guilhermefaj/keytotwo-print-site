@@ -19,14 +19,14 @@ export type Product = {
   thumbnail?: { src: string; alt: string }
 }
 
-export const packageContents = ['5 jogos para imprimir', 'Instruções para preparar e jogar', 'Arquivos digitais em PDF']
+export const packageContents = ['Jogos para imprimir', 'Instruções para preparar e jogar', 'Arquivos digitais em PDF']
 
 const rabisque = games.find(game => game.code === 'J001')!
 
 // Produtos confirmados pelo responsável; preço e aprovação comercial são por oferta.
 // Regra de catálogo: título, chamada, conteúdo e entrega vêm daqui; a oferta renderiza um card por produto.
 export const products: readonly Product[] = [
-  { code: packageOffer.code, slug: 'p001', kind: 'bundle', availability: 'sale', title: 'Pacote KeyToTwo', tagline: '5 jogos. Muitas próximas rodadas.', shopHeadline: '5 jogos num só pedido', contents: packageContents, delivery: ['Download após a confirmação da compra.', 'Acesso sem prazo de expiração.'], games: packageGames, offer: packageOffer },
+  { code: packageOffer.code, slug: 'p001', kind: 'bundle', availability: 'sale', title: 'Pacote KeyToTwo', tagline: 'Pacote de jogos. Muitas próximas rodadas.', shopHeadline: 'Pacote de jogos', contents: packageContents, delivery: ['Download após a confirmação da compra.', 'Acesso sem prazo de expiração.'], games: packageGames, offer: packageOffer },
   {
     code: 'J001', slug: 'j001', kind: 'single', availability: 'sale',
     title: rabisque.name, tagline: rabisque.summary,

@@ -9,7 +9,7 @@ export const navigation = [
 
 export const site = {
   description: 'Jogos para casais imprimirem e jogarem juntos em casa.',
-  heroDescription: 'Um pacote com 5 jogos para imprimir, preparar e jogar juntos em casa. O Kito traz a ideia. Vocês fazem a noite acontecer.',
+  heroDescription: 'Um pacote de jogos para imprimir, preparar e jogar juntos em casa. O Kito traz a ideia. Vocês fazem a noite acontecer.',
   closing: 'Uma ideia para a próxima noite de vocês.',
 }
 

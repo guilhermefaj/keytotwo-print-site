@@ -38,12 +38,11 @@ export const games: readonly Game[] = [
     preview: { src: '/media/experience/j001-page-1-720.webp', alt: 'Prévia real de Rabisque e Adivinhe.', href: '/#experiencia', label: 'Ver a prévia' },
     facts: j001Facts,
   },
-  // Códigos atribuídos nas fichas do Drive (capa e PDF por código); a vaga sem jogo usa apenas id interno.
+  // Códigos atribuídos nas fichas do Drive (capa e PDF por código); jogo ainda sem ficha usa apenas id interno.
+  // O pacote lista só os jogos disponíveis, sem quantidade fixa nem vagas "a definir" (responsável, 2026-10-16).
   { id: 'tabuleiro-da-sorte', code: 'J003', name: 'Tabuleiro da Sorte', confirmed: true, description: 'Inclusão confirmada no pacote.', pending: pending('regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('j003') },
   // J002 (escape room) entra no P001 por decisão do responsável (2026-10-16).
   { id: 'o-sumico-de-rapadura', code: 'J002', name: 'O Sumiço de Rapadura', confirmed: true, description: 'Inclusão confirmada no pacote.', pending: pending('regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('j002') },
-  { id: 'jogo-4', name: 'Jogo a definir', confirmed: false, description: 'Quarta vaga do pacote.', pending: pending('definição do jogo e de seus materiais.'), summary: 'Estamos preparando este jogo para o pacote.' },
-  { id: 'jogo-5', name: 'Jogo a definir', confirmed: false, description: 'Quinta vaga do pacote.', pending: pending('definição do jogo e de seus materiais.'), summary: 'Estamos preparando este jogo para o pacote.' },
   // Freebies (código F): dois no início; o segundo ainda está em desenvolvimento.
   { id: 'hora-dos-artistas', code: 'F001', name: 'Hora dos Artistas', confirmed: true, freebie: true, description: 'Jogo grátis para quem cria a conta.', pending: pending('ficha, regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('f001') },
   { id: 'freebie-2', name: 'Jogo a definir', confirmed: false, freebie: true, description: 'Segundo jogo grátis.', pending: pending('definição do jogo e de seus materiais.'), summary: 'O segundo jogo grátis está em preparação.' },
