@@ -212,3 +212,22 @@ O responsável aprovou a Fase 0 e liberou a Fase 1 com as decisões que cabem ao
 - Toda mudança de copy: lista na seção 6, item 7. A exceção são os resumos e fichas de J002 e J003, que vieram das fichas.
 
 O preço continua como está: o responsável vai adicionar mais jogos ao pacote.
+
+## 8. Execução da Fase 2 (2026-10-16, branch `design/fase-2`)
+
+- **Página de produto completa.** Ficha no topo; galeria (capa e páginas reais autorizadas, ou as capas dos jogos no pacote); "Como jogar" em três passos; "O que vocês precisam" com ícones; o pacote como alternativa ("todos num só pedido", sem comparar preços).
+- **Avulsos de J003 e J002**, por decisão do responsável no meio da fase: todo jogo pago se vende sozinho. Tabuleiro da Sorte custa R$ 9,90 e O Sumiço de Rapadura, R$ 12,90. Os preços foram criados no Stripe de teste e os produtos ativados no banco hospedado, com o OK do responsável (`supabase/catalog/avulsos-j002-j003.sql`). As páginas `/loja/j003` e `/loja/j002` são pré-renderizadas.
+- **Banner do pacote** na Loja e no Início: a capa grande com as miniaturas dos jogos embaixo e, ao lado, a compra.
+- **Vitrine do Início:** fileira de capas clicáveis com o preço do avulso, em carrossel no celular. A compra fica no banner, na Loja e no produto.
+- **"Como funciona"** em três cartas com calhas tracejadas e ícones.
+- **Conteúdo:** os passos de "Como jogar" e "O que vocês precisam" de J002 e J003 vêm das fichas do segundo cérebro. Os do J001 vêm das regras já no site.
+- **Fora desta fase:** a foto da mesa, que depende do responsável.
+
+**Ajuste pedido pelo responsável (2026-10-16), antes do merge da Fase 2:** nenhuma página do PDF vai para o site, porque qualquer pessoa abriria a imagem em outra aba e baixaria o jogo sem comprar. Por isso:
+- **Arquivos:** saíram de `public/` as três páginas do J001 e o componente que as mostrava no Início. O script `prepare-conversion-assets.mjs` deixou de renderizá-las.
+- **Início:** o leque de páginas deu lugar ao Kito comemorando no tabuleiro, arte da marca. O link da hero agora é "Como funciona".
+- **Galeria do produto:** mostra só capas oficiais.
+- **Detalhes de cada jogo:** ficaram genéricos e focados na experiência do casal:
+  - ficha com pessoas, jeito de jogar, o que está em jogo e formato, sem contar páginas nem cartas;
+  - "Como é jogar" em três momentos no lugar dos passos de regra;
+  - "O que está incluído" também sem contagens.

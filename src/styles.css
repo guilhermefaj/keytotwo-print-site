@@ -292,18 +292,18 @@ input, select, textarea { font: inherit; color: inherit; }
 .experience-copy h2 { margin-bottom: var(--space-md); }
 .experience-copy p { max-width: 42ch; }
 .experience-copy .button { margin-top: var(--space-sm); }
-.product-preview { min-width: 0; margin: 0; }
-.paper-composition { position: relative; width: 100%; aspect-ratio: 1.1; isolation: isolate; }
-.sample-page { position: absolute; width: 47%; height: auto; top: 11%; border: 1px solid var(--color-ink-rule); background: var(--color-paper); }
-.sample-page-1 { left: 28%; top: 6%; transform: rotate(3deg); }
-.sample-page-2 { left: 8%; transform: rotate(-10deg); }
-.sample-page-3 { right: 8%; transform: rotate(12deg); }
-.product-preview figcaption { margin-top: 20px; font-size: var(--text-caption); color: var(--color-ink-soft); text-align: center; line-height: 1.5; }
+/* A experiência, não o conteúdo: o Kito comemora a rodada no tabuleiro (arte da marca, pixel, sem retoque). */
+.experience-art { margin: 0; display: grid; place-items: center; min-width: 0; }
+.experience-art img { width: min(100%, 420px); height: auto; image-rendering: pixelated; }
 .how-section { background: var(--color-paper); }
-.steps-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3xl); margin: 0; }
-.steps-list li { min-width: 0; }
+/* Como funciona: três cartas numa folha, com calhas tracejadas entre elas (DESIGN.md › Folha). */
+.steps-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: var(--line-card); border-radius: var(--radius-lg); }
+.steps-list li { min-width: 0; padding: var(--space-xl); }
+.steps-list li + li { border-left: var(--line-cut); }
+.step-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-lg); }
+.steps-list .step-icon { color: var(--color-deep-teal); }
 .steps-list .step-number { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: 1.5px solid var(--color-ink); border-radius: 50%; color: var(--color-ink); font-family: var(--font-display); font-size: var(--text-small); font-variant-numeric: tabular-nums; }
-.steps-list h3 { font-size: var(--text-title); margin: 18px 0 12px; }
+.steps-list h3 { font-size: var(--text-title); margin: 0 0 12px; }
 .steps-list p { color: var(--color-ink-soft); font-size: var(--text-small); margin: 0; }
 .social-section { background: var(--color-paper); }
 .social-section .section-heading { margin-bottom: 28px; }
@@ -497,7 +497,7 @@ input, select, textarea { font: inherit; color: inherit; }
 @media (max-width: 1050px) {
   .content-width, .hero-copy, .pending-page { width: calc(100% - 48px); }
   .experience-layout { gap: 48px; }
-  .steps-list { gap: 32px; }
+  .steps-list li { padding: var(--space-lg); }
   .folha-topo { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); align-items: start; }
   .offer-layout, .faq-layout { gap: 40px; }
   .auth-page { gap: 40px; }
@@ -508,13 +508,11 @@ input, select, textarea { font: inherit; color: inherit; }
   .content-width { width: calc(100% - 40px); }
   .section-heading { margin-bottom: 28px; }
   .section-heading > p:not(.eyebrow) { font-size: var(--text-body); }
-  .steps-list { gap: 28px; grid-template-columns: minmax(0, 1fr); }
-  .steps-list li { display: grid; grid-template-columns: 38px minmax(0, 1fr); column-gap: 18px; }
-  .steps-list .step-number { grid-row: span 2; margin-top: 2px; }
-  .steps-list h3 { margin: 0 0 8px; font-size: var(--text-title); }
-  .steps-list p { grid-column: 2; }
+  .steps-list { grid-template-columns: minmax(0, 1fr); }
+  .steps-list li + li { border-left: 0; border-top: var(--line-cut); }
+  .step-top { margin-bottom: var(--space-md); }
   .experience-layout { grid-template-columns: minmax(0, 1fr); gap: 32px; }
-  .paper-composition { max-width: 470px; margin-inline: auto; }
+  .experience-art img { width: min(70%, 300px); }
   .social-card { padding: 24px; gap: 14px; }
   .offer-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
   .offer-summary { order: -1; padding: 24px; }

@@ -1,8 +1,10 @@
 import { Link, isRouteErrorResponse, useLoaderData, useRouteError, type ClientLoaderFunctionArgs, type LoaderFunctionArgs } from 'react-router'
-import { productPages, products } from '../content/products'
-import { GameCover } from '../components/account/GameCover'
+import { productPages, products, type Product } from '../content/products'
+import type { Game } from '../content/games'
 import { ProductAvailability } from '../components/shop/ProductAvailability'
 import { GameGrid } from '../components/shop/GameGrid'
+import { ProductGallery, type GalleryImage } from '../components/shop/ProductGallery'
+import { ProductFacts, ProductMoments, ProductNeeds, ProductPackage } from '../components/shop/ProductSections'
 import { BackLink } from '../components/ui/BackLink'
 import NotFound from './not-found'
 import '../shop.css'
@@ -21,27 +23,40 @@ function loadProduct(slug?: string) {
 export function clientLoader({ params }: ClientLoaderFunctionArgs) { return loadProduct(params.slug) }
 clientLoader.hydrate = true
 
+const coverImage = (src: string, srcSet: string, name: string): GalleryImage => ({ src, srcSet, alt: `Capa de ${name}.`, width: 640, height: 360 })
+
+// Galeria: só capas oficiais. No avulso, a capa do jogo; no pacote, a capa dele e as dos jogos.
+function galleryOf(product: Product, game?: Game): GalleryImage[] {
+  if (game) return game.cover ? [coverImage(game.cover.src, game.cover.srcSet, game.name)] : []
+  return [
+    ...(product.cover ? [coverImage(product.cover.src, product.cover.srcSet, product.title)] : []),
+    ...product.games.filter(item => item.cover).map(item => coverImage(item.cover!.src, item.cover!.srcSet, item.name)),
+  ]
+}
+
+// Página de produto (DESIGN.md › Página de produto): ficha no topo, galeria e compra, como é jogar,
+// o que vocês precisam e o pacote como alternativa. O pacote mostra os jogos com a ficha de cada um.
 export default function ShopProduct() {
   const { product } = useLoaderData<typeof loader>()
   const game = product.kind === 'single' ? product.games[0] : undefined
-  const bundle = game && products.find(item => item.kind === 'bundle' && item.games.some(included => included.id === game.id))
+  const bundle = game && products.find(item => item.kind === 'bundle' && item.availability === 'sale' && item.games.some(included => included.id === game.id))
   return <main id="conteudo" tabIndex={-1} className="shop-page shop-product-page content-width">
     <BackLink to="/loja">Loja</BackLink>
     <header className="shop-heading"><h1>{product.title}</h1><p>{product.shopHeadline || product.tagline}</p></header>
+    {game && <ProductFacts game={game} />}
     <div className="shop-product-layout">
-      <div className="shop-product-cover"><GameCover code={game?.code} name={product.title} art={product.cover} />
-        {game?.preview && <p className="shop-cover-caption"><Link className="inline-link" to={game.preview.href}>{game.preview.label}</Link></p>}
-      </div>
+      <ProductGallery images={galleryOf(product, game)} accent={game?.accent} />
       <section className="shop-purchase" aria-labelledby="shop-includes-title" data-shop-product={product.code}>
         <h2 id="shop-includes-title">O que está incluído</h2>
         <ul className="shop-includes">{product.contents.map(line => <li key={line}>{line}</li>)}</ul>
         <ProductAvailability product={product} detail />
         <div className="shop-delivery">{product.delivery.map(line => <p key={line}>{line}</p>)}</div>
-        {bundle && <p className="shop-in-bundle">Também está no pacote{bundle.availability === 'sale' ? <>: <Link className="inline-link" to={`/loja/${bundle.slug}`}>{bundle.title}</Link></> : <>: {bundle.title}</>}.</p>}
       </section>
     </div>
-    {game?.facts && <section className="shop-facts" aria-labelledby="shop-facts-title"><h2 id="shop-facts-title">{game.name}</h2><p>{game.description}</p><dl className="ficha">{game.facts.map(fact => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl></section>}
-    {product.kind === 'bundle' && <section className="shop-games" aria-labelledby="shop-games-title"><h2 id="shop-games-title">Jogos do pacote</h2><GameGrid games={product.games} variant="included" /></section>}
+    {game && <ProductMoments game={game} />}
+    {product.kind === 'bundle' && <section className="product-section shop-games" aria-labelledby="shop-games-title"><h2 id="shop-games-title">Jogos do pacote</h2><GameGrid games={product.games} variant="included" /></section>}
+    <ProductNeeds games={product.games} bundle={product.kind === 'bundle'} />
+    {game && bundle && <ProductPackage game={game} bundle={bundle} />}
   </main>
 }
 

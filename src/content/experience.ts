@@ -2,17 +2,18 @@
 // Replace social proof ONLY with authorized material. null = placeholder.
 export const experience = {
   // Portão 1 (2026-10-10): etiqueta em caixa normal, marca-texto em "encontro.", sem lista de ✓.
-  // CTA "Ver os jogos" (Loja, decisão 2 do responsável) e link "Ver a prévia". A hero vende a marca, não o produto.
+  // CTA "Ver os jogos" (Loja, decisão 2 do responsável) e link "Como funciona". A hero vende a marca, não o produto.
+  // Sem "Ver a prévia": nenhuma página do PDF vai para o site (responsável, 2026-10-16).
   tag: 'KeyToTwo · jogos para casais',
   headline: ['A rotina pode esperar.', 'Vocês têm um encontro.'],
   highlight: 'encontro.',
   description: 'Jogos para imprimir, puxar uma cadeira e descobrir o quanto vocês se divertem juntos.',
   cta: { label: 'Ver os jogos', href: '/loja' },
-  secondary: { label: 'Ver a prévia', href: '/#experiencia' },
+  secondary: { label: 'Como funciona', href: '/#como-funciona' },
   steps: [
-    { title: 'Escolham.', text: 'Levem a ideia para a sacola. Entrem na conta para seguir com a compra.' },
-    { title: 'Imprimam.', text: 'Depois da compra, os arquivos ficam em Meus jogos e chegam por e-mail.' },
-    { title: 'Divirtam-se.', text: 'Preparem os materiais e escolham quem começa.' },
+    { title: 'Escolham.', text: 'Levem a ideia para a sacola. Entrem na conta para seguir com a compra.', icon: 'sacola' },
+    { title: 'Imprimam.', text: 'Depois da compra, os arquivos ficam em Meus jogos e chegam por e-mail.', icon: 'impressora' },
+    { title: 'Divirtam-se.', text: 'Preparem os materiais e escolham quem começa.', icon: 'dado' },
   ],
   // Portão 1: relatos de exemplo na voz da marca, marcados placeholder: true. Aparecem só no stage
   // test; em live só entram relatos reais (placeholder: false) e, sem nenhum, a seção não renderiza.
