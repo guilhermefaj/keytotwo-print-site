@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { expect, test, type Page } from '@playwright/test'
+import { authStorageKey } from './fixtures/session'
 
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 const fileId = '11111111-1111-4111-8111-111111111111'
@@ -10,7 +11,7 @@ const fakeSession = { access_token: 'synthetic-token', refresh_token: 'synthetic
 const fileURL = 'https://qa.s3.us-east-005.backblazeb2.com/fixture.pdf'
 
 async function fixture(page: Page) {
-  await page.addInitScript(session => localStorage.setItem('sb-127-auth-token', JSON.stringify(session)), fakeSession)
+  await page.addInitScript(([key, session]) => localStorage.setItem(key, JSON.stringify(session)), [authStorageKey, fakeSession] as const)
   await page.route('**/auth/v1/**', route => route.fulfill({ json: fakeSession.user }))
   await page.route('**/functions/v1/api/**', route => {
     const path = new URL(route.request().url()).pathname.split('/api')[1]

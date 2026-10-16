@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
+import { authStorageKey } from './fixtures/session'
 
 // Browser-only fixtures exercise the existing API contract without account writes.
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
@@ -14,7 +15,7 @@ async function fixture(page: Page, { empty = false, failLibrary = false } = {}) 
   let optedIn = false
   let failed = false
   const writes: unknown[] = []
-  await page.addInitScript(value => localStorage.setItem('sb-127-auth-token', JSON.stringify(value)), session)
+  await page.addInitScript(([key, value]) => localStorage.setItem(key, JSON.stringify(value)), [authStorageKey, session] as const)
   await page.route('**/auth/v1/**', route => route.fulfill({ json: user }))
   await page.route('**/functions/v1/api/**', route => {
     const path = new URL(route.request().url()).pathname.split('/api')[1]

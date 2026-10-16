@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { mkdir } from 'node:fs/promises'
 import { readFileSync } from 'node:fs'
+import { authStorageKey } from './fixtures/session'
 import { builtStage } from './fixtures/stage'
 
 // Synthetic API boundary fixtures, confined to this browser; no backend writes or credentials.
@@ -11,7 +12,7 @@ const fakeSession = { access_token: 'synthetic-d1-token', refresh_token: 'synthe
 async function fixture(page: Page, { filled = false, owned = false, failCart = false } = {}) {
   test.skip(!readFileSync('build/client/index.html', 'utf8').includes('Ambiente de teste'), 'Authenticated fixtures require the configured local stage=test build')
   let items = filled ? [product] : []
-  await page.addInitScript(session => localStorage.setItem('sb-127-auth-token', JSON.stringify(session)), fakeSession)
+  await page.addInitScript(([key, session]) => localStorage.setItem(key, JSON.stringify(session)), [authStorageKey, fakeSession] as const)
   await page.route('**/auth/v1/**', route => route.fulfill({ json: fakeSession.user }))
   await page.route('**/functions/v1/api/**', route => {
     const path = new URL(route.request().url()).pathname.split('/api')[1]

@@ -42,6 +42,10 @@ if (enabled) {
   }
 }
 
+// Sem a chave só leitura do B2 (ex.: CI sem os segredos), o teste é ignorado com aviso em vez de falhar.
+const b2Ready = Boolean(Deno.env.get('B2_READ_KEY_ID') && Deno.env.get('B2_READ_APPLICATION_KEY'))
+if (enabled && !b2Ready) console.warn('delivery.integration: sem B2_READ_KEY_ID/B2_READ_APPLICATION_KEY; teste ignorado')
+
 const hex = (bytes: ArrayBuffer) => Array.from(new Uint8Array(bytes), (b) => b.toString(16).padStart(2, '0')).join('')
 
 // Baixa do B2 e confere status, tipo, anexo e conteúdo.
@@ -73,7 +77,7 @@ const deliveryTokens = (text: string) => [...text.matchAll(/\/functions\/v1\/api
 
 Deno.test({
   name: 'I4 integração: entrega por e-mail única, downloads com e sem direito, B2 real, link do e-mail, revogação e gratuito',
-  ignore: !enabled,
+  ignore: !enabled || !b2Ready,
   sanitizeOps: false,
   sanitizeResources: false,
   async fn(t) {

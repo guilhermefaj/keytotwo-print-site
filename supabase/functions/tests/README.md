@@ -31,6 +31,16 @@ KT_INTEGRATION=1 npx deno@2.9.6 test --no-lock --config supabase/functions/deno.
   --allow-env --allow-read --allow-net --allow-run=docker supabase/functions/tests/
 ```
 
+## No CI
+
+Desde 2026-10-16 o desenvolvimento usa o Supabase hospedado e não há stack local na máquina. A integração roda no job `integration` do `.github/workflows/ci.yml`:
+- sobe uma stack efêmera com o seed de TESTE;
+- gera um `supabase/functions/.env` descartável;
+- serve as funções e grava o Vault;
+- roda `test:integration`, o `trigger-senha.mjs` e o e2e completo com `I2B_LOCAL_QA=1` contra um build stage=test ligado a essa stack.
+
+O teste de entrega lê o bucket de TESTE do B2 com os segredos do repositório `B2_TEST_READ_KEY_ID` e `B2_TEST_READ_APPLICATION_KEY`. Sem eles, é ignorado com aviso. `checkout.integration` com `KT_STRIPE=1` (Stripe real) continua só manual.
+
 ## Requisitos da integração
 
 - `supabase/functions/.env` local com `B2_*` (chave só leitura), `EMAIL_LINK_SECRET`, `API_PUBLIC_URL`, `EMAIL_FROM*` e `BREVO_WEBHOOK_SECRET`. Os testes leem só esses nomes e não imprimem valores.

@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test'
+import { authStorageKey } from './session'
 
 export const product = { code: 'P001', kind: 'bundle', name: 'Pacote de TESTE', games: [{ code: 'J001', name: 'Jogo de TESTE' }], price: { unit_amount: 1990, currency: 'brl' }, status: 'ok', available: true, owned_games: [], shared_with: [] }
 export const cart = { version: 3, items: [product], subtotal: { amount: 1990, currency: 'brl' }, warnings: [] }
@@ -12,7 +13,7 @@ const stripeStub = `window.Stripe = (key, options) => ({ initCheckoutFormSdk({ap
 }});`
 
 export async function fixture(page: Page) {
-  await page.addInitScript(session => localStorage.setItem('sb-127-auth-token', JSON.stringify(session)), fakeSession)
+  await page.addInitScript(([key, session]) => localStorage.setItem(key, JSON.stringify(session)), [authStorageKey, fakeSession] as const)
   await page.route('**/auth/v1/**', route => route.fulfill({ json: fakeSession.user }))
   await page.route('**/functions/v1/api/**', route => {
     const path = new URL(route.request().url()).pathname.split('/api')[1]

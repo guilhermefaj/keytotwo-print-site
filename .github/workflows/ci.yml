@@ -99,3 +99,89 @@ jobs:
       - name: Testes unitários e de contrato
         working-directory: supabase/functions
         run: env -u KT_INTEGRATION deno test --no-lock --allow-env tests/
+
+  # Desenvolvimento usa o Supabase hospedado (sem Docker na máquina). Os testes que precisam de Auth, Mailpit,
+  # banco e funções locais rodam aqui, numa stack efêmera do runner com o seed de TESTE.
+  integration:
+    name: Integração (stack efêmera, Auth e Mailpit reais)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      # Only satisfy the local config; OAuth is not exercised here.
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: ci-placeholder.apps.googleusercontent.com
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET: ci-placeholder
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 'v2.9.x'
+      - name: Instalar dependências
+        run: npm ci
+      - name: Iniciar stack efêmera do runner
+        # Avoid printing the local stack's generated API keys.
+        run: npx --yes supabase@2.118.0 start > /dev/null
+      - name: Chaves da stack efêmera no ambiente dos próximos passos
+        run: npx --yes supabase@2.118.0 status -o env 2>/dev/null | grep -E '^[A-Z0-9_]+=' | sed -E 's/^([A-Z0-9_]+)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
+      - name: Ambiente das funções, gerado no runner
+        # Segredos aleatórios e descartáveis. O B2 de TESTE vem dos segredos do repositório; sem eles, o teste de entrega é ignorado.
+        env:
+          B2_READ_KEY_ID: ${{ secrets.B2_TEST_READ_KEY_ID }}
+          B2_READ_APPLICATION_KEY: ${{ secrets.B2_TEST_READ_APPLICATION_KEY }}
+        run: |
+          {
+            echo "SITE_URL=http://127.0.0.1:4174"
+            echo "ALLOWED_ORIGINS=http://127.0.0.1:4174,http://localhost:4174"
+            echo "TERMS_VERSION=rascunho-2026-10-08"
+            echo "STRIPE_WEBHOOK_SECRET=whsec_ci$(openssl rand -hex 16)"
+            echo "B2_ENDPOINT=s3.us-east-005.backblazeb2.com"
+            echo "B2_REGION=us-east-005"
+            echo "B2_BUCKET=keytotwo-print-attachments"
+            echo "B2_READ_KEY_ID=$B2_READ_KEY_ID"
+            echo "B2_READ_APPLICATION_KEY=$B2_READ_APPLICATION_KEY"
+            echo "EMAIL_LINK_SECRET=$(openssl rand -hex 32)"
+            echo "EMAIL_MODE=log"
+            echo "EMAIL_LOG_MAILPIT_URL=http://supabase_inbucket_keytotwo-print-site:8025"
+            echo "EMAIL_FROM=kito@keytotwo.test"
+            echo "EMAIL_FROM_NAME=Kito"
+            echo "API_PUBLIC_URL=$API_URL/functions/v1/api"
+            echo "BREVO_WEBHOOK_SECRET=$(openssl rand -hex 32)"
+          } > supabase/functions/.env
+      - name: Servir as funções
+        run: |
+          nohup npx --yes supabase@2.118.0 functions serve > "$RUNNER_TEMP/functions-serve.log" 2>&1 &
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Origin: http://127.0.0.1:4174' "$API_URL/functions/v1/api/catalog" || true)
+            [ "$code" = 200 ] && exit 0
+            sleep 2
+          done
+          tail -50 "$RUNNER_TEMP/functions-serve.log"
+          exit 1
+      - name: Vault do despacho de e-mail
+        run: node supabase/local/aplicar-dispatch-vault.mjs
+      - name: Integração das funções (Deno)
+        run: deno task --config supabase/functions/deno.json test:integration
+      - name: Trigger de senha com o GoTrue real
+        run: node supabase/tests/gotrue/trigger-senha.mjs
+      - name: Build stage=test ligado à stack efêmera
+        env:
+          VITE_SITE_STAGE: test
+          # Como o .env.local de desenvolvimento: checkout Stripe. Os specs trocam o Stripe.js por um stub; a chave é fictícia.
+          VITE_CHECKOUT_MODE: stripe
+          VITE_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
+        run: VITE_SUPABASE_URL="$API_URL" VITE_SUPABASE_PUBLISHABLE_KEY="$PUBLISHABLE_KEY" npm run build
+      - name: Instalar o Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+      - name: E2E com Auth, Mailpit e API locais (inclui I2b)
+        env:
+          I2B_LOCAL_QA: '1'
+        run: VITE_SUPABASE_URL="$API_URL" npm run test:e2e
+      - name: Log das funções
+        if: failure()
+        run: tail -100 "$RUNNER_TEMP/functions-serve.log"
+      - name: Remover stack efêmera do runner
+        if: always()
+        run: npx --yes supabase@2.118.0 stop --no-backup

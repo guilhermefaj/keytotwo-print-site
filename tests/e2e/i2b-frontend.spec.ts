@@ -46,6 +46,17 @@ async function noOverflow(page: Page) {
   }
 }
 
+// Without a Stripe key (CI), the real /catalog returns price null and the shop offers no purchase.
+// Only the missing price is filled in here; products, composition and availability stay those of the API.
+test.beforeEach(async ({ page }) => {
+  await page.route('**/functions/v1/api/catalog', async route => {
+    const response = await route.fetch()
+    const body = await response.json()
+    for (const product of body.products ?? []) product.price ??= { unit_amount: 100, currency: 'brl' }
+    await route.fulfill({ response, json: body })
+  })
+})
+
 test('guest add → Mailpit code → persistent cart; marketing and private views', async ({ page }) => {
   const email = `qa-cart-${randomUUID()}@example.test`
   const runtimeErrors: string[] = []
