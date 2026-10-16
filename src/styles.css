@@ -292,13 +292,9 @@ input, select, textarea { font: inherit; color: inherit; }
 .experience-copy h2 { margin-bottom: var(--space-md); }
 .experience-copy p { max-width: 42ch; }
 .experience-copy .button { margin-top: var(--space-sm); }
-.product-preview { min-width: 0; margin: 0; }
-.paper-composition { position: relative; width: 100%; aspect-ratio: 1.1; isolation: isolate; }
-.sample-page { position: absolute; width: 47%; height: auto; top: 11%; border: 1px solid var(--color-ink-rule); background: var(--color-paper); }
-.sample-page-1 { left: 28%; top: 6%; transform: rotate(3deg); }
-.sample-page-2 { left: 8%; transform: rotate(-10deg); }
-.sample-page-3 { right: 8%; transform: rotate(12deg); }
-.product-preview figcaption { margin-top: 20px; font-size: var(--text-caption); color: var(--color-ink-soft); text-align: center; line-height: 1.5; }
+/* A experiência, não o conteúdo: o Kito comemora a rodada no tabuleiro (arte da marca, pixel, sem retoque). */
+.experience-art { margin: 0; display: grid; place-items: center; min-width: 0; }
+.experience-art img { width: min(100%, 420px); height: auto; image-rendering: pixelated; }
 .how-section { background: var(--color-paper); }
 /* Como funciona: três cartas numa folha, com calhas tracejadas entre elas (DESIGN.md › Folha). */
 .steps-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: var(--line-card); border-radius: var(--radius-lg); }
@@ -516,7 +512,7 @@ input, select, textarea { font: inherit; color: inherit; }
   .steps-list li + li { border-left: 0; border-top: var(--line-cut); }
   .step-top { margin-bottom: var(--space-md); }
   .experience-layout { grid-template-columns: minmax(0, 1fr); gap: 32px; }
-  .paper-composition { max-width: 470px; margin-inline: auto; }
+  .experience-art img { width: min(70%, 300px); }
   .social-card { padding: 24px; gap: 14px; }
   .offer-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
   .offer-summary { order: -1; padding: 24px; }

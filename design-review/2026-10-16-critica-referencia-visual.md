@@ -222,3 +222,12 @@ O preço continua como está: o responsável vai adicionar mais jogos ao pacote.
 - **"Como funciona"** em três cartas com calhas tracejadas e ícones.
 - **Conteúdo:** os passos de "Como jogar" e "O que vocês precisam" de J002 e J003 vêm das fichas do segundo cérebro. Os do J001 vêm das regras já no site.
 - **Fora desta fase:** a foto da mesa, que depende do responsável.
+
+**Ajuste pedido pelo responsável (2026-10-16), antes do merge da Fase 2:** nenhuma página do PDF vai para o site, porque qualquer pessoa abriria a imagem em outra aba e baixaria o jogo sem comprar. Por isso:
+- **Arquivos:** saíram de `public/` as três páginas do J001 e o componente que as mostrava no Início. O script `prepare-conversion-assets.mjs` deixou de renderizá-las.
+- **Início:** o leque de páginas deu lugar ao Kito comemorando no tabuleiro, arte da marca. O link da hero agora é "Como funciona".
+- **Galeria do produto:** mostra só capas oficiais.
+- **Detalhes de cada jogo:** ficaram genéricos e focados na experiência do casal:
+  - ficha com pessoas, jeito de jogar, o que está em jogo e formato, sem contar páginas nem cartas;
+  - "Como é jogar" em três momentos no lugar dos passos de regra;
+  - "O que está incluído" também sem contagens.

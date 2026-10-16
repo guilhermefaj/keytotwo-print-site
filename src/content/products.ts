@@ -47,12 +47,12 @@ function single(game: Game, contents: readonly string[], materials: string): Pro
 
 // Produtos confirmados pelo responsável; preço e aprovação comercial são por oferta.
 // Regra de catálogo: título, chamada, conteúdo e entrega vêm daqui; a oferta renderiza um card por produto.
-// Conteúdo de J003 e J002 vem das fichas conferidas em 2026-10-16 (segundo cérebro, Jogos/).
+// Conteúdo genérico (responsável, 2026-10-16): o que vem, sem contar páginas nem cartas; base nas fichas do segundo cérebro.
 export const products: readonly Product[] = [
   { code: packageOffer.code, slug: 'p001', kind: 'bundle', availability: 'sale', title: 'Coleção KeyToTwo: Fundadores', tagline: 'Pacote de jogos. Muitas próximas rodadas.', shopHeadline: 'Pacote de jogos', contents: packageContents, delivery: ['Download após a confirmação da compra.', 'Acesso sem prazo de expiração.'], games: packageGames, cover: cover('p001'), thumbnail: { src: cover('p001').src, alt: '' }, offer: packageOffer },
-  single(byCode('J001'), ['PDF de 4 páginas A4', 'Instruções e 50 cartas'], j001.materials),
-  single(byCode('J003'), ['PDF de 11 páginas A4', 'Tabuleiro, 54 cartas, moedas, dado e pinos'], 'Impressão, tesoura, cola, uma caneta por pessoa, cronômetro e celular para os desafios de foto.'),
-  single(byCode('J002'), ['PDF de 21 páginas A4', '6 desafios, selos dos envelopes e 18 cartões de dica'], 'Impressão, tesoura, estilete com base de corte, fita adesiva, uma caneta por pessoa, um copo para as dicas e luz do dia ou um abajur.'),
+  single(byCode('J001'), ['O jogo completo em PDF para imprimir', 'Instruções e cartas para recortar'], j001.materials),
+  single(byCode('J003'), ['O jogo completo em PDF para imprimir', 'Tabuleiro, cartas, moedas, dado e pinos para montar'], 'Impressão, tesoura, cola, uma caneta por pessoa, cronômetro e celular para os desafios de foto.'),
+  single(byCode('J002'), ['O jogo completo em PDF para imprimir', 'Desafios, envelopes e cartões de dica'], 'Impressão, tesoura, estilete com base de corte, fita adesiva, uma caneta por pessoa, um copo para as dicas e luz do dia ou um abajur.'),
 ]
 
 // PENDENTE: licença, atualizações e validação jurídica de cada oferta (campos pending acima).

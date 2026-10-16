@@ -251,7 +251,7 @@ Grade: 12 colunas com divisões assimétricas. Título e apoio à esquerda em 7/
 
 Ritmo vertical em múltiplos de 8: `{spacing.sm}` entre rótulo e campo, `{spacing.md}` entre parágrafos, `{spacing.lg}` entre grupos, `{spacing.xl}` entre título e conteúdo, `{spacing.2xl}` entre blocos de uma folha, `{spacing.section}` entre folhas. Mais espaço acima de um título do que abaixo.
 
-No celular tudo empilha: título, apoio, ação; na oferta, **o preço e o botão vêm antes da prévia**. Na página do produto e no card do pacote, **a capa vem antes do preço**: a capa não é a prévia, e a pessoa vê o que compra antes de decidir. A barra fixa de compra (`.mobile-purchase-bar`) só existe abaixo de 768 px e se recolhe quando hero, oferta ou rodapé estão à vista.
+No celular tudo empilha: título, apoio, ação; na oferta, **o preço e o botão vêm antes da imagem**. Na página do produto e no card do pacote, **a capa vem antes do preço**: a pessoa vê o que compra antes de decidir. A barra fixa de compra (`.mobile-purchase-bar`) só existe abaixo de 768 px e se recolhe quando hero, oferta ou rodapé estão à vista.
 
 Pontos de quebra: 360, 480, 600, 767, 1050 e 1120 (70rem) px, já usados pelo código. Sem rolagem horizontal de 320 a 1440 px com texto a 200 %.
 
@@ -298,16 +298,16 @@ Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exa
 - **Shape:** retângulo de cantos discretos (`{rounded.sm}`), altura mínima 48 px (44 px no cabeçalho), padding `12px 22px`, Label 600, sem ícone de seta, sem sombra.
 - **Primary:** Papel sobre Turquesa profundo; hover `{colors.deep-teal-hover}`; pressionado `{colors.deep-teal-active}` com `transform: scale(.98)` em 160 ms; desabilitado em aguada de Tinta com texto Tinta suave e `cursor: not-allowed`.
 - **Secondary:** Papel com borda de 1,5 px Tinta e texto Tinta; hover em aguada de Tinta; mesma altura e raio. É o botão de "Tentar novamente", "Atualizar status", "Sair da conta", cupom e voltar.
-- **Text button / link:** Turquesa profundo 600, sublinhado com `text-underline-offset: 4px`; no hover o sublinhado engrossa para 2 px. Usado para "Ver a prévia", "Remover", "Precisa de ajuda?".
+- **Text button / link:** Turquesa profundo 600, sublinhado com `text-underline-offset: 4px`; no hover o sublinhado engrossa para 2 px. Usado para "Ver detalhes", "Remover", "Precisa de ajuda?".
 - **Focus:** `outline: 3px solid {colors.ink}; outline-offset: 3px` em todo controle, em qualquer fundo (sobre a hero o Céu mantém 11,5:1).
-- **Rótulos:** um nome por ação em todo o site: "Quero o pacote" leva à oferta (`/#comprar`); "Adicionar ao carrinho" compra; "Ver a prévia" abre a prévia; "Finalizar compra" paga.
+- **Rótulos:** um nome por ação em todo o site: "Quero o pacote" leva à oferta (`/#comprar`); "Adicionar à sacola" compra; "Ver detalhes" abre a página do produto; "Finalizar compra" paga.
 
 ### Tags (etiqueta e selo)
 - **Etiqueta** (`.tag`): Papel, borda 2 px **tracejada** Turquesa J001, `{rounded.sm}`, padding `6px 12px`, Label 600 em Tinta. Só para a identificação da hero e para marcar algo "por recortar" (ex.: freebie em preparação).
 - **Selo** (`.tag-solid`): borda 1,5 px sólida Turquesa J001, texto Turquesa profundo em Caption 600, padding `2px 8px`. Só dentro da carta ("No pacote", no rodapé do card de jogo).
 
 ### Cards / Containers
-- **Capa de jogo** (`.game-cover`): face 16:9 de Papel, borda 2 px Turquesa J001, `{rounded.lg}`. Duas faces: **arte oficial** (a capa aprovada do jogo, `cover` em `src/content/games.ts`, gerada por `scripts/prepare-game-covers.mjs`, em `object-fit: cover`) e **tipográfica** (nome do jogo em Title 22 px, sem imagem), padrão de qualquer jogo sem capa. A prévia (página real do PDF) nunca é capa: ela fica na seção de experiência e na galeria da página do produto, sempre depois da capa (decisão do responsável, 2026-10-16). Só entram páginas com prévia pública autorizada (`pages` em `src/content/games.ts`); hoje, as do J001.
+- **Capa de jogo** (`.game-cover`): face 16:9 de Papel, borda 2 px Turquesa J001, `{rounded.lg}`. Duas faces: **arte oficial** (a capa aprovada do jogo, `cover` em `src/content/games.ts`, gerada por `scripts/prepare-game-covers.mjs`, em `object-fit: cover`) e **tipográfica** (nome do jogo em Title 22 px, sem imagem), padrão de qualquer jogo sem capa. Nenhuma página do PDF vai para o site, em lugar nenhum (decisão do responsável, 2026-10-16): quem abrisse a imagem em outra aba baixaria o jogo sem comprar. Capa, cor e texto apresentam o jogo; o conteúdo fica para depois da compra.
 - **Card de produto** (`.shop-game`, Loja e página do pacote): o quadro é o card (borda 2 px Turquesa, `{rounded.lg}`), com a capa no topo sem borda própria, separada do corpo por uma régua de Tinta; abaixo, H3 Title, resumo em Tinta suave e, no rodapé alinhado entre os cards da linha, preço + botão primário "Adicionar à sacola" + "Ver detalhes", ou um dos estados abaixo. Logo sob a capa corre a faixa da cor do jogo. A grade cria as colunas pela quantidade de jogos (mínimo 240 px). Vaga de jogo indefinido do pacote não vira card.
   - **Estados do rodapé:** *à venda* (preço, "Adicionar à sacola", "Ver detalhes"); *no pacote* (selo "No pacote" e o link "Ver o pacote", quando o jogo não tem avulso mas está num pacote à venda); *grátis* (seção Grátis); *em breve* (etiqueta tracejada, só para o que não se compra de jeito nenhum). Um jogo do pacote nunca aparece como "Em breve".
   - **Variante incluído** (`GameGrid variant="included"`, página do pacote): capa, nome, resumo e a ficha do jogo (`facts`), com "Ver detalhes" só se houver página do avulso. Sem preço e sem compra avulsa dentro da oferta do pacote.
@@ -332,9 +332,9 @@ Depois do banner do pacote, uma fileira de capas clicáveis (`.cover-tile`), uma
 ### Página de produto (`/loja/:slug`)
 Ordem fixa, com dados de `src/content/games.ts` e `products.ts`:
 1. **Voltar** ("Loja"), H1 com o nome e a chamada.
-2. **Ficha no topo** (`.product-facts`, só no avulso): os fatos do jogo lado a lado, cada um com o rótulo em Caption Tinta suave e o valor em 600, separados por calhas tracejadas e com linha tracejada em cima e embaixo; duas colunas no celular.
-3. **Galeria e compra**: à esquerda a galeria (`ProductGallery`), à direita o card "O que está incluído" com preço e compra. A galeria abre na capa (16:9, com a faixa de 8 px da cor do jogo) e troca pelas miniaturas (botões de 88 px, `aria-pressed`, a escolhida com borda de 2 px Turquesa profundo). No avulso seguem as páginas reais autorizadas, inteiras sobre a aguada de Tinta; no pacote, as capas de cada jogo.
-4. **Como jogar** (só no avulso): a descrição do jogo e três passos numerados (`howTo`), em cartas com calhas tracejadas. Os passos vêm das regras conferidas e nunca revelam soluções.
+2. **Ficha no topo** (`.product-facts`, só no avulso): os fatos genéricos do jogo (pessoas, jeito de jogar, o que está em jogo, formato), sem contar páginas, cartas ou peças, lado a lado, cada um com o rótulo em Caption Tinta suave e o valor em 600, separados por calhas tracejadas e com linha tracejada em cima e embaixo; duas colunas no celular.
+3. **Galeria e compra**: à esquerda a galeria (`ProductGallery`), à direita o card "O que está incluído" com preço e compra. A galeria abre na capa (16:9, com a faixa de 8 px da cor do jogo) e troca pelas miniaturas (botões de 88 px, `aria-pressed`, a escolhida com borda de 2 px Turquesa profundo). Só capas oficiais: no avulso, a capa do jogo sozinha (sem miniaturas); no pacote, a capa dele e as de cada jogo.
+4. **Como é jogar** (só no avulso): a descrição do jogo e três momentos da experiência do casal (`moments`: título e uma frase), em cartas com calhas tracejadas, sem números. Fala do que a dupla vive (conversa, risada, desafio, mistério), nunca das regras, das soluções ou do conteúdo das páginas.
 5. **Jogos do pacote** (só no pacote): a grade na variante "incluído".
 6. **O que vocês precisam** (`needs`): ícone Tabler de 24 px em Turquesa profundo e o rótulo de `needLabels`, com régua pontilhada. No pacote, a lista junta o que todos os jogos pedem.
 7. **Também está no pacote** (só no avulso que faz parte de um pacote à venda): card tracejado com o argumento real, "todos num só pedido", as miniaturas dos jogos e "Ver o pacote". Nunca compara preços nem anuncia economia.
@@ -366,7 +366,7 @@ Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entr
 
 ### Kito (uso do personagem)
 - **Hero:** o único lugar onde o Kito se move. Atlas v3.1 RIGHT, 12 poses, 10 FPS, ciclo de 1,2 s, deslocamento `S × 520/1254 × FPS/12` px/s, chão em `S × 1160/1254`, duas camadas CSS (`.kito-track` desloca, `.kito-frames` troca a pose), volta só fora da tela, pausa fora de vista/aba oculta/menu aberto, `prefers-reduced-motion` começa parado com "Retomar animação". Parâmetros vêm de `src/kito-motion.ts` (gerado); nunca editar à mão, nunca regerar, recortar ou espelhar o atlas.
-- **Na home, fora da hero:** no máximo uma participação, parada, como anfitrião de um convite (ex.: ao lado do freebie ou do fechamento). Nunca como ícone de pilar ou enfeite de prévia. Na arte oficial das capas dos jogos ele é o protagonista (as capas são peças aprovadas, não enfeite).
+- **Na home, fora da hero:** no máximo uma participação, parada, como anfitrião de um convite: hoje, comemorando a rodada no tabuleiro (`kito-tabuleiro`) ao lado de "A próxima rodada sai da impressora", no lugar de qualquer página do PDF. O aceno do rodapé é da moldura do site, não da home. Nunca como ícone de pilar. Na arte oficial das capas dos jogos ele é o protagonista (as capas são peças aprovadas, não enfeite).
 - **Vazios** (carrinho, biblioteca, gaveta): Kito na caixa (`kito-caixa`, 240 px; 180 px no celular), com a entrada curta de 650 ms.
 - **Celebração** (pagamento confirmado): Kito acenando (`kito-hi`) com o confete de 1,1 s. Único lugar de delícia longa.
 - **Erro, falha de pagamento e 404:** pose neutra = **quadro 01 do atlas** (`.kito-still`, fundo `kito-walk-v31-right-atlas.webp` em `0 0 / 600% 200%`, 128–160 px), sem lágrima, sem aceno. Nenhuma imagem nova é gerada para isso.
@@ -389,7 +389,7 @@ Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entr
 - Momentos raros (celebração) podem passar de 300 ms; tudo o mais fica abaixo.
 
 ### Named Rules
-**The Catalog Rule.** Nenhum componente desenha "5" ou "P001". Título, chamada, conteúdo e entrega da oferta vêm de `src/content/products.ts`; código, nome, resumo, capa, prévia aprovada e fatos de cada carta vêm de `src/content/games.ts`. A grade de cards aceita de 1 a N jogos (colunas pela quantidade, quebrando em linhas novas), a capa tipográfica é o padrão de qualquer jogo sem capa oficial, e a oferta renderiza um card por produto do catálogo. Um freebie ou um segundo pacote entra sem CSS novo.
+**The Catalog Rule.** Nenhum componente desenha "5" ou "P001". Título, chamada, conteúdo e entrega da oferta vêm de `src/content/products.ts`; código, nome, resumo, capa, cor, fatos e momentos de cada carta vêm de `src/content/games.ts`. A grade de cards aceita de 1 a N jogos (colunas pela quantidade, quebrando em linhas novas), a capa tipográfica é o padrão de qualquer jogo sem capa oficial, e a oferta renderiza um card por produto do catálogo. Um freebie ou um segundo pacote entra sem CSS novo.
 
 **The Kito Acts Rule.** Se o Kito não está caminhando, acolhendo, celebrando, convidando ou se despedindo, ele não está na tela.
 
@@ -411,8 +411,8 @@ Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entr
 - **Don't** usar Céu ou Marca-texto fora da hero, nem a paleta da paisagem fora da hero e do chão do rodapé (o marca-texto só atrás de uma palavra).
 - **Don't** escrever texto na cor do jogo nem marcar um jogo do pacote como "Em breve".
 - **Don't** usar cápsula (999 px), sombra dura (`0 3px 0`), borda lateral colorida ou card com borda mais sombra.
-- **Don't** colocar o Kito como ícone, enfeite de prévia ou em erro com expressão triste. A exceção é a arte oficial das capas.
-- **Don't** usar a prévia do PDF como capa ou miniatura de jogo.
+- **Don't** colocar o Kito como ícone ou em erro com expressão triste. A exceção é a arte oficial das capas.
+- **Don't** publicar página do PDF como imagem, em lugar nenhum: nem capa, nem miniatura, nem galeria, nem seção da home. O arquivo também não fica em `public/`.
 - **Don't** animar fundo de seção, mover card não clicável no hover ou passar de 300 ms em UI (exceto a celebração).
 - **Don't** publicar relato, nota ou número de clientes que não exista; relatos `placeholder: true` só renderizam no stage `test`.
 - **Don't** apresentar um jogo ainda indefinido com arte, capa ou descrição que ele não tem.

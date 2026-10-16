@@ -28,13 +28,13 @@ export function ProductNeeds({ games, bundle = false }: { games: readonly Game[]
   </section>
 }
 
-// Como jogar em três passos, numerados porque a ordem importa.
-export function ProductHowTo({ game }: { game: Game }) {
-  if (!game.howTo?.length) return null
-  return <section className="product-section product-howto" aria-labelledby="howto-title">
-    <h2 id="howto-title">Como jogar</h2>
-    <p className="product-howto-intro">{game.description}</p>
-    <ol className="howto-steps">{game.howTo.map((step, index) => <li key={step}><span className="step-number" aria-hidden="true">{index + 1}</span><p>{step}</p></li>)}</ol>
+// Como é jogar: a experiência do casal em três momentos, sem regras nem páginas do PDF (responsável, 2026-10-16).
+export function ProductMoments({ game }: { game: Game }) {
+  if (!game.moments?.length) return null
+  return <section className="product-section product-moments" aria-labelledby="moments-title">
+    <h2 id="moments-title">Como é jogar</h2>
+    <p>{game.description}</p>
+    <ul className="moments-list">{game.moments.map(moment => <li key={moment.title}><h3>{moment.title}</h3><p>{moment.text}</p></li>)}</ul>
   </section>
 }
 

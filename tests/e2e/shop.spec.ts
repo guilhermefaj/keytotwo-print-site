@@ -84,7 +84,7 @@ test('produto: preço vem do catálogo, compra preserva escolha e ausência não
   await page.goto('/loja/j001')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Rabisque e Adivinhe')
   await expect(page.locator('main')).toContainText('Também está no pacote')
-  await expect(page.locator('.shop-includes')).toContainText('PDF de 4 páginas A4')
+  await expect(page.locator('.shop-includes')).toContainText('O jogo completo em PDF para imprimir')
   if (stage === 'preview') {
     await expect(page.locator('.shop-purchase')).toContainText('Em breve')
     await expect(page.locator('.shop-purchase button')).toHaveCount(0)
@@ -103,34 +103,32 @@ test('produto: preço vem do catálogo, compra preserva escolha e ausência não
   await expect(included).toHaveCount(3)
   await expect(page.locator('.shop-games').getByRole('button')).toHaveCount(0)
   await expect(page.locator('.shop-games')).not.toContainText('Em breve')
-  await expect(page.locator('[data-shop-game="tabuleiro-da-sorte"] .ficha')).toContainText('54: 27 perguntas e 27 desafios')
-  await expect(page.locator('[data-shop-game="o-sumico-de-rapadura"] .ficha')).toContainText('PDF de 21 páginas A4')
+  await expect(page.locator('[data-shop-game="tabuleiro-da-sorte"] .ficha')).toContainText('Tabuleiro, perguntas e desafios')
+  await expect(page.locator('[data-shop-game="o-sumico-de-rapadura"] .ficha')).toContainText('Escape room de papel')
 })
 
-test('página de produto: ficha no topo, galeria, como jogar, o que vocês precisam e o pacote', async ({ page }) => {
+test('página de produto: ficha no topo, capa, como é jogar, o que vocês precisam e o pacote', async ({ page }) => {
   const j003 = { ...single, code: 'J003', name: 'Tabuleiro da Sorte', games: [{ code: 'J003', name: 'Tabuleiro da Sorte' }], price: { unit_amount: 990, currency: 'brl' } }
   const j002 = { ...single, code: 'J002', name: 'O Sumiço de Rapadura', games: [{ code: 'J002', name: 'O Sumiço de Rapadura' }], price: { unit_amount: 1290, currency: 'brl' } }
   await catalog(page, [single, j003, j002])
   await page.goto('/loja/j001')
-  await expect(page.locator('.product-facts dt')).toHaveText(['Pessoas', 'Partida', 'Arquivo', 'Conteúdo'])
-  // A galeria abre na capa; as páginas reais vêm depois, nunca como capa.
-  const thumbs = page.getByRole('list', { name: 'Imagens do produto' }).getByRole('button')
-  await expect(thumbs).toHaveCount(4)
+  await expect(page.locator('.product-facts dt')).toHaveText(['Pessoas', 'Jeito de jogar', 'Rodadas', 'Formato'])
+  // Nenhuma página do PDF no site (responsável, 2026-10-16): o avulso mostra só a capa, e a URL antiga não serve imagem.
   await expect(page.locator('.product-gallery-main img')).toHaveAttribute('src', '/media/games/j001-capa-640.webp')
-  await thumbs.nth(1).click()
-  await expect(thumbs.nth(1)).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.locator('.product-gallery-main img')).toHaveAttribute('src', '/media/experience/j001-page-1-720.webp')
-  await expect(page.locator('.howto-steps li')).toHaveCount(3)
+  await expect(page.locator('.product-gallery-thumbs')).toHaveCount(0)
+  await expect(page.locator('img[src*="j001-page"]')).toHaveCount(0)
+  for (const n of [1, 2, 3]) expect((await page.request.get(`/media/experience/j001-page-${n}-720.webp`)).headers()['content-type'] ?? '').not.toContain('image')
+  await expect(page.locator('.moments-list li')).toHaveCount(3)
   await expect(page.locator('.needs-list li')).toHaveCount(5)
   await expect(page.locator('.product-package').getByRole('link', { name: 'Ver o pacote: Coleção KeyToTwo: Fundadores', exact: true })).toHaveAttribute('href', '/loja/p001')
   await expect(page.locator('.product-package')).not.toContainText('R$')
-  // Tabuleiro e Rapadura também se vendem sozinhos (responsável, 2026-10-16); sem prévia autorizada, só a capa.
+  // Tabuleiro e Rapadura também se vendem sozinhos (responsável, 2026-10-16); só a capa, como em todo avulso.
   for (const [slug, price] of [['j003', '9,90'], ['j002', '12,90']]) {
     await page.goto(`/loja/${slug}`)
     if (stage !== 'preview') await expect(page.locator('.shop-purchase .shop-price')).toContainText(price)
     await expect(page.locator('.product-gallery-thumbs')).toHaveCount(0)
     await expect(page.locator('.product-gallery-main img')).toHaveAttribute('src', `/media/games/${slug}-capa-640.webp`)
-    await expect(page.locator('.howto-steps li')).toHaveCount(3)
+    await expect(page.locator('.moments-list li')).toHaveCount(3)
   }
   await page.goto('/loja/p001')
   await expect(page.getByRole('list', { name: 'Imagens do produto' }).getByRole('button')).toHaveCount(4)

@@ -70,14 +70,9 @@
 .product-gallery-main { margin: 0; aspect-ratio: 16 / 9; display: grid; place-items: center; overflow: hidden; border: var(--line-card); border-radius: var(--radius-lg); background: var(--color-paper); }
 .product-gallery-main[data-accent] { border-bottom: 8px solid var(--game-accent); }
 .product-gallery-main img { width: 100%; height: 100%; object-fit: cover; }
-/* Página do PDF: a folha inteira sobre a aguada de Tinta, como papel na mesa. */
-.product-gallery-main[data-fit="contain"] { background: var(--color-ink-wash); padding: var(--space-md); }
-.product-gallery-main[data-fit="contain"] img { object-fit: contain; }
 .product-gallery-thumbs { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-sm); padding: 0; margin: 0; }
 .product-gallery-thumbs button { display: block; width: 88px; aspect-ratio: 16 / 9; padding: 0; overflow: hidden; border: 1.5px solid var(--color-ink-rule); border-radius: var(--radius-sm); background: var(--color-paper); cursor: pointer; }
-.product-gallery-thumbs button[data-fit="contain"] { background: var(--color-ink-wash); padding: 3px; }
 .product-gallery-thumbs img { width: 100%; height: 100%; object-fit: cover; }
-.product-gallery-thumbs button[data-fit="contain"] img { object-fit: contain; }
 .product-gallery-thumbs button:hover { border-color: var(--color-ink-soft); }
 .product-gallery-thumbs button[aria-pressed="true"] { border: 2px solid var(--color-deep-teal); }
 .shop-purchase { border: var(--line-card); border-radius: var(--radius-lg); padding: var(--space-xl); min-width: 0; }
@@ -90,11 +85,11 @@
 .product-section { margin-top: var(--space-3xl); }
 .product-section > h2 { font-size: var(--text-headline-sm); margin: 0 0 var(--space-md); }
 .product-section > p { color: var(--color-ink-soft); max-width: 65ch; margin: 0 0 var(--space-lg); }
-.howto-steps { list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0; margin: 0; border: var(--line-card); border-radius: var(--radius-lg); }
-.howto-steps li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: var(--space-md); align-items: start; padding: var(--space-lg); min-width: 0; }
-.howto-steps li + li { border-left: var(--line-cut); }
-.howto-steps .step-number { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1.5px solid var(--color-ink); border-radius: 50%; font-family: var(--font-display); font-weight: 700; font-size: var(--text-label); font-variant-numeric: tabular-nums; }
-.howto-steps p { margin: 0; font-size: var(--text-small); line-height: 1.6; }
+.moments-list { list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0; margin: 0; border: var(--line-card); border-radius: var(--radius-lg); }
+.moments-list li { padding: var(--space-lg); min-width: 0; }
+.moments-list li + li { border-left: var(--line-cut); }
+.moments-list h3 { font-size: var(--text-title-sm); margin: 0 0 var(--space-sm); }
+.moments-list p { margin: 0; font-size: var(--text-small); line-height: 1.6; color: var(--color-ink-soft); }
 .needs-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-sm) var(--space-lg); padding: 0; margin: 0; }
 .needs-list li { display: flex; align-items: center; gap: var(--space-md); padding-block: var(--space-sm); border-bottom: var(--line-dot); font-size: var(--text-small); }
 .needs-list svg { flex: 0 0 auto; color: var(--color-deep-teal); }
@@ -128,8 +123,8 @@
 }
 @media (max-width: 960px) {
   .shop-freebies { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
-  .howto-steps { grid-template-columns: minmax(0, 1fr); }
-  .howto-steps li + li { border-left: 0; border-top: var(--line-cut); }
+  .moments-list { grid-template-columns: minmax(0, 1fr); }
+  .moments-list li + li { border-left: 0; border-top: var(--line-cut); }
 }
 @media (max-width: 767px) {
   .shop-bundle, .shop-product-layout, .product-package { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }

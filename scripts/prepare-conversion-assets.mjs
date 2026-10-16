@@ -1,23 +1,21 @@
 import sharp from 'sharp'
 import { createHash } from 'node:crypto'
-import { spawnSync } from 'node:child_process'
-import { mkdir, mkdtemp, readFile, writeFile, unlink, rmdir } from 'node:fs/promises'
-import os from 'node:os'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 // A2 phase 1: reads approved real sources; writes only public/media and docs.
+// Páginas do PDF nunca vão para public/ (responsável, 2026-10-16): qualquer pessoa abriria e baixaria o jogo
+// pela URL sem comprar. Este script prepara só os Kitos; a renderização das páginas do J001 foi removida.
 // Does not call prepare-walk-assets (which also writes src/kito-motion.ts).
 const root = path.resolve(import.meta.dirname, '..')
 const vault = process.env.KTT_VAULT_ROOT || 'G:/Meu Drive/09-Second-brain'
 const walkDir = process.env.KTT_WALK_SOURCE || 'G:/Meu Drive/05-Projetos/KeyToTwo/Images/Pixel Art/Kito Walking v3'
-const poppler = process.env.PDFTOPPM || 'pdftoppm'
 const hash = value => createHash('sha256').update(value).digest('hex')
 const options = { lossless: true, exact: true, quality: 100, effort: 6 }
 const sourceFiles = {
   atlas: path.join(walkDir, 'kito_walk_right_atlas.png'),
   board: path.join(vault, '95-Anexos/KeyToTwo/Marca/Pixel Art/kito_tabuleiro.png'),
   hi: path.join(vault, '95-Anexos/KeyToTwo/Marca/Pixel Art/kito_hi.png'),
-  pdf: path.join(vault, '95-Anexos/KeyToTwo/Jogos/J001 - Rabisque e adivinhe.pdf'),
 }
 const sources = {}
 for (const [name, filename] of Object.entries(sourceFiles)) {
@@ -46,29 +44,12 @@ for (const [source, name, widths] of [['board', 'kito-tabuleiro', [240, 480]], [
   for (const width of widths) await save(sharp(sourceFiles[source]).resize({ width, kernel: sharp.kernel.nearest }), `experience/${name}-${width}.webp`, source, `Full canvas, proportional nearest-neighbor resize to ${width}px; exact lossless WebP; no crop or retouch`)
 }
 
-const version = spawnSync(poppler, ['-v'], { encoding: 'utf8' })
-if (version.error || version.status !== 0) throw new Error(`Install Poppler pdftoppm or set PDFTOPPM: ${version.error?.message || version.stderr}`)
-const temp = await mkdtemp(path.join(os.tmpdir(), 'ktt-a2-pdf-'))
-try {
-  for (const page of [1, 2, 3]) {
-    const prefix = path.join(temp, `j001-${page}`)
-    const args = ['-f', String(page), '-l', String(page), '-singlefile', '-scale-to-x', '720', '-scale-to-y', '-1', '-png', sourceFiles.pdf, prefix]
-    const result = spawnSync(poppler, args, { encoding: 'utf8' })
-    if (result.error || result.status !== 0) throw new Error(`PDF render failed: ${result.error?.message || result.stderr}`)
-    await save(sharp(`${prefix}.png`), `experience/j001-page-${page}-720.webp`, 'pdf', `Actual PDF page ${page}, full page; Poppler raster at 720px wide, no crop or retouch; exact lossless WebP of raster`)
-    await unlink(`${prefix}.png`)
-  }
-} finally {
-  // Remove only known intermediate files and then the empty, freshly created dir.
-  for (const page of [1, 2, 3]) await unlink(path.join(temp, `j001-${page}.png`)).catch(error => { if (error.code !== 'ENOENT') throw error })
-  await rmdir(temp)
-}
 for (const [name, filename] of Object.entries(sourceFiles)) {
   if (hash(await readFile(filename)) !== sources[name].sha256) throw new Error(`Source changed during preparation: ${filename}`)
 }
 const manifest = {
   task: 'A2 phase 1', sourceNote: 'Jogos/J001 - Rabisque e Adivinhe.md', sources,
-  tooling: { sharp: sharp.versions.sharp, vips: sharp.versions.vips, webp: sharp.versions.webp, poppler: `${version.stdout}${version.stderr}`.split(/\r?\n/)[0] },
+  tooling: { sharp: sharp.versions.sharp, vips: sharp.versions.vips, webp: sharp.versions.webp, poppler: 'não usado' },
   webpOptions: options, assets,
   integration: 'Prepared only. CSS still references the PNG until phase 2; retain it to avoid breaking the concurrent UI work.',
 }
@@ -80,7 +61,6 @@ await writeFile(path.join(root, 'docs/conversion-assets.md'), [
   ...Object.entries(sources).map(([name, source]) => `- ${name}: \`${source.path}\` (${source.bytes} bytes), SHA-256 \`${source.sha256}\`.`), '',
   `Atlas RIGHT v3.1: **2304 × 768**, 12 quadros, células 384 × 384, sem redimensionamento nem alteração de poses. WebP **${atlas.bytes} bytes**, redução de **${(100 * (1 - atlas.bytes / sources.atlas.bytes)).toFixed(1)}%** sobre o PNG. Comparação de todos os canais RGBA, inclusive RGB sob alfa zero: **0 bytes diferentes**. Hash RGBA de ambos: \`${atlas.rgbaSha256}\`.`, '',
   'WebP usa `lossless: true, exact: true, quality: 100, effort: 6`. `exact` é necessário para preservar também RGB invisível. Nenhuma quantização, IA ou composição fictícia. O atlas PNG fica disponível até a troca da URL em src na fase 2; não removê-lo antes.', '',
-  'O PDF real foi localizado pela ficha do J001 em `95-Anexos/KeyToTwo/Jogos`. Páginas 1 (instruções e cartas), 2 e 3 (cartas), completas, renderizadas a 720 px de largura. São prévias do documento existente, não arquivos de impressão, novas capas nem jogos adicionais. `kito_tabuleiro` é ilustração de marca: o tabuleiro desenhado não representa um componente incluído no P001.', '',
   '## Derivados preparados', '',
   '| Arquivo em public/media | Dimensões | Bytes |', '| --- | --- | ---: |',
   ...assets.map(asset => `| ${asset.output} | ${asset.width} × ${asset.height} | ${asset.bytes} |`), '',

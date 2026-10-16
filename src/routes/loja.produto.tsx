@@ -4,7 +4,7 @@ import type { Game } from '../content/games'
 import { ProductAvailability } from '../components/shop/ProductAvailability'
 import { GameGrid } from '../components/shop/GameGrid'
 import { ProductGallery, type GalleryImage } from '../components/shop/ProductGallery'
-import { ProductFacts, ProductHowTo, ProductNeeds, ProductPackage } from '../components/shop/ProductSections'
+import { ProductFacts, ProductMoments, ProductNeeds, ProductPackage } from '../components/shop/ProductSections'
 import { BackLink } from '../components/ui/BackLink'
 import NotFound from './not-found'
 import '../shop.css'
@@ -23,21 +23,18 @@ function loadProduct(slug?: string) {
 export function clientLoader({ params }: ClientLoaderFunctionArgs) { return loadProduct(params.slug) }
 clientLoader.hydrate = true
 
-const coverImage = (src: string, srcSet: string, name: string): GalleryImage => ({ src, srcSet, alt: `Capa de ${name}.`, width: 640, height: 360, fit: 'cover' })
+const coverImage = (src: string, srcSet: string, name: string): GalleryImage => ({ src, srcSet, alt: `Capa de ${name}.`, width: 640, height: 360 })
 
-// Galeria: a capa do produto abre; no avulso seguem as páginas reais autorizadas, no pacote as capas dos jogos.
+// Galeria: só capas oficiais. No avulso, a capa do jogo; no pacote, a capa dele e as dos jogos.
 function galleryOf(product: Product, game?: Game): GalleryImage[] {
-  if (game) return [
-    ...(game.cover ? [coverImage(game.cover.src, game.cover.srcSet, game.name)] : []),
-    ...(game.pages ?? []).map(page => ({ src: page.src, alt: page.alt, width: 720, height: 1019, fit: 'contain' as const })),
-  ]
+  if (game) return game.cover ? [coverImage(game.cover.src, game.cover.srcSet, game.name)] : []
   return [
     ...(product.cover ? [coverImage(product.cover.src, product.cover.srcSet, product.title)] : []),
     ...product.games.filter(item => item.cover).map(item => coverImage(item.cover!.src, item.cover!.srcSet, item.name)),
   ]
 }
 
-// Página de produto (DESIGN.md › Página de produto): ficha no topo, galeria e compra, como jogar,
+// Página de produto (DESIGN.md › Página de produto): ficha no topo, galeria e compra, como é jogar,
 // o que vocês precisam e o pacote como alternativa. O pacote mostra os jogos com a ficha de cada um.
 export default function ShopProduct() {
   const { product } = useLoaderData<typeof loader>()
@@ -56,7 +53,7 @@ export default function ShopProduct() {
         <div className="shop-delivery">{product.delivery.map(line => <p key={line}>{line}</p>)}</div>
       </section>
     </div>
-    {game && <ProductHowTo game={game} />}
+    {game && <ProductMoments game={game} />}
     {product.kind === 'bundle' && <section className="product-section shop-games" aria-labelledby="shop-games-title"><h2 id="shop-games-title">Jogos do pacote</h2><GameGrid games={product.games} variant="included" /></section>}
     <ProductNeeds games={product.games} bundle={product.kind === 'bundle'} />
     {game && bundle && <ProductPackage game={game} bundle={bundle} />}
