@@ -47,8 +47,9 @@ test('cart loads as a skeleton, not an unavailable price or an empty cart', asyn
   } finally { release() }
   await expect(page.locator('[data-cart-product] .purchase-thumbnail')).toBeVisible()
   await expect(page.locator('.checkout-steps [aria-current]')).toContainText('Sacola')
-  await expect(page.locator('.checkout-steps li').filter({ hasText: 'Entrar' })).toHaveAttribute('data-complete', 'true')
-  await expect(page.locator('.checkout-steps li').filter({ hasText: 'Entrar' })).not.toHaveAttribute('aria-current')
+  // Quem já entrou vê três etapas, renumeradas, sem um "Entrar" concluído fora de ordem.
+  await expect(page.locator('.checkout-steps li > span:last-child')).toHaveText(['Sacola', 'Pagamento', 'Pronto'])
+  await expect(page.locator('.checkout-steps .step-number').nth(1)).toHaveText('2')
 })
 
 for (const width of [390, 1440]) test(`purchase states, focused payment, keyboard and axe at ${width}`, async ({ page }) => {
@@ -76,7 +77,8 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await expect(page.getByRole('link', { name: 'Baixar agora', exact: true })).toHaveAttribute('href', '/meus-jogos')
   await expect(page.getByText('Também enviamos para o seu e-mail.')).toBeVisible()
   await expect(page.locator('.purchase-celebration')).toBeVisible()
-  await expect(page.locator('.newsletter')).toHaveCount(1)
+  // Newsletter escondida até existir o envio (responsável, 2026-10-16).
+  await expect(page.locator('.newsletter')).toHaveCount(0)
   await capture(page, `confirmacao-${width}`); await axe(page)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(page.locator('.purchase-celebration img')).toHaveCSS('animation-name', 'none')
@@ -126,18 +128,13 @@ test('vitrine curta com três jogos na home; carrossel e relatos só por ação 
   await expect(page.locator('.social-metrics')).toHaveCount(0)
 })
 
-test('public newsletter is a truthful stage-only preview; published posts alone enter home', async ({ page }) => {
+test('public newsletter stays hidden until sending exists; published posts alone enter home', async ({ page }) => {
   const writes: string[] = []
   page.on('request', request => { if (['POST', 'PUT'].includes(request.method()) && request.url().includes('/api/')) writes.push(request.url()) })
   await page.goto('/')
-  const newsletter = page.locator('footer .newsletter')
-  if (stageTest) {
-    await expect(newsletter.getByRole('heading', { name: 'Ideias de encontro no seu e-mail' })).toBeVisible()
-    await newsletter.getByLabel('Seu e-mail', { exact: true }).fill('qa-newsletter@example.test')
-    await expect(newsletter.getByRole('button', { name: 'Receber ideias' })).toBeDisabled()
-    await expect(newsletter).toContainText('Seu e-mail ainda não será enviado.')
-    await expect(newsletter).not.toContainText(/inscrição confirmada|preferência salva/i)
-  } else await expect(newsletter).toHaveCount(0)
+  // Escondida em todos os stages (responsável, 2026-10-16); o rodapé público fecha com o chão do Kito.
+  await expect(page.locator('.newsletter')).toHaveCount(0)
+  await expect(page.locator('.footer-ground .footer-kito')).toHaveCount(1)
   expect(writes).toEqual([])
   // The build's real published feed is the source of truth, not the draft listing.
   const { readBlogPosts } = await import('../../src/lib/blog.server')
@@ -147,31 +144,20 @@ test('public newsletter is a truthful stage-only preview; published posts alone 
   for (const post of published.slice(0, 3)) await expect(page.locator('.home-posts').getByRole('link', { name: post.title })).toHaveAttribute('href', `/blog/${post.slug}`)
 })
 
-test('logged-in newsletter uses existing consent API, stays out of checkout and is not duplicated on posts', async ({ page }) => {
+test('logged-in: newsletter hidden everywhere, Conta keeps the e-mail preference, payment footer stays minimal', async ({ page }) => {
   test.skip(!stageTest, 'Stage test fixture')
   await fixture(page)
-  let optedIn = false
-  const writes: unknown[] = []
-  await page.route('**/api/account', route => route.fulfill({ json: { email: 'qa@example.test', marketing: { opted_in: optedIn, prompted_at: null }, orders: [] } }))
-  await page.route('**/api/account/marketing', route => { const body = route.request().postDataJSON(); writes.push(body); optedIn = body.granted; return route.fulfill({ json: { opted_in: optedIn } }) })
-  await page.goto('/')
-  const newsletter = page.locator('footer .newsletter')
-  await expect(newsletter.getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeEnabled()
-  await expect(newsletter).toContainText('Dá para sair quando quiser.')
-  await expect(newsletter.getByRole('link', { name: 'Privacidade', exact: true })).toHaveAttribute('href', '/privacidade')
-  await newsletter.getByRole('button', { name: 'Quero receber ideias', exact: true }).focus(); await page.keyboard.press('Enter')
-  await expect(newsletter).toContainText('Você já recebe nossas ideias.')
-  expect(writes).toEqual([expect.objectContaining({ granted: true, source: 'signup_prompt', text_version: expect.any(String) })])
-  for (const path of ['/carrinho', '/pagamento', '/conta']) { await page.goto(path); await expect(page.locator('main')).toBeVisible(); await expect(page.locator('.newsletter')).toHaveCount(0) }
-  // Em Conta, quem já está inscrito vê o estado com o link discreto de descadastro.
-  await expect(page.locator('.marketing-form')).toContainText('Você recebe nossas ideias')
-  await expect(page.locator('.marketing-form').getByRole('button', { name: 'Parar de receber', exact: true })).toBeVisible()
-  await page.goto('/blog/exemplo-como-publicar')
-  await expect(page.locator('.blog-post > .newsletter')).toHaveCount(1)
-  await expect(page.locator('footer .newsletter')).toHaveCount(0)
+  await page.route('**/api/account', route => route.fulfill({ json: { email: 'qa@example.test', marketing: { opted_in: false, prompted_at: null }, orders: [] } }))
+  for (const path of ['/', '/carrinho', '/pagamento', '/blog/exemplo-como-publicar']) { await page.goto(path); await expect(page.locator('main')).toBeVisible(); await expect(page.locator('.newsletter')).toHaveCount(0) }
+  // Pagamento em modo foco: só a linha legal, sem o chão nem os convites do rodapé público.
+  await page.goto('/pagamento')
+  await expect(page.locator('footer .footer-ground')).toHaveCount(0)
+  await expect(page.getByRole('navigation', { name: 'Informações legais', exact: true }).getByRole('link')).toHaveText(['Termos de uso', 'Privacidade', 'Ajuda'])
+  await page.goto('/conta')
+  await expect(page.locator('.marketing-form').getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeEnabled()
 })
 
-test('purchase, home and newsletter fit 320–1440 with doubled text', async ({ page }) => {
+test('purchase and home fit 320–1440 with doubled text', async ({ page }) => {
   test.skip(!stageTest, 'Stage test fixture')
   test.setTimeout(120_000)
   await fixture(page)
@@ -192,14 +178,15 @@ test('purchase, home and newsletter fit 320–1440 with doubled text', async ({ 
 for (const width of [390, 1440]) test(`home carousel and footer captures plus axe at ${width}`, async ({ page }) => {
   await page.setViewportSize({ width, height: 1100 })
   await page.goto('/')
-  await page.locator('.shop-showcase').scrollIntoViewIfNeeded()
+  // Folga para o cabeçalho fixo: sem ela o axe conta o link da vitrine como coberto pelo cabeçalho.
+  await page.locator('.shop-showcase').evaluate(el => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 120))
   await settle(page)
   if (process.env.D3_CAPTURE === '1') {
     await mkdir('.maestri/design-review/d3', { recursive: true })
     await page.locator('.shop-showcase').evaluate(el => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 120))
     await page.locator('.shop-showcase').screenshot({ path: `.maestri/design-review/d3/vitrine-${width}.png`, animations: 'disabled' })
-    await page.locator('.footer-newsletter').scrollIntoViewIfNeeded()
-    await page.locator('.footer-newsletter').screenshot({ path: `.maestri/design-review/d3/newsletter-rodape-${width}.png`, animations: 'disabled' })
+    await page.locator('.footer-ground').scrollIntoViewIfNeeded()
+    await page.locator('.site-footer').screenshot({ path: `.maestri/design-review/d3/rodape-${width}.png`, animations: 'disabled' })
   }
   await axe(page)
 })

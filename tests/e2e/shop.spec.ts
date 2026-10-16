@@ -13,7 +13,7 @@ async function catalog(page: Page, products = [single]) {
   await page.route('**/functions/v1/api/catalog', route => route.fulfill({ json: { products } }))
 }
 
-test('loja: pacote e jogos sem produto ficam em breve; apenas o avulso disponível tem compra e detalhes', async ({ page }) => {
+test('loja: pacote fora do catálogo fica em breve; jogos do pacote sem avulso ficam "No pacote"; só o avulso tem compra', async ({ page }) => {
   await catalog(page)
   await page.goto('/loja')
   await expect(page.getByRole('heading', { name: 'Loja', exact: true })).toBeVisible()
@@ -25,8 +25,15 @@ test('loja: pacote e jogos sem produto ficam em breve; apenas o avulso disponív
   // Jogos do pacote: só os disponíveis; capas oficiais no lugar da prévia do PDF.
   const paid = page.locator('.shop-games [data-shop-game]')
   await expect(paid).toHaveCount(3)
-  await expect(page.locator('[data-shop-game="tabuleiro-da-sorte"]')).toContainText('Em breve')
-  await expect(page.locator('[data-shop-game="o-sumico-de-rapadura"]')).toContainText('Em breve')
+  // Jogo do pacote sem avulso nunca aparece "Em breve": selo "No pacote" e o caminho até o pacote.
+  for (const id of ['tabuleiro-da-sorte', 'o-sumico-de-rapadura']) {
+    const card = page.locator(`[data-shop-game="${id}"]`)
+    await expect(card.locator('.tag-solid')).toHaveText('No pacote')
+    await expect(card.getByRole('link', { name: 'Ver o pacote: Coleção KeyToTwo: Fundadores', exact: true })).toHaveAttribute('href', '/loja/p001')
+    await expect(card).not.toContainText('Em breve')
+    // Cor do jogo: faixa sob a capa, vinda de games.ts.
+    await expect(card.locator('.game-cover[data-accent]')).toHaveCount(1)
+  }
   await expect(page.locator('.shop-games .game-cover-art img')).toHaveCount(3)
   await expect(page.locator('[data-shop-game] img[src*="/media/experience/j001-page"]')).toHaveCount(0)
   // Freebies: Hora dos Artistas grátis e o segundo em preparação; a seção só existe no stage test.
@@ -91,6 +98,13 @@ test('produto: preço vem do catálogo, compra preserva escolha e ausência não
   await page.goto('/loja/p001')
   await expect(page.locator('.shop-purchase')).toContainText('Em breve')
   await expect(page.locator('.shop-purchase button')).toHaveCount(0)
+  // Jogos do pacote: apresentação e ficha, sem compra avulsa nem "Em breve" dentro da oferta.
+  const included = page.locator('.shop-games [data-shop-game]')
+  await expect(included).toHaveCount(3)
+  await expect(page.locator('.shop-games').getByRole('button')).toHaveCount(0)
+  await expect(page.locator('.shop-games')).not.toContainText('Em breve')
+  await expect(page.locator('[data-shop-game="tabuleiro-da-sorte"] .ficha')).toContainText('54: 27 perguntas e 27 desafios')
+  await expect(page.locator('[data-shop-game="o-sumico-de-rapadura"] .ficha')).toContainText('PDF de 21 páginas A4')
 })
 
 test('produto listado sem preço não oferece compra; falha permite retry', async ({ page }) => {

@@ -4,6 +4,7 @@ import { formatBlogDate } from '../lib/blog'
 import { siteConfig } from '../lib/seo'
 import { site } from '../content/site'
 import { Newsletter } from '../components/newsletter/Newsletter'
+import { BackLink } from '../components/ui/BackLink'
 import '../blog.css'
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -30,7 +31,7 @@ clientLoader.hydrate = true
 export default function BlogPost() {
   const { post } = useLoaderData<typeof loader>()
   return <main id="conteudo" tabIndex={-1} className="blog-page blog-post content-width">
-    <Link to="/blog" className="inline-link">Voltar ao blog</Link>
+    <BackLink to="/blog">Voltar ao blog</BackLink>
     <article>
       <header className="blog-post-heading">
         <div className="blog-meta">
@@ -52,7 +53,7 @@ export default function BlogPost() {
       <Link className="button button-primary" to="/loja">Ver os jogos</Link>
     </aside>
     <Newsletter />
-    <Link to="/blog" className="inline-link">Voltar ao blog</Link>
+    <BackLink to="/blog">Voltar ao blog</BackLink>
   </main>
 }
 
@@ -62,6 +63,6 @@ export function ErrorBoundary() {
   return <main id="conteudo" tabIndex={-1} className="blog-page blog-post content-width">
     <h1>{missing ? 'Artigo não encontrado' : 'Não foi possível abrir este artigo'}</h1>
     <p>{missing ? 'Este endereço não está disponível. Veja os artigos publicados no blog.' : 'Tente abrir o artigo novamente a partir do blog.'}</p>
-    <Link to="/blog" className="inline-link">Voltar ao blog</Link>
+    <BackLink to="/blog">Voltar ao blog</BackLink>
   </main>
 }

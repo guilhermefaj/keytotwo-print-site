@@ -1,6 +1,7 @@
 import type { Product } from '../../content/products'
 import { ProductAvailability } from './ProductAvailability'
 import { GameCover } from '../account/GameCover'
+import { accentStyle } from './GameGrid'
 
 export function BundleFeature({ product }: { product: Product }) {
   return <article className="shop-bundle" aria-labelledby={`bundle-${product.slug}`} data-shop-product={product.code}>
@@ -9,7 +10,7 @@ export function BundleFeature({ product }: { product: Product }) {
       <ProductAvailability product={product} />
     </div>
     <div className="shop-bundle-side">{product.cover && <GameCover name={product.title} art={product.cover} />}
-      <ol className="shop-bundle-games" aria-label="Jogos do pacote">{product.games.map(game => <li key={game.id}>{game.name}</li>)}</ol>
+      <ol className="shop-bundle-games" aria-label="Jogos do pacote">{product.games.map(game => <li key={game.id} style={accentStyle(game.accent)}>{game.name}</li>)}</ol>
     </div>
   </article>
 }

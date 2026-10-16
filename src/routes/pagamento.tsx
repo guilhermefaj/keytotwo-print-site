@@ -58,7 +58,7 @@ function Payment({ cart, refresh }: { cart: Cart; refresh: () => void }) {
 export default function Pagamento() {
   const { cart } = useShop()
   const { session } = useAuth()
-  return <main id="conteudo" tabIndex={-1} className="account-page payment-page purchase-page content-width"><CheckoutSteps current={3} /><h1>Pagamento</h1><DataStatus loading={false} error={cart.error} retry={cart.reload} />
+  return <main id="conteudo" tabIndex={-1} className="account-page payment-page purchase-page content-width">{cart.data?.items.length !== 0 && <CheckoutSteps current={3} signedIn={Boolean(session)} />}<h1>Pagamento</h1><DataStatus loading={false} error={cart.error} retry={cart.reload} />
     {cart.loading && !cart.data ? <PurchaseSkeleton /> : cart.data && (cart.data.items.length ? <Payment key={`${session?.user.id}:${cart.data.version}`} cart={cart.data} refresh={cart.reload} /> : <EmptyCart />)}
   </main>
 }

@@ -196,7 +196,14 @@ Uma folha branca com tinta verde-azulada escura, linhas de corte turquesa e um �
 - **Régua de tinta** (`{colors.ink-rule}`): divisórias sólidas de 1 px em listas, tabelas e rodapé (Tinta a 18 %). Quando a divisória "é da folha" (entre cartas, entre seções), usa-se a linha turquesa tracejada no lugar.
 - **Erro** (`{colors.error}`): mensagens de erro e borda de campo inválido. 7,30:1 sobre Papel.
 
-A paisagem da hero tem a própria paleta de cena (terra `#684839`, grama `#77A85B` / `#ACD475` / `#3F7957`, mato distante `#CFE6D7`, sulco `#A16C4E`), confinada ao bloco `.hero-scene`. Esses valores não saem da cena.
+A paisagem da hero tem a própria paleta de cena (terra `#684839`, grama `#77A85B` / `#ACD475` / `#3F7957`, mato distante `#CFE6D7`, sulco `#A16C4E`), confinada aos blocos `.hero-scene` e `.footer-ground` (o chão que fecha o rodapé público). Esses valores não saem da cena.
+
+### Cor do jogo
+Cada jogo tem uma cor tirada da própria capa oficial (`accent` em `src/content/games.ts`): Rabisque e Adivinhe rosa `#E06D86`, Tabuleiro da Sorte ouro `#F2B33C`, O Sumiço de Rapadura laranja-terra `#D9772E`, Hora dos Artistas vermelho-tinta `#C94050`. Ela chega ao CSS como `--game-accent`, posta pelo `GameCover` e pelo card. O pacote não tem cor própria: usa a Turquesa J001, a linha da marca.
+
+Onde aparece: a faixa de 6 px sob a capa nos cards da Loja, da vitrine e da biblioteca (8 px na página do produto); o marcador quadrado de 10 px de cada jogo na lista do pacote; o fundo da capa tipográfica, misturado a 14 % no Papel. Jogo novo com `accent` entra pintado sem CSS novo.
+
+**The Accent-Is-Paper Rule.** A cor do jogo é superfície e linha, como a tinta da capa impressa. Nunca é texto, ícone, borda única de controle nem fundo de botão.
 
 ### Named Rules
 **The Line-Not-Text Rule.** A Turquesa J001 nunca carrega significado sozinha: é linha de corte, calha ou borda de carta. Tudo o que precisa ser lido ou acionado é Tinta ou Turquesa profundo.
@@ -214,7 +221,7 @@ A paisagem da hero tem a própria paleta de cena (terra `#684839`, grama `#77A85
 
 ### Hierarchy
 - **Display** (700, `{typography.display}`, entrelinha 1, tracking −0,04em): só o H1 da hero. No celular usa `{typography.display-mobile}` (42 px) e, em 320 px, `{typography.display-xs}` (36 px). Nunca em outra seção.
-- **Headline** (700, `{typography.headline}`, 1,05, −0,03em): H2 de cada folha e H1 das páginas internas, alinhado à esquerda, largura máxima de 18ch, `text-wrap: balance`.
+- **Headline** (700, `{typography.headline}`, 1,05, −0,03em): H2 de cada folha e H1 das páginas internas, alinhado à esquerda, largura máxima de 18ch, `text-wrap: balance`. Regra de nível: H2 de **seção** (uma folha do Início, como Grátis ou Dúvidas) é Headline; H2 de **bloco** dentro de uma página que já tem H1 (Loja, produto) é Headline small.
 - **Headline small** (700, `{typography.headline-sm}`, 1,12): preço real na oferta, título do menu móvel e dos vazios, título da newsletter, H2 da lista do blog, links do menu móvel.
 - **Title large** (700, `{typography.title-lg}`, 1,2): H2 de cards e painéis (conta, carrinho, pagamento, gaveta), saudação da área privada, subtotal.
 - **Title** (700, `{typography.title}` e `{typography.title-sm}`, 1,15–1,2, −0,02em): nome do jogo na carta (22 px), H3 de legendas, de blocos e de itens de lista (19 px).
@@ -244,7 +251,7 @@ Grade: 12 colunas com divisões assimétricas. Título e apoio à esquerda em 7/
 
 Ritmo vertical em múltiplos de 8: `{spacing.sm}` entre rótulo e campo, `{spacing.md}` entre parágrafos, `{spacing.lg}` entre grupos, `{spacing.xl}` entre título e conteúdo, `{spacing.2xl}` entre blocos de uma folha, `{spacing.section}` entre folhas. Mais espaço acima de um título do que abaixo.
 
-No celular tudo empilha: título, apoio, ação; na oferta, **o preço e o botão vêm antes da prévia**. A barra fixa de compra (`.mobile-purchase-bar`) só existe abaixo de 768 px e se recolhe quando hero, oferta ou rodapé estão à vista.
+No celular tudo empilha: título, apoio, ação; na oferta, **o preço e o botão vêm antes da prévia**. Na página do produto e no card do pacote, **a capa vem antes do preço**: a capa não é a prévia, e a pessoa vê o que compra antes de decidir. A barra fixa de compra (`.mobile-purchase-bar`) só existe abaixo de 768 px e se recolhe quando hero, oferta ou rodapé estão à vista.
 
 Pontos de quebra: 360, 480, 600, 767, 1050 e 1120 (70rem) px, já usados pelo código. Sem rolagem horizontal de 320 a 1440 px com texto a 200 %.
 
@@ -297,11 +304,13 @@ Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exa
 
 ### Tags (etiqueta e selo)
 - **Etiqueta** (`.tag`): Papel, borda 2 px **tracejada** Turquesa J001, `{rounded.sm}`, padding `6px 12px`, Label 600 em Tinta. Só para a identificação da hero e para marcar algo "por recortar" (ex.: freebie em preparação).
-- **Selo** (`.tag-solid`): borda 1,5 px sólida Turquesa J001, texto Turquesa profundo em Caption 600, padding `2px 8px`. Só dentro da carta ("No pacote").
+- **Selo** (`.tag-solid`): borda 1,5 px sólida Turquesa J001, texto Turquesa profundo em Caption 600, padding `2px 8px`. Só dentro da carta ("No pacote", no rodapé do card de jogo).
 
 ### Cards / Containers
 - **Capa de jogo** (`.game-cover`): face 16:9 de Papel, borda 2 px Turquesa J001, `{rounded.lg}`. Duas faces: **arte oficial** (a capa aprovada do jogo, `cover` em `src/content/games.ts`, gerada por `scripts/prepare-game-covers.mjs`, em `object-fit: cover`) e **tipográfica** (nome do jogo em Title 22 px, sem imagem), padrão de qualquer jogo sem capa. A prévia (página real do PDF) nunca é capa: ela fica na seção de experiência e no link "Ver a prévia" da página do produto (decisão do responsável, 2026-10-16).
-- **Card de produto** (`.shop-game`, Loja e vitrine do Início): o quadro é o card (borda 2 px Turquesa, `{rounded.lg}`), com a capa no topo sem borda própria, separada do corpo por uma régua de Tinta; abaixo, H3 Title, resumo em Tinta suave e, no rodapé alinhado entre os cards da linha, preço + botão primário "Adicionar à sacola" + "Ver detalhes", ou a etiqueta tracejada "Em breve" quando não há avulso à venda. A grade cria as colunas pela quantidade de jogos (mínimo 240 px). Vaga de jogo indefinido do pacote não vira card.
+- **Card de produto** (`.shop-game`, Loja e vitrine do Início): o quadro é o card (borda 2 px Turquesa, `{rounded.lg}`), com a capa no topo sem borda própria, separada do corpo por uma régua de Tinta; abaixo, H3 Title, resumo em Tinta suave e, no rodapé alinhado entre os cards da linha, preço + botão primário "Adicionar à sacola" + "Ver detalhes", ou um dos estados abaixo. Logo sob a capa corre a faixa da cor do jogo. A grade cria as colunas pela quantidade de jogos (mínimo 240 px). Vaga de jogo indefinido do pacote não vira card.
+  - **Estados do rodapé:** *à venda* (preço, "Adicionar à sacola", "Ver detalhes"); *no pacote* (selo "No pacote" e o link "Ver o pacote", quando o jogo não tem avulso mas está num pacote à venda); *grátis* (seção Grátis); *em breve* (etiqueta tracejada, só para o que não se compra de jeito nenhum). Um jogo do pacote nunca aparece como "Em breve".
+  - **Variante incluído** (`GameGrid variant="included"`, página do pacote): capa, nome, resumo e a ficha do jogo (`facts`), com "Ver detalhes" só se houver página do avulso. Sem preço e sem compra avulsa dentro da oferta do pacote.
 - **Grátis** (`.shop-freebies`, Loja e Início): jogos entregues ao criar a conta (`freebie` em `src/content/games.ts`), fora do pacote. Etiqueta "Grátis", título e texto de `experience.freebie` à esquerda e os cards à direita (empilha abaixo de 960 px). O card mostra "Grátis" no lugar do preço e o botão "Criar conta". O freebie ainda em desenvolvimento aparece como card tracejado com a face "em breve". Até existir o resgate no backend, a seção só aparece no stage test. Na biblioteca (Minha área) a mesma capa vai dentro do card do jogo, também 16:9.
 - **Folha** (`.folha`): contêiner da grade de cartas com calhas tracejadas (`border-right`/`border-bottom` 2 px tracejado Turquesa J001 em cada carta, nunca duplicadas). Padding 18 px (10 px no celular).
 - **Card de oferta, conta e pagamento** (`.offer-summary`, `.account-card`, `.payment-card`, `.cart-summary`): Papel, borda 2 px Turquesa J001, `{rounded.lg}`, padding 32 px (24 px no celular), sem sombra. Dentro dele, a composição é uma ficha: nome, conteúdo, preço, ação.
@@ -326,12 +335,15 @@ Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direit
 
 ### Navigation
 - **Cabeçalho:** Céu sobre a hero, Papel nas demais páginas e quando rolado (Papel a 94 % com desfoque de 12 px e a sombra de cabeçalho). Logo à esquerda (146 px; 125 px no celular), links ao centro, ações à direita. Links em Body 15 px Tinta, padding `10px 12px`, alvo de 44 px; hover sublinha (2 px, offset 6 px); ativo sublinha em Turquesa profundo e Label 600. "Ajuda" tem o mesmo peso dos outros links. O CTA compacto é o botão primário de 44 px.
-- **Área privada** (`/meus-jogos`, `/pedidos`, `/conta`): o cabeçalho simplifica para logo, Meus jogos, Minha conta e Ajuda, sem CTA comercial nem carrinho.
-- **Navegação pública (I6):** Início, Loja e Blog (somente quando há posts no stage do build); Jogo grátis só quando disponível. Loja fica ativa em `/loja` e seus detalhes, sem scroll-spy. À direita ficam Ajuda, conta/Entrar e sacola, com rótulo acessível "Sacola, N itens". O CTA compacto "Ver os jogos" leva a `/loja` e não aparece na Loja nem na área privada. O menu móvel mantém a mesma ordem e regra de CTA. No rodapé, Explorar oferece Início, Loja e Como funciona (`/#como-funciona`), além de Blog e jogo gratuito quando disponíveis; não há link para a antiga oferta.
-- **Modo foco** (`/pagamento`): logo, "Compra segura" com cadeado e "Voltar à sacola" (rota `/carrinho`).
+- **Área privada** (`/meus-jogos`, `/pedidos`, `/conta`): no desktop o cabeçalho fica com logo, Ajuda e a conta, porque as abas já levam a Meus jogos, Pedidos e Minha conta; o menu móvel mantém os três links. Sem CTA comercial nem carrinho. A saudação traz o Kito acenando ao lado do nome.
+- **Navegação pública (I6):** Início, Loja e Blog (somente quando há posts no stage do build); Jogo grátis só quando disponível. Loja fica ativa em `/loja` e seus detalhes, sem scroll-spy. À direita ficam Ajuda, conta/Entrar e sacola, com rótulo acessível "Sacola, N itens". O CTA compacto "Ver os jogos" leva a `/loja` e não aparece na Loja, na área privada, na sacola nem na confirmação do pedido. O menu móvel mantém a mesma ordem e regra de CTA. No rodapé, Explorar oferece Início, Loja e Como funciona (`/#como-funciona`), além de Blog e jogo gratuito quando disponíveis; não há link para a antiga oferta.
+- **Modo foco** (`/pagamento`): logo, "Compra segura" com cadeado e "Voltar à sacola" (rota `/carrinho`). O rodapé encolhe para a linha legal (©, Termos, Privacidade, Ajuda).
+- **Newsletter:** escondida até existir o envio (responsável, 2026-10-16; `newsletterVisible` em `src/lib/features.ts`, `VITE_NEWSLETTER=true` traz de volta). A preferência de e-mail em Minha conta continua.
+- **Voltar** (`BackLink`, `.back-link`): chevron Tabler à esquerda (20 px) e o destino em Label 600 Turquesa profundo; sublinha no hover. Um desenho só no produto ("Loja"), na Ajuda e nas páginas legais ("Voltar ao início") e no post ("Voltar ao blog").
+- **Abre e fecha** (`Summary`, `<details>`): o marcador do navegador some; o chevron Tabler (`IconChevronDown`, 20 px, Turquesa profundo) gira 180° em 240 ms quando abre. No FAQ o chevron vai à direita da linha; nos detalhes curtos (sacola, pedidos) ele vem logo depois do texto.
 - **Menu móvel (Sheet):** painel de Papel de até 480 px com a sombra de painel; links em Headline reduzida (Bricolage 700, 28 px) separados por régua de Tinta; entrada de 240 ms com 40 ms de escalonamento e 8 px de deslocamento; Escape fecha e devolve o foco.
 - **Abas da área privada:** sublinhado de 3 px Turquesa profundo na aba ativa, texto Tinta suave nas demais, barra fixa sob o cabeçalho.
-- **Etapas da compra** (`.checkout-steps`): quatro passos em Caption, número em círculo de 28 px com borda de régua; a etapa atual em Tinta 600 com o círculo em Turquesa profundo; concluída com o ícone de conferir (`IconCheck`, 16 px) em aguada de Tinta. Os números aqui são uma sequência real.
+- **Etapas da compra** (`.checkout-steps`): quatro passos (Sacola, Entrar, Pagamento, Pronto) para quem ainda não entrou; três, renumerados, para quem já entrou, sem uma etapa "Entrar" concluída fora de ordem. Somem na sacola vazia e nos erros da confirmação. Em Caption, número em círculo de 28 px com borda de régua; a etapa atual em Tinta 600 com o círculo em Turquesa profundo; concluída com o ícone de conferir (`IconCheck`, 16 px) em aguada de Tinta. Os números aqui são uma sequência real.
 
 ### Kito (uso do personagem)
 - **Hero:** o único lugar onde o Kito se move. Atlas v3.1 RIGHT, 12 poses, 10 FPS, ciclo de 1,2 s, deslocamento `S × 520/1254 × FPS/12` px/s, chão em `S × 1160/1254`, duas camadas CSS (`.kito-track` desloca, `.kito-frames` troca a pose), volta só fora da tela, pausa fora de vista/aba oculta/menu aberto, `prefers-reduced-motion` começa parado com "Retomar animação". Parâmetros vêm de `src/kito-motion.ts` (gerado); nunca editar à mão, nunca regerar, recortar ou espelhar o atlas.
@@ -339,7 +351,8 @@ Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direit
 - **Vazios** (carrinho, biblioteca, gaveta): Kito na caixa (`kito-caixa`, 240 px; 180 px no celular), com a entrada curta de 650 ms.
 - **Celebração** (pagamento confirmado): Kito acenando (`kito-hi`) com o confete de 1,1 s. Único lugar de delícia longa.
 - **Erro, falha de pagamento e 404:** pose neutra = **quadro 01 do atlas** (`.kito-still`, fundo `kito-walk-v31-right-atlas.webp` em `0 0 / 600% 200%`, 128–160 px), sem lágrima, sem aceno. Nenhuma imagem nova é gerada para isso.
-- **Área privada:** Kito acenando pequeno (56–64 px) na saudação. Só ali.
+- **Área privada:** Kito acenando pequeno (56–64 px), ao lado do nome na saudação.
+- **Rodapé público:** o chão da hero volta como faixa de borda a borda (`.footer-ground`: grama, terra, um arbusto da cena) e o Kito acenando (`kito-hi`, 104 px; 84 px no celular) se despede em pé sobre ela, parado. Decorativo (`aria-hidden`). Não entra no rodapé privado, no da compra nem no do modo foco.
 
 ### Estados
 - **Carregando:** esqueleto em aguada de Tinta com `role="status"` e texto visível ("Carregando seu carrinho…"); preço em "Consultando preço…" em Body Tinta suave, nunca em Display.
@@ -359,7 +372,7 @@ Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direit
 ### Named Rules
 **The Catalog Rule.** Nenhum componente desenha "5" ou "P001". Título, chamada, conteúdo e entrega da oferta vêm de `src/content/products.ts`; código, nome, resumo, capa, prévia aprovada e fatos de cada carta vêm de `src/content/games.ts`. A grade de cards aceita de 1 a N jogos (colunas pela quantidade, quebrando em linhas novas), a capa tipográfica é o padrão de qualquer jogo sem capa oficial, e a oferta renderiza um card por produto do catálogo. Um freebie ou um segundo pacote entra sem CSS novo.
 
-**The Kito Acts Rule.** Se o Kito não está caminhando, acolhendo, celebrando ou convidando, ele não está na tela.
+**The Kito Acts Rule.** Se o Kito não está caminhando, acolhendo, celebrando, convidando ou se despedindo, ele não está na tela.
 
 ## Do's and Don'ts
 
@@ -376,7 +389,8 @@ Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direit
 ### Don't:
 - **Don't** usar rótulo, kicker ou caixa alta com tracking acima de um título.
 - **Don't** usar Turquesa J001 em texto, ícone informativo ou borda única de controle.
-- **Don't** usar Céu, Marca-texto ou a paleta da paisagem fora da hero (o marca-texto só atrás de uma palavra).
+- **Don't** usar Céu ou Marca-texto fora da hero, nem a paleta da paisagem fora da hero e do chão do rodapé (o marca-texto só atrás de uma palavra).
+- **Don't** escrever texto na cor do jogo nem marcar um jogo do pacote como "Em breve".
 - **Don't** usar cápsula (999 px), sombra dura (`0 3px 0`), borda lateral colorida ou card com borda mais sombra.
 - **Don't** colocar o Kito como ícone, enfeite de prévia ou em erro com expressão triste. A exceção é a arte oficial das capas.
 - **Don't** usar a prévia do PDF como capa ou miniatura de jogo.

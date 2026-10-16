@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import type { Product } from '../../content/products'
 import { money } from '../../lib/api'
@@ -14,14 +15,14 @@ export function CatalogFeedback() {
 }
 
 // Conteúdo não concede disponibilidade: o catálogo aplica a completude e publicação dos jogos.
-export function ProductAvailability({ product, detail = false }: { product?: Product; detail?: boolean }) {
+// `fallback` substitui o "Em breve" quando o jogo ainda se compra de outro jeito (no pacote).
+export function ProductAvailability({ product, detail = false, fallback }: { product?: Product; detail?: boolean; fallback?: ReactNode }) {
   const { catalog } = useShop()
-  if (!product || product.availability !== 'sale' || !siteConfig.showCartAccess) {
-    return <p className="shop-soon">Em breve</p>
-  }
+  const soon = fallback ?? <p className="shop-soon">Em breve</p>
+  if (!product || product.availability !== 'sale' || !siteConfig.showCartAccess) return soon
   if (catalog.loading || catalog.error) return detail ? <CatalogFeedback /> : null
   const listed = catalog.data?.products.find(item => item.code === product.code)
-  if (!listed) return <p className="shop-soon">Em breve</p>
+  if (!listed) return soon
   if (!listed.price) return <p className="shop-status">Não conseguimos carregar o preço.</p>
   return <div className="shop-availability">
     <p className="shop-price">{money(listed.price.unit_amount, listed.price.currency)}</p>

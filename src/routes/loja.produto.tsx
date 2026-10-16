@@ -3,6 +3,7 @@ import { productPages, products } from '../content/products'
 import { GameCover } from '../components/account/GameCover'
 import { ProductAvailability } from '../components/shop/ProductAvailability'
 import { GameGrid } from '../components/shop/GameGrid'
+import { BackLink } from '../components/ui/BackLink'
 import NotFound from './not-found'
 import '../shop.css'
 
@@ -25,7 +26,7 @@ export default function ShopProduct() {
   const game = product.kind === 'single' ? product.games[0] : undefined
   const bundle = game && products.find(item => item.kind === 'bundle' && item.games.some(included => included.id === game.id))
   return <main id="conteudo" tabIndex={-1} className="shop-page shop-product-page content-width">
-    <Link className="inline-link shop-back" to="/loja">Loja</Link>
+    <BackLink to="/loja">Loja</BackLink>
     <header className="shop-heading"><h1>{product.title}</h1><p>{product.shopHeadline || product.tagline}</p></header>
     <div className="shop-product-layout">
       <div className="shop-product-cover"><GameCover code={game?.code} name={product.title} art={product.cover} />
@@ -40,7 +41,7 @@ export default function ShopProduct() {
       </section>
     </div>
     {game?.facts && <section className="shop-facts" aria-labelledby="shop-facts-title"><h2 id="shop-facts-title">{game.name}</h2><p>{game.description}</p><dl className="ficha">{game.facts.map(fact => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl></section>}
-    {product.kind === 'bundle' && <section className="shop-games" aria-labelledby="shop-games-title"><h2 id="shop-games-title">Jogos do pacote</h2><GameGrid games={product.games} /></section>}
+    {product.kind === 'bundle' && <section className="shop-games" aria-labelledby="shop-games-title"><h2 id="shop-games-title">Jogos do pacote</h2><GameGrid games={product.games} variant="included" /></section>}
   </main>
 }
 

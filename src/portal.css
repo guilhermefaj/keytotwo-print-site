@@ -1,6 +1,7 @@
 /* Minha área: os jogos comprados lideram. Tokens em styles.css. */
 .portal-page { --portal-tabs-offset: var(--header-height); min-height: 65svh; background: var(--color-paper); }
-.portal-welcome { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 36px 28px; }
+/* O Kito acena ao lado do nome: a saudação é um cartão de boas-vindas, não um rótulo solto. */
+.portal-welcome { display: flex; align-items: center; justify-content: flex-start; gap: 16px; padding-block: 36px 28px; }
 .portal-welcome > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px 24px; min-width: 0; }
 .portal-greeting { font-family: var(--font-display); font-weight: 700; font-size: var(--text-title-lg); line-height: 1.25; letter-spacing: var(--tracking-title); margin: 0; }
 .portal-area-name { margin: 0; color: var(--color-ink-soft); font-size: var(--text-small); }
@@ -49,7 +50,7 @@
 .order-total strong { font-size: var(--text-title); }
 .order-total a { display: inline-flex; align-items: center; min-height: 44px; gap: 12px; font-size: var(--text-label); }
 .order-details { grid-column: 1 / -1; }
-.order-details summary { width: fit-content; min-height: 44px; padding-block: 12px; cursor: pointer; font-size: var(--text-caption); color: var(--color-deep-teal); }
+.order-details summary { width: fit-content; justify-content: flex-start; gap: 6px; min-height: 44px; padding-block: 12px; cursor: pointer; font-size: var(--text-caption); color: var(--color-deep-teal); }
 .order-details dl { display: flex; flex-wrap: wrap; gap: 24px; padding: 20px; margin: 0; border: var(--line-rule); border-radius: var(--radius-md); }
 .order-details dt { color: var(--color-ink-soft); font-size: var(--text-caption); margin-bottom: 6px; }
 .order-details dd { margin: 0; font-size: var(--text-label); overflow-wrap: anywhere; }

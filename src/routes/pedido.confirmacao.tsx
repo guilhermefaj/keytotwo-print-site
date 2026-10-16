@@ -61,7 +61,7 @@ function Status({ sessionId }: { sessionId: string }) {
     if (error) { setError('Não foi possível trocar de conta. Tente novamente.'); setSigningOut(false) }
     // RequireAuth preserves the full confirmation URL as next after signing out.
   }
-  return <main id="conteudo" tabIndex={-1} className="account-page confirmation-page purchase-page content-width"><CheckoutSteps current={state === 'paid' ? 4 : 3} /><div className="confirmation-card"><div className="confirmation-result">
+  return <main id="conteudo" tabIndex={-1} className="account-page confirmation-page purchase-page content-width">{!['failed', 'expired', 'not_found', 'other_account'].includes(state ?? '') && <CheckoutSteps current={state === 'paid' ? 4 : 3} signedIn />}<div className="confirmation-card"><div className="confirmation-result">
     {state === 'paid' ? <Celebration /> : ['failed', 'expired', 'not_found', 'other_account'].includes(state ?? '') ? <span className="kito-still" aria-hidden="true" /> : <img className="confirmation-waiting" src="/media/experience/kito-hi-256.webp" alt="" width="200" height="200" />}
     <div><h1>{content?.title || 'Conferindo seu pagamento'}</h1>
     {demo && <p className="checkout-demo"><strong>Demonstração.</strong> Esta confirmação é simulada. Nenhuma compra ou liberação foi feita.</p>}
