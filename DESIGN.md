@@ -288,7 +288,7 @@ Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exa
 
 - **Família:** outline. As variantes `Filled` só existem para play/pause do Kito (`IconPlayerPlayFilled`/`IconPlayerPauseFilled`).
 - **Traço:** 1,75 (`stroke`); cor sempre `currentColor` — Tinta ou Turquesa profundo conforme o controle. A Turquesa J001 nunca aparece em ícone que precise ser lido (regra existente).
-- **Tamanhos:** 20 px em controles e navegação (menu, chevrons do carrossel, gatilho da conta usa 16 px); 24 px na sacola, no fechar do painel e na tesoura; 16 px em selos inline ("Compra segura", "Pagamento seguro") e na etapa concluída da compra.
+- **Tamanhos:** 20 px em controles e navegação (menu, chevrons do carrossel, gatilho da conta usa 16 px); 24 px na sacola, no fechar do painel, na tesoura e na lista "O que vocês precisam"; 16 px em selos inline ("Compra segura", "Pagamento seguro") e na etapa concluída da compra; 32 px só para ilustrar as cartas de "Como funciona", nunca em controle.
 - **Acessibilidade:** todo ícone é decorativo (`aria-hidden`) e o rótulo fica no controle — `aria-label` no botão/link ou texto visível ao lado.
 - **No código:** `<Icon component={IconShoppingBag} size={24} />` a partir de `src/components/ui/Icon.tsx`, que fixa os padrões (traço 1,75, `aria-hidden`, `currentColor`). Sem SVG inline para ícone, sem `import *` e sem o pacote `@tabler/icons` (SVG cru) — há regra de lint para as duas últimas.
 
@@ -307,8 +307,8 @@ Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exa
 - **Selo** (`.tag-solid`): borda 1,5 px sólida Turquesa J001, texto Turquesa profundo em Caption 600, padding `2px 8px`. Só dentro da carta ("No pacote", no rodapé do card de jogo).
 
 ### Cards / Containers
-- **Capa de jogo** (`.game-cover`): face 16:9 de Papel, borda 2 px Turquesa J001, `{rounded.lg}`. Duas faces: **arte oficial** (a capa aprovada do jogo, `cover` em `src/content/games.ts`, gerada por `scripts/prepare-game-covers.mjs`, em `object-fit: cover`) e **tipográfica** (nome do jogo em Title 22 px, sem imagem), padrão de qualquer jogo sem capa. A prévia (página real do PDF) nunca é capa: ela fica na seção de experiência e no link "Ver a prévia" da página do produto (decisão do responsável, 2026-10-16).
-- **Card de produto** (`.shop-game`, Loja e vitrine do Início): o quadro é o card (borda 2 px Turquesa, `{rounded.lg}`), com a capa no topo sem borda própria, separada do corpo por uma régua de Tinta; abaixo, H3 Title, resumo em Tinta suave e, no rodapé alinhado entre os cards da linha, preço + botão primário "Adicionar à sacola" + "Ver detalhes", ou um dos estados abaixo. Logo sob a capa corre a faixa da cor do jogo. A grade cria as colunas pela quantidade de jogos (mínimo 240 px). Vaga de jogo indefinido do pacote não vira card.
+- **Capa de jogo** (`.game-cover`): face 16:9 de Papel, borda 2 px Turquesa J001, `{rounded.lg}`. Duas faces: **arte oficial** (a capa aprovada do jogo, `cover` em `src/content/games.ts`, gerada por `scripts/prepare-game-covers.mjs`, em `object-fit: cover`) e **tipográfica** (nome do jogo em Title 22 px, sem imagem), padrão de qualquer jogo sem capa. A prévia (página real do PDF) nunca é capa: ela fica na seção de experiência e na galeria da página do produto, sempre depois da capa (decisão do responsável, 2026-10-16). Só entram páginas com prévia pública autorizada (`pages` em `src/content/games.ts`); hoje, as do J001.
+- **Card de produto** (`.shop-game`, Loja e página do pacote): o quadro é o card (borda 2 px Turquesa, `{rounded.lg}`), com a capa no topo sem borda própria, separada do corpo por uma régua de Tinta; abaixo, H3 Title, resumo em Tinta suave e, no rodapé alinhado entre os cards da linha, preço + botão primário "Adicionar à sacola" + "Ver detalhes", ou um dos estados abaixo. Logo sob a capa corre a faixa da cor do jogo. A grade cria as colunas pela quantidade de jogos (mínimo 240 px). Vaga de jogo indefinido do pacote não vira card.
   - **Estados do rodapé:** *à venda* (preço, "Adicionar à sacola", "Ver detalhes"); *no pacote* (selo "No pacote" e o link "Ver o pacote", quando o jogo não tem avulso mas está num pacote à venda); *grátis* (seção Grátis); *em breve* (etiqueta tracejada, só para o que não se compra de jeito nenhum). Um jogo do pacote nunca aparece como "Em breve".
   - **Variante incluído** (`GameGrid variant="included"`, página do pacote): capa, nome, resumo e a ficha do jogo (`facts`), com "Ver detalhes" só se houver página do avulso. Sem preço e sem compra avulsa dentro da oferta do pacote.
 - **Grátis** (`.shop-freebies`, Loja e Início): jogos entregues ao criar a conta (`freebie` em `src/content/games.ts`), fora do pacote. Etiqueta "Grátis", título e texto de `experience.freebie` à esquerda e os cards à direita (empilha abaixo de 960 px). O card mostra "Grátis" no lugar do preço e o botão "Criar conta". O freebie ainda em desenvolvimento aparece como card tracejado com a face "em breve". Até existir o resgate no backend, a seção só aparece no stage test. Na biblioteca (Minha área) a mesma capa vai dentro do card do jogo, também 16:9.
@@ -321,7 +321,26 @@ Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exa
 Elemento decorativo (`aria-hidden`) de 40 px de altura entre duas folhas: linha tracejada 2 px Turquesa J001 de borda a borda da janela e a tesoura (ícone Tabler `IconScissors`, 24 px, traço 1,75 Turquesa profundo) sobre um retângulo de Papel na margem esquerda do contêiner. Usa-se em três cortes: hero → folha dos jogos, antes da oferta e antes do rodapé (só no rodapé público). Não dentro de uma folha, não entre seções do mesmo assunto, não em páginas privadas.
 
 ### Ficha (`.ficha`)
-Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direita, pontilhado de 2 px Turquesa J001 preenchendo o meio (`flex: 1; border-bottom: 2px dotted`). Usada para os fatos do J001, o resumo da oferta (conteúdo, formato, acesso) e os detalhes do pedido.
+Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direita, pontilhado de 2 px Turquesa J001 preenchendo o meio (`flex: 1; border-bottom: 2px dotted`). Usada para os fatos de cada jogo nos cards da página do pacote, o resumo da oferta (conteúdo, formato, acesso) e os detalhes do pedido.
+
+### Banner do pacote (`.shop-bundle`, Loja e Início)
+Card de borda 2 px Turquesa. À esquerda, a capa grande do pacote e, sob ela, os jogos: miniatura da capa (88 px, faixa de 4 px na cor do jogo) e o nome, separados por régua pontilhada. À direita, "Pacote de jogos", o nome do pacote, o que vem, o preço e a compra. No celular, a capa abre; depois nome, preço e compra; por fim os jogos.
+
+### Vitrine do Início (`.cover-carousel`)
+Depois do banner do pacote, uma fileira de capas clicáveis (`.cover-tile`), uma por jogo do pacote: capa com a faixa da cor do jogo, nome em Title, resumo em Tinta suave e o preço do avulso em Label 600 Turquesa profundo (ou "No pacote" quando o /catalog não lista o avulso; vazio enquanto carrega). O card inteiro é um link para a página do jogo; no hover a capa sobe 2 px (só com ponteiro fino e sem movimento reduzido) e o nome sublinha. Sem botão de compra: a compra mora no banner, na Loja e no produto. Três colunas no desktop; carrossel com snap abaixo de 768 px.
+
+### Página de produto (`/loja/:slug`)
+Ordem fixa, com dados de `src/content/games.ts` e `products.ts`:
+1. **Voltar** ("Loja"), H1 com o nome e a chamada.
+2. **Ficha no topo** (`.product-facts`, só no avulso): os fatos do jogo lado a lado, cada um com o rótulo em Caption Tinta suave e o valor em 600, separados por calhas tracejadas e com linha tracejada em cima e embaixo; duas colunas no celular.
+3. **Galeria e compra**: à esquerda a galeria (`ProductGallery`), à direita o card "O que está incluído" com preço e compra. A galeria abre na capa (16:9, com a faixa de 8 px da cor do jogo) e troca pelas miniaturas (botões de 88 px, `aria-pressed`, a escolhida com borda de 2 px Turquesa profundo). No avulso seguem as páginas reais autorizadas, inteiras sobre a aguada de Tinta; no pacote, as capas de cada jogo.
+4. **Como jogar** (só no avulso): a descrição do jogo e três passos numerados (`howTo`), em cartas com calhas tracejadas. Os passos vêm das regras conferidas e nunca revelam soluções.
+5. **Jogos do pacote** (só no pacote): a grade na variante "incluído".
+6. **O que vocês precisam** (`needs`): ícone Tabler de 24 px em Turquesa profundo e o rótulo de `needLabels`, com régua pontilhada. No pacote, a lista junta o que todos os jogos pedem.
+7. **Também está no pacote** (só no avulso que faz parte de um pacote à venda): card tracejado com o argumento real, "todos num só pedido", as miniaturas dos jogos e "Ver o pacote". Nunca compara preços nem anuncia economia.
+
+### Como funciona (`.steps-list`)
+Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entre as cartas (em cima umas das outras no celular). Cada carta tem o número da etapa em círculo e o ícone Tabler de 32 px em Turquesa profundo na mesma linha, o título em Title e o texto em Small Tinta suave.
 
 ### Marca-texto (`mark`)
 `background: linear-gradient(transparent 58%, {colors.highlight} 58% 92%, transparent 92%)`, `color: inherit`, `padding: 0 .04em`. Uma vez por página.

@@ -10,9 +10,9 @@ export const experience = {
   cta: { label: 'Ver os jogos', href: '/loja' },
   secondary: { label: 'Ver a prévia', href: '/#experiencia' },
   steps: [
-    { title: 'Escolham.', text: 'Levem a ideia para a sacola. Entrem na conta para seguir com a compra.' },
-    { title: 'Imprimam.', text: 'Depois da compra, os arquivos ficam em Meus jogos e chegam por e-mail.' },
-    { title: 'Divirtam-se.', text: 'Preparem os materiais e escolham quem começa.' },
+    { title: 'Escolham.', text: 'Levem a ideia para a sacola. Entrem na conta para seguir com a compra.', icon: 'sacola' },
+    { title: 'Imprimam.', text: 'Depois da compra, os arquivos ficam em Meus jogos e chegam por e-mail.', icon: 'impressora' },
+    { title: 'Divirtam-se.', text: 'Preparem os materiais e escolham quem começa.', icon: 'dado' },
   ],
   // Portão 1: relatos de exemplo na voz da marca, marcados placeholder: true. Aparecem só no stage
   // test; em live só entram relatos reais (placeholder: false) e, sem nenhum, a seção não renderiza.

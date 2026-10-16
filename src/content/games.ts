@@ -5,6 +5,21 @@ import { pending } from '../lib/pending.ts'
 // capa, prévia aprovada, fatos). Sem capa oficial a capa é tipográfica; sem confirmação, "em breve".
 // A prévia (página real do PDF) não é capa: só aparece na seção de experiência.
 export type GamePreview = { src: string; alt: string; href: string; label: string }
+/** O que a dupla providencia além do PDF (DESIGN.md › O que vocês precisam). Rótulos em `needLabels`. */
+export type Need = 'impressora' | 'tesoura' | 'caneta' | 'folha' | 'cronometro' | 'estilete' | 'fita' | 'cola' | 'copo' | 'luz' | 'celular'
+export const needLabels: Record<Need, string> = {
+  impressora: 'Impressora e papel A4',
+  tesoura: 'Tesoura',
+  caneta: 'Uma caneta por pessoa',
+  folha: 'Uma folha grande para desenhar',
+  cronometro: 'Cronômetro',
+  estilete: 'Estilete e base de corte',
+  fita: 'Fita adesiva',
+  cola: 'Cola',
+  copo: 'Um copo para as dicas',
+  luz: 'Luz do dia ou um abajur',
+  celular: 'Celular, para os desafios de foto',
+}
 /** Arte oficial 16:9 gerada por scripts/prepare-game-covers.mjs (640 e 1280 px de largura). */
 export type GameCoverArt = { src: string; srcSet: string }
 export type Game = {
@@ -23,6 +38,11 @@ export type Game = {
   facts?: ReadonlyArray<{ label: string; value: string }>
   /** Cor do jogo, tirada da capa oficial (DESIGN.md › Cor do jogo): só faixa e superfície, nunca texto. */
   accent?: string
+  /** Páginas reais do PDF com prévia pública autorizada: entram na galeria do produto, depois da capa. */
+  pages?: ReadonlyArray<{ src: string; alt: string }>
+  needs?: readonly Need[]
+  /** Como jogar em três passos, tirados das regras conferidas; sem revelar soluções. */
+  howTo?: readonly string[]
 }
 
 // Verified J001 facts, never extrapolated to the other games.
@@ -40,6 +60,17 @@ export const games: readonly Game[] = [
     preview: { src: '/media/experience/j001-page-1-720.webp', alt: 'Prévia real de Rabisque e Adivinhe.', href: '/#experiencia', label: 'Ver a prévia' },
     facts: j001Facts,
     accent: '#e06d86',
+    pages: [
+      { src: '/media/experience/j001-page-1-720.webp', alt: 'Página 1 do PDF: instruções e as primeiras cartas.' },
+      { src: '/media/experience/j001-page-2-720.webp', alt: 'Página 2 do PDF: cartas para recortar.' },
+      { src: '/media/experience/j001-page-3-720.webp', alt: 'Página 3 do PDF: mais cartas para recortar.' },
+    ],
+    needs: ['impressora', 'tesoura', 'folha', 'caneta', 'cronometro'],
+    howTo: [
+      'Imprimam e recortem as cartas. Coloquem-nas viradas para baixo e escolham quem começa desenhando.',
+      'O Artista desenha a palavra ou frase da carta, sem letras nem números. A dupla tenta acertar o máximo de cartas em 60 segundos.',
+      'Troquem de papéis a cada rodada. Depois de 10 rodadas, somem os pontos da dupla.',
+    ],
   },
   // Códigos atribuídos nas fichas do Drive (capa e PDF por código); jogo ainda sem ficha usa apenas id interno.
   // O pacote lista só os jogos disponíveis, sem quantidade fixa nem vagas "a definir" (responsável, 2026-10-16).
@@ -52,6 +83,12 @@ export const games: readonly Game[] = [
     cover: cover('j003'),
     facts: [{ label: 'Pessoas', value: '2, um contra o outro' }, { label: 'Arquivo', value: 'PDF de 11 páginas A4' }, { label: 'Cartas', value: '54: 27 perguntas e 27 desafios' }, { label: 'Peças', value: 'Tabuleiro, 30 moedas, dado e pinos' }],
     accent: '#f2b33c',
+    needs: ['impressora', 'tesoura', 'cola', 'caneta', 'cronometro', 'celular'],
+    howTo: [
+      'Recortem cartas, moedas, dado e pinos. Cada um escreve no Tesouro um pedido secreto para o par e guarda até o fim.',
+      'Na sua vez, joguem o dado, andem as casas e façam o que a casa pede: pergunta, desafio, ganhar ou dar moedas.',
+      'Quem voltar primeiro ao INÍCIO ganha 5 moedas e encerra o jogo. Quem tiver mais moedas entrega o seu pedido ao par.',
+    ],
   },
   // J002 (escape room) entra no P001 por decisão do responsável (2026-10-16).
   {
@@ -62,6 +99,12 @@ export const games: readonly Game[] = [
     cover: cover('j002'),
     facts: [{ label: 'Pessoas', value: '2, em cooperação' }, { label: 'Desafios', value: '6 e um desfecho' }, { label: 'Arquivo', value: 'PDF de 21 páginas A4' }, { label: 'Dicas', value: '18 cartões, da dica leve à solução' }],
     accent: '#d9772e',
+    needs: ['impressora', 'tesoura', 'estilete', 'fita', 'caneta', 'copo', 'luz'],
+    howTo: [
+      'Imprimam as páginas e fechem os sete envelopes com os selos, sem ler o que vai dentro.',
+      'Abram o primeiro envelope e resolvam o desafio. A resposta certa no Livro do Cartório diz qual envelope abrir depois.',
+      'Cada um tem folhas que o par não pode ver: descrevam, perguntem e usem as dicas quando precisarem.',
+    ],
   },
   // Freebies (código F): dois no início; o segundo ainda está em desenvolvimento.
   { id: 'hora-dos-artistas', code: 'F001', name: 'Hora dos Artistas', confirmed: true, freebie: true, description: 'Jogo grátis para quem cria a conta.', pending: pending('ficha, regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('f001'), accent: '#c94050' },

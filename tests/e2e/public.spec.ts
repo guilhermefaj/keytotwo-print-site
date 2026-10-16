@@ -125,7 +125,7 @@ test.describe('conteúdo', () => {
     await expect(page.locator('.shop-showcase')).toHaveCount(1)
     await expect(page.locator('.shop-showcase [data-shop-product]')).toHaveCount(1)
     await expect(page.locator('.shop-showcase [data-shop-product]')).toHaveAttribute('data-shop-product', 'P001')
-    await expect(page.locator('.shop-showcase .shop-game')).toHaveCount(3)
+    await expect(page.locator('.shop-showcase .cover-tile')).toHaveCount(3)
     await expect(page.locator('section.offer-section')).toHaveCount(0)
     await expect(page.locator('.package-game')).toHaveCount(0)
     await expect(page.locator('.mobile-purchase-bar')).toHaveCount(0)

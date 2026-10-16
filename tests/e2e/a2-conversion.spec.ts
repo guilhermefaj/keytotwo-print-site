@@ -12,11 +12,14 @@ test('real previews and catalog price on the home showcase', async ({ page }) =>
   await page.goto('/')
   await expect(page.locator('.experience-section .sample-page')).toHaveCount(3)
   const showcase = page.locator('.shop-showcase')
-  await expect(showcase.locator('.shop-price')).toHaveText('R$ 19,90')
-  await expect(showcase.getByRole('link', { name: 'Ver detalhes: Rabisque e Adivinhe' })).toHaveAttribute('href', '/loja/j001')
+  // Fileira de capas: cada jogo leva à própria página, com o preço do avulso quando o catálogo o lista.
+  const tile = showcase.locator('[data-shop-game="rabisque-e-adivinhe"]')
+  await expect(tile.getByRole('link')).toHaveAttribute('href', '/loja/j001')
+  await expect(tile.locator('.cover-tile-meta')).toHaveText('R$ 19,90')
+  await expect(showcase.locator('[data-shop-game="tabuleiro-da-sorte"] .cover-tile-meta')).toHaveText('No pacote')
   // O pacote não está no catálogo (incompleto): aparece "Em breve", sem botão de compra.
   await expect(showcase.locator('[data-shop-product="P001"] .shop-soon')).toHaveText('Em breve')
   await expect(showcase.locator('[data-shop-product="P001"]').getByRole('button')).toHaveCount(0)
-  await expect(showcase.getByRole('button', { name: 'Adicionar à sacola: Rabisque e Adivinhe', exact: true })).toBeVisible()
+  await expect(showcase.getByRole('button', { name: /Adicionar à sacola/ })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Ver os jogos' }).first()).toHaveAttribute('href', '/loja')
 })

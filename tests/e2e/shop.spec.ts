@@ -107,6 +107,37 @@ test('produto: preço vem do catálogo, compra preserva escolha e ausência não
   await expect(page.locator('[data-shop-game="o-sumico-de-rapadura"] .ficha')).toContainText('PDF de 21 páginas A4')
 })
 
+test('página de produto: ficha no topo, galeria, como jogar, o que vocês precisam e o pacote', async ({ page }) => {
+  const j003 = { ...single, code: 'J003', name: 'Tabuleiro da Sorte', games: [{ code: 'J003', name: 'Tabuleiro da Sorte' }], price: { unit_amount: 990, currency: 'brl' } }
+  const j002 = { ...single, code: 'J002', name: 'O Sumiço de Rapadura', games: [{ code: 'J002', name: 'O Sumiço de Rapadura' }], price: { unit_amount: 1290, currency: 'brl' } }
+  await catalog(page, [single, j003, j002])
+  await page.goto('/loja/j001')
+  await expect(page.locator('.product-facts dt')).toHaveText(['Pessoas', 'Partida', 'Arquivo', 'Conteúdo'])
+  // A galeria abre na capa; as páginas reais vêm depois, nunca como capa.
+  const thumbs = page.getByRole('list', { name: 'Imagens do produto' }).getByRole('button')
+  await expect(thumbs).toHaveCount(4)
+  await expect(page.locator('.product-gallery-main img')).toHaveAttribute('src', '/media/games/j001-capa-640.webp')
+  await thumbs.nth(1).click()
+  await expect(thumbs.nth(1)).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('.product-gallery-main img')).toHaveAttribute('src', '/media/experience/j001-page-1-720.webp')
+  await expect(page.locator('.howto-steps li')).toHaveCount(3)
+  await expect(page.locator('.needs-list li')).toHaveCount(5)
+  await expect(page.locator('.product-package').getByRole('link', { name: 'Ver o pacote: Coleção KeyToTwo: Fundadores', exact: true })).toHaveAttribute('href', '/loja/p001')
+  await expect(page.locator('.product-package')).not.toContainText('R$')
+  // Tabuleiro e Rapadura também se vendem sozinhos (responsável, 2026-10-16); sem prévia autorizada, só a capa.
+  for (const [slug, price] of [['j003', '9,90'], ['j002', '12,90']]) {
+    await page.goto(`/loja/${slug}`)
+    if (stage !== 'preview') await expect(page.locator('.shop-purchase .shop-price')).toContainText(price)
+    await expect(page.locator('.product-gallery-thumbs')).toHaveCount(0)
+    await expect(page.locator('.product-gallery-main img')).toHaveAttribute('src', `/media/games/${slug}-capa-640.webp`)
+    await expect(page.locator('.howto-steps li')).toHaveCount(3)
+  }
+  await page.goto('/loja/p001')
+  await expect(page.getByRole('list', { name: 'Imagens do produto' }).getByRole('button')).toHaveCount(4)
+  await expect(page.locator('.product-facts')).toHaveCount(0)
+  await expect(page.locator('.needs-list li')).toHaveCount(11)
+})
+
 test('produto listado sem preço não oferece compra; falha permite retry', async ({ page }) => {
   test.skip(stage === 'preview', 'Preview não consulta disponibilidade comercial na tela')
   let fail = true
