@@ -44,8 +44,8 @@ export const games: readonly Game[] = [
   { id: 'o-sumico-de-rapadura', code: 'J002', name: 'O Sumiço de Rapadura', confirmed: true, description: 'Inclusão confirmada no pacote.', pending: pending('regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('j002') },
   { id: 'jogo-4', name: 'Jogo a definir', confirmed: false, description: 'Quarta vaga do pacote.', pending: pending('definição do jogo e de seus materiais.'), summary: 'Estamos preparando este jogo para o pacote.' },
   { id: 'jogo-5', name: 'Jogo a definir', confirmed: false, description: 'Quinta vaga do pacote.', pending: pending('definição do jogo e de seus materiais.'), summary: 'Estamos preparando este jogo para o pacote.' },
-  // Freebies: dois no início; o segundo ainda está em desenvolvimento.
-  { id: 'hora-dos-artistas', code: 'J004', name: 'Hora dos Artistas', confirmed: true, freebie: true, description: 'Jogo grátis para quem cria a conta.', pending: pending('ficha, regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('j004') },
+  // Freebies (código F): dois no início; o segundo ainda está em desenvolvimento.
+  { id: 'hora-dos-artistas', code: 'F001', name: 'Hora dos Artistas', confirmed: true, freebie: true, description: 'Jogo grátis para quem cria a conta.', pending: pending('ficha, regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('f001') },
   { id: 'freebie-2', name: 'Jogo a definir', confirmed: false, freebie: true, description: 'Segundo jogo grátis.', pending: pending('definição do jogo e de seus materiais.'), summary: 'O segundo jogo grátis está em preparação.' },
 ]
 
