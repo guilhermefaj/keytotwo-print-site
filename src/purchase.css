@@ -19,7 +19,7 @@
 .purchase-page .cart-items h3 { font-size: var(--text-title-lg); margin: 0 0 12px; }
 .purchase-page .cart-item-tagline { margin: 0 0 8px; color: var(--color-ink-soft); font-size: var(--text-small); }
 .purchase-page .cart-item-price { font-weight: 600; margin: 0 0 20px; }
-.purchase-page .cart-composition summary { min-height: 44px; cursor: pointer; }
+.purchase-page .cart-composition summary { width: fit-content; justify-content: flex-start; gap: 6px; min-height: 44px; cursor: pointer; }
 .purchase-page .cart-composition ul { padding-left: 20px; }
 .purchase-page .payment-items > li { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 16px; }
 .payment-items .purchase-thumbnail { width: 96px; }

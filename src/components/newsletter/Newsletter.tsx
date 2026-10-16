@@ -2,7 +2,7 @@ import { useId } from 'react'
 import { Link } from 'react-router'
 import { useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
-import { guestNewsletterPreview } from '../../lib/features'
+import { guestNewsletterPreview, newsletterVisible } from '../../lib/features'
 import { MarketingPreference } from '../account/MarketingPreference'
 import '../../newsletter.css'
 
@@ -10,7 +10,7 @@ export function Newsletter() {
   const { session, ready } = useAuth()
   const { account } = useShop()
   const id = useId()
-  if (!session && !guestNewsletterPreview) return null
+  if (!newsletterVisible || (!session && !guestNewsletterPreview)) return null
   return <section className="newsletter" aria-labelledby={`${id}-title`}>
     <div className="newsletter-intro"><h2 id={`${id}-title`}>Ideias de encontro no seu e-mail</h2><p>Um jogo, uma conversa, uma boa desculpa para ficarem juntos.</p></div>
     <div className="newsletter-form">

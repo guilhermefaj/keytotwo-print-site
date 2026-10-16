@@ -95,7 +95,7 @@ export default function Entrar() {
 
   return <main id="conteudo" tabIndex={-1} className="account-page content-width auth-page">
     {(add || /^\/(carrinho|pagamento)(?:[/?#]|$)/.test(next)) && <CheckoutSteps current={2} />}
-    <div className="auth-intro"><h1>{settingPassword ? 'Definir senha' : method === 'recover' ? 'Redefinir senha' : 'Entrar'}</h1><p>Sua escolha fica guardada. Entre ou crie sua conta para continuar.</p><div className="auth-brand-note" aria-hidden="true">o encontro<br />continua <span>aqui.</span></div><Link className="inline-link" to="/ajuda">Precisa de ajuda?</Link></div>
+    <div className="auth-intro"><h1>{settingPassword ? 'Definir senha' : method === 'recover' ? 'Redefinir senha' : 'Entrar'}</h1><p>Sua escolha fica guardada. Entre ou crie sua conta para continuar.</p><Link className="inline-link" to="/ajuda">Precisa de ajuda?</Link></div>
     <section className="account-card" aria-label="Acesso à conta">
       {!authConfigured ? <p className="legal-pending">O acesso à conta estará disponível em breve.</p> : <>
         {step === 'email' && !settingPassword && <div className="auth-methods" role="group" aria-label="Como entrar"><button className="text-button" aria-pressed={method === 'code'} onClick={() => selectMethod('code')} disabled={busy}>Código por e-mail</button><button className="text-button" aria-pressed={method === 'password'} onClick={() => selectMethod('password')} disabled={busy}>E-mail e senha</button></div>}

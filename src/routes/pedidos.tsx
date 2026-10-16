@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { DataStatus } from '../components/account/AccountUi'
+import { Summary } from '../components/ui/Summary'
 import { orderStatus } from '../content/account'
 import { productName } from '../content/products'
 import { dateLabel, money } from '../lib/api'
@@ -13,7 +14,7 @@ export default function Pedidos() {
       : <ul className="order-list portal-orders">{account.data.orders.map(order => <li key={order.ref} className="portal-order">
         <div className="order-main"><span className="order-status" data-status={order.status}>{orderStatus[order.status] || 'Situação em atualização'}</span><ul className="order-products">{order.items.map((item, index) => <li key={`${item.code}-${index}`}>{productName(item.code, item.name)}</li>)}</ul><time dateTime={order.created_at}>{dateLabel(order.created_at)}</time></div>
         <div className="order-total"><span>Total</span><strong>{money(order.amount_total, order.currency)}</strong>{order.status === 'paid' && <Link className="inline-link" to="/meus-jogos">Ver meus jogos</Link>}</div>
-        <details className="order-details"><summary>Detalhes do pedido</summary><dl><div><dt>Número do pedido</dt><dd>{order.ref}</dd></div>{order.paid_at && <div><dt>Pagamento confirmado em</dt><dd>{dateLabel(order.paid_at)}</dd></div>}</dl></details>
+        <details className="order-details"><Summary>Detalhes do pedido</Summary><dl><div><dt>Número do pedido</dt><dd>{order.ref}</dd></div>{order.paid_at && <div><dt>Pagamento confirmado em</dt><dd>{dateLabel(order.paid_at)}</dd></div>}</dl></details>
       </li>)}</ul>)}
   </section>
 }

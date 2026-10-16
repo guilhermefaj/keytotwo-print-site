@@ -1,5 +1,6 @@
 import { CheckoutSteps } from '../components/checkout/CheckoutSteps'
 import { EmptyCart, PurchaseSkeleton, PurchaseThumbnail } from '../components/checkout/PurchaseUi'
+import { Summary } from '../components/ui/Summary'
 import { gameName, itemName } from '../components/checkout/purchase-names'
 import { products } from '../content/products'
 import { useEffect, useRef, useState } from 'react'
@@ -24,7 +25,7 @@ function CartItemRow({ item, items, busy, onRemove }: { item: CartItem; items: C
       <h3>{itemName(item.code, item.name)}</h3>
       {product?.tagline && <p className="cart-item-tagline">{product.tagline}</p>}
       <p className="cart-item-price">{item.price ? money(item.price.unit_amount, item.price.currency) : 'Não conseguimos carregar o preço.'}</p>
-      <details className="cart-composition"><summary>O que está incluído</summary><ul>{item.games.map(game => <li key={game.code}>{game.name}</li>)}{product?.contents.map(text => <li key={text}>{text}</li>)}</ul></details>
+      <details className="cart-composition"><Summary>O que está incluído</Summary><ul>{item.games.map(game => <li key={game.code}>{game.name}</li>)}{product?.contents.map(text => <li key={text}>{text}</li>)}</ul></details>
       {item.status === 'unavailable' && <p className="form-error">Este produto não está disponível para compra.</p>}
       {item.status === 'already_owned' && <p>Você já tem todos os jogos deste produto. <Link className="inline-link" to="/meus-jogos">Ver Meus jogos</Link></p>}
       {item.status === 'ok' && item.owned_games.length > 0 && <p className="cart-overlap">Você já tem {item.owned_games.map(gameName).join(', ')}. O valor não é reduzido por isso.</p>}
@@ -66,7 +67,7 @@ export default function Carrinho() {
     try { await remove(code); setMessage('Item removido da sacola.') }
     catch (cause) { setErrorCode(cause instanceof ApiError ? cause.code : ''); setError(apiErrorMessage(cause)) }
   }
-  return <main id="conteudo" tabIndex={-1} className="cart-page purchase-page content-width"><CheckoutSteps current={1} signedIn={Boolean(session)} />
+  return <main id="conteudo" tabIndex={-1} className="cart-page purchase-page content-width">{items?.length !== 0 && <CheckoutSteps current={1} signedIn={Boolean(session)} />}
     <h1>Sacola</h1><p>Uma boa ideia para a próxima noite de vocês.</p>
     <p className="form-message" role="status">{message}</p>
     {errorCode === 'ALREADY_OWNED'

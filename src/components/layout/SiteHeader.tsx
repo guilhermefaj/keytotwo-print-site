@@ -12,7 +12,9 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTri
 
 const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: module.CartDrawer })))
 
-// Minha área: cabeçalho simplificado (logo, Meus jogos, Minha conta, Ajuda), sem estímulo comercial.
+// Minha área: cabeçalho simplificado, sem estímulo comercial. No desktop as abas da Minha área já
+// levam a Meus jogos, Pedidos e Minha conta, então o cabeçalho fica com logo, Ajuda e a conta.
+// O menu móvel mantém os três links.
 const privateRoutes = ['/meus-jogos', '/pedidos', '/conta']
 const privateNavigation = [
   { label: 'Meus jogos', href: '/meus-jogos' },
@@ -38,7 +40,9 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
   const home = pathname === '/'
   const focusMode = pathname === '/pagamento'
   const privateArea = privateRoutes.includes(pathname)
-  const showPrimary = !privateArea && pathname !== '/loja' && !pathname.startsWith('/loja/')
+  // Sem CTA comercial na Loja, na Minha área e nas telas de compra (sacola e confirmação).
+  const purchaseFlow = pathname === '/carrinho' || pathname.startsWith('/pedido/')
+  const showPrimary = !privateArea && !purchaseFlow && pathname !== '/loja' && !pathname.startsWith('/loja/')
   const mainNavigation = navigation.filter(item => item.href !== '/blog' || hasBlogPosts)
   const publicNavigation = freeGame.data?.available ? [...mainNavigation, { label: 'Jogo grátis', href: '/jogo-gratuito' }] : mainNavigation
   const visibleNavigation: ReadonlyArray<{ label: string; href: string }> = privateArea ? privateNavigation : publicNavigation
@@ -99,9 +103,9 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
       <div className="site-header">
         <Link className="brand" to="/" aria-label="KeyToTwo — início"><img src="/media/hero/keytotwo-logo.webp" alt="KeyToTwo" width="420" height="97" fetchPriority="high" /></Link>
         {focusMode ? <><span className="checkout-secure"><Icon component={IconLock} size={16} />Compra segura</span><Link className="text-button checkout-back" to="/carrinho">Voltar à sacola</Link></> : <>
-          <nav className="desktop-nav" aria-label="Navegação principal">{visibleNavigation.map(item => <Link className="nav-link" aria-current={current(item.href)} key={item.href} to={item.href}>{item.label}</Link>)}</nav>
+          {!privateArea && <nav className="desktop-nav" aria-label="Navegação principal">{visibleNavigation.map(item => <Link className="nav-link" aria-current={current(item.href)} key={item.href} to={item.href}>{item.label}</Link>)}</nav>}
           <div className="desktop-action">
-            {!privateArea && <Link className="nav-link" to="/ajuda" aria-current={pathname === '/ajuda' ? 'page' : undefined}>Ajuda</Link>}
+            <Link className="nav-link" to="/ajuda" aria-current={pathname === '/ajuda' ? 'page' : undefined}>Ajuda</Link>
             {accountControl}
             {showCart && cartButton}
             {showPrimary && <Link className="button button-primary" to="/loja">Ver os jogos</Link>}

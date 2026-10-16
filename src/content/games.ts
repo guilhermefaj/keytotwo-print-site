@@ -21,9 +21,11 @@ export type Game = {
   freebie?: boolean
   preview?: GamePreview
   facts?: ReadonlyArray<{ label: string; value: string }>
+  /** Cor do jogo, tirada da capa oficial (DESIGN.md › Cor do jogo): só faixa e superfície, nunca texto. */
+  accent?: string
 }
 
-// Verified J001 facts, never extrapolated to the other four games.
+// Verified J001 facts, never extrapolated to the other games.
 export const cover = (code: string): GameCoverArt => ({ src: `/media/games/${code}-capa-640.webp`, srcSet: `/media/games/${code}-capa-640.webp 640w, /media/games/${code}-capa-1280.webp 1280w` })
 
 const j001Facts = [{ label: 'Pessoas', value: '2, em equipe' }, { label: 'Partida', value: '10 rodadas de 60 segundos' }, { label: 'Arquivo', value: 'PDF de 4 páginas A4' }, { label: 'Conteúdo', value: 'Instruções e 50 cartas' }] as const
@@ -37,14 +39,32 @@ export const games: readonly Game[] = [
     cover: cover('j001'),
     preview: { src: '/media/experience/j001-page-1-720.webp', alt: 'Prévia real de Rabisque e Adivinhe.', href: '/#experiencia', label: 'Ver a prévia' },
     facts: j001Facts,
+    accent: '#e06d86',
   },
   // Códigos atribuídos nas fichas do Drive (capa e PDF por código); jogo ainda sem ficha usa apenas id interno.
   // O pacote lista só os jogos disponíveis, sem quantidade fixa nem vagas "a definir" (responsável, 2026-10-16).
-  { id: 'tabuleiro-da-sorte', code: 'J003', name: 'Tabuleiro da Sorte', confirmed: true, description: 'Inclusão confirmada no pacote.', pending: pending('regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('j003') },
+  // Fatos das fichas do segundo cérebro (Jogos/J003 e J002, conferidas em 2026-10-16); duração não medida não entra.
+  {
+    id: 'tabuleiro-da-sorte', code: 'J003', name: 'Tabuleiro da Sorte', confirmed: true,
+    description: 'Jogo de tabuleiro para duas pessoas, com perguntas sobre o relacionamento, desafios e moedas. Cada um escreve um pedido secreto no Tesouro; quem terminar com mais moedas entrega o seu ao par.',
+    pending: pending('prévia pública autorizada, testes de impressão e playtest.'),
+    summary: 'Perguntas, desafios e moedas no tabuleiro. Quem juntar mais faz o par cumprir um pedido secreto.',
+    cover: cover('j003'),
+    facts: [{ label: 'Pessoas', value: '2, um contra o outro' }, { label: 'Arquivo', value: 'PDF de 11 páginas A4' }, { label: 'Cartas', value: '54: 27 perguntas e 27 desafios' }, { label: 'Peças', value: 'Tabuleiro, 30 moedas, dado e pinos' }],
+    accent: '#f2b33c',
+  },
   // J002 (escape room) entra no P001 por decisão do responsável (2026-10-16).
-  { id: 'o-sumico-de-rapadura', code: 'J002', name: 'O Sumiço de Rapadura', confirmed: true, description: 'Inclusão confirmada no pacote.', pending: pending('regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('j002') },
+  {
+    id: 'o-sumico-de-rapadura', code: 'J002', name: 'O Sumiço de Rapadura', confirmed: true,
+    description: 'Escape room cooperativo para duas pessoas: ajudem o Kito a descobrir o que aconteceu com Rapadura, o cachorro dele, antes do forró da vila. São seis desafios com papel, recorte, dobra, luz e conversa.',
+    pending: pending('prévia pública autorizada, testes de impressão e playtest.'),
+    summary: 'Escape room em dupla: seis desafios de papel, recorte e conversa para encontrar Rapadura.',
+    cover: cover('j002'),
+    facts: [{ label: 'Pessoas', value: '2, em cooperação' }, { label: 'Desafios', value: '6 e um desfecho' }, { label: 'Arquivo', value: 'PDF de 21 páginas A4' }, { label: 'Dicas', value: '18 cartões, da dica leve à solução' }],
+    accent: '#d9772e',
+  },
   // Freebies (código F): dois no início; o segundo ainda está em desenvolvimento.
-  { id: 'hora-dos-artistas', code: 'F001', name: 'Hora dos Artistas', confirmed: true, freebie: true, description: 'Jogo grátis para quem cria a conta.', pending: pending('ficha, regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('f001') },
+  { id: 'hora-dos-artistas', code: 'F001', name: 'Hora dos Artistas', confirmed: true, freebie: true, description: 'Jogo grátis para quem cria a conta.', pending: pending('ficha, regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('f001'), accent: '#c94050' },
   { id: 'freebie-2', name: 'Jogo a definir', confirmed: false, freebie: true, description: 'Segundo jogo grátis.', pending: pending('definição do jogo e de seus materiais.'), summary: 'O segundo jogo grátis está em preparação.' },
 ]
 

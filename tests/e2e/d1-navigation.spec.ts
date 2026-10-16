@@ -128,10 +128,11 @@ test('account menu, catalog CTA regardless of ownership and the simplified priva
   await expect(page.locator('.desktop-action > .button')).toHaveText('Ver os jogos')
   await expect(page.locator('.desktop-action > .button')).toHaveAttribute('href', '/loja')
   await page.goto('/conta')
-  // Minha área: logo, Meus jogos, Minha conta, Ajuda; sem CTA comercial nem carrinho.
+  // Minha área no desktop: logo, Ajuda e a conta (as abas levam aos destinos); sem CTA comercial nem carrinho.
   await expect(page.locator('header')).toHaveAttribute('data-private', 'true')
-  await expect(page.locator('.desktop-nav a')).toHaveText(['Meus jogos', 'Minha conta', 'Ajuda'])
-  await expect(page.locator('.desktop-nav a').nth(1)).toHaveAttribute('aria-current', 'page')
+  await expect(page.locator('.desktop-nav')).toHaveCount(0)
+  await expect(page.locator('.desktop-action > .nav-link')).toHaveText(['Ajuda'])
+  await expect(page.getByRole('navigation', { name: 'Minha área', exact: true }).getByRole('link', { name: 'Minha conta', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('.desktop-action > .button')).toHaveCount(0)
   await expect(page.locator('header .cart-trigger')).toHaveCount(0)
   const trigger = page.getByRole('button', { name: 'Abrir opções da conta' })
