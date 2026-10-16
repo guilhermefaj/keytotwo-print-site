@@ -23,7 +23,7 @@
 .purchase-page .cart-composition ul { padding-left: 20px; }
 .purchase-page .payment-items > li { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-items: center; gap: 16px; }
 .payment-items .purchase-thumbnail { width: 96px; }
-.payment-item-copy { display: grid; gap: 6px; min-width: 0; }
+.payment-item-copy { display: grid; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
 .payment-item-tagline { font-size: var(--text-caption); color: var(--color-ink-soft); }
 .payment-delivery { margin: 0 0 16px; font-size: var(--text-caption); line-height: 1.6; color: var(--color-ink-soft); }
 .purchase-page .payment-terms { margin-bottom: 16px; }

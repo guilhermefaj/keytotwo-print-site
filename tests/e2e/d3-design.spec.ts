@@ -103,7 +103,9 @@ test('vitrine curta com três jogos na home; carrossel e relatos só por ação 
   await expect(page.locator('.shop-showcase .shop-game')).toHaveCount(3)
   // Capa oficial dos jogos confirmados (a tipográfica fica para quem não tem arte). Nunca a prévia do PDF.
   await expect(page.locator('.shop-showcase .shop-game h3')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura'])
-  await expect(page.locator('.shop-showcase .game-cover-art img')).toHaveCount(3)
+  await expect(page.locator('.shop-showcase .shop-game .game-cover-art img')).toHaveCount(3)
+  // O pacote tem a capa própria (Coleção KeyToTwo: Fundadores).
+  await expect(page.locator('.shop-showcase .shop-bundle .game-cover-art img')).toHaveAttribute('src', '/media/games/p001-capa-640.webp')
   await expect(page.locator('.shop-showcase .game-cover-type')).toHaveCount(0)
   await expect(page.locator('.shop-showcase img[src*="/media/experience/j001-page"]')).toHaveCount(0)
   await expect(page.locator('.game-number')).toHaveCount(0)
