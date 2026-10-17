@@ -1,7 +1,7 @@
 /* Cabeçalho, menu móvel, gaveta do carrinho, 404 e movimento. Tokens em styles.css. */
 .site-header-shell { position: sticky; top: 0; z-index: 35; background: transparent; transition: transform 200ms var(--ease-out), background-color 200ms, box-shadow 200ms; }
 .site-header-shell[data-home="true"] { margin-bottom: calc(-1 * var(--header-height)); }
-/* Em todas as larguras (responsável, 2026-10-17): o cabeçalho some ao rolar para baixo e volta ao rolar para
+/* Em todas as larguras (responsável, 2026-10-16): o cabeçalho some ao rolar para baixo e volta ao rolar para
    cima. Fica visível no topo (< 80 px), no pagamento, com foco dentro dele e com menu, conta ou sacola abertos. */
 .site-header-shell[data-hidden="true"]:not([data-focus="true"]):not(:focus-within) { transform: translateY(calc(-100% - 12px)); }
 .site-header-shell[data-scrolled="true"] { background: rgb(255 255 255 / .94); backdrop-filter: blur(12px); box-shadow: var(--shadow-header); }
