@@ -1,6 +1,9 @@
 /* Cabeçalho, menu móvel, gaveta do carrinho, 404 e movimento. Tokens em styles.css. */
 .site-header-shell { position: sticky; top: 0; z-index: 35; background: transparent; transition: transform 200ms var(--ease-out), background-color 200ms, box-shadow 200ms; }
 .site-header-shell[data-home="true"] { margin-bottom: calc(-1 * var(--header-height)); }
+/* Em todas as larguras (responsável, 2026-10-17): o cabeçalho some ao rolar para baixo e volta ao rolar para
+   cima. Fica visível no topo (< 80 px), no pagamento, com foco dentro dele e com menu, conta ou sacola abertos. */
+.site-header-shell[data-hidden="true"]:not([data-focus="true"]):not(:focus-within) { transform: translateY(calc(-100% - 12px)); }
 .site-header-shell[data-scrolled="true"] { background: rgb(255 255 255 / .94); backdrop-filter: blur(12px); box-shadow: var(--shadow-header); }
 .site-header-shell .site-header { width: min(var(--container-wide), calc(100% - 64px)); min-height: var(--header-height); margin: 0 auto; padding: 8px 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: nowrap; }
 .brand { display: inline-flex; flex-shrink: 0; padding: 4px 0; }
@@ -162,7 +165,6 @@
   .site-header .brand img { width: 125px; }
   .site-header .desktop-nav, .site-header .desktop-action { display: none; }
   .site-header .mobile-navigation { display: flex; align-items: center; flex-wrap: nowrap; gap: 6px; }
-  .site-header-shell[data-hidden="true"]:not([data-focus="true"]):not(:focus-within) { transform: translateY(calc(-100% - 12px)); }
 }
 @media (max-width: 600px) {
   .mobile-menu-sheet { width: 100%; }
