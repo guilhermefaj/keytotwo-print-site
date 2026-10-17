@@ -3,7 +3,6 @@ import { experience } from '../../content/experience'
 import { siteConfig } from '../../lib/seo'
 import { SnapCarousel } from '../ui/SnapCarousel'
 import { CutLine } from '../ui/CutLine'
-import '../../carousels.css'
 
 // A experiência, não o conteúdo: o Kito comemora a rodada no tabuleiro (arte da marca, nunca página do PDF,
 // responsável, 2026-10-16). A linha de recorte entra aqui, logo depois da hero (DESIGN.md › The Three Cuts Rule).

@@ -7,7 +7,6 @@ import { ProductGallery, type GalleryImage } from '../components/shop/ProductGal
 import { ProductFacts, ProductMoments, ProductNeeds, ProductPackage } from '../components/shop/ProductSections'
 import { BackLink } from '../components/ui/BackLink'
 import NotFound from './not-found'
-import '../shop.css'
 
 export function loader({ params }: LoaderFunctionArgs) {
   return loadProduct(params.slug)

@@ -6,10 +6,12 @@ import { siteConfig } from '../../lib/seo'
 import { useShop } from '../../lib/shop-context'
 import { ProductPurchaseAction } from '../sections/ProductPurchaseAction'
 
-export function CatalogFeedback() {
+// `quietLoading`: no topo da Loja, o "Consultando…" aparecia e sumia empurrando o banner (CLS). Ali ele fica só
+// para leitor de tela; o erro continua visível, com a nova tentativa.
+export function CatalogFeedback({ quietLoading = false }: { quietLoading?: boolean }) {
   const { catalog } = useShop()
   if (!siteConfig.showCartAccess) return null
-  if (catalog.loading) return <p className="shop-status" role="status">Consultando disponibilidade…</p>
+  if (catalog.loading) return <p className={quietLoading ? 'shop-status sr-only' : 'shop-status'} role="status">Consultando disponibilidade…</p>
   if (catalog.error) return <div className="shop-status"><p role="alert">{catalog.error}</p><button className="button button-secondary" onClick={catalog.reload}>Tentar novamente</button></div>
   return null
 }

@@ -8,17 +8,14 @@ import { readBlogPosts } from './lib/blog.server'
 import { buildSiteConfig } from './lib/site-build.server'
 import { AuthProvider } from './components/auth/AuthProvider'
 import { ShopProvider } from './components/account/ShopProvider'
-import '@fontsource/bricolage-grotesque/latin-700.css'
-import '@fontsource/dm-sans/latin-400.css'
-import '@fontsource/dm-sans/latin-600.css'
 // Fase 4 (desempenho): o título da hero é o LCP e espera a Bricolage; o preload a busca junto com o CSS.
 // As URLs são os mesmos arquivos (com hash) que o CSS do @fontsource referencia.
 import bricolage700 from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-700-normal.woff2?url'
 import dmSans400 from '@fontsource/dm-sans/files/dm-sans-latin-400-normal.woff2?url'
 
 const supabaseOrigin = (() => { try { return new URL(import.meta.env.VITE_SUPABASE_URL).origin } catch { return '' } })()
-import './styles.css'
-import './navigation.css'
+// Um só CSS para o site inteiro (app.css), com `precedence` para vir antes dos scripts no <head>.
+import appCss from './app.css?url'
 
 // eslint-disable-next-line react-refresh/only-export-components -- React Router removes this prerender-only loader from the client.
 export async function loader() {
@@ -49,6 +46,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta property="og:locale" content="pt_BR" />
         <meta property="og:site_name" content="KeyToTwo" />
         <meta name="theme-color" content="#ECFAF7" />
+        <link rel="stylesheet" href={appCss} precedence="default" />
         {/* A sessão e o catálogo vêm do Supabase em toda página: a conexão já começa aberta. */}
         {supabaseOrigin && <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />}
         <link rel="preload" href={bricolage700} as="font" type="font/woff2" crossOrigin="anonymous" />
