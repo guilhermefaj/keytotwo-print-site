@@ -97,7 +97,10 @@
   .sheet-content[data-state="closed"] { animation: d1-sheet 180ms ease-in reverse; }
   .mobile-menu-sheet[data-state="open"] .sheet-nav .nav-link { animation: d1-link var(--duration-ui) var(--ease-out) both; animation-delay: calc(var(--stagger) + var(--link-order, 3) * var(--stagger)); }
   .kito-empty { animation: d1-kito 650ms var(--ease-out) 1; }
+  /* Vitrine do Início: as capas entram uma a uma quando a folha aparece (8 px, 240 ms, 40 ms entre elas). */
+  [data-reveal="visible"] .cover-tile { animation: tile-deal var(--duration-ui) var(--ease-out) both; animation-delay: calc(var(--reveal-delay, 0ms) + 120ms + var(--tile-order, 0) * var(--stagger)); }
 }
+@keyframes tile-deal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes d1-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes d1-sheet { from { transform: translateX(100%); } to { transform: translateX(0); } }
 @keyframes d1-link { from { opacity: .01; transform: translateX(8px); } to { opacity: 1; transform: none; } }

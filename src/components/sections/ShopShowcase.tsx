@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router'
 import { products } from '../../content/products'
 import { packageGames, type Game } from '../../content/games'
@@ -23,13 +24,13 @@ function TilePrice({ code }: { code: string }) {
   return <span className="cover-tile-meta">{catalog.loading ? ' ' : listed?.price ? money(listed.price.unit_amount, listed.price.currency) : 'No pacote'}</span>
 }
 
-function CoverTile({ game }: { game: Game }) {
+function CoverTile({ game, order }: { game: Game; order: number }) {
   const single = products.find(product => product.kind === 'single' && product.code === game.code)
   const bundle = products.find(product => product.kind === 'bundle' && product.games.some(item => item.id === game.id))
   const page = single ?? bundle
-  return <article className="cover-tile" data-shop-game={game.id} style={accentStyle(game.accent)}>
+  return <article className="cover-tile" data-shop-game={game.id} style={{ ...accentStyle(game.accent), '--tile-order': order } as CSSProperties}>
     <Link className="cover-tile-link" to={page ? `/loja/${page.slug}` : '/loja'}>
-      <GameCover code={game.code} name={game.name} />
+      <GameCover code={game.code} name={game.name} sizes="(max-width: 767px) 78vw, 360px" />
       <span className="cover-tile-name">{game.name}</span>
       <span className="cover-tile-summary">{game.summary}</span>
       {game.code && <TilePrice code={game.code} />}
@@ -43,7 +44,7 @@ export function ShopShowcase() {
     <div className="content-width">
       <div className="from-blog-heading"><h2 id="showcase-title">Jogos para imprimir</h2><Link className="inline-link" to="/loja">Ver os jogos</Link></div>
       {bundle && <BundleFeature product={bundle} />}
-      <SnapCarousel label="Jogos do pacote" className="cover-carousel">{showcaseGames.map(game => <CoverTile key={game.id} game={game} />)}</SnapCarousel>
+      <SnapCarousel label="Jogos do pacote" className="cover-carousel">{showcaseGames.map((game, order) => <CoverTile key={game.id} game={game} order={order} />)}</SnapCarousel>
     </div>
   </section>
 }

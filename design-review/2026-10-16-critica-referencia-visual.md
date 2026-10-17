@@ -239,3 +239,42 @@ O preço continua como está: o responsável vai adicionar mais jogos ao pacote.
 - **Atendimento:** `contato@keytotwo.com.br`, definido pelo responsável, com botão "Copiar e-mail".
 - **E-mails no visual da marca:** os 3 modelos de Auth e os 3 transacionais (entrega, lembrete e pós-compra) ganharam a faixa de Céu, a linha de recorte, o botão em Turquesa profundo e o rodapé com a assinatura e o atendimento. O texto não mudou. O responsável autorizou publicá-los no Supabase hospedado depois dos testes.
 - **Meus jogos:** "Como imprimir" já levava a `/ajuda#impressao`, que agora é o guia. Não há como oferecer "imprimir só as cartas", porque cada jogo é um PDF único.
+
+## 10. Execução da Fase 4 e prova de referência (2026-10-16, branch `design/fase-4`)
+
+**Desempenho:**
+- **Compressão:** `gzip on` no `nginx.conf` do container do site. Antes, JS e CSS saíam sem compressão (cerca de 535 KB a mais). O Traefik da VPS não foi tocado.
+- **Fontes:** preload da Bricolage 700 e da DM Sans 400 (o título da hero é o LCP) e `preconnect` ao Supabase.
+- **Capas:** `sizes` corretos, para as miniaturas de 88 a 112 px não baixarem a versão de 1280 px.
+- **Atlas do Kito (482 KB):** não muda. É arte em resolução nativa, o AVIF sem perdas fica 2,7 vezes maior e o DESIGN.md proíbe regerar o atlas. Continua valendo a exceção aprovada no Portão 2. Testei adiar o atlas para depois do `load` e desfiz, porque não houve ganho consistente.
+
+**Movimento:** as capas da vitrine entram uma a uma (8 px, 240 ms, 40 ms entre elas), só sem movimento reduzido.
+
+**Consistência:** o cartão "Sair neste dispositivo" usa a variante "aviso" do sistema.
+
+### Critérios de referência
+
+| Critério | Resultado |
+|---|---|
+| Axe 0 em todas as telas | ✓ 18 telas (públicas e privadas, 1440 px), WCAG 2.2 AA |
+| Lighthouse acessibilidade ≥ 95 | ✓ 100 em Início, Loja, produto e Ajuda |
+| Lighthouse desempenho ≥ 95 no celular | ✗ Loja 82, produto 82, Ajuda 83, Início cerca de 70 (simulação de 4G lento, servidor local com gzip). O LCP observado sem simulação é de 0,7 s. |
+| Nenhuma inconsistência da seção 3.4 em aberto | Quase: falta o Kito da caixa chorando (arte nova) e a repetição de "encontro" (copy) |
+| Teste de 5 segundos com 5 pessoas | Pendente: depende do responsável |
+| Nova crítica com a mesma skill | Feita (abaixo) |
+
+### Crítica final (design:design-critique)
+
+- **Primeira impressão:** a hero continua sendo a assinatura. Logo abaixo, o Kito comemorando no tabuleiro diz "isto é um jogo para jogar junto", sem mostrar nenhum conteúdo pago.
+- **Usabilidade:** todo jogo pago se compra sozinho ou no pacote, sem nenhum "Em breve" enganoso. A página de produto responde o que é, como é jogar, o que precisam e quanto custa. A compra corre em modo foco e a Ajuda tem atendimento real.
+- **Hierarquia:** o Início alterna cartas (Como funciona), relatos, o banner do pacote e a fileira de capas. As seções deixaram de ter todas o mesmo peso.
+- **Consistência:** a cor por jogo atravessa card, banner, página, biblioteca e Ajuda. Um só desenho para voltar, abrir e fechar, aviso e etapas. Os e-mails falam a mesma língua do site.
+- **Acessibilidade:** axe 0, Lighthouse 100, foco visível e movimento reduzido respeitado.
+
+**O que ainda separa o site de uma referência:**
+1. Fotos da mesa com o jogo impresso (produção do responsável).
+2. Desempenho no celular: carregar o `supabase-js` só quando necessário nas páginas públicas e servir o atlas em duas resoluções, se o responsável aceitar rever a regra.
+3. O Kito da caixa sem lágrima.
+4. Uma rodada de copy (seção 6).
+5. O teste de 5 segundos.
+6. Atualizar o `scripts/verify-hero.mjs`, que ainda espera a navegação e o CTA anteriores aos PRs #17 e #18.
