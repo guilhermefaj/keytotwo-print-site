@@ -15,7 +15,8 @@
     "assets:prepare": "node scripts/prepare-hero-assets.mjs",
     "verify:hero": "node scripts/verify-hero.mjs",
     "test:e2e": "playwright test",
-    "test:unit": "node --test tests/unit/*.test.mjs"
+    "test:unit": "node --test tests/unit/*.test.mjs",
+    "verificar": "node scripts/verificar.mjs"
   },
   "dependencies": {
     "@fontsource/bricolage-grotesque": "^5.3.0",
