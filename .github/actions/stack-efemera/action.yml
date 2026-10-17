@@ -1,0 +1,63 @@
+name: Stack efêmera do Supabase
+description: Sobe banco, Auth, API e Mailpit no runner com o seed de TESTE, gera o ambiente das funções, serve as funções e grava o Vault.
+
+inputs:
+  b2-read-key-id:
+    description: Chave de leitura do B2 de TESTE (opcional; sem ela, o teste de entrega é ignorado).
+    required: false
+    default: ''
+  b2-read-application-key:
+    description: Segredo da chave de leitura do B2 de TESTE.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Iniciar stack efêmera do runner
+      shell: bash
+      # Só o que os testes usam: sem Studio, Storage, Realtime, imgproxy, postgres-meta, logs e pooler, que só atrasavam a subida.
+      # Avoid printing the local stack's generated API keys.
+      run: npx --yes supabase@2.118.0 start -x realtime,storage-api,imgproxy,postgres-meta,studio,logflare,vector,supavisor > /dev/null
+    - name: Chaves da stack efêmera no ambiente dos próximos passos
+      shell: bash
+      run: npx --yes supabase@2.118.0 status -o env 2>/dev/null | grep -E '^[A-Z0-9_]+=' | sed -E 's/^([A-Z0-9_]+)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
+    - name: Ambiente das funções, gerado no runner
+      shell: bash
+      # Segredos aleatórios e descartáveis. O B2 de TESTE vem dos segredos do repositório; sem eles, o teste de entrega é ignorado.
+      env:
+        B2_READ_KEY_ID: ${{ inputs.b2-read-key-id }}
+        B2_READ_APPLICATION_KEY: ${{ inputs.b2-read-application-key }}
+      run: |
+        {
+          echo "SITE_URL=http://127.0.0.1:4174"
+          echo "ALLOWED_ORIGINS=http://127.0.0.1:4174,http://localhost:4174"
+          echo "TERMS_VERSION=rascunho-2026-10-08"
+          echo "STRIPE_WEBHOOK_SECRET=whsec_ci$(openssl rand -hex 16)"
+          echo "B2_ENDPOINT=s3.us-east-005.backblazeb2.com"
+          echo "B2_REGION=us-east-005"
+          echo "B2_BUCKET=keytotwo-print-attachments"
+          echo "B2_READ_KEY_ID=$B2_READ_KEY_ID"
+          echo "B2_READ_APPLICATION_KEY=$B2_READ_APPLICATION_KEY"
+          echo "EMAIL_LINK_SECRET=$(openssl rand -hex 32)"
+          echo "EMAIL_MODE=log"
+          echo "EMAIL_LOG_MAILPIT_URL=http://supabase_inbucket_keytotwo-print-site:8025"
+          echo "EMAIL_FROM=kito@keytotwo.test"
+          echo "EMAIL_FROM_NAME=Kito"
+          echo "API_PUBLIC_URL=$API_URL/functions/v1/api"
+          echo "BREVO_WEBHOOK_SECRET=$(openssl rand -hex 32)"
+        } > supabase/functions/.env
+    - name: Servir as funções
+      shell: bash
+      run: |
+        nohup npx --yes supabase@2.118.0 functions serve > "$RUNNER_TEMP/functions-serve.log" 2>&1 &
+        for i in $(seq 1 60); do
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Origin: http://127.0.0.1:4174' "$API_URL/functions/v1/api/catalog" || true)
+          [ "$code" = 200 ] && exit 0
+          sleep 2
+        done
+        tail -50 "$RUNNER_TEMP/functions-serve.log"
+        exit 1
+    - name: Vault do despacho de e-mail
+      shell: bash
+      run: node supabase/local/aplicar-dispatch-vault.mjs
