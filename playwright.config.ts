@@ -10,6 +10,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  // Testes de varredura visitam dezenas de rotas, e cada navegação espera a página ficar interativa
+  // (tests/e2e/fixtures/test.ts): o JS só começa depois da primeira pintura.
+  timeout: 60_000,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   outputDir: 'test-results',
   use: { baseURL, trace: 'retain-on-failure' },

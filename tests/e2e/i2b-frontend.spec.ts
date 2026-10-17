@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from './fixtures/test'
 
 // Opt-in integration suite: real local Auth, Mailpit and Edge API, no admin key.
 // Run after a stage=test build: $env:I2B_LOCAL_QA='1'; npm run test:e2e

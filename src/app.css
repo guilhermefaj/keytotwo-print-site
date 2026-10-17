@@ -1,0 +1,15 @@
+/* Folha única do site (Fase de desempenho, 2026-10-16): um só CSS, carregado pelo root.tsx com `precedence`
+   para o React colocá-lo antes dos ~30 modulepreload no <head>. Antes, cada rota trazia o seu CSS depois dos
+   scripts e o FCP esperava a fila. A ordem abaixo é a mesma ordem de cascata de antes (raiz, depois rotas). */
+@import '@fontsource/bricolage-grotesque/latin-700.css';
+@import '@fontsource/dm-sans/latin-400.css';
+@import '@fontsource/dm-sans/latin-600.css';
+@import './styles.css';
+@import './navigation.css';
+@import './components/account/game-cover.css';
+@import './carousels.css';
+@import './shop.css';
+@import './newsletter.css';
+@import './purchase.css';
+@import './portal.css';
+@import './blog.css';

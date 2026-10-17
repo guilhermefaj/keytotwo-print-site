@@ -9,8 +9,6 @@ import { BundleFeature } from '../shop/BundleFeature'
 import { accentStyle } from '../shop/GameGrid'
 import { GameCover } from '../account/GameCover'
 import { SnapCarousel } from '../ui/SnapCarousel'
-import '../../shop.css'
-import '../../carousels.css'
 
 // Vitrine do Início (decisão 9 do responsável): o pacote em destaque e uma fileira de capas clicáveis
 // que levam à página de cada jogo. Os cards completos, com compra, ficam na Loja.

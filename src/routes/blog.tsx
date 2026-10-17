@@ -3,7 +3,6 @@ import type { Route } from './+types/blog'
 import { readBlogPosts, summarizeBlogPost } from '../lib/blog.server'
 import { formatBlogDate } from '../lib/blog'
 import { siteConfig } from '../lib/seo'
-import '../blog.css'
 
 export async function loader() {
   return { posts: (await readBlogPosts({ stage: siteConfig.stage })).map(summarizeBlogPost) }

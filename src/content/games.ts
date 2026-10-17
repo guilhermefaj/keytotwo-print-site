@@ -20,7 +20,7 @@ export const needLabels: Record<Need, string> = {
   luz: 'Luz do dia ou um abajur',
   celular: 'Celular, para os desafios de foto',
 }
-/** Arte oficial 16:9 gerada por scripts/prepare-game-covers.mjs (640 e 1280 px de largura). */
+/** Arte oficial 16:9 gerada por scripts/prepare-game-covers.mjs (640, 960 e 1280 px de largura). */
 export type GameCoverArt = { src: string; srcSet: string }
 export type Game = {
   id: string
@@ -44,7 +44,7 @@ export type Game = {
 }
 
 // Verified J001 facts, never extrapolated to the other games.
-export const cover = (code: string): GameCoverArt => ({ src: `/media/games/${code}-capa-640.webp`, srcSet: `/media/games/${code}-capa-640.webp 640w, /media/games/${code}-capa-1280.webp 1280w` })
+export const cover = (code: string): GameCoverArt => ({ src: `/media/games/${code}-capa-640.webp`, srcSet: `/media/games/${code}-capa-640.webp 640w, /media/games/${code}-capa-960.webp 960w, /media/games/${code}-capa-1280.webp 1280w` })
 
 const j001Facts = [{ label: 'Pessoas', value: '2, em equipe' }, { label: 'Jeito de jogar', value: 'Desenho e adivinhação' }, { label: 'Rodadas', value: 'Um minuto cada' }, { label: 'Formato', value: 'PDF para imprimir em casa' }] as const
 

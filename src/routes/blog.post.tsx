@@ -5,7 +5,6 @@ import { siteConfig } from '../lib/seo'
 import { site } from '../content/site'
 import { Newsletter } from '../components/newsletter/Newsletter'
 import { BackLink } from '../components/ui/BackLink'
-import '../blog.css'
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const post = (await readBlogPosts({ stage: siteConfig.stage })).find(post => post.slug === params.slug)

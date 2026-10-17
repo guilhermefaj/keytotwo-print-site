@@ -10,7 +10,7 @@ export function ProductGallery({ images, accent }: { images: readonly GalleryIma
   if (!current) return null
   return <div className="product-gallery">
     <figure className="product-gallery-main" data-accent={accent ? '' : undefined} style={accent ? { '--game-accent': accent } as CSSProperties : undefined}>
-      <img key={current.src} src={current.src} srcSet={current.srcSet} sizes="(max-width: 767px) 100vw, 600px" alt={current.alt} width={current.width} height={current.height} decoding="async" />
+      <img key={current.src} src={current.src} srcSet={current.srcSet} sizes="(max-width: 767px) 100vw, 600px" alt={current.alt} width={current.width} height={current.height} fetchPriority="high" decoding="async" />
     </figure>
     {images.length > 1 && <ul className="product-gallery-thumbs" aria-label="Imagens do produto">{images.map((image, position) => <li key={image.src}>
       <button type="button" aria-pressed={position === index} aria-label={`Imagem ${position + 1} de ${images.length}: ${image.alt}`} onClick={() => setIndex(position)}>

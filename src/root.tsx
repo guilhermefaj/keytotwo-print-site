@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { isRouteErrorResponse, Link, Links, Outlet, Scripts, ScrollRestoration, useLocation, useMatches, useRouteError } from 'react-router'
 import { SiteHeader } from './components/layout/SiteHeader'
 import { SiteFooter } from './components/layout/SiteFooter'
@@ -8,17 +8,15 @@ import { readBlogPosts } from './lib/blog.server'
 import { buildSiteConfig } from './lib/site-build.server'
 import { AuthProvider } from './components/auth/AuthProvider'
 import { ShopProvider } from './components/account/ShopProvider'
-import '@fontsource/bricolage-grotesque/latin-700.css'
-import '@fontsource/dm-sans/latin-400.css'
-import '@fontsource/dm-sans/latin-600.css'
+import { useAuth } from './lib/auth-context'
 // Fase 4 (desempenho): o título da hero é o LCP e espera a Bricolage; o preload a busca junto com o CSS.
 // As URLs são os mesmos arquivos (com hash) que o CSS do @fontsource referencia.
 import bricolage700 from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-700-normal.woff2?url'
 import dmSans400 from '@fontsource/dm-sans/files/dm-sans-latin-400-normal.woff2?url'
 
 const supabaseOrigin = (() => { try { return new URL(import.meta.env.VITE_SUPABASE_URL).origin } catch { return '' } })()
-import './styles.css'
-import './navigation.css'
+// Um só CSS para o site inteiro (app.css), com `precedence` para vir antes dos scripts no <head>.
+import appCss from './app.css?url'
 
 // eslint-disable-next-line react-refresh/only-export-components -- React Router removes this prerender-only loader from the client.
 export async function loader() {
@@ -49,6 +47,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta property="og:locale" content="pt_BR" />
         <meta property="og:site_name" content="KeyToTwo" />
         <meta name="theme-color" content="#ECFAF7" />
+        <link rel="stylesheet" href={appCss} precedence="default" />
         {/* A sessão e o catálogo vêm do Supabase em toda página: a conexão já começa aberta. */}
         {supabaseOrigin && <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />}
         <link rel="preload" href={bricolage700} as="font" type="font/woff2" crossOrigin="anonymous" />
@@ -64,9 +63,17 @@ export function Layout({ children }: { children: ReactNode }) {
   )
 }
 
+// O JS só começa depois da primeira pintura (scripts/html-priorities.mjs). Este marcador diz que a página já
+// responde: hidratada e com a sessão lida. Os e2e esperam por ele (tests/e2e/fixtures/test.ts).
+function InteractiveMarker() {
+  const { ready } = useAuth()
+  useEffect(() => { if (ready) document.documentElement.dataset.interactive = 'true' }, [ready])
+  return null
+}
+
 export default function Root() {
   const [menuOpen, setMenuOpen] = useState(false)
-  return <AuthProvider><ShopProvider>
+  return <AuthProvider><ShopProvider><InteractiveMarker />
     <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
     {siteConfig.stage === 'test' && <aside aria-label="Aviso de ambiente"><p className="stage-banner">Ambiente de teste — sem cobranças reais.</p></aside>}
     <SiteHeader onMenuOpenChange={setMenuOpen} />

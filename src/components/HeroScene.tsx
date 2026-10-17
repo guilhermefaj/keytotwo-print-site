@@ -94,14 +94,16 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
           {userPaused ? 'Retomar animação' : 'Pausar animação'}
         </button>
       </div>
+      {/* Desempenho: a cena é decorativa; o atlas (fundo CSS do Kito) entra com prioridade baixa, depois do título. */}
+      <link rel="preload" as="image" href="/media/hero/kito-walk-v31-right-atlas.webp" fetchPriority="low" />
       <div ref={stage} className="hero-scene" id="kito-scene" aria-hidden="true">
-        <img className="cloud cloud-left" src="/media/hero/cloud-a.webp" width="280" height="117" alt="" />
-        <img className="cloud cloud-right" src="/media/hero/cloud-b.webp" width="208" height="88" alt="" />
+        <img className="cloud cloud-left" src="/media/hero/cloud-a.webp" width="280" height="117" alt="" fetchPriority="low" />
+        <img className="cloud cloud-right" src="/media/hero/cloud-b.webp" width="208" height="88" alt="" fetchPriority="low" />
         <svg className="distant-land" width="1440" height="96" viewBox="0 0 1440 96" preserveAspectRatio="none">
           <path d="M0 24h72v12h56v16h64v-8h48v16h100v12h96v-8h88v16h112v-8h88v8h100v-16h64v-8h88v12h56v-20h80v-12h64v-8h80V8h84V0h100v96H0Z" fill="#CFE6D7" />
         </svg>
-        <img className="landscape landscape-left" src="/media/hero/foliage-left.webp" width="360" height="119" alt="" />
-        <img className="landscape landscape-right" src="/media/hero/foliage-right.webp" width="720" height="298" alt="" />
+        <img className="landscape landscape-left" src="/media/hero/foliage-left.webp" width="360" height="119" alt="" fetchPriority="low" />
+        <img className="landscape landscape-right" src="/media/hero/foliage-right.webp" width="720" height="298" alt="" fetchPriority="low" />
         <div className="kito-track" style={ready ? undefined : { left: 'calc(50% - var(--sprite-size) / 2)', animationDelay: '0s' }}><div className="kito-frames" /></div>
         <div className="ground"><div className="ground-grass" /><div className="ground-soil" /></div>
       </div>

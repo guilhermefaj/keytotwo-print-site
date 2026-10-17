@@ -4,7 +4,6 @@ import { useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
 import { guestNewsletterPreview, newsletterVisible } from '../../lib/features'
 import { MarketingPreference } from '../account/MarketingPreference'
-import '../../newsletter.css'
 
 export function Newsletter() {
   const { session, ready } = useAuth()

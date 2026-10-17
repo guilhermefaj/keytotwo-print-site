@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../lib/auth-context'
-import '../portal.css'
 
 export default function MinhaArea() {
   const { session } = useAuth()

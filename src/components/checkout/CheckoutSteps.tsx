@@ -1,6 +1,5 @@
 import { IconCheck } from '@tabler/icons-react'
 import { Icon } from '../ui/Icon'
-import '../../purchase.css'
 
 const steps = ['Sacola', 'Entrar', 'Pagamento', 'Pronto'] as const
 // `current` conta as quatro etapas. Quem já entrou não passa por "Entrar": a sequência mostra três
