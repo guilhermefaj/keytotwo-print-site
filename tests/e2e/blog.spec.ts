@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures/test'
 import AxeBuilder from '@axe-core/playwright'
 
 const slug = 'exemplo-como-publicar'

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures/test'
 import AxeBuilder from '@axe-core/playwright'
 
 // Central de ajuda (Fase 3): temas, guia de impressão sem páginas do PDF e atendimento por e-mail.

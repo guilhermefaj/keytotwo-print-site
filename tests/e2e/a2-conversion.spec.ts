@@ -1,4 +1,4 @@
-﻿import { expect, test } from '@playwright/test'
+﻿import { expect, test } from './fixtures/test'
 import { readFile } from 'node:fs/promises'
 
 // A vitrine do Início aplica a regra da Loja: à venda só com sale + catálogo (preço real vindo do

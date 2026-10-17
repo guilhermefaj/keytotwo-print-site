@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from './fixtures/test'
 
 // Explicit opt-in, real TEST-mode payment only. No traces, HAR, video, saved auth
 // or automatic screenshots: Stripe client secrets and Auth responses must not be recorded.

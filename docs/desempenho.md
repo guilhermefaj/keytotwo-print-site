@@ -45,6 +45,15 @@ O Lighthouse móvel simula 4G lento. No LCP, ele conta tudo o que foi pedido ant
 
 O JS começa a baixar depois da primeira pintura, então botões como "Adicionar à sacola" respondem um pouco mais tarde que antes. Numa navegação normal, o boot começa de 10 a 20 ms depois do FCP. Os e2e de interação passaram em duas repetições.
 
+## Testes e2e
+
+Com o JS começando depois da primeira pintura, um teste podia clicar ou teclar antes da hidratação (no CI, o menu móvel e o formulário de senha falharam assim).
+
+- **Marcador:** o `root.tsx` liga `html[data-interactive="true"]` quando a página já responde, ou seja, hidratada e com a sessão lida.
+- **Fixture:** as specs importam `test` de `tests/e2e/fixtures/test.ts`, em que `page.goto` e `page.reload` esperam esse marcador.
+- **Timeout:** o global subiu para 60 s, por causa dos testes que varrem dezenas de rotas.
+- **Usuários reais:** um toque, uma tecla ou um foco antes do boot já inicia o download do JS.
+
 ## Como medir localmente
 
 1. `npm run build`.

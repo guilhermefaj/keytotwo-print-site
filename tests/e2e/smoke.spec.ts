@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page } from './fixtures/test'
 
 // The 15 routes pre-rendered into build/client/<route>/index.html.
 const routes = [

@@ -28,6 +28,8 @@ let started = false;
 const start = () => { if (started) return; started = true; requestAnimationFrame(() => setTimeout(boot, 0)) };
 try { new PerformanceObserver((list, observer) => { if (list.getEntriesByName('first-contentful-paint').length) { observer.disconnect(); start() } }).observe({ type: 'paint', buffered: true }) } catch { start() }
 setTimeout(start, 2500);
+// Quem toca ou digita antes do boot não espera a pintura: o JS começa na hora.
+for (const type of ['pointerdown', 'keydown', 'touchstart', 'focusin']) addEventListener(type, start, { once: true, capture: true, passive: true });
 </script>`
 }
 
