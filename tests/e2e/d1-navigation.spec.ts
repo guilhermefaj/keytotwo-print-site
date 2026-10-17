@@ -64,6 +64,10 @@ test('desktop header: shared navigation, active page, transparent top and sticky
   expect(requested.some(url => url.includes('kito-caixa'))).toBe(false)
   await page.evaluate(() => window.scrollTo({ top: 800, behavior: 'instant' }))
   await expect(page.locator('header')).toHaveAttribute('data-scrolled', 'true')
+  // Também no desktop o cabeçalho some ao rolar para baixo e volta ao rolar para cima.
+  await expect(page.locator('header')).toHaveAttribute('data-hidden', 'true')
+  await page.evaluate(() => window.scrollTo({ top: 700, behavior: 'instant' }))
+  await expect(page.locator('header')).toHaveAttribute('data-hidden', 'false')
   await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('aria-current', 'page')
   await capture(page, 'header-desktop-rolado')
   await page.locator('.desktop-nav').getByRole('link', { name: 'Blog', exact: true }).click()

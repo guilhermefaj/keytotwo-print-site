@@ -77,9 +77,8 @@
   .portal-game { animation: portal-deal var(--duration-ui) var(--ease-out) backwards; animation-delay: calc(var(--game-order, 0) * var(--stagger)); }
 }
 @keyframes portal-deal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@media (max-width: 70rem) {
-  .site-header-shell[data-hidden="true"] ~ .portal-page { --portal-tabs-offset: 0px; }
-}
+/* As abas sobem junto quando o cabeçalho se esconde (em todas as larguras). */
+.site-header-shell[data-hidden="true"] ~ .portal-page { --portal-tabs-offset: 0px; }
 @media (max-width: 960px) {
   .portal-library { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
   .portal-setting { gap: 32px; }
