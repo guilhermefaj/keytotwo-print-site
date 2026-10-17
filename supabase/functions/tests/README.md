@@ -33,7 +33,7 @@ KT_INTEGRATION=1 npx deno@2.9.6 test --no-lock --config supabase/functions/deno.
 
 ## No CI
 
-Desde 2026-10-16 o desenvolvimento usa o Supabase hospedado e não há stack local na máquina. A integração roda no job `integration` do `.github/workflows/ci.yml`:
+Desde 2026-10-16 o desenvolvimento usa o Supabase hospedado e não há stack local na máquina. A integração roda no job `integration` do `.github/workflows/ci.yml` (em PR, só quando o diff toca o que ela testa; no `main` e em `gh workflow run CI --ref <branch>`, sempre):
 - sobe uma stack efêmera com o seed de TESTE;
 - gera um `supabase/functions/.env` descartável;
 - serve as funções e grava o Vault;

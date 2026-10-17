@@ -28,7 +28,7 @@ Headers: `nosniff`, bloqueio de frames, política de referrer e restrição de c
 
 ## CI
 
-`.github/workflows/ci.yml` roda em push e pull request com permissão somente de leitura. Executa `npm ci`, lint, typecheck, build, instalação dos navegadores/dependências Playwright e `npm run test:e2e`. O build precede os testes que servem `build/client`. Os navegadores exercitados são os declarados pela configuração da Lupa; instalar os executáveis não amplia automaticamente a matriz de testes.
+`.github/workflows/ci.yml` roda em pull request, em push no `main` e por execução manual (`gh workflow run CI --ref <branch>`), com permissão somente de leitura. Desde 2026-10-17, para caber na cota de minutos do plano Free: um commit de PR roda uma vez só, um commit novo cancela a execução anterior do mesmo PR, e em PR os jobs de funções, banco e integração só rodam quando o diff toca `supabase/`, `src/lib/`, os specs `i*`/`smoke`, `playwright.config.ts`, `package*.json` ou `.github/`. No `main` e na execução manual roda tudo. Executa `npm ci`, lint, typecheck, build, instalação dos navegadores/dependências Playwright e `npm run test:e2e`. O build precede os testes que servem `build/client`. Os navegadores exercitados são os declarados pela configuração da Lupa; instalar os executáveis não amplia automaticamente a matriz de testes.
 
 Um job independente detecta `supabase/functions` e, quando existir, instala **Deno 2.9.x** e executa `deno check .` nesse diretório, usando a configuração Deno versionada pelo outro floor. Não conecta ao Supabase remoto nem aplica migrações. A execução real no GitHub fica para o próximo commit/PR; nenhum workflow de deploy existe nesta entrega.
 

@@ -1,17 +1,58 @@
 name: CI
 
+# Economia de minutos do Actions (repositório privado no plano Free, cota mensal). Em PR roda uma vez por commit
+# (o push da branch não dispara); no main e na execução manual roda tudo.
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Um commit novo no mesmo PR cancela a execução anterior; no main cada merge roda até o fim.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Em PR, os jobs de funções, banco e integração só rodam quando o diff toca o que eles testam; o Site roda sempre.
+  # Para rodar tudo numa branch: `gh workflow run CI --ref <branch>`.
+  changes:
+    name: Arquivos alterados
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      functions: ${{ steps.diff.outputs.functions }}
+      database: ${{ steps.diff.outputs.database }}
+      integration: ${{ steps.diff.outputs.integration }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 2
+      - name: Decidir quais jobs rodam
+        id: diff
+        shell: bash
+        env:
+          FULL: ${{ github.event_name != 'pull_request' }}
+        run: |
+          if [[ "$FULL" == true ]]; then
+            for job in functions database integration; do echo "$job=true" >> "$GITHUB_OUTPUT"; done
+            echo "Tudo roda: main ou execução manual."
+            exit 0
+          fi
+          # O checkout de um PR é o merge com a base; o primeiro pai é a base, então o diff é só o do PR.
+          files=$(git diff --name-only HEAD^1 HEAD)
+          echo "$files"
+          has() { grep -qE "$1" <<< "$files" && echo true || echo false; }
+          shared='^(\.github/|package(-lock)?\.json$)'
+          {
+            echo "functions=$(has "^supabase/functions/|$shared")"
+            echo "database=$(has "^supabase/(migrations|tests|seed\.sql|config\.toml)|$shared")"
+            echo "integration=$(has "^supabase/|^src/lib/|^tests/e2e/(i[0-9]|smoke)|^playwright\.config\.ts$|$shared")"
+          } | tee -a "$GITHUB_OUTPUT"
+
   site:
     name: Site (Node 24)
     runs-on: ubuntu-latest
@@ -43,6 +84,8 @@ jobs:
 
   functions:
     name: Edge Functions (Deno 2.9.x)
+    needs: changes
+    if: needs.changes.outputs.functions == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -67,6 +110,8 @@ jobs:
 
   database:
     name: Banco (Supabase CLI 2.118.0 / pgTAP)
+    needs: changes
+    if: needs.changes.outputs.database == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -89,6 +134,8 @@ jobs:
 
   functions-tests:
     name: Testes das funções (sem integração)
+    needs: changes
+    if: needs.changes.outputs.functions == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -104,6 +151,8 @@ jobs:
   # banco e funções locais rodam aqui, numa stack efêmera do runner com o seed de TESTE.
   integration:
     name: Integração (stack efêmera, Auth e Mailpit reais)
+    needs: changes
+    if: needs.changes.outputs.integration == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
