@@ -69,7 +69,8 @@
 .portal-setting .marketing-form > * + * { margin-top: 16px; }
 .portal-setting .marketing-form .form-actions { margin-top: 24px; }
 .portal-setting .marketing-form [role]:empty { display: none; }
-.portal-signout { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; padding: 28px; margin-top: 24px; border: var(--line-rule); border-radius: var(--radius-lg); }
+/* Sair: variante "aviso" do sistema (DESIGN.md › Aviso), borda 1,5 px Tinta suave e raio médio, sem a régua cinza solta. */
+.portal-signout { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; padding: 24px 28px; margin-top: 24px; border: 1.5px solid var(--color-ink-soft); border-radius: var(--radius-md); }
 .portal-signout p { margin: 0; }
 .portal-signout .form-error:empty { display: none; }
 @media (prefers-reduced-motion: no-preference) {

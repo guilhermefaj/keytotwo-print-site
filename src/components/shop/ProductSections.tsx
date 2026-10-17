@@ -48,6 +48,6 @@ export function ProductPackage({ game, bundle }: { game: Game; bundle: Product }
       <p>A {bundle.title} traz {game.name}{list ? <> junto com {list}</> : null}, todos num só pedido.</p>
       <Link className="inline-link" to={`/loja/${bundle.slug}`} aria-label={`Ver o pacote: ${bundle.title}`}>Ver o pacote</Link>
     </div>
-    <ul className="product-package-covers" aria-label={`Jogos do pacote ${bundle.title}`}>{bundle.games.map(item => <li key={item.id} style={accentStyle(item.accent)}><GameCover code={item.code} name={item.name} /><span>{item.name}</span></li>)}</ul>
+    <ul className="product-package-covers" aria-label={`Jogos do pacote ${bundle.title}`}>{bundle.games.map(item => <li key={item.id} style={accentStyle(item.accent)}><GameCover code={item.code} name={item.name} sizes="88px" /><span>{item.name}</span></li>)}</ul>
   </section>
 }
