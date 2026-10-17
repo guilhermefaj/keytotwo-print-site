@@ -53,6 +53,10 @@ export function Layout({ children }: { children: ReactNode }) {
         <link rel="preload" href={bricolage700} as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href={dmSans400} as="font" type="font/woff2" crossOrigin="anonymous" />
         <Links />
+        {/* Kito em pixel art, gerado por scripts/prepare-favicon.mjs. */}
+        <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+        <link rel="icon" href="/media/icons/kito-192.png" type="image/png" sizes="192x192" />
+        <link rel="apple-touch-icon" href="/media/icons/apple-touch-icon.png" />
       </head>
       <body>
         {children}

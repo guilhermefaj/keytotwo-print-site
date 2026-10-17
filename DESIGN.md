@@ -378,6 +378,7 @@ Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entr
 - **Vazios** (carrinho, biblioteca, gaveta): Kito na caixa (`kito-caixa`, 240 px; 180 px no celular), com a entrada curta de 650 ms.
 - **Celebração** (pagamento confirmado): Kito acenando (`kito-hi`) com o confete de 1,1 s. Único lugar de delícia longa.
 - **Erro, falha de pagamento e 404:** pose neutra = **quadro 01 do atlas** (`.kito-still`, fundo `kito-walk-v31-right-atlas.webp` em `0 0 / 600% 200%`, 128–160 px), sem lágrima, sem aceno. Nenhuma imagem nova é gerada para isso.
+- **Favicon:** o Kito em pixel art (`kito_favicon.png` do Drive), de frente e sorrindo, é o ícone do site: `favicon.ico` (16/32/48), `kito-192.png` e o ícone da tela inicial do iPhone sobre Céu. Gerados por `scripts/prepare-favicon.mjs`; não se edita à mão.
 - **Área privada:** Kito acenando pequeno (56–64 px), ao lado do nome na saudação.
 - **Rodapé público:** o chão da hero volta como faixa de borda a borda (`.footer-ground`: grama, terra, um arbusto da cena) e o Kito acenando (`kito-hi`, 104 px; 84 px no celular) se despede em pé sobre ela, parado. Decorativo (`aria-hidden`). Não entra no rodapé privado, no da compra nem no do modo foco.
 

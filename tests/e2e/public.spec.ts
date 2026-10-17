@@ -274,3 +274,17 @@ test('home: matriz responsiva, texto 200%, cena preservada e capturas', async ({
     }
   }
 })
+
+test('favicon do Kito: os ícones declarados no head existem e são imagens', async ({ page, request }) => {
+  await page.goto('/')
+  const icons = await page.locator('link[rel="icon"], link[rel="apple-touch-icon"]').evaluateAll(links => links.map(link => link.getAttribute('href') ?? ''))
+  expect(icons).toEqual(['/favicon.ico', '/media/icons/kito-192.png', '/media/icons/apple-touch-icon.png'])
+  // Pela assinatura dos bytes: o sirv dos testes não manda Content-Type para .ico (o nginx manda image/x-icon).
+  const signatures: Record<string, string> = { '.ico': '00000100', '.png': '89504e47' }
+  for (const href of icons) {
+    const response = await request.get(href)
+    expect(response.status(), href).toBe(200)
+    const body = await response.body()
+    expect(body.subarray(0, 4).toString('hex'), href).toBe(signatures[href.slice(href.lastIndexOf('.'))])
+  }
+})
