@@ -9,7 +9,7 @@ import { kitoSprites } from '../kito-sprites'
 // multiplicadas pela escala da tela, para o passo ser o mesmo no desktop e no celular.
 
 type Anim = keyof typeof kitoSprites.animations
-type Mode = 'idle' | 'move' | 'sit' | 'sleep' | 'love' | 'point' | 'push' | 'clip' | 'carried' | 'airborne'
+type Mode = 'idle' | 'move' | 'sit' | 'sleep' | 'love' | 'hello' | 'point' | 'push' | 'clip' | 'carried' | 'airborne'
 type Step = [anim: Anim, frame: number, facing?: 1 | -1]
 // hop: [quadro inicial, quadro final, altura em px de arte] de um arco que tira o Kito do chão durante o clipe;
 // slide: segue escorregando com a velocidade que tinha; sway: cambaleia de um lado para o outro.
@@ -33,7 +33,10 @@ const DRAG_THRESHOLD = 6
 // Cursor parado perto dele: cochila depois de 4 s.
 const SLEEP_AFTER = 4000
 // Poses em laço: ms por quadro.
-const LOOP = { sleep: 220, love: 110, point: 120 }
+// hello: o aceno com o cursor em cima dele (sobe a mão e balança enquanto o cursor estiver ali).
+const LOOP = { sleep: 220, love: 110, hello: 90, point: 120 }
+// Clique ou toque no Kito: saltita com o coração por este tempo.
+const LOVE_FOR = 1800
 // Chacoalhar: três trocas de sentido rápidas da mão em 1,2 s deixam o Kito tonto.
 const SHAKE_SPEED = 700, SHAKE_TURNS = 3, SHAKE_WINDOW = 1200
 // O chão de uma palavra fica perto do topo das minúsculas, não no topo da caixa da linha.
@@ -44,7 +47,7 @@ const MOVES: Array<[Action, number]> = [['walk', 2], ['run', 3], ['sprint', 1.5]
 const STAYS: Array<[Action, number]> = [['jump', 2], ['wave', 2], ['hoist', 1.5], ['love', 1], ['sit', 0.8]]
 // Poses de lado espelham para a esquerda; as de frente nunca.
 const SIDE = new Set<Anim>(['frontSide', 'side', 'walk', 'run', 'sprint', 'fall', 'push', 'dizzy'])
-const POSE: Partial<Record<Mode, Anim>> = { idle: 'front', sit: 'sit', sleep: 'sleep', love: 'love', point: 'point', push: 'push' }
+const POSE: Partial<Record<Mode, Anim>> = { idle: 'front', sit: 'sit', sleep: 'sleep', love: 'love', hello: 'wave', point: 'point', push: 'push' }
 const INTERACTIVE = 'a, button, input, select, textarea, label, summary, [role="button"]'
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
@@ -130,7 +133,7 @@ export function startKito({ hero, layer, sprite, hitbox, shadow, die, dieHitbox 
     if (facing) s.facing = facing
   }
 
-  const idle = () => setMode(s.hovered ? 'love' : 'idle')
+  const idle = () => setMode(s.hovered ? 'hello' : 'idle')
   const settle = () => play([['frontSide', 0]], 8, idle)
   const celebrate = (then = idle) => play(frames('jump', [0, 1, 2, 3, 4, 5, 6]), 12, then, { hop: [3, 6, 22] })
   // Aceno duplo: a mão sobe, balança duas vezes e desce.
@@ -269,11 +272,17 @@ export function startKito({ hero, layer, sprite, hitbox, shadow, die, dieHitbox 
     }
     if (s.mode === 'push') return settle()
     if (s.mode === 'point' && !s.cta && now > s.pointUntil) return setMode('idle')
-    if (s.hovered && s.mode !== 'love' && s.mode !== 'point') return setMode('love')
-    if (s.mode === 'love' && !s.hovered && now > s.loveUntil) return setMode('idle')
+    // Cursor em cima: acena. Coração (clique) e apontar o botão têm a vez enquanto duram.
+    if (s.mode === 'love' && now > s.loveUntil) return idle()
+    if (s.hovered && s.mode !== 'hello' && s.mode !== 'love' && s.mode !== 'point') return setMode('hello')
+    if (s.mode === 'hello' && !s.hovered) return play(frames('wave', [7, 8]), 11, idle)
     const waited = now - s.since
     if (s.mode === 'sleep') s.frame = Math.floor(waited / LOOP.sleep) % animations.sleep.count
     if (s.mode === 'love') s.frame = Math.floor(waited / LOOP.love) % animations.love.count
+    if (s.mode === 'hello') {
+      const tick = Math.floor(waited / LOOP.hello)
+      s.frame = tick < 3 ? tick : 3 + (tick - 3) % 4
+    }
     if (s.mode === 'point') {
       const tick = Math.floor(waited / LOOP.point)
       s.frame = tick < 3 ? tick : 3 + (tick - 3) % 5
@@ -465,9 +474,10 @@ export function startKito({ hero, layer, sprite, hitbox, shadow, die, dieHitbox 
       if (Math.abs(reachable - s.x) > START_DISTANCE * scale || (reachable !== s.target && !s.platform)) return 0
     }
     const waited = now - s.since
-    const frame = s.mode === 'sleep' || s.mode === 'love' || s.mode === 'point' ? LOOP[s.mode] - waited % LOOP[s.mode] : Infinity
+    const frame = s.mode === 'sleep' || s.mode === 'love' || s.mode === 'hello' || s.mode === 'point' ? LOOP[s.mode] - waited % LOOP[s.mode] : Infinity
     if (s.mode === 'point') return s.cta ? frame : Math.min(frame, s.pointUntil - now)
-    if (s.mode === 'love') return s.hovered ? frame : Math.min(frame, s.loveUntil - now)
+    if (s.mode === 'love') return Math.min(frame, s.loveUntil - now)
+    if (s.mode === 'hello') return frame
     if (s.mouse) return Math.min(frame, s.mode === 'idle' ? SLEEP_AFTER - waited : Infinity)
     return Math.min(frame, s.nextAt - waited)
   }
@@ -563,7 +573,7 @@ export function startKito({ hero, layer, sprite, hitbox, shadow, die, dieHitbox 
     return [clamp((x - x0) / seconds, -limit, limit), clamp((y - y0) / seconds, -limit, limit)]
   }
 
-  // Kito: pressionar e arrastar carrega; clique ou toque sem arrastar faz ele pular ou acenar.
+  // Kito: pressionar e arrastar carrega; clique ou toque sem arrastar mostra o coração.
   function onKitoDown(event: PointerEvent) {
     if (!running || s.drag || d.drag || (event.pointerType === 'mouse' && event.button !== 0)) return
     event.preventDefault()
@@ -617,13 +627,13 @@ export function startKito({ hero, layer, sprite, hitbox, shadow, die, dieHitbox 
     s.drag = null
     delete document.documentElement.dataset.kitoCarrying
     if (!drag.carrying) {
-      // No toque não há hover: depois do pulo ou do aceno ele segura o coração por um instante.
-      if (event.type === 'pointerup' && s.mode !== 'clip') {
-        const touch = event.pointerType !== 'mouse'
+      // Clique ou toque sem arrastar: ele saltita segurando o coração por um instante.
+      if (event.type === 'pointerup' && grounded()) {
         s.target = null
         s.goal = null
         s.nextAt = between(1500, 3000)
-        greet(touch ? () => { s.loveUntil = performance.now() + 1800; setMode('love') } : idle)
+        setMode('love')
+        s.loveUntil = now + LOVE_FOR
       }
       return wake()
     }

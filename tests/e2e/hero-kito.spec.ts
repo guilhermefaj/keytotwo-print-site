@@ -34,7 +34,7 @@ test('desktop: persegue o cursor pelo chão, vai no colo e volta ao chão', asyn
 
   await page.mouse.up()
   await expect(page.locator('html')).not.toHaveAttribute('data-kito-carrying')
-  await expect.poll(() => sprite(page).getAttribute('data-mode'), { timeout: 10_000 }).toMatch(/^(idle|love|sleep|move)$/)
+  await expect.poll(() => sprite(page).getAttribute('data-mode'), { timeout: 10_000 }).toMatch(/^(idle|hello|love|sleep|move)$/)
   const resting = await aboveGround(page)
   expect(resting).toBeGreaterThanOrEqual(0)
   expect(resting).toBeLessThan(32)
@@ -56,7 +56,7 @@ test('desktop: aponta o botão, fica em cima dele quando solto ali e o dado rola
   await page.mouse.move(cta.x + cta.width / 2, cta.y - 120, { steps: 12 })
   await page.waitForTimeout(200)
   await page.mouse.up()
-  await expect.poll(() => sprite(page).getAttribute('data-mode'), { timeout: 5_000 }).toMatch(/^(idle|love|point)$/)
+  await expect.poll(() => sprite(page).getAttribute('data-mode'), { timeout: 5_000 }).toMatch(/^(idle|hello|love|point)$/)
   await page.mouse.move(1200, 680, { steps: 4 })
   await page.waitForTimeout(2_000)
   const feetOnButton = (await kito(page)).bottom - cta.y
