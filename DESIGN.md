@@ -161,7 +161,7 @@ components:
 
 **Creative North Star: "Folha de recorte"**
 
-O que o casal compra é papel. A hero é a janela para o mundo do Kito: céu, horizonte baixo, chão até as bordas e um único pinguim caminhando. Logo abaixo do chão passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, linhas turquesa como nas cartas do J001, calhas tracejadas entre as cartas, fichas com pontilhado de índice e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
+O que o casal compra é papel. A hero é a janela para o mundo do Kito: céu, horizonte baixo, chão até as bordas e um único pinguim que brinca com quem chega. Logo abaixo do chão passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, linhas turquesa como nas cartas do J001, calhas tracejadas entre as cartas, fichas com pontilhado de índice e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
 
 A hero vende a marca e uma forma de pensar (sair do automático, fazer algo juntos), não um produto específico. A folha abaixo vende o catálogo: hoje a Coleção KeyToTwo: Fundadores, amanhã outros pacotes e um freebie. Por isso o sistema é feito de cartas, fichas e folhas que aceitam qualquer quantidade de itens. O tom é adulto, divertido e direto; o acabamento é o de um objeto gráfico bem impresso, não o de um app.
 
@@ -173,7 +173,7 @@ Anti-referências confirmadas na auditoria e no Portão 1: landing de template (
 - Linhas turquesa J001 decorativas (recorte, cartas, pontilhado); o texto é sempre Tinta ou Turquesa profundo.
 - Tipografia à esquerda, com um marca-texto por página, no máximo.
 - Controles planos, retos (6 px), sem sombra; só painéis que saem da folha (menu, gaveta) ganham sombra.
-- Kito age: caminha na hero, acolhe em vazios, celebra a compra. Nunca decora.
+- Kito age: brinca na hero, acolhe em vazios, celebra a compra. Nunca decora.
 - Pronto para mais produtos: cartas, fichas e oferta vêm de dados, não de "5" ou "P001" desenhados.
 
 ## Colors
@@ -286,7 +286,7 @@ A cena do Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelat
 
 Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exata no `package.json`), sempre em importação nomeada; o carrinho é uma sacola (`IconShoppingBag`).
 
-- **Família:** outline. As variantes `Filled` só existem para play/pause do Kito (`IconPlayerPlayFilled`/`IconPlayerPauseFilled`).
+- **Família:** outline. Sem variantes `Filled`.
 - **Traço:** 1,75 (`stroke`); cor sempre `currentColor` — Tinta ou Turquesa profundo conforme o controle. A Turquesa J001 nunca aparece em ícone que precise ser lido (regra existente).
 - **Tamanhos:** 20 px em controles e navegação (menu, chevrons do carrossel, gatilho da conta usa 16 px); 24 px na sacola, no fechar do painel, na tesoura e na lista "O que vocês precisam"; 16 px em selos inline ("Compra segura", "Pagamento seguro") e na etapa concluída da compra; 32 px só para ilustrar as cartas de "Como funciona", nunca em controle.
 - **Acessibilidade:** todo ícone é decorativo (`aria-hidden`) e o rótulo fica no controle — `aria-label` no botão/link ou texto visível ao lado.
@@ -373,7 +373,17 @@ Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entr
 - **Etapas da compra** (`.checkout-steps`): quatro passos (Sacola, Entrar, Pagamento, Pronto) para quem ainda não entrou; três, renumerados, para quem já entrou, sem uma etapa "Entrar" concluída fora de ordem. Somem na sacola vazia e nos erros da confirmação. Em Caption, número em círculo de 28 px com borda de régua; a etapa atual em Tinta 600 com o círculo em Turquesa profundo; concluída com o ícone de conferir (`IconCheck`, 16 px) em aguada de Tinta. Os números aqui são uma sequência real.
 
 ### Kito (uso do personagem)
-- **Hero:** o único lugar onde o Kito se move. Atlas v3.1 RIGHT, 12 poses, 10 FPS, ciclo de 1,2 s, deslocamento `S × 520/1254 × FPS/12` px/s, chão em `S × 1160/1254`, duas camadas CSS (`.kito-track` desloca, `.kito-frames` troca a pose), volta só fora da tela, pausa fora de vista/aba oculta/menu aberto, `prefers-reduced-motion` começa parado com "Retomar animação". Parâmetros vêm de `src/kito-motion.ts` (gerado); nunca editar à mão, nunca regerar, recortar ou espelhar o atlas.
+- **Hero (2026-10-18):** o único lugar onde o Kito se move, e ele interage com quem chega. Pixel art real em 256 px (`art-source/kito-pixel/`), servida num atlas WebP sem perda gerado por `scripts/prepare-kito-pixel.mjs` (posições em `src/kito-sprites.ts`, gerado; não editar à mão). Só os quadros virados para a direita entram; a esquerda é espelho no CSS. Tamanho: 192 px no desktop (×0,75) e 128 px no celular (×0,5, 1:1 em tela 2×); vizinho mais próximo quando a tela tem pixels de sobra, redução filtrada abaixo disso.
+  - **Mouse:** o Kito persegue o cursor pelo chão. Caminha perto, corre a meia distância e dispara de longe; a cadência dos pés acompanha a velocidade. Vira de frente para trocar de lado, às vezes tropeça ao virar em sprint. Ao alcançar, pula ou acena; com o cursor em cima, acena enquanto o cursor estiver ali; clicado, saltita segurando o coração; com o cursor parado, cochila em pé, respirando, e acorda num susto quando o cursor se mexe. Cursor além da borda: empurra a borda.
+  - **Botão "Ver os jogos":** com o cursor ou o foco do teclado no botão, o Kito corre até embaixo dele e aponta, com brilhos, enquanto o cursor estiver lá. No piloto automático ele também vai até o botão e aponta por um instante.
+  - **Plataformas:** o botão e a palavra destacada ("encontro.") são plataformas. Solto em cima deles (ou com os pés um pouco abaixo da borda, sem arremesso), o Kito fica ali até alguém carregá-lo de volta: anda só em cima da plataforma e, no piloto automático, só faz ações paradas. Não há animação de descida (decisão do responsável em 2026-10-18).
+  - **Piloto automático** (celular sempre; desktop com o cursor fora da hero): começa correndo e acenando e depois alterna um deslocamento (andar, correr, disparar e às vezes tropeçar, empurrar a borda, chutar o dado, ir até o botão e apontar) com uma ação parada (pular, acenar, ser erguido por uma mão invisível, que é a dica de que dá para pegá-lo, saltitar com o coração, sentar), sem repetir seguido e com pausas curtas.
+  - **Dado** (pixel art do Dice.zip, mesma escala de pixel do Kito): fica no chão a 24 % da largura. Andando, o Kito empurra o dado, que rola devagar à frente dele; correndo, chuta. A pessoa pode arrastar e arremessar o dado, ou clicar nele: ele treme, pula e cai numa das oito faces, sorteada. Dado arremessado que acerta o Kito o deixa tonto.
+  - **Tonto:** chacoalhar o Kito no colo (três trocas rápidas de sentido), arremessá-lo forte ou acertá-lo com o dado o deixa com estrelinhas girando, cambaleando, por quase dois segundos.
+  - **Toque:** um toque na hero (fora de links e botões) leva o Kito até lá; tocar nele faz ele saltitar segurando o coração. Só o corpo dele segura a rolagem (`touch-action: none`); o resto da cena rola a página.
+  - **Carregar:** pressionar e arrastar o Kito o leva para qualquer ponto da hero, por cima do texto, pendurado pelos pés soltos e balançando com a mão (quadros girados com RotSprite a partir do "erguido no ar"). Ao soltar ele cai com o impulso da mão: queda curta amortece, queda alta ou arremesso rola no chão. Uma sombra em degraus fica no chão e encolhe com a altura.
+  - **Nuvens:** atravessam o céu em 150 a 300 s, cada uma num ritmo.
+  - **Pausa:** fora de vista, aba oculta ou menu aberto congelam tudo, inclusive a interação. Não há botão de pausa (decisão do responsável em 2026-10-18); `prefers-reduced-motion` deixa o Kito parado, de frente, sem baixar o motor nem o atlas. O motor (`src/lib/kito-playground.ts`) só desce quando a cena roda pela primeira vez; o servidor entrega a pose de frente (3 KB).
 - **Na home, fora da hero:** no máximo uma participação, parada, como anfitrião de um convite: hoje, comemorando a rodada no tabuleiro (`kito-tabuleiro`) ao lado de "A próxima rodada sai da impressora", no lugar de qualquer página do PDF. O aceno do rodapé é da moldura do site, não da home. Nunca como ícone de pilar. Na arte oficial das capas dos jogos ele é o protagonista (as capas são peças aprovadas, não enfeite).
 - **Vazios** (carrinho, biblioteca, gaveta): Kito na caixa (`kito-caixa`, 240 px; 180 px no celular), com a entrada curta de 650 ms.
 - **Celebração** (pagamento confirmado): Kito acenando (`kito-hi`) com o confete de 1,1 s. Único lugar de delícia longa.
@@ -388,7 +398,7 @@ Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entr
 - **Erro:** uma única mensagem em Body com `role="alert"`, em Tinta (não em cor de erro quando não há culpa da pessoa), seguida de **um** botão secundário "Tentar novamente". Sem título em Display, sem segunda mensagem genérica. Falha de pagamento e 404 usam o Kito neutro.
 - **Desabilitado:** aguada de Tinta + Tinta suave; sempre com a razão em Caption ao lado quando não for óbvia.
 - **Foco:** contorno de 3 px Tinta com offset em tudo que recebe foco, inclusive cartas com `tabindex`, abas e a trilha do carrossel.
-- **Movimento reduzido:** nenhuma entrada, nenhum deslocamento, carrossel instantâneo, Kito parado no quadro 01 com botão de retomar.
+- **Movimento reduzido:** nenhuma entrada, nenhum deslocamento, carrossel instantâneo, Kito da hero parado de frente e nuvens paradas.
 
 ### Movimento (tokens do plano 005)
 - `--ease-out: cubic-bezier(.16, 1, .3, 1)` para toda entrada e hover; nada usa `ease-in` em UI.
@@ -411,7 +421,7 @@ Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entr
 - **Do** manter botões retos (6 px), sem sombra, sem seta, com um nome por ação.
 - **Do** escrever preço só com um preço real; qualquer substituto é Body em Tinta suave.
 - **Do** dar a todo erro uma mensagem e um botão secundário de nova tentativa, e nada mais.
-- **Do** manter a hero exatamente como a coreografia do Kito pede e medir `verify:hero` após qualquer mudança nela.
+- **Do** rodar `tests/e2e/hero-kito.spec.ts` (perseguir, carregar, toque, movimento reduzido) após qualquer mudança na hero.
 - **Do** medir contraste AA em cada estado novo antes de fechar uma fatia.
 
 ### Don't:

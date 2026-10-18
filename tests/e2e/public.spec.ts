@@ -77,10 +77,6 @@ test.describe('links e botões', () => {
     await expect(page.getByRole('dialog')).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog')).toBeHidden()
-
-    await page.setViewportSize({ width: 1440, height: 900 })
-    await page.getByRole('button', { name: /Pausar anima/ }).click()
-    await expect(page.getByRole('button', { name: /Retomar anima/ })).toBeVisible()
   })
 })
 
@@ -246,7 +242,7 @@ test('home: matriz responsiva, texto 200%, cena preservada e capturas', async ({
     await page.evaluate(() => document.fonts.ready)
     const scene = page.locator('.hero-scene-region')
     await expect(scene).toHaveAttribute('data-running', 'false')
-    expect(await page.locator('.kito-frames').evaluate(el => getComputedStyle(el).backgroundImage)).toContain('kito-walk-v31-right-atlas.webp')
+    expect(await page.locator('.kito-sprite').evaluate(el => getComputedStyle(el).backgroundImage)).toContain('kito-pixel-pose.webp')
     for (const zoom of [100, 200]) {
       if (zoom === 200) await page.evaluate(() => {
         const sizes = [...document.querySelectorAll<HTMLElement>('body *')].map(el => [el, parseFloat(getComputedStyle(el).fontSize)] as const)

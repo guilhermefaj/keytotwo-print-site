@@ -1,0 +1,421 @@
+{
+  "group_id": "fa625fca-5914-464c-a4dd-e9d7c9a3bd64",
+  "states": [
+    {
+      "character": {
+        "id": "90bdf880-083b-4b02-8488-e79f1b550934",
+        "name": "Idle",
+        "prompt": "A cute, happy smiling, charismatic and chubby turquoise penguin mascot in detailed 32-bit pixel art, front-facing and perfectly symmetrical. Its head and body form one continuous, round, pear-shaped silhouette with no visible neck or separation. Vibrant cyan-turquoise plumage (#00BEC5), a large rounded white belly seamlessly connected to two white facial patches, and subtle light-blue shading.\n\nTwo large oval black eyes with square white reflections, a small golden-orange beak with an open black mouth and tiny red tongue, creating a joyful expression. Short, thick flippers extending slightly outward and downward, and small, wide, flattened orange feet with subtle toes.\n\nPolished retro-game sprite aesthetic, crisp square pixels, vibrant highlights, dark teal edge shading, soft dimensional lighting, and glossy cyan reflections. No black outer outline, no separate oversized head, no neck, no accessories, no realistic feathers. Full-body centered composition, transparent background.",
+        "size": {
+          "width": 256,
+          "height": 256
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-10-10T17:39:43.966252+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {
+          "Push_Object": {
+            "west": [
+              "Idle/animations/Push_Object/west/frame_000.png",
+              "Idle/animations/Push_Object/west/frame_001.png",
+              "Idle/animations/Push_Object/west/frame_002.png",
+              "Idle/animations/Push_Object/west/frame_003.png",
+              "Idle/animations/Push_Object/west/frame_004.png",
+              "Idle/animations/Push_Object/west/frame_005.png"
+            ],
+            "east": [
+              "Idle/animations/Push_Object/east/frame_000.png",
+              "Idle/animations/Push_Object/east/frame_001.png",
+              "Idle/animations/Push_Object/east/frame_002.png",
+              "Idle/animations/Push_Object/east/frame_003.png",
+              "Idle/animations/Push_Object/east/frame_004.png",
+              "Idle/animations/Push_Object/east/frame_005.png"
+            ]
+          },
+          "Full_Sprint": {
+            "west": [
+              "Idle/animations/Full_Sprint/west/frame_000.png",
+              "Idle/animations/Full_Sprint/west/frame_001.png",
+              "Idle/animations/Full_Sprint/west/frame_002.png",
+              "Idle/animations/Full_Sprint/west/frame_003.png",
+              "Idle/animations/Full_Sprint/west/frame_004.png",
+              "Idle/animations/Full_Sprint/west/frame_005.png",
+              "Idle/animations/Full_Sprint/west/frame_006.png",
+              "Idle/animations/Full_Sprint/west/frame_007.png"
+            ],
+            "east": [
+              "Idle/animations/Full_Sprint/east/frame_000.png",
+              "Idle/animations/Full_Sprint/east/frame_001.png",
+              "Idle/animations/Full_Sprint/east/frame_002.png",
+              "Idle/animations/Full_Sprint/east/frame_003.png",
+              "Idle/animations/Full_Sprint/east/frame_004.png",
+              "Idle/animations/Full_Sprint/east/frame_005.png",
+              "Idle/animations/Full_Sprint/east/frame_006.png",
+              "Idle/animations/Full_Sprint/east/frame_007.png"
+            ]
+          },
+          "The_character_is_suddenly_hoisted_into_the_air_by": {
+            "south": [
+              "Idle/animations/The_character_is_suddenly_hoisted_into_the_air_by/south/frame_000.png",
+              "Idle/animations/The_character_is_suddenly_hoisted_into_the_air_by/south/frame_001.png",
+              "Idle/animations/The_character_is_suddenly_hoisted_into_the_air_by/south/frame_002.png",
+              "Idle/animations/The_character_is_suddenly_hoisted_into_the_air_by/south/frame_003.png",
+              "Idle/animations/The_character_is_suddenly_hoisted_into_the_air_by/south/frame_004.png",
+              "Idle/animations/The_character_is_suddenly_hoisted_into_the_air_by/south/frame_005.png",
+              "Idle/animations/The_character_is_suddenly_hoisted_into_the_air_by/south/frame_006.png",
+              "Idle/animations/The_character_is_suddenly_hoisted_into_the_air_by/south/frame_007.png",
+              "Idle/animations/The_character_is_suddenly_hoisted_into_the_air_by/south/frame_008.png"
+            ]
+          },
+          "The_character_wobbles_unsteadily_head_swaying_with": {
+            "east": [
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_000.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_001.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_002.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_003.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_004.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_005.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_006.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_007.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_008.png"
+            ],
+            "west": [
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_000.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_001.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_002.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_003.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_004.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_005.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_006.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_007.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_008.png"
+            ],
+            "south": [
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_000.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_001.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_002.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_003.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_004.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_005.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_006.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_007.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_008.png"
+            ]
+          },
+          "penguin_falling_in_a_cute_and_funny_way": {
+            "east": [
+              "Idle/animations/penguin_falling_in_a_cute_and_funny_way/east/frame_000.png",
+              "Idle/animations/penguin_falling_in_a_cute_and_funny_way/east/frame_001.png",
+              "Idle/animations/penguin_falling_in_a_cute_and_funny_way/east/frame_002.png",
+              "Idle/animations/penguin_falling_in_a_cute_and_funny_way/east/frame_003.png",
+              "Idle/animations/penguin_falling_in_a_cute_and_funny_way/east/frame_004.png",
+              "Idle/animations/penguin_falling_in_a_cute_and_funny_way/east/frame_005.png",
+              "Idle/animations/penguin_falling_in_a_cute_and_funny_way/east/frame_006.png",
+              "Idle/animations/penguin_falling_in_a_cute_and_funny_way/east/frame_007.png",
+              "Idle/animations/penguin_falling_in_a_cute_and_funny_way/east/frame_008.png"
+            ]
+          },
+          "Running": {
+            "west": [
+              "Idle/animations/Running/west/frame_000.png",
+              "Idle/animations/Running/west/frame_001.png",
+              "Idle/animations/Running/west/frame_002.png",
+              "Idle/animations/Running/west/frame_003.png",
+              "Idle/animations/Running/west/frame_004.png",
+              "Idle/animations/Running/west/frame_005.png",
+              "Idle/animations/Running/west/frame_006.png",
+              "Idle/animations/Running/west/frame_007.png"
+            ],
+            "east": [
+              "Idle/animations/Running/east/frame_000.png",
+              "Idle/animations/Running/east/frame_001.png",
+              "Idle/animations/Running/east/frame_002.png",
+              "Idle/animations/Running/east/frame_003.png",
+              "Idle/animations/Running/east/frame_004.png",
+              "Idle/animations/Running/east/frame_005.png",
+              "Idle/animations/Running/east/frame_006.png",
+              "Idle/animations/Running/east/frame_007.png"
+            ]
+          },
+          "Two-Footed_Jump": {
+            "south": [
+              "Idle/animations/Two-Footed_Jump/south/frame_000.png",
+              "Idle/animations/Two-Footed_Jump/south/frame_001.png",
+              "Idle/animations/Two-Footed_Jump/south/frame_002.png",
+              "Idle/animations/Two-Footed_Jump/south/frame_003.png",
+              "Idle/animations/Two-Footed_Jump/south/frame_004.png",
+              "Idle/animations/Two-Footed_Jump/south/frame_005.png",
+              "Idle/animations/Two-Footed_Jump/south/frame_006.png"
+            ],
+            "north": [
+              "Idle/animations/Two-Footed_Jump/north/frame_000.png",
+              "Idle/animations/Two-Footed_Jump/north/frame_001.png",
+              "Idle/animations/Two-Footed_Jump/north/frame_002.png",
+              "Idle/animations/Two-Footed_Jump/north/frame_003.png",
+              "Idle/animations/Two-Footed_Jump/north/frame_004.png",
+              "Idle/animations/Two-Footed_Jump/north/frame_005.png",
+              "Idle/animations/Two-Footed_Jump/north/frame_006.png"
+            ]
+          },
+          "The_penguin_raises_its_right_arm_in_a_sharp_enthus": {
+            "south": [
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_000.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_001.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_002.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_003.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_004.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_005.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_006.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_007.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_008.png"
+            ]
+          },
+          "The_character_lifts_its_right_hand_to_shoulder_hei": {
+            "south": [
+              "Idle/animations/The_character_lifts_its_right_hand_to_shoulder_hei/south/frame_000.png",
+              "Idle/animations/The_character_lifts_its_right_hand_to_shoulder_hei/south/frame_001.png",
+              "Idle/animations/The_character_lifts_its_right_hand_to_shoulder_hei/south/frame_002.png",
+              "Idle/animations/The_character_lifts_its_right_hand_to_shoulder_hei/south/frame_003.png",
+              "Idle/animations/The_character_lifts_its_right_hand_to_shoulder_hei/south/frame_004.png",
+              "Idle/animations/The_character_lifts_its_right_hand_to_shoulder_hei/south/frame_005.png",
+              "Idle/animations/The_character_lifts_its_right_hand_to_shoulder_hei/south/frame_006.png",
+              "Idle/animations/The_character_lifts_its_right_hand_to_shoulder_hei/south/frame_007.png",
+              "Idle/animations/The_character_lifts_its_right_hand_to_shoulder_hei/south/frame_008.png"
+            ]
+          },
+          "Walking": {
+            "east": [
+              "Idle/animations/Walking/east/frame_000.png",
+              "Idle/animations/Walking/east/frame_001.png",
+              "Idle/animations/Walking/east/frame_002.png",
+              "Idle/animations/Walking/east/frame_003.png",
+              "Idle/animations/Walking/east/frame_004.png",
+              "Idle/animations/Walking/east/frame_005.png",
+              "Idle/animations/Walking/east/frame_006.png",
+              "Idle/animations/Walking/east/frame_007.png"
+            ],
+            "west": [
+              "Idle/animations/Walking/west/frame_000.png",
+              "Idle/animations/Walking/west/frame_001.png",
+              "Idle/animations/Walking/west/frame_002.png",
+              "Idle/animations/Walking/west/frame_003.png",
+              "Idle/animations/Walking/west/frame_004.png",
+              "Idle/animations/Walking/west/frame_005.png",
+              "Idle/animations/Walking/west/frame_006.png",
+              "Idle/animations/Walking/west/frame_007.png"
+            ],
+            "north": [
+              "Idle/animations/Walking/north/frame_000.png",
+              "Idle/animations/Walking/north/frame_001.png",
+              "Idle/animations/Walking/north/frame_002.png",
+              "Idle/animations/Walking/north/frame_003.png",
+              "Idle/animations/Walking/north/frame_004.png",
+              "Idle/animations/Walking/north/frame_005.png",
+              "Idle/animations/Walking/north/frame_006.png",
+              "Idle/animations/Walking/north/frame_007.png"
+            ],
+            "south": [
+              "Idle/animations/Walking/south/frame_000.png",
+              "Idle/animations/Walking/south/frame_001.png",
+              "Idle/animations/Walking/south/frame_002.png",
+              "Idle/animations/Walking/south/frame_003.png",
+              "Idle/animations/Walking/south/frame_004.png",
+              "Idle/animations/Walking/south/frame_005.png",
+              "Idle/animations/Walking/south/frame_006.png",
+              "Idle/animations/Walking/south/frame_007.png"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "character": {
+        "id": "1f4f58dc-477f-4bb9-93f2-9f6246f27041",
+        "name": "sitting down (the ch",
+        "prompt": "A cute, happy smiling, charismatic and chubby turquoise penguin mascot in detailed 32-bit pixel art, front-facing and perfectly symmetrical. Its head and body form one continuous, round, pear-shaped silhouette with no visible neck or separation. Vibrant cyan-turquoise plumage (#00BEC5), a large rounded white belly seamlessly connected to two white facial patches, and subtle light-blue shading.\n\nTwo large oval black eyes with square white reflections, a small golden-orange beak with an open black mouth and tiny red tongue, creating a joyful expression. Short, thick flippers extending slightly outward and downward, and small, wide, flattened orange feet with subtle toes.\n\nPolished retro-game sprite aesthetic, crisp square pixels, vibrant highlights, dark teal edge shading, soft dimensional lighting, and glossy cyan reflections. No black outer outline, no separate oversized head, no neck, no accessories, no realistic feathers. Full-body centered composition, transparent background.",
+        "size": {
+          "width": 256,
+          "height": 256
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-10-10T18:46:38.156168+00:00"
+      },
+      "folder": "sitting_down_the_ch",
+      "frames": {
+        "rotations": {
+          "south": "sitting_down_the_ch/rotations/south.png",
+          "south-east": "sitting_down_the_ch/rotations/south-east.png",
+          "east": "sitting_down_the_ch/rotations/east.png",
+          "north-east": "sitting_down_the_ch/rotations/north-east.png",
+          "north": "sitting_down_the_ch/rotations/north.png",
+          "north-west": "sitting_down_the_ch/rotations/north-west.png",
+          "west": "sitting_down_the_ch/rotations/west.png",
+          "south-west": "sitting_down_the_ch/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "484edff6-d214-4dc7-a324-a7421c832ebc",
+        "name": "playing a boadgame",
+        "prompt": "A cute, happy smiling, charismatic and chubby turquoise penguin mascot in detailed 32-bit pixel art, front-facing and perfectly symmetrical. Its head and body form one continuous, round, pear-shaped silhouette with no visible neck or separation. Vibrant cyan-turquoise plumage (#00BEC5), a large rounded white belly seamlessly connected to two white facial patches, and subtle light-blue shading.\n\nTwo large oval black eyes with square white reflections, a small golden-orange beak with an open black mouth and tiny red tongue, creating a joyful expression. Short, thick flippers extending slightly outward and downward, and small, wide, flattened orange feet with subtle toes.\n\nPolished retro-game sprite aesthetic, crisp square pixels, vibrant highlights, dark teal edge shading, soft dimensional lighting, and glossy cyan reflections. No black outer outline, no separate oversized head, no neck, no accessories, no realistic feathers. Full-body centered composition, transparent background.",
+        "size": {
+          "width": 256,
+          "height": 256
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-10-10T20:25:41.889074+00:00"
+      },
+      "folder": "playing_a_boadgame",
+      "frames": {
+        "rotations": {
+          "south": "playing_a_boadgame/rotations/south.png",
+          "south-east": "playing_a_boadgame/rotations/south-east.png",
+          "east": "playing_a_boadgame/rotations/east.png",
+          "north-east": "playing_a_boadgame/rotations/north-east.png",
+          "north": "playing_a_boadgame/rotations/north.png",
+          "north-west": "playing_a_boadgame/rotations/north-west.png",
+          "west": "playing_a_boadgame/rotations/west.png",
+          "south-west": "playing_a_boadgame/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    },
+    {
+      "character": {
+        "id": "5112c4d2-31d0-4ca7-bfbb-48882b938425",
+        "name": "In love holding a bi",
+        "prompt": "A cute, happy smiling, charismatic and chubby turquoise penguin mascot in detailed 32-bit pixel art, front-facing and perfectly symmetrical. Its head and body form one continuous, round, pear-shaped silhouette with no visible neck or separation. Vibrant cyan-turquoise plumage (#00BEC5), a large rounded white belly seamlessly connected to two white facial patches, and subtle light-blue shading.\n\nTwo large oval black eyes with square white reflections, a small golden-orange beak with an open black mouth and tiny red tongue, creating a joyful expression. Short, thick flippers extending slightly outward and downward, and small, wide, flattened orange feet with subtle toes.\n\nPolished retro-game sprite aesthetic, crisp square pixels, vibrant highlights, dark teal edge shading, soft dimensional lighting, and glossy cyan reflections. No black outer outline, no separate oversized head, no neck, no accessories, no realistic feathers. Full-body centered composition, transparent background.",
+        "size": {
+          "width": 256,
+          "height": 256
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-10-10T22:09:46.703006+00:00"
+      },
+      "folder": "In_love_holding_a_bi",
+      "frames": {
+        "rotations": {
+          "south": "In_love_holding_a_bi/rotations/south.png",
+          "south-east": "In_love_holding_a_bi/rotations/south-east.png",
+          "east": "In_love_holding_a_bi/rotations/east.png",
+          "north-east": "In_love_holding_a_bi/rotations/north-east.png",
+          "north": "In_love_holding_a_bi/rotations/north.png",
+          "north-west": "In_love_holding_a_bi/rotations/north-west.png",
+          "west": "In_love_holding_a_bi/rotations/west.png",
+          "south-west": "In_love_holding_a_bi/rotations/south-west.png"
+        },
+        "animations": {
+          "The_character_rhythmically_hops_with_both_feet_whi": {
+            "south": [
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_000.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_001.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_002.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_003.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_004.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_005.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_006.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_007.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_008.png"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "character": {
+        "id": "810b82ad-afd7-4b2c-a458-e589a3315197",
+        "name": "sleeping",
+        "prompt": "A cute, happy smiling, charismatic and chubby turquoise penguin mascot in detailed 32-bit pixel art, front-facing and perfectly symmetrical. Its head and body form one continuous, round, pear-shaped silhouette with no visible neck or separation. Vibrant cyan-turquoise plumage (#00BEC5), a large rounded white belly seamlessly connected to two white facial patches, and subtle light-blue shading.\n\nTwo large oval black eyes with square white reflections, a small golden-orange beak with an open black mouth and tiny red tongue, creating a joyful expression. Short, thick flippers extending slightly outward and downward, and small, wide, flattened orange feet with subtle toes.\n\nPolished retro-game sprite aesthetic, crisp square pixels, vibrant highlights, dark teal edge shading, soft dimensional lighting, and glossy cyan reflections. No black outer outline, no separate oversized head, no neck, no accessories, no realistic feathers. Full-body centered composition, transparent background.",
+        "size": {
+          "width": 256,
+          "height": 256
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-10-18T18:55:14.192144+00:00"
+      },
+      "folder": "sleeping",
+      "frames": {
+        "rotations": {
+          "south": "sleeping/rotations/south.png",
+          "south-east": "sleeping/rotations/south-east.png",
+          "east": "sleeping/rotations/east.png",
+          "north-east": "sleeping/rotations/north-east.png",
+          "north": "sleeping/rotations/north.png",
+          "north-west": "sleeping/rotations/north-west.png",
+          "west": "sleeping/rotations/west.png",
+          "south-west": "sleeping/rotations/south-west.png"
+        },
+        "animations": {
+          "The_character_rhythmically_inhales_and_exhales_cau": {
+            "south": [
+              "sleeping/animations/The_character_rhythmically_inhales_and_exhales_cau/south/frame_000.png",
+              "sleeping/animations/The_character_rhythmically_inhales_and_exhales_cau/south/frame_001.png",
+              "sleeping/animations/The_character_rhythmically_inhales_and_exhales_cau/south/frame_002.png",
+              "sleeping/animations/The_character_rhythmically_inhales_and_exhales_cau/south/frame_003.png",
+              "sleeping/animations/The_character_rhythmically_inhales_and_exhales_cau/south/frame_004.png",
+              "sleeping/animations/The_character_rhythmically_inhales_and_exhales_cau/south/frame_005.png",
+              "sleeping/animations/The_character_rhythmically_inhales_and_exhales_cau/south/frame_006.png",
+              "sleeping/animations/The_character_rhythmically_inhales_and_exhales_cau/south/frame_007.png",
+              "sleeping/animations/The_character_rhythmically_inhales_and_exhales_cau/south/frame_008.png"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "character": {
+        "id": "0960938f-4342-4cdc-917c-f4c28907f573",
+        "name": "hanging on the edge",
+        "prompt": "A cute, happy smiling, charismatic and chubby turquoise penguin mascot in detailed 32-bit pixel art, front-facing and perfectly symmetrical. Its head and body form one continuous, round, pear-shaped silhouette with no visible neck or separation. Vibrant cyan-turquoise plumage (#00BEC5), a large rounded white belly seamlessly connected to two white facial patches, and subtle light-blue shading.\n\nTwo large oval black eyes with square white reflections, a small golden-orange beak with an open black mouth and tiny red tongue, creating a joyful expression. Short, thick flippers extending slightly outward and downward, and small, wide, flattened orange feet with subtle toes.\n\nPolished retro-game sprite aesthetic, crisp square pixels, vibrant highlights, dark teal edge shading, soft dimensional lighting, and glossy cyan reflections. No black outer outline, no separate oversized head, no neck, no accessories, no realistic feathers. Full-body centered composition, transparent background.",
+        "size": {
+          "width": 256,
+          "height": 256
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-10-18T19:39:49.787055+00:00"
+      },
+      "folder": "hanging_on_the_edge",
+      "frames": {
+        "rotations": {
+          "south": "hanging_on_the_edge/rotations/south.png",
+          "south-east": "hanging_on_the_edge/rotations/south-east.png",
+          "east": "hanging_on_the_edge/rotations/east.png",
+          "north-east": "hanging_on_the_edge/rotations/north-east.png",
+          "north": "hanging_on_the_edge/rotations/north.png",
+          "north-west": "hanging_on_the_edge/rotations/north-west.png",
+          "west": "hanging_on_the_edge/rotations/west.png",
+          "south-west": "hanging_on_the_edge/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-10-18T20:11:28.143511"
+}

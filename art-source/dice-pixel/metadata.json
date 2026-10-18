@@ -1,0 +1,76 @@
+{
+  "group_id": "b2b21cae-4707-4a31-8f75-943ebe8d27d0",
+  "objects": [
+    {
+      "id": "33c5676a-b43c-4da1-8f7c-6588a9384cce",
+      "name": "base",
+      "prompt": "Dice",
+      "size": {
+        "width": 136,
+        "height": 136
+      },
+      "directions": 8,
+      "view": "low top-down",
+      "rotations": {
+        "south": "rotations/south.png",
+        "south-east": "rotations/south-east.png",
+        "east": "rotations/east.png",
+        "north-east": "rotations/north-east.png",
+        "north": "rotations/north.png",
+        "north-west": "rotations/north-west.png",
+        "west": "rotations/west.png",
+        "south-west": "rotations/south-west.png"
+      },
+      "animations": {
+        "The_die_begins_to_tremble_violently_before_suddenl": {
+          "directions": {
+            "south": {
+              "frames": [
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/south/frame_000.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/south/frame_001.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/south/frame_002.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/south/frame_003.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/south/frame_004.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/south/frame_005.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/south/frame_006.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/south/frame_007.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/south/frame_008.png"
+              ],
+              "frame_count": 9
+            },
+            "east": {
+              "frames": [
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/east/frame_000.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/east/frame_001.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/east/frame_002.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/east/frame_003.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/east/frame_004.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/east/frame_005.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/east/frame_006.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/east/frame_007.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/east/frame_008.png"
+              ],
+              "frame_count": 9
+            },
+            "west": {
+              "frames": [
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/west/frame_000.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/west/frame_001.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/west/frame_002.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/west/frame_003.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/west/frame_004.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/west/frame_005.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/west/frame_006.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/west/frame_007.png",
+                "animations/The_die_begins_to_tremble_violently_before_suddenl/west/frame_008.png"
+              ],
+              "frame_count": 9
+            }
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "1.1",
+  "export_date": "2026-10-18T20:09:56.896050"
+}

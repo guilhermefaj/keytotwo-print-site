@@ -28,19 +28,16 @@ npm run assets:prepare
 
 Originais utilizados em `art-source/hero/`; derivados servidos em `public/media/hero/`. O script não precisa acessar o vault. [Inventário e transformações](docs/hero-assets.md), [manifesto com hashes](docs/hero-assets.json) e [decisão sobre caminhada](docs/kito-walk-review.md).
 
+O Kito da hero é pixel art em 256 px (`art-source/kito-pixel/`, o Kito.zip de 2026-10-18). `node scripts/prepare-kito-pixel.mjs` gera o atlas, a pose de frente e `src/kito-sprites.ts`; os quadros de "carregado" saem do pulo, girados com RotSprite.
+
 Fontes auto-hospedadas: Bricolage Grotesque 700 e DM Sans 400/600, subset Latin, via `@fontsource`.
 
 ## Verificar
 
 ```powershell
-npm run lint
-npm run typecheck
-npm run build
-npx playwright install chromium
-$env:HERO_QA_DIR = 'D:/Maestri/hero-kito-qa'
-npm run verify:hero
+npm run verificar
 ```
 
-O script verifica os cinco tamanhos, texto a 200% (duplicação dos tamanhos computados), foco, teclado, painéis, pausa/retomada, movimento reduzido, saída de vista, troca real de abas em Chromium isolado, contraste e mídia transferida. Acompanha um loop inteiro em tempo real no desktop e mobile; reserve cerca de dois minutos. Capturas e JSON ficam **fora do repositório**; sem `HERO_QA_DIR`, usa a pasta temporária do sistema. Para testar produção, definir `$env:HERO_URL = 'http://127.0.0.1:4173/preview/hero'`.
+Roda lint, testes unitários, os dois builds (como o do CI e com o `.env.local`) e a suíte E2E, numa porta própria. A cena da hero (Kito perseguindo o cursor, carregado, toque no celular, movimento reduzido) fica em `tests/e2e/hero-kito.spec.ts`.
 
 Limites: axe e Chromium automatizados não substituem revisão independente, leitor de tela ou testes em Safari/Firefox. [Notas e pendências](docs/implementation-notes.md).
