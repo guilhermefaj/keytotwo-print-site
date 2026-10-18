@@ -18,12 +18,16 @@ const visibilitySnapshot = () => document.visibilityState === 'visible'
 const serverMotionSnapshot = () => true
 const serverVisibilitySnapshot = () => false
 
-// O motor e o atlas só descem quando a cena roda pela primeira vez; antes disso o Kito é a pose de frente do servidor.
+// O motor e os atlas só descem quando a cena roda pela primeira vez; antes disso o Kito e o dado são as poses paradas
+// do servidor.
 async function loadKito() {
-  const atlas = new Image()
-  atlas.fetchPriority = 'low'
-  atlas.src = kitoSprites.atlas
-  const [{ startKito }] = await Promise.all([import('../lib/kito-playground'), atlas.decode().catch(() => undefined)])
+  const atlases = [kitoSprites.atlas, kitoSprites.dieAtlas].map(src => {
+    const image = new Image()
+    image.fetchPriority = 'low'
+    image.src = src
+    return image.decode().catch(() => undefined)
+  })
+  const [{ startKito }] = await Promise.all([import('../lib/kito-playground'), ...atlases])
   return startKito
 }
 
@@ -34,6 +38,8 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
   const sprite = useRef<HTMLDivElement>(null)
   const hitbox = useRef<HTMLDivElement>(null)
   const shadow = useRef<HTMLDivElement>(null)
+  const die = useRef<HTMLDivElement>(null)
+  const dieHitbox = useRef<HTMLDivElement>(null)
   const kito = useRef<Kito | null>(null)
   const reducedMotion = useSyncExternalStore(subscribeMotionPreference, motionSnapshot, serverMotionSnapshot)
   const visible = useSyncExternalStore(subscribeVisibility, visibilitySnapshot, serverVisibilitySnapshot)
@@ -56,8 +62,8 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
     if (kito.current) kito.current.setRunning(true)
     else loadKito().then(startKito => {
       const hero = region.current?.closest<HTMLElement>('.hero')
-      if (cancelled || !hero || !layer.current || !sprite.current || !hitbox.current || !shadow.current) return
-      kito.current = startKito({ hero, layer: layer.current, sprite: sprite.current, hitbox: hitbox.current, shadow: shadow.current })
+      if (cancelled || !hero || !layer.current || !sprite.current || !hitbox.current || !shadow.current || !die.current || !dieHitbox.current) return
+      kito.current = startKito({ hero, layer: layer.current, sprite: sprite.current, hitbox: hitbox.current, shadow: shadow.current, die: die.current, dieHitbox: dieHitbox.current })
       kito.current.setRunning(true)
     }).catch(() => undefined) // Sem o motor, o Kito fica parado de frente: a cena é decorativa.
     return () => {
@@ -83,6 +89,7 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
       {/* A camada do Kito cobre a hero inteira: ele anda no chão da cena, mas pode ser carregado por cima do texto. */}
       <div ref={layer} className="kito-layer" aria-hidden="true">
         <div ref={shadow} className="kito-shadow" />
+        <div ref={die} className="kito-die"><div ref={dieHitbox} className="kito-die-hitbox" /></div>
         <div ref={sprite} className="kito-sprite"><div ref={hitbox} className="kito-hitbox" /></div>
       </div>
     </div>

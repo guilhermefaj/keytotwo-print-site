@@ -1,10 +1,10 @@
-// Gerado por scripts/prepare-kito-pixel.mjs a partir de art-source/kito-pixel/. Não editar à mão.
+// Gerado por scripts/prepare-kito-pixel.mjs a partir de art-source/kito-pixel/ e art-source/dice-pixel/. Não editar à mão.
 export const kitoSprites = {
   "atlas": "/media/hero/kito-pixel-atlas.webp",
-  "pose": "/media/hero/kito-pixel-pose.webp",
+  "dieAtlas": "/media/hero/dice-pixel-atlas.webp",
   "cell": 256,
-  "columns": 8,
-  "rows": 11,
+  "columns": 12,
+  "rows": 10,
   "animations": {
     "front": {
       "start": 0,
@@ -58,26 +58,41 @@ export const kitoSprites = {
     },
     "love": {
       "start": 50,
-      "count": 1,
+      "count": 9,
       "ground": 231
     },
     "wave": {
-      "start": 51,
+      "start": 59,
       "count": 9,
       "ground": 232
     },
     "hoist": {
-      "start": 60,
+      "start": 68,
       "count": 9,
       "ground": 230
     },
     "sleep": {
-      "start": 69,
+      "start": 77,
+      "count": 9,
+      "ground": 232
+    },
+    "dizzy": {
+      "start": 86,
+      "count": 9,
+      "ground": 237
+    },
+    "dizzyFront": {
+      "start": 95,
+      "count": 9,
+      "ground": 232
+    },
+    "point": {
+      "start": 104,
       "count": 9,
       "ground": 232
     },
     "carry": {
-      "start": 78,
+      "start": 113,
       "count": 5,
       "ground": 0,
       "angles": [
@@ -117,5 +132,37 @@ export const kitoSprites = {
         236
       ]
     }
+  },
+  "dice": {
+    "cell": 136,
+    "columns": 9,
+    "rows": 2,
+    "faces": {
+      "start": 0,
+      "count": 8
+    },
+    "roll": {
+      "start": 8,
+      "count": 9
+    },
+    "feet": [
+      118,
+      123,
+      115,
+      120,
+      116,
+      120,
+      115,
+      123,
+      115,
+      115,
+      113,
+      110,
+      115,
+      108,
+      113,
+      117,
+      115
+    ]
   }
 } as const

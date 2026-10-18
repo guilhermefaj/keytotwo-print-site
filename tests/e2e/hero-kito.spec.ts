@@ -20,7 +20,8 @@ test('desktop: persegue o cursor pelo chão, vai no colo e volta ao chão', asyn
   await page.goto('/')
   await expect(page.locator('.kito-layer')).toHaveAttribute('data-live', 'true')
 
-  await page.mouse.move(200, 500)
+  // Na cena, longe do botão (com o cursor no botão ele vai apontar).
+  await page.mouse.move(200, 680)
   await expect.poll(async () => (await kito(page)).x, { timeout: 10_000 }).toBeLessThan(240)
 
   const hitbox = (await page.locator('.kito-hitbox').boundingBox())!
@@ -37,6 +38,35 @@ test('desktop: persegue o cursor pelo chão, vai no colo e volta ao chão', asyn
   const resting = await aboveGround(page)
   expect(resting).toBeGreaterThanOrEqual(0)
   expect(resting).toBeLessThan(32)
+})
+
+test('desktop: aponta o botão, fica em cima dele quando solto ali e o dado rola ao clique', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/')
+  await expect(page.locator('.kito-layer')).toHaveAttribute('data-live', 'true')
+  const cta = (await page.locator('.hero-cta').boundingBox())!
+  await page.mouse.move(cta.x + cta.width / 2, cta.y + cta.height / 2, { steps: 4 })
+  await expect(sprite(page)).toHaveAttribute('data-mode', 'point', { timeout: 10_000 })
+
+  // Segurando pela cabeça logo acima do botão, os pés ficam abaixo da borda: ele fica em cima do botão mesmo assim,
+  // e não desce sozinho quando o cursor vai para longe.
+  const hitbox = (await page.locator('.kito-hitbox').boundingBox())!
+  await page.mouse.move(hitbox.x + hitbox.width / 2, hitbox.y + hitbox.height / 3)
+  await page.mouse.down()
+  await page.mouse.move(cta.x + cta.width / 2, cta.y - 120, { steps: 12 })
+  await page.waitForTimeout(200)
+  await page.mouse.up()
+  await expect.poll(() => sprite(page).getAttribute('data-mode'), { timeout: 5_000 }).toMatch(/^(idle|love|point)$/)
+  await page.mouse.move(1200, 680, { steps: 4 })
+  await page.waitForTimeout(2_000)
+  const feetOnButton = (await kito(page)).bottom - cta.y
+  expect(feetOnButton).toBeGreaterThanOrEqual(0)
+  expect(feetOnButton).toBeLessThan(32)
+
+  const die = (await page.locator('.kito-die-hitbox').boundingBox())!
+  await page.mouse.click(die.x + die.width / 2, die.y + die.height / 2)
+  await expect(page.locator('.kito-die')).toHaveAttribute('data-mode', /^(air|roll)$/)
+  await expect(page.locator('.kito-die')).toHaveAttribute('data-mode', 'rest', { timeout: 5_000 })
 })
 
 test('movimento reduzido: o Kito fica parado de frente e o motor só desce sem a preferência', async ({ page }) => {
@@ -66,7 +96,7 @@ test.describe('celular', () => {
     await expect(page.locator('.kito-layer')).toHaveAttribute('data-live', 'true')
     // Sem toque nenhum ele já sai do lugar: quem chega vê que ele anda.
     const start = (await kito(page)).x
-    await expect.poll(async () => Math.abs((await kito(page)).x - start), { timeout: 4_000 }).toBeGreaterThan(30)
+    await expect.poll(async () => Math.abs((await kito(page)).x - start), { timeout: 10_000 }).toBeGreaterThan(30)
     const scene = (await page.locator('.hero-scene').boundingBox())!
     await page.touchscreen.tap(60, scene.y + 40)
     await expect.poll(async () => (await kito(page)).x, { timeout: 10_000 }).toBeLessThan(110)

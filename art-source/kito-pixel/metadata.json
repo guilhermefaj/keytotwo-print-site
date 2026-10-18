@@ -81,6 +81,41 @@
               "Idle/animations/The_character_is_suddenly_hoisted_into_the_air_by/south/frame_008.png"
             ]
           },
+          "The_character_wobbles_unsteadily_head_swaying_with": {
+            "east": [
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_000.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_001.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_002.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_003.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_004.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_005.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_006.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_007.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/east/frame_008.png"
+            ],
+            "west": [
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_000.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_001.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_002.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_003.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_004.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_005.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_006.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_007.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/west/frame_008.png"
+            ],
+            "south": [
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_000.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_001.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_002.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_003.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_004.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_005.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_006.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_007.png",
+              "Idle/animations/The_character_wobbles_unsteadily_head_swaying_with/south/frame_008.png"
+            ]
+          },
           "penguin_falling_in_a_cute_and_funny_way": {
             "east": [
               "Idle/animations/penguin_falling_in_a_cute_and_funny_way/east/frame_000.png",
@@ -134,6 +169,19 @@
               "Idle/animations/Two-Footed_Jump/north/frame_004.png",
               "Idle/animations/Two-Footed_Jump/north/frame_005.png",
               "Idle/animations/Two-Footed_Jump/north/frame_006.png"
+            ]
+          },
+          "The_penguin_raises_its_right_arm_in_a_sharp_enthus": {
+            "south": [
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_000.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_001.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_002.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_003.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_004.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_005.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_006.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_007.png",
+              "Idle/animations/The_penguin_raises_its_right_arm_in_a_sharp_enthus/south/frame_008.png"
             ]
           },
           "The_character_lifts_its_right_hand_to_shoulder_hei": {
@@ -278,7 +326,21 @@
           "west": "In_love_holding_a_bi/rotations/west.png",
           "south-west": "In_love_holding_a_bi/rotations/south-west.png"
         },
-        "animations": {}
+        "animations": {
+          "The_character_rhythmically_hops_with_both_feet_whi": {
+            "south": [
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_000.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_001.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_002.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_003.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_004.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_005.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_006.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_007.png",
+              "In_love_holding_a_bi/animations/The_character_rhythmically_hops_with_both_feet_whi/south/frame_008.png"
+            ]
+          }
+        }
       }
     },
     {
@@ -323,8 +385,37 @@
           }
         }
       }
+    },
+    {
+      "character": {
+        "id": "0960938f-4342-4cdc-917c-f4c28907f573",
+        "name": "hanging on the edge",
+        "prompt": "A cute, happy smiling, charismatic and chubby turquoise penguin mascot in detailed 32-bit pixel art, front-facing and perfectly symmetrical. Its head and body form one continuous, round, pear-shaped silhouette with no visible neck or separation. Vibrant cyan-turquoise plumage (#00BEC5), a large rounded white belly seamlessly connected to two white facial patches, and subtle light-blue shading.\n\nTwo large oval black eyes with square white reflections, a small golden-orange beak with an open black mouth and tiny red tongue, creating a joyful expression. Short, thick flippers extending slightly outward and downward, and small, wide, flattened orange feet with subtle toes.\n\nPolished retro-game sprite aesthetic, crisp square pixels, vibrant highlights, dark teal edge shading, soft dimensional lighting, and glossy cyan reflections. No black outer outline, no separate oversized head, no neck, no accessories, no realistic feathers. Full-body centered composition, transparent background.",
+        "size": {
+          "width": 256,
+          "height": 256
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-10-18T19:39:49.787055+00:00"
+      },
+      "folder": "hanging_on_the_edge",
+      "frames": {
+        "rotations": {
+          "south": "hanging_on_the_edge/rotations/south.png",
+          "south-east": "hanging_on_the_edge/rotations/south-east.png",
+          "east": "hanging_on_the_edge/rotations/east.png",
+          "north-east": "hanging_on_the_edge/rotations/north-east.png",
+          "north": "hanging_on_the_edge/rotations/north.png",
+          "north-west": "hanging_on_the_edge/rotations/north-west.png",
+          "west": "hanging_on_the_edge/rotations/west.png",
+          "south-west": "hanging_on_the_edge/rotations/south-west.png"
+        },
+        "animations": {}
+      }
     }
   ],
   "export_version": "3.1",
-  "export_date": "2026-10-18T19:07:00.634540"
+  "export_date": "2026-10-18T20:11:28.143511"
 }
