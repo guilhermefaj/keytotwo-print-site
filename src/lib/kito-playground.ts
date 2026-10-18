@@ -261,7 +261,11 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
     s.tilt = s.spin = 0
     s.traveled = 0
     s.nextAt = between(1200, 2500)
-    if (hard) { s.facing = s.vx < 0 ? -1 : 1; play(stumble(4, 8), 10, idle, { slide: true }) }
+    // A queda da arte é de costas (os pés vão para a frente): ele olha para o lado de onde veio e escorrega de costas.
+    if (hard) {
+      if (Math.abs(s.vx) > 30 * scale) s.facing = s.vx > 0 ? -1 : 1
+      play(stumble(4, 8), 10, idle, { slide: true })
+    }
     else { s.vx = 0; play(frames('jump', [6, 1, 2, 0]), 14, idle) }
   }
 
