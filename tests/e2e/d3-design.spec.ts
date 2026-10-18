@@ -118,12 +118,23 @@ test('vitrine curta com três jogos na home; carrossel e relatos só por ação 
   await page.locator('.shop-showcase').scrollIntoViewIfNeeded()
   await page.setViewportSize({ width: 390, height: 844 })
   if (builtStage() === 'test') {
-    // Relatos de exemplo só no stage test, sempre marcados; nunca nota ou contagem.
-    const social = page.locator('.social-carousel .snap-track')
-    await social.focus(); await page.keyboard.press('End')
-    await expect(page.locator('.social-carousel .carousel-position')).toHaveText('3 de 3')
-    await expect(page.locator('.social-card blockquote')).toHaveCount(3)
-    await expect(page.locator('.social-card[data-placeholder="true"] .tag-solid')).toHaveCount(3)
+    // Relatos de exemplo só no stage test, sempre marcados, com a nota de cada um; nunca média ou contagem.
+    // A faixa repete a lista uma vez para o laço; a cópia fica fora da leitura e do foco.
+    const own = page.locator('.social-track > li:not([aria-hidden])')
+    await expect(own.locator('.social-card blockquote')).toHaveCount(8)
+    await expect(own.locator('.social-card[data-placeholder="true"] .tag-solid')).toHaveCount(8)
+    await expect(own.locator('.social-stars[aria-label="Nota 5 de 5"]')).toHaveCount(8)
+    await expect(own.locator('.social-photo')).toHaveCount(8)
+    await expect(page.locator('.social-track > li[aria-hidden="true"][inert]')).toHaveCount(8)
+    // Movimento reduzido: fileira parada que rola à mão, sem a cópia do laço.
+    const track = page.locator('.social-track')
+    await expect(track).toHaveCSS('animation-name', 'none')
+    await expect(page.locator('.social-track > li[aria-hidden="true"]').first()).toBeHidden()
+    // Sem a preferência, desliza sem parar e para com o foco.
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await expect(track).toHaveCSS('animation-name', 'social-slide')
+    await page.locator('.social-marquee').focus()
+    await expect(track).toHaveCSS('animation-play-state', 'paused')
   } else {
     // Em preview e live só relatos reais aparecem; sem nenhum, a seção não existe (P0-1).
     await expect(page.locator('.social-section')).toHaveCount(0)

@@ -309,9 +309,33 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .social-section { background: var(--color-paper); }
 .social-section .section-heading { margin-bottom: 28px; }
 .social-card { margin: 0; padding: 28px; border: var(--line-card); border-radius: var(--radius-lg); background: var(--color-paper); display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.social-card .tag-solid { align-self: flex-start; }
+.social-card-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .social-card blockquote { margin: 0; line-height: 1.6; }
-.social-card figcaption { margin-top: auto; font-size: var(--text-label); font-weight: 600; }
+.social-card figcaption { margin-top: auto; display: flex; align-items: center; gap: 12px; font-size: var(--text-label); font-weight: 600; }
+/* Estrelas em marca-texto com contorno de Tinta (o contorno garante o contraste no Papel). */
+.social-stars { display: flex; gap: 2px; }
+.social-stars svg { fill: var(--color-ink-rule); }
+.social-stars svg[data-on] { fill: var(--color-highlight); stroke: var(--color-ink); stroke-width: 1.2; stroke-linejoin: round; }
+.social-photo { flex-shrink: 0; width: 48px; height: 48px; border: 1.5px solid var(--color-ink); border-radius: 50%; overflow: hidden; background: var(--color-sky); color: var(--color-ink-soft); object-fit: cover; }
+.social-photo svg { display: block; width: 100%; height: 100%; fill: currentColor; }
+.social-photo[data-tone="1"] { background: color-mix(in srgb, var(--color-highlight) 35%, var(--color-paper)); }
+.social-photo[data-tone="2"] { background: color-mix(in srgb, var(--color-line) 22%, var(--color-paper)); }
+.social-photo[data-tone="3"] { background: color-mix(in srgb, var(--color-deep-teal) 14%, var(--color-paper)); }
+/* Faixa de relatos: desliza devagar e sem fim; a lista vai duas vezes e -50% fecha o laço sem salto. */
+.social-marquee { overflow: hidden; padding-block: 4px 8px; mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.social-marquee:focus-visible { outline: 3px solid var(--color-ink); outline-offset: 4px; }
+.social-track { list-style: none; margin: 0; padding: 0; display: flex; width: max-content; animation: social-slide var(--social-duration, 72s) linear infinite; }
+.social-track > li { display: flex; width: 384px; padding-right: 24px; }
+.social-track .social-card { flex: 1; }
+.social-marquee:hover .social-track, .social-marquee:focus-within .social-track, .social-marquee:active .social-track { animation-play-state: paused; }
+@keyframes social-slide { to { transform: translateX(-50%); } }
+/* Movimento reduzido: fileira parada que rola à mão, sem a cópia do laço. */
+@media (prefers-reduced-motion: reduce) {
+  .social-marquee { overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: max(20px, calc(50% - var(--container) / 2)); mask-image: none; }
+  .social-track { animation: none; padding-inline: max(20px, calc(50% - var(--container) / 2)); }
+  .social-track > li { scroll-snap-align: start; }
+  .social-track > li[aria-hidden] { display: none; }
+}
 .offer-section { background: var(--color-paper); }
 .product-list { display: grid; gap: var(--space-3xl); }
 .offer-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-3xl); align-items: start; }
@@ -544,6 +568,7 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .experience-layout { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .experience-art img { width: min(70%, 300px); }
   .social-card { padding: 24px; gap: 14px; }
+  .social-track > li { width: min(336px, 84vw); padding-right: 16px; }
   .offer-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }
   .offer-summary { order: -1; padding: 24px; }
   .product-title { max-width: none; }

@@ -350,6 +350,11 @@ O mesmo visual em `supabase/templates/*.html` (código de acesso, confirmação 
 ### Como funciona (`.steps-list`)
 Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entre as cartas (em cima umas das outras no celular). Cada carta tem o número da etapa em círculo e o ícone Tabler de 32 px em Turquesa profundo na mesma linha, o título em Title e o texto em Small Tinta suave.
 
+### Relatos (`.social-marquee`)
+A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9 s por relato, `linear`), com as pontas esmaecidas por máscara. A lista vai duas vezes para fechar o laço em -50%; a cópia é `aria-hidden` e `inert`. Cursor, foco (a faixa recebe foco) e toque param o movimento. Com `prefers-reduced-motion`, vira uma fileira parada que rola à mão, com encaixe e sem a cópia. Com menos de 4, o carrossel com encaixe de sempre (`.social-carousel`). Cada card tem as cinco estrelas da nota do casal (marca-texto com contorno de Tinta, nota em texto para leitores de tela), o selo "Relato de exemplo" quando for placeholder, o relato e, no rodapé, a foto do casal em círculo de 48 px. Sem foto autorizada entra a silhueta de dupla sobre um de quatro fundos claros da paleta. Nunca rosto de banco de imagem.
+
+(Pedido do responsável em 2026-10-18; substitui a regra antiga de relatos sem estrelas.)
+
 ### Marca-texto (`mark`)
 `background: linear-gradient(transparent 58%, {colors.highlight} 58% 92%, transparent 92%)`, `color: inherit`, `padding: 0 .04em`. Uma vez por página.
 

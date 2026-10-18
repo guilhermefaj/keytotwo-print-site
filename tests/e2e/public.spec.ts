@@ -113,8 +113,9 @@ test.describe('conteúdo', () => {
       await expect(page.locator('.social-section')).toHaveCount(0)
       await expect(page.locator('.social-card')).toHaveCount(0)
     } else {
-      await expect(page.locator('.social-card[data-placeholder="true"]')).toHaveCount(3)
-      await expect(page.locator('.social-card blockquote')).toHaveCount(3)
+      const own = page.locator('.social-track > li:not([aria-hidden])')
+      await expect(own.locator('.social-card[data-placeholder="true"]')).toHaveCount(8)
+      await expect(own.locator('.social-card blockquote')).toHaveCount(8)
     }
     await expect(page.locator('.social-metrics')).toHaveCount(0)
     // Vitrine curta (decisão 9): o pacote e até 3 jogos, sem a oferta antiga nem a folha completa.
@@ -251,8 +252,8 @@ test('home: matriz responsiva, texto 200%, cena preservada e capturas', async ({
       const overflow = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('body *')].filter(el => {
         if (!el.checkVisibility() || el.closest('[aria-hidden="true"]') || el.classList.contains('skip-link')) return false
         const rect = el.getBoundingClientRect()
-        // Cards outside a scroll-snap viewport are intentional; text must still fit each card.
-        const track = el.closest('.snap-track')
+        // Cards outside a scroll-snap viewport (carousels, testimonial row) are intentional; text must still fit each card.
+        const track = el.closest('.snap-track, .social-marquee')
         if (track && getComputedStyle(track).overflowX === 'auto') {
           return el === track ? rect.left < -1 || rect.right > innerWidth + 1 : el.scrollWidth > el.clientWidth + 2
         }
