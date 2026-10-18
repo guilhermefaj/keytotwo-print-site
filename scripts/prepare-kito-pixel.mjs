@@ -8,8 +8,9 @@ import path from 'node:path'
 // - public/media/hero/kito-pixel-pose.webp: o Kito de frente, parado, que o servidor entrega antes do atlas;
 // - src/kito-sprites.ts: posição de cada animação no atlas, linha do chão e ponto de pega.
 // Só os quadros "east" entram: os "west" do zip são o espelho exato deles (0 pixel de diferença) e a hero espelha no CSS.
-// O zip não tem pose de "sendo carregado"; ela sai do quadro de braços para cima do pulo, girado com RotSprite
-// (Scale2x três vezes, giro por vizinho mais próximo, volta ao tamanho original), para o pixel continuar limpo.
+// A segunda versão do zip (mesmo dia) trouxe o aceno, o cochilo e o "erguido no ar". O balanço de quando ele é carregado
+// sai do quadro mais alto do "erguido no ar" (pés pendurados), girado com RotSprite (Scale2x três vezes, giro por
+// vizinho mais próximo, volta ao tamanho original), para o pixel continuar limpo.
 const root = path.resolve(import.meta.dirname, '..')
 const source = path.join(root, 'art-source/kito-pixel')
 const cell = 256
@@ -27,13 +28,14 @@ const animations = {
   fall: anim('penguin_falling_in_a_cute_and_funny_way', 'east', 9),
   push: anim('Push_Object', 'east', 6),
   sit: ['sitting_down_the_ch/rotations/south.png'],
-  // De lado: de frente a mesa apoia no chão, mas o Kito, atrás dela, parece flutuar.
-  play: ['playing_a_boadgame/rotations/east.png'],
   love: ['In_love_holding_a_bi/rotations/south.png'],
+  wave: anim('The_character_lifts_its_right_hand_to_shoulder_hei', 'south', 9),
+  hoist: anim('The_character_is_suddenly_hoisted_into_the_air_by', 'south', 9),
+  sleep: Array.from({ length: 9 }, (_, i) => `sleeping/animations/The_character_rhythmically_inhales_and_exhales_cau/south/frame_${String(i).padStart(3, '0')}.png`),
 }
-// Ângulos em graus, sentido horário positivo (o mesmo do CSS). ±16° é o maior giro que ainda cabe na célula.
-const carryAngles = [-16, -8, 0, 8, 16]
-const carryBase = animations.jump[4]
+// Ângulos em graus, sentido horário positivo (o mesmo do CSS). ±18° ainda cabe na célula.
+const carryAngles = [-18, -9, 0, 9, 18]
+const carryBase = animations.hoist[4]
 
 async function readFrame(file) {
   const { data, info } = await sharp(path.join(source, file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true })

@@ -286,7 +286,7 @@ A cena do Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelat
 
 Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exata no `package.json`), sempre em importação nomeada; o carrinho é uma sacola (`IconShoppingBag`).
 
-- **Família:** outline. As variantes `Filled` só existem para play/pause do Kito (`IconPlayerPlayFilled`/`IconPlayerPauseFilled`).
+- **Família:** outline. Sem variantes `Filled`.
 - **Traço:** 1,75 (`stroke`); cor sempre `currentColor` — Tinta ou Turquesa profundo conforme o controle. A Turquesa J001 nunca aparece em ícone que precise ser lido (regra existente).
 - **Tamanhos:** 20 px em controles e navegação (menu, chevrons do carrossel, gatilho da conta usa 16 px); 24 px na sacola, no fechar do painel, na tesoura e na lista "O que vocês precisam"; 16 px em selos inline ("Compra segura", "Pagamento seguro") e na etapa concluída da compra; 32 px só para ilustrar as cartas de "Como funciona", nunca em controle.
 - **Acessibilidade:** todo ícone é decorativo (`aria-hidden`) e o rótulo fica no controle — `aria-label` no botão/link ou texto visível ao lado.
@@ -374,11 +374,12 @@ Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entr
 
 ### Kito (uso do personagem)
 - **Hero (2026-10-18):** o único lugar onde o Kito se move, e ele interage com quem chega. Pixel art real em 256 px (`art-source/kito-pixel/`), servida num atlas WebP sem perda gerado por `scripts/prepare-kito-pixel.mjs` (posições em `src/kito-sprites.ts`, gerado; não editar à mão). Só os quadros virados para a direita entram; a esquerda é espelho no CSS. Tamanho: 192 px no desktop (×0,75) e 128 px no celular (×0,5, 1:1 em tela 2×); vizinho mais próximo quando a tela tem pixels de sobra, redução filtrada abaixo disso.
-  - **Mouse:** o Kito persegue o cursor pelo chão. Caminha perto, corre a meia distância e dispara de longe; a cadência dos pés acompanha a velocidade. Vira de frente para trocar de lado, às vezes tropeça ao virar em sprint. Ao alcançar, pula; com o cursor em cima, segura o coração; com o cursor parado, senta e, depois, joga no tabuleiro, de lado e virado para onde parou. Cursor além da borda: empurra a borda.
-  - **Toque:** um toque na hero (fora de links e botões) leva o Kito até lá; sozinho ele passeia, senta e joga. Só o corpo dele segura a rolagem (`touch-action: none`); o resto da cena rola a página.
-  - **Carregar:** pressionar e arrastar o Kito o leva para qualquer ponto da hero, por cima do texto, balançando com a mão (quadros girados com RotSprite a partir do pulo). Ao soltar ele cai com o impulso da mão: queda curta amortece, queda alta ou arremesso rola no chão. Uma sombra em degraus fica no chão e encolhe com a altura.
+  - **Mouse:** o Kito persegue o cursor pelo chão. Caminha perto, corre a meia distância e dispara de longe; a cadência dos pés acompanha a velocidade. Vira de frente para trocar de lado, às vezes tropeça ao virar em sprint. Ao alcançar, pula ou acena; com o cursor em cima, segura o coração; com o cursor parado, cochila em pé, respirando, e acorda num susto quando o cursor se mexe. Cursor além da borda: empurra a borda.
+  - **Piloto automático** (celular sempre; desktop com o cursor fora da hero): começa correndo e acenando e depois alterna, sem repetir seguido, andar, correr, disparar (às vezes tropeça), pular, acenar, ser erguido por uma mão invisível (a dica de que dá para pegá-lo), segurar o coração, sentar e empurrar a borda, com pausas de meio a um segundo e meio.
+  - **Toque:** um toque na hero (fora de links e botões) leva o Kito até lá; tocar nele faz pular ou acenar e segurar o coração. Só o corpo dele segura a rolagem (`touch-action: none`); o resto da cena rola a página.
+  - **Carregar:** pressionar e arrastar o Kito o leva para qualquer ponto da hero, por cima do texto, pendurado pelos pés soltos e balançando com a mão (quadros girados com RotSprite a partir do "erguido no ar"). Ao soltar ele cai com o impulso da mão: queda curta amortece, queda alta ou arremesso rola no chão. Uma sombra em degraus fica no chão e encolhe com a altura.
   - **Nuvens:** atravessam o céu em 150 a 300 s, cada uma num ritmo.
-  - **Pausa:** fora de vista, aba oculta, menu aberto ou "Pausar animação" congelam tudo, inclusive a interação. `prefers-reduced-motion` começa parado, de frente, sem baixar o motor nem o atlas, com "Retomar animação". O motor (`src/lib/kito-playground.ts`) só desce quando a cena roda pela primeira vez; o servidor entrega a pose de frente (3 KB).
+  - **Pausa:** fora de vista, aba oculta ou menu aberto congelam tudo, inclusive a interação. Não há botão de pausa (decisão do responsável em 2026-10-18); `prefers-reduced-motion` deixa o Kito parado, de frente, sem baixar o motor nem o atlas. O motor (`src/lib/kito-playground.ts`) só desce quando a cena roda pela primeira vez; o servidor entrega a pose de frente (3 KB).
 - **Na home, fora da hero:** no máximo uma participação, parada, como anfitrião de um convite: hoje, comemorando a rodada no tabuleiro (`kito-tabuleiro`) ao lado de "A próxima rodada sai da impressora", no lugar de qualquer página do PDF. O aceno do rodapé é da moldura do site, não da home. Nunca como ícone de pilar. Na arte oficial das capas dos jogos ele é o protagonista (as capas são peças aprovadas, não enfeite).
 - **Vazios** (carrinho, biblioteca, gaveta): Kito na caixa (`kito-caixa`, 240 px; 180 px no celular), com a entrada curta de 650 ms.
 - **Celebração** (pagamento confirmado): Kito acenando (`kito-hi`) com o confete de 1,1 s. Único lugar de delícia longa.
@@ -393,7 +394,7 @@ Três cartas numa folha: borda 2 px Turquesa no conjunto, calhas tracejadas entr
 - **Erro:** uma única mensagem em Body com `role="alert"`, em Tinta (não em cor de erro quando não há culpa da pessoa), seguida de **um** botão secundário "Tentar novamente". Sem título em Display, sem segunda mensagem genérica. Falha de pagamento e 404 usam o Kito neutro.
 - **Desabilitado:** aguada de Tinta + Tinta suave; sempre com a razão em Caption ao lado quando não for óbvia.
 - **Foco:** contorno de 3 px Tinta com offset em tudo que recebe foco, inclusive cartas com `tabindex`, abas e a trilha do carrossel.
-- **Movimento reduzido:** nenhuma entrada, nenhum deslocamento, carrossel instantâneo, Kito da hero parado de frente e nuvens paradas, com botão de retomar.
+- **Movimento reduzido:** nenhuma entrada, nenhum deslocamento, carrossel instantâneo, Kito da hero parado de frente e nuvens paradas.
 
 ### Movimento (tokens do plano 005)
 - `--ease-out: cubic-bezier(.16, 1, .3, 1)` para toda entrada e hover; nada usa `ease-in` em UI.

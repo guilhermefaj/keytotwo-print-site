@@ -1,15 +1,18 @@
 import { kitoSprites } from '../kito-sprites'
 
-// O Kito da hero: persegue o mouse pelo chão, vai até onde a pessoa toca, pode ser carregado e arremessado,
-// e, sozinho, passeia, senta e joga. Um elemento com o atlas (posição por transform, pose por background-position),
-// um laço de requestAnimationFrame que dorme quando o Kito está parado e Pointer Events para mouse e toque.
-// Coordenadas em px CSS da camada (a hero inteira). Velocidades e distâncias são medidas na arte (256 px) e
-// multiplicadas pela escala da tela, para o passo ser o mesmo no desktop e no celular.
+// O Kito da hero: persegue o mouse pelo chão, vai até onde a pessoa toca, pode ser carregado e arremessado.
+// Sem mouse na hero (no celular, sempre), um piloto automático alterna o que ele sabe fazer, já começando em movimento,
+// para quem chega perceber que ele anda, pula e pode ser pego. Um elemento com o atlas (posição por transform, pose por
+// background-position), um laço de requestAnimationFrame que dorme quando o Kito está parado e Pointer Events para
+// mouse e toque. Coordenadas em px CSS da camada (a hero inteira). Velocidades e distâncias são medidas na arte
+// (256 px) e multiplicadas pela escala da tela, para o passo ser o mesmo no desktop e no celular.
 
 type Anim = keyof typeof kitoSprites.animations
-type Mode = 'idle' | 'move' | 'sit' | 'play' | 'love' | 'push' | 'clip' | 'carried' | 'airborne'
+type Mode = 'idle' | 'move' | 'sit' | 'sleep' | 'love' | 'push' | 'clip' | 'carried' | 'airborne'
 type Step = [anim: Anim, frame: number, facing?: 1 | -1]
-type Clip = { steps: Step[]; fps: number; clock: number; then: () => void; hop?: boolean; slide?: boolean }
+// hop: [quadro inicial, quadro final, altura em px de arte] de um arco que tira o Kito do chão durante o clipe.
+type Clip = { steps: Step[]; fps: number; clock: number; then: () => void; hop?: [number, number, number]; slide?: boolean }
+type Action = 'walk' | 'run' | 'sprint' | 'jump' | 'wave' | 'hoist' | 'love' | 'sit' | 'push'
 
 export type Kito = { setRunning(running: boolean): void; destroy(): void }
 
@@ -22,14 +25,21 @@ const ACCEL = 900, BRAKE = 1400, GRAVITY = 3200
 // Para sair do lugar o cursor precisa se afastar mais do que para parar: tremidas do mouse não viram passos.
 const START_DISTANCE = 40, ARRIVE_DISTANCE = 12
 const DRAG_THRESHOLD = 6
+// Cursor parado perto dele: cochila depois de 4 s, respirando a um quadro a cada 220 ms.
+const SLEEP_AFTER = 4000, SLEEP_FRAME = 220
+// Piloto automático: peso de cada ação no sorteio. Depois de uma ação parada vem sempre um deslocamento, e depois de
+// um deslocamento, na maioria das vezes, uma ação parada: ele nunca fica muito tempo no mesmo lugar.
+const MOVES: Array<[Action, number]> = [['walk', 2], ['run', 3], ['sprint', 1.5], ['push', 0.7]]
+const STAYS: Array<[Action, number]> = [['jump', 2], ['wave', 2], ['hoist', 1.5], ['love', 1], ['sit', 0.8]]
 // Poses de lado espelham para a esquerda; as de frente nunca.
-const SIDE = new Set<Anim>(['frontSide', 'side', 'walk', 'run', 'sprint', 'fall', 'push', 'play'])
-const POSE: Partial<Record<Mode, Anim>> = { idle: 'front', sit: 'sit', play: 'play', love: 'love', push: 'push' }
+const SIDE = new Set<Anim>(['frontSide', 'side', 'walk', 'run', 'sprint', 'fall', 'push'])
+const POSE: Partial<Record<Mode, Anim>> = { idle: 'front', sit: 'sit', sleep: 'sleep', love: 'love', push: 'push' }
 const INTERACTIVE = 'a, button, input, select, textarea, label, summary, [role="button"]'
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 const approach = (value: number, target: number, delta: number) => value < target ? Math.min(target, value + delta) : Math.max(target, value - delta)
 const between = (min: number, max: number) => min + Math.random() * (max - min)
+const frames = (anim: Anim, list: number[]): Step[] => list.map(frame => [anim, frame])
 
 export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLElement; layer: HTMLElement; sprite: HTMLElement; hitbox: HTMLElement; shadow: HTMLElement }): Kito {
   let scale = 0.75, size = cell * scale, width = 0, ground = 0, ceiling = 0, left = 0
@@ -38,9 +48,12 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
   const s = {
     x: 0, y: 0, vx: 0, vy: 0, facing: -1 as 1 | -1, hop: 0,
     mode: 'idle' as Mode, since: now, anim: 'front' as Anim, frame: 0, clip: null as Clip | null,
-    // target: x que o Kito persegue; mouse: o cursor está na hero; goal: alvo de um toque ou de um passeio, some ao chegar.
-    target: null as number | null, mouse: false, goal: null as null | 'tap' | 'wander', traveled: 0, phase: 0, braking: false,
-    hovered: false, loveUntil: 0, nextAt: between(2500, 5000),
+    // target: x que o Kito persegue; mouse: o cursor está na hero; goal: de onde veio um alvo que some ao chegar
+    // (toque, piloto automático ou empurrar a borda); cap: passo máximo; tripAt: distância em que tropeça no sprint.
+    target: null as number | null, mouse: false, goal: null as null | 'tap' | 'auto' | 'push', cap: SPRINT, tripAt: 0,
+    traveled: 0, phase: 0, braking: false, hovered: false, loveUntil: 0,
+    // O piloto automático começa correndo e depois acena; nextAt é a pausa, em ms, antes da próxima ação.
+    nextAt: 0, queue: ['run', 'wave'] as Action[], lastAction: null as Action | null,
     tilt: 0, spin: 0, handVx: 0,
     drag: null as null | { id: number; x: number; y: number; at: number; carrying: boolean; samples: Array<[t: number, x: number, y: number]> },
     tap: null as null | { id: number; x: number; y: number; at: number },
@@ -86,19 +99,47 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
 
   const idle = () => setMode(s.hovered ? 'love' : 'idle')
   const settle = () => play([['frontSide', 0]], 8, idle)
-  const celebrate = (then = idle) => play([0, 1, 2, 3, 4, 5, 6].map(frame => ['jump', frame]), 12, then, { hop: true })
-  const range = (from: number, to: number): Step[] => Array.from({ length: to - from + 1 }, (_, i) => ['fall', from + i])
+  const celebrate = (then = idle) => play(frames('jump', [0, 1, 2, 3, 4, 5, 6]), 12, then, { hop: [3, 6, 22] })
+  // Aceno duplo: a mão sobe, balança duas vezes e desce.
+  const wave = (then = idle) => play(frames('wave', [0, 1, 2, 3, 4, 5, 6, 3, 4, 5, 6, 7, 8]), 11, then)
+  // Uma mão invisível ergue o Kito e o põe de volta: a dica de que dá para pegá-lo.
+  const hoist = () => play(frames('hoist', [0, 1, 2, 3, 4, 5, 6, 7, 8]), 9, idle, { hop: [2, 7, 40] })
+  const greet = (then = idle) => Math.random() < 0.5 ? celebrate(then) : wave(then)
+  const stumble = (from: number, to: number) => frames('fall', Array.from({ length: to - from + 1 }, (_, i) => from + i))
 
   function turn(dir: 1 | -1) {
     play([['frontSide', 0], ['front', 0], ['frontSide', 0, dir]], 14, () => setMode('move'))
   }
 
-  function wander() {
-    const distance = between(150, 600) * scale * (Math.random() < 0.5 ? -1 : 1)
-    let target = s.x + distance
-    if (target < minX() || target > maxX()) target = s.x - distance
+  // Alvo do piloto automático a `distance` px de arte, para o lado que tiver espaço.
+  function go(distance: number, cap: number, trips = false) {
+    const step = distance * scale * (Math.random() < 0.5 ? -1 : 1)
+    const target = s.x + step < minX() || s.x + step > maxX() ? s.x - step : s.x + step
     s.target = clamp(target, minX(), maxX())
-    s.goal = 'wander'
+    s.goal = 'auto'
+    s.cap = cap
+    s.tripAt = trips ? Math.abs(s.target - s.x) * 0.5 : 0
+  }
+
+  function autopilot() {
+    let action = s.queue.shift()
+    if (!action) {
+      const moved = MOVES.some(([name]) => name === s.lastAction)
+      const options = (moved && Math.random() < 0.7 ? STAYS : MOVES).filter(([name]) => name !== s.lastAction)
+      let roll = Math.random() * options.reduce((sum, [, weight]) => sum + weight, 0)
+      action = options.find(([, weight]) => (roll -= weight) < 0)?.[0] ?? 'run'
+    }
+    s.lastAction = action
+    s.nextAt = between(300, 900)
+    if (action === 'walk') go(between(140, 260), WALK)
+    else if (action === 'run') go(between(280, 520), RUN)
+    else if (action === 'sprint') go(width / scale * between(0.5, 0.75), SPRINT, Math.random() < 0.35)
+    else if (action === 'jump') celebrate()
+    else if (action === 'wave') wave()
+    else if (action === 'hoist') hoist()
+    else if (action === 'love') { setMode('love'); s.loveUntil = now + 1400 }
+    else if (action === 'sit') { setMode('sit'); s.nextAt = between(1200, 2000) }
+    else { s.target = s.x < width / 2 ? -width : width * 2; s.goal = 'push'; s.cap = RUN; s.tripAt = 0 }
   }
 
   // Decide o próximo passo de quem está no chão, sem quadro em andamento.
@@ -109,21 +150,22 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
     if (target !== null && Math.abs(dx) > (moving ? ARRIVE_DISTANCE : START_DISTANCE) * scale) {
       const dir: 1 | -1 = dx > 0 ? 1 : -1
       if (!moving) {
-        // Levanta de frente, vira para o lado do alvo e sai andando.
-        if (s.mode === 'sit' || s.mode === 'play') return play([['front', 0]], 6, () => turn(dir))
+        // Levanta (ou acorda num susto), vira para o lado do alvo e sai andando.
+        if (s.mode === 'sleep') return play([['jump', 1], ['jump', 2], ['front', 0]], 10, () => turn(dir))
+        if (s.mode === 'sit') return play([['front', 0]], 6, () => turn(dir))
         return dir === s.facing ? play([['frontSide', 0, dir]], 12, () => setMode('move')) : turn(dir)
       }
       if (dir !== s.facing) {
         // Em sprint, mudar de lado às vezes termina num tropeço (sorteado uma vez por virada); senão freia e vira.
         const trips = !s.braking && Math.abs(s.vx) > 300 * scale && Math.random() < 0.4
         s.braking = true
-        if (trips) return play(range(3, 8), 11, () => { s.braking = false; turn(dir) }, { slide: true })
+        if (trips) return play(stumble(3, 8), 11, () => { s.braking = false; turn(dir) }, { slide: true })
         s.vx = approach(s.vx, 0, BRAKE * scale * dt)
         if (Math.abs(s.vx) < 20 * scale) { s.vx = 0; s.braking = false; return turn(dir) }
       } else {
         const distance = Math.abs(dx) / scale
         // Longe, sprint; a meia distância, corrida; perto, caminhada. A frenagem amacia a troca.
-        const gait = distance > 500 ? SPRINT : distance > 110 ? RUN : WALK
+        const gait = Math.min(s.cap, distance > 500 ? SPRINT : distance > 110 ? RUN : WALK)
         const want = Math.min(gait, Math.max(WALK * 0.5, Math.sqrt(2 * BRAKE * 0.6 * distance))) * scale
         const speed = Math.abs(s.vx)
         s.vx = dir * (speed < want ? Math.min(want, speed + ACCEL * scale * dt) : Math.max(want, speed - BRAKE * scale * dt))
@@ -135,16 +177,21 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
       s.anim = gait
       s.phase += dt * Math.max(speed / STRIDE[gait], 5)
       s.frame = Math.floor(s.phase) % animations[gait].count
+      // Piloto automático: alguns sprints terminam num tropeço no meio do caminho, e ele segue.
+      if (s.tripAt && s.traveled > s.tripAt && speed > 250) {
+        s.tripAt = 0
+        return play(stumble(3, 8), 11, () => setMode('move'), { slide: true })
+      }
       return
     }
     if (moving) {
-      // Chegou: comemora quando a viagem foi longa e foi a pessoa quem chamou (não quando parou numa borda).
+      // Chegou: cumprimenta quando a viagem foi longa e foi a pessoa quem chamou (não quando parou numa borda).
       const called = s.traveled > size && (s.mouse || s.goal === 'tap') && s.target === target
       s.vx = 0
       s.traveled = 0
-      if (s.goal) { s.target = null; s.goal = null }
-      s.nextAt = between(2500, 5000)
-      return called ? celebrate() : settle()
+      s.nextAt = s.goal === 'tap' ? between(1500, 3000) : between(250, 700)
+      if (s.goal === 'tap' || s.goal === 'auto') { s.target = null; s.goal = null }
+      if (s.goal !== 'push') return called ? greet() : settle()
     }
     // Cursor além da borda que o Kito alcança: ele empurra a borda.
     const raw = s.target
@@ -153,24 +200,17 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
       if (s.mode !== 'push') { setMode('push'); s.facing = raw! < s.x ? -1 : 1 }
       s.phase += dt * 8
       s.frame = Math.floor(s.phase) % animations.push.count
+      if (s.goal === 'push' && now - s.since > 1600) { s.target = null; s.goal = null }
       return
     }
     if (s.mode === 'push') return settle()
     if (s.hovered && s.mode !== 'love') return setMode('love')
     if (s.mode === 'love' && !s.hovered && now > s.loveUntil) return setMode('idle')
     const waited = now - s.since
+    if (s.mode === 'sleep') s.frame = Math.floor(waited / SLEEP_FRAME) % animations.sleep.count
     if (s.mouse) {
-      // Com o cursor por perto e parado: senta e, depois de um tempo, joga no tabuleiro, virado para o lado em que parou.
-      if (s.mode === 'idle' && waited > 3500) setMode('sit')
-      else if (s.mode === 'sit' && waited > 10000) setMode('play')
-    } else if (waited > s.nextAt && (s.mode === 'idle' || s.mode === 'sit' || s.mode === 'play')) {
-      // Sozinho: passeia, senta e joga, sem pressa.
-      const roll = Math.random()
-      s.nextAt = between(6000, 11000)
-      if (s.mode === 'idle' && roll < 0.4) setMode('sit')
-      else if (s.mode === 'sit' && roll < 0.5) setMode('play')
-      else wander()
-    }
+      if (s.mode === 'idle' && waited > SLEEP_AFTER) setMode('sleep')
+    } else if (!s.goal && waited > s.nextAt && (s.mode === 'idle' || s.mode === 'sit' || s.mode === 'sleep')) autopilot()
   }
 
   function advanceClip(dt: number) {
@@ -181,8 +221,10 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
       s.vx = approach(s.vx, 0, 1600 * scale * dt)
     }
     const index = Math.floor(clip.clock * clip.fps)
-    // Pulo: os quadros 3 a 5 tiram o Kito do chão por um arco curto.
-    s.hop = clip.hop ? Math.max(0, Math.sin(Math.PI * clamp((clip.clock * clip.fps - 3) / 3, 0, 1))) * 22 * scale : 0
+    if (clip.hop) {
+      const [from, to, height] = clip.hop
+      s.hop = Math.sin(Math.PI * clamp((clip.clock * clip.fps - from) / (to - from), 0, 1)) * height * scale
+    }
     if (index >= clip.steps.length) { s.clip = null; s.hop = 0; clip.then(); return }
     applyStep(clip.steps[index])
   }
@@ -218,9 +260,9 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
     s.x = clamp(s.x, minX(), maxX())
     s.tilt = s.spin = 0
     s.traveled = 0
-    s.nextAt = between(2500, 5000)
-    if (hard) { s.facing = s.vx < 0 ? -1 : 1; play(range(4, 8), 10, idle, { slide: true }) }
-    else { s.vx = 0; play([['jump', 6], ['jump', 1], ['jump', 2], ['jump', 0]], 14, idle) }
+    s.nextAt = between(1200, 2500)
+    if (hard) { s.facing = s.vx < 0 ? -1 : 1; play(stumble(4, 8), 10, idle, { slide: true }) }
+    else { s.vx = 0; play(frames('jump', [6, 1, 2, 0]), 14, idle) }
   }
 
   function step(dt: number) {
@@ -256,9 +298,11 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
     // Alvo longe ou além da borda (empurrando): o laço segue acordado.
     if (s.target !== null && (Math.abs(clamp(s.target, minX(), maxX()) - s.x) > START_DISTANCE * scale || s.target !== clamp(s.target, minX(), maxX()))) return 0
     const waited = now - s.since
-    if (s.mode === 'love') return s.hovered ? Infinity : Math.max(16, s.loveUntil - now)
-    if (s.mouse) return s.mode === 'idle' ? 3500 - waited : s.mode === 'sit' ? 10000 - waited : Infinity
-    return Math.max(16, s.nextAt - waited)
+    if (s.mode === 'sleep') return SLEEP_FRAME - (waited % SLEEP_FRAME)
+    if (s.mode === 'love' && s.hovered) return Infinity
+    if (s.mode === 'love') return s.loveUntil - now
+    if (s.mouse) return s.mode === 'idle' ? SLEEP_AFTER - waited : Infinity
+    return s.nextAt - waited
   }
 
   function tick(time: number) {
@@ -286,19 +330,25 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
   }
 
   // Hero: o mouse vira alvo; um toque curto fora de links e botões também.
+  function chase(x: number, goal: 'tap' | null) {
+    s.target = x
+    s.goal = goal
+    s.cap = SPRINT
+    s.tripAt = 0
+    s.queue = []
+    wake()
+  }
   function onHeroMove(event: PointerEvent) {
     if (event.pointerType === 'touch' || s.drag) return
     s.mouse = true
-    s.goal = null
-    s.target = event.clientX - left
-    wake()
+    chase(event.clientX - left, null)
   }
   function onHeroLeave(event: PointerEvent) {
     if (event.pointerType === 'touch' || s.drag) return
     s.mouse = false
     s.target = null
     s.since = performance.now()
-    s.nextAt = between(2500, 5000)
+    s.nextAt = between(600, 1500)
     wake()
   }
   function onHeroDown(event: PointerEvent) {
@@ -310,12 +360,10 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
     if (!tap || tap.id !== event.pointerId || s.drag || !running) return
     if (Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > 10 || event.timeStamp - tap.at > 500) return
     if ((event.target as Element).closest?.(INTERACTIVE)) return
-    s.target = event.clientX - left
-    s.goal = 'tap'
-    wake()
+    chase(event.clientX - left, 'tap')
   }
 
-  // Kito: pressionar e arrastar carrega; clique ou toque sem arrastar faz ele pular.
+  // Kito: pressionar e arrastar carrega; clique ou toque sem arrastar faz ele pular ou acenar.
   function onKitoDown(event: PointerEvent) {
     if (!running || s.drag || (event.pointerType === 'mouse' && event.button !== 0)) return
     event.preventDefault()
@@ -341,8 +389,10 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
       setMode('carried')
       s.vx = s.vy = s.tilt = s.spin = s.handVx = 0
       s.anim = 'carry'
-      s.frame = 2
+      s.frame = carry.angles.indexOf(0)
       s.hovered = false
+      s.goal = null
+      s.tripAt = 0
       document.documentElement.dataset.kitoCarrying = 'true'
     }
     drag.samples.push([event.timeStamp, x, y])
@@ -358,10 +408,13 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
     s.drag = null
     delete document.documentElement.dataset.kitoCarrying
     if (!drag.carrying) {
-      // No toque não há hover: depois do pulo ele segura o coração por um instante.
+      // No toque não há hover: depois do pulo ou do aceno ele segura o coração por um instante.
       if (event.type === 'pointerup' && s.mode !== 'clip') {
         const touch = event.pointerType !== 'mouse'
-        celebrate(touch ? () => { s.loveUntil = performance.now() + 1800; setMode('love') } : idle)
+        s.target = null
+        s.goal = null
+        s.nextAt = between(1500, 3000)
+        greet(touch ? () => { s.loveUntil = performance.now() + 1800; setMode('love') } : idle)
       }
       return wake()
     }
@@ -372,8 +425,8 @@ export function startKito({ hero, layer, sprite, hitbox, shadow }: { hero: HTMLE
     const limit = 2400 * scale
     s.vx = throwable ? clamp((s.x - x0) / seconds, -limit, limit) : 0
     s.vy = throwable ? clamp((s.y - y0) / seconds, -limit, limit) : 0
-    // Com o mouse, depois de cair ele volta para perto do cursor.
-    if (event.pointerType === 'mouse') { s.target = event.clientX - left; s.goal = null }
+    // Com o mouse, depois de cair ele volta para perto do cursor; no toque, segue o piloto automático.
+    s.target = event.pointerType === 'mouse' ? event.clientX - left : null
     setMode('airborne')
     wake()
   }

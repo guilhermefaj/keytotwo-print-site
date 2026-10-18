@@ -4,7 +4,7 @@ export const kitoSprites = {
   "pose": "/media/hero/kito-pixel-pose.webp",
   "cell": 256,
   "columns": 8,
-  "rows": 8,
+  "rows": 11,
   "animations": {
     "front": {
       "start": 0,
@@ -56,55 +56,65 @@ export const kitoSprites = {
       "count": 1,
       "ground": 231
     },
-    "play": {
-      "start": 50,
-      "count": 1,
-      "ground": 240
-    },
     "love": {
-      "start": 51,
+      "start": 50,
       "count": 1,
       "ground": 231
     },
+    "wave": {
+      "start": 51,
+      "count": 9,
+      "ground": 232
+    },
+    "hoist": {
+      "start": 60,
+      "count": 9,
+      "ground": 230
+    },
+    "sleep": {
+      "start": 69,
+      "count": 9,
+      "ground": 232
+    },
     "carry": {
-      "start": 52,
+      "start": 78,
       "count": 5,
       "ground": 0,
       "angles": [
-        -16,
-        -8,
+        -18,
+        -9,
         0,
-        8,
-        16
+        9,
+        18
       ],
       "grab": [
         [
-          106,
-          52
+          104,
+          55
         ],
         [
-          117,
-          49
+          116,
+          52
         ],
         [
           128,
-          49
+          51
         ],
         [
-          139,
-          49
-        ],
-        [
-          150,
+          140,
           52
+        ],
+        [
+          152,
+          55
         ]
       ],
       "feet": [
-        242,
-        238,
-        231,
         236,
-        240
+        234,
+        229,
+        234,
+        236
       ]
     }
   }

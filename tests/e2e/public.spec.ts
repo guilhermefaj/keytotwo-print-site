@@ -77,10 +77,6 @@ test.describe('links e botões', () => {
     await expect(page.getByRole('dialog')).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog')).toBeHidden()
-
-    await page.setViewportSize({ width: 1440, height: 900 })
-    await page.getByRole('button', { name: /Pausar anima/ }).click()
-    await expect(page.getByRole('button', { name: /Retomar anima/ })).toBeVisible()
   })
 })
 

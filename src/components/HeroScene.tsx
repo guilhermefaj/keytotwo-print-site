@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { IconPlayerPauseFilled, IconPlayerPlayFilled } from '@tabler/icons-react'
 import type { Kito } from '../lib/kito-playground'
 import { kitoSprites } from '../kito-sprites'
-import { Icon } from './ui/Icon'
 
 function subscribeMotionPreference(onChange: () => void) {
   const query = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -15,7 +13,8 @@ function subscribeVisibility(onChange: () => void) {
 }
 const motionSnapshot = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const visibilitySnapshot = () => document.visibilityState === 'visible'
-// Server and first hydration render agree: paused until browser preferences load.
+// Server and first hydration render agree: still until browser preferences load.
+// Sem botão de pausa (decisão do responsável, 2026-10-18): quem pede movimento reduzido ao sistema vê o Kito parado.
 const serverMotionSnapshot = () => true
 const serverVisibilitySnapshot = () => false
 
@@ -38,29 +37,19 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
   const kito = useRef<Kito | null>(null)
   const reducedMotion = useSyncExternalStore(subscribeMotionPreference, motionSnapshot, serverMotionSnapshot)
   const visible = useSyncExternalStore(subscribeVisibility, visibilitySnapshot, serverVisibilitySnapshot)
-  const [manualPause, setManualPause] = useState<boolean | null>(null)
-  const userPaused = manualPause ?? reducedMotion
   const [inView, setInView] = useState(false)
 
   useEffect(() => {
-    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const preferenceChanged = () => {
-      // Entering reduced-motion requires a fresh explicit opt-in.
-      // Leaving it never overrides a manual pause.
-      if (motionPreference.matches) setManualPause(true)
-    }
-    motionPreference.addEventListener('change', preferenceChanged)
     const intersection = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0 })
     if (stage.current) intersection.observe(stage.current)
     return () => {
-      motionPreference.removeEventListener('change', preferenceChanged)
       intersection.disconnect()
       kito.current?.destroy()
       kito.current = null
     }
   }, [])
 
-  const running = !userPaused && visible && inView && !obscured
+  const running = !reducedMotion && visible && inView && !obscured
   useEffect(() => {
     if (!running) return
     let cancelled = false
@@ -78,16 +67,9 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
   }, [running])
 
   return (
-    <div ref={region} className="hero-scene-region" data-running={running} data-user-paused={userPaused}
-      data-visible={visible} data-in-view={inView}>
-      <div className="motion-controls">
-        <button type="button" className="motion-button" aria-controls="kito-scene" onClick={() => setManualPause(!userPaused)}>
-          <Icon component={userPaused ? IconPlayerPlayFilled : IconPlayerPauseFilled} size={16} />
-          {userPaused ? 'Retomar animação' : 'Pausar animação'}
-        </button>
-      </div>
+    <div ref={region} className="hero-scene-region" data-running={running} data-visible={visible} data-in-view={inView}>
       {/* Desempenho: a cena é decorativa; a pose do Kito é leve e entra com prioridade baixa, depois do título. */}
-      <div ref={stage} className="hero-scene" id="kito-scene" aria-hidden="true">
+      <div ref={stage} className="hero-scene" aria-hidden="true">
         <img className="cloud cloud-left" src="/media/hero/cloud-a.webp" width="280" height="117" alt="" fetchPriority="low" />
         <img className="cloud cloud-right" src="/media/hero/cloud-b.webp" width="208" height="88" alt="" fetchPriority="low" />
         <img className="cloud cloud-far" src="/media/hero/cloud-a.webp" width="280" height="117" alt="" fetchPriority="low" />

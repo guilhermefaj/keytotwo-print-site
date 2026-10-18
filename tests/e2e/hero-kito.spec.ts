@@ -1,7 +1,8 @@
 import { expect, test, type Page } from './fixtures/test'
 
 // O Kito da hero (src/lib/kito-playground.ts): persegue o mouse, vai até onde a pessoa toca, pode ser carregado
-// e cai de volta no chão. Com movimento reduzido fica parado de frente, sem baixar o motor nem o atlas.
+// e cai de volta no chão; sem mouse, já começa se movendo. Com movimento reduzido fica parado de frente, sem baixar
+// o motor nem o atlas.
 const sprite = (page: Page) => page.locator('.kito-sprite')
 
 async function kito(page: Page) {
@@ -18,8 +19,6 @@ test('desktop: persegue o cursor pelo chão, vai no colo e volta ao chão', asyn
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
   await expect(page.locator('.kito-layer')).toHaveAttribute('data-live', 'true')
-  // O motor assume onde o servidor desenhou a pose de frente, sem salto.
-  expect(Math.abs((await kito(page)).x - 1440 * 0.64)).toBeLessThan(4)
 
   await page.mouse.move(200, 500)
   await expect.poll(async () => (await kito(page)).x, { timeout: 10_000 }).toBeLessThan(240)
@@ -34,13 +33,13 @@ test('desktop: persegue o cursor pelo chão, vai no colo e volta ao chão', asyn
 
   await page.mouse.up()
   await expect(page.locator('html')).not.toHaveAttribute('data-kito-carrying')
-  await expect.poll(() => sprite(page).getAttribute('data-mode'), { timeout: 10_000 }).toMatch(/^(idle|love|sit|move)$/)
+  await expect.poll(() => sprite(page).getAttribute('data-mode'), { timeout: 10_000 }).toMatch(/^(idle|love|sleep|move)$/)
   const resting = await aboveGround(page)
   expect(resting).toBeGreaterThanOrEqual(0)
   expect(resting).toBeLessThan(32)
 })
 
-test('movimento reduzido: o Kito fica parado de frente e o motor só desce ao retomar', async ({ page }) => {
+test('movimento reduzido: o Kito fica parado de frente e o motor só desce sem a preferência', async ({ page }) => {
   const requested: string[] = []
   page.on('request', request => requested.push(request.url()))
   await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -53,7 +52,7 @@ test('movimento reduzido: o Kito fica parado de frente e o motor só desce ao re
   expect(await page.locator('.kito-hitbox').evaluate(el => getComputedStyle(el).pointerEvents)).toBe('none')
   expect(requested.some(url => url.includes('kito-pixel-atlas'))).toBe(false)
 
-  await page.getByRole('button', { name: /Retomar anima/ }).click()
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
   await expect(page.locator('.kito-layer')).toHaveAttribute('data-live', 'true')
   expect(requested.some(url => url.includes('kito-pixel-atlas'))).toBe(true)
 })
@@ -61,10 +60,13 @@ test('movimento reduzido: o Kito fica parado de frente e o motor só desce ao re
 test.describe('celular', () => {
   test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })
 
-  test('um toque chama o Kito; só o corpo dele segura a rolagem', async ({ page }) => {
+  test('começa andando sozinho; um toque chama o Kito; só o corpo dele segura a rolagem', async ({ page }) => {
     await page.goto('/')
     await page.locator('.hero-scene').scrollIntoViewIfNeeded()
     await expect(page.locator('.kito-layer')).toHaveAttribute('data-live', 'true')
+    // Sem toque nenhum ele já sai do lugar: quem chega vê que ele anda.
+    const start = (await kito(page)).x
+    await expect.poll(async () => Math.abs((await kito(page)).x - start), { timeout: 4_000 }).toBeGreaterThan(30)
     const scene = (await page.locator('.hero-scene').boundingBox())!
     await page.touchscreen.tap(60, scene.y + 40)
     await expect.poll(async () => (await kito(page)).x, { timeout: 10_000 }).toBeLessThan(110)
