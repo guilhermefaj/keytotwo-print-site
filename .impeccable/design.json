@@ -140,14 +140,14 @@
   ],
   "narrative": {
     "northStar": "Folha de recorte",
-    "overview": "O que o casal compra é papel. A hero é a janela para o mundo do Kito: céu, horizonte baixo, chão até as bordas e um único pinguim caminhando. Logo abaixo do chão passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, linhas turquesa como nas cartas do J001, calhas tracejadas entre as cartas, fichas com pontilhado de índice e um traço de marca-texto Damasco atrás de uma palavra. A hero vende a marca e uma forma de pensar, não um produto específico. A folha abaixo vende o catálogo: hoje o Pacote KeyToTwo com cinco jogos, amanhã outros pacotes e um freebie.",
+    "overview": "O que o casal compra é papel. A hero é a janela para o mundo do Kito: céu, horizonte baixo, chão até as bordas e um único pinguim que brinca com quem chega. Logo abaixo do chão passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, linhas turquesa como nas cartas do J001, calhas tracejadas entre as cartas, fichas com pontilhado de índice e um traço de marca-texto Damasco atrás de uma palavra. A hero vende a marca e uma forma de pensar, não um produto específico. A folha abaixo vende o catálogo: hoje o Pacote KeyToTwo com cinco jogos, amanhã outros pacotes e um freebie.",
     "keyCharacteristics": [
       "Papel dominante abaixo da hero; o Céu existe só na primeira dobra.",
       "Uma assinatura: linha de recorte tracejada com tesoura separando as seções.",
       "Linhas turquesa J001 decorativas (recorte, cartas, pontilhado); o texto é sempre Tinta ou Turquesa profundo.",
       "Tipografia à esquerda, com um marca-texto por página, no máximo.",
       "Controles planos, retos (6 px), sem sombra; só painéis que saem da folha ganham sombra.",
-      "Kito age: caminha na hero, acolhe em vazios, celebra a compra. Nunca decora.",
+      "Kito age: brinca na hero, acolhe em vazios, celebra a compra. Nunca decora.",
       "Pronto para mais produtos: cartas, fichas e oferta vêm de dados, não de \"5\" ou \"P001\" desenhados."
     ],
     "rules": [
@@ -169,7 +169,7 @@
       "Do manter botões retos (6 px), sem sombra, sem seta, com um nome por ação.",
       "Do escrever preço só com um preço real; qualquer substituto é Body em Tinta suave.",
       "Do dar a todo erro uma mensagem e um botão secundário de nova tentativa, e nada mais.",
-      "Do manter a hero exatamente como a coreografia do Kito pede e medir verify:hero após qualquer mudança nela.",
+      "Do rodar tests/e2e/hero-kito.spec.ts (perseguir, carregar, toque, movimento reduzido) após qualquer mudança na hero.",
       "Do medir contraste AA em cada estado novo antes de fechar uma fatia."
     ],
     "donts": [

@@ -6,7 +6,7 @@ import path from 'node:path'
 // A2 phase 1: reads approved real sources; writes only public/media and docs.
 // Páginas do PDF nunca vão para public/ (responsável, 2026-10-16): qualquer pessoa abriria e baixaria o jogo
 // pela URL sem comprar. Este script prepara só os Kitos; a renderização das páginas do J001 foi removida.
-// Does not call prepare-walk-assets (which also writes src/kito-motion.ts).
+// Does not call prepare-walk-assets.
 const root = path.resolve(import.meta.dirname, '..')
 const vault = process.env.KTT_VAULT_ROOT || 'G:/Meu Drive/09-Second-brain'
 const walkDir = process.env.KTT_WALK_SOURCE || 'G:/Meu Drive/05-Projetos/KeyToTwo/Images/Pixel Art/Kito Walking v3'
