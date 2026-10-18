@@ -158,7 +158,7 @@ test('carregamento não antecipa preço nem compra', async ({ page }) => {
   await page.route('**/functions/v1/api/catalog', async route => { await gate; await route.fulfill({ json: { products: [] } }) })
   await page.goto('/loja/j001')
   try {
-    await expect(page.locator('.shop-purchase [role="status"]')).toContainText('Consultando disponibilidade…')
+    await expect(page.locator('.shop-purchase [role="status"]')).toContainText('Consultando o preço…')
     await expect(page.locator('.shop-purchase button')).toHaveCount(0)
     await expect(page.locator('.shop-price')).toHaveCount(0)
   } finally { release() }
@@ -174,10 +174,10 @@ test('slugs sem produto e desconhecidos usam a 404 existente', async ({ page }) 
 })
 
 test('prerender e SEO: loja e produtos confirmados, sem páginas das vagas', async () => {
-  for (const [route, title] of [['loja', 'Loja'], ['loja/p001', 'Coleção KeyToTwo: Fundadores'], ['loja/j001', 'Rabisque e Adivinhe']]) {
+  for (const [route, heading, title] of [['loja', 'Loja', 'Loja de jogos para casais imprimirem'], ['loja/p001', 'Coleção KeyToTwo: Fundadores', 'Coleção KeyToTwo: Fundadores, pacote de jogos para casais'], ['loja/j001', 'Rabisque e Adivinhe', 'Rabisque e Adivinhe, jogo de desenho para casais']]) {
     const html = await readFile(`build/client/${route}/index.html`, 'utf8')
     expect(html).toContain(`<title>${title} — KeyToTwo</title>`)
-    expect(html).toContain(`<h1>${title}</h1>`)
+    expect(html).toContain(`<h1>${heading}</h1>`)
     expect(html).not.toContain('Adicionar à sacola')
   }
   await expect(readFile('build/client/loja/hora-dos-artistas/index.html')).rejects.toThrow()

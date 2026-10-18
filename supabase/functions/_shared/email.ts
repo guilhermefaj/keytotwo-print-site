@@ -84,6 +84,11 @@ function listNames(items: Named[]): string {
   return names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`
 }
 
+// Assinatura: a frase do Kito só nos e-mails de marketing (os que têm rodapé de descadastro); nos de
+// serviço (código, confirmação, senha e entrega) a linha neutra, para não competir com o conteúdo.
+const KITO_SIGNATURE = 'Um pinguim numa tela pedindo para vocês saírem dela.'
+const SERVICE_SIGNATURE = 'KeyToTwo: jogos para casais imprimirem em casa.'
+
 function layout(subject: string, heading: string, body: string, footer = ''): string {
   return `<!doctype html>
 <html lang="pt-BR">
@@ -101,7 +106,7 @@ function layout(subject: string, heading: string, body: string, footer = ''): st
         ${footer}
       </td></tr>
       <tr><td style="padding:16px 28px 24px;border-top:1px solid ${RULE};">
-        <p style="margin:0 0 6px;font-family:${FONT};font-size:13px;line-height:1.5;color:${INK_SOFT};">Uma boa ideia. Vocês dois. O resto vira história.</p>
+        <p style="margin:0 0 6px;font-family:${FONT};font-size:13px;line-height:1.5;color:${INK_SOFT};">${footer ? KITO_SIGNATURE : SERVICE_SIGNATURE}</p>
         <p style="margin:0;font-family:${FONT};font-size:13px;line-height:1.5;color:${INK_SOFT};">Dúvidas? Escrevam para ${link(`mailto:${SUPPORT_EMAIL}`, SUPPORT_EMAIL)}.</p>
       </td></tr>
     </table>
@@ -121,8 +126,8 @@ async function unsubscribeParts(row: OutboxRow) {
   const page = `${env.siteUrl()}/email/preferencias?token=${token}`
   const account = `${env.siteUrl()}/conta`
   const footer = `<hr style="margin:24px 0 16px;border:0;border-top:2px dashed ${LINE};">
-    ${paragraph(`Vocês recebem este e-mail porque aceitaram receber novidades da KeyToTwo. Não querem mais? ${link(page, 'Descadastrar')} (vale na hora) ou ajustem em ${link(account, 'Minha conta')}.`, true)}`
-  const text = ['', '--', 'Vocês recebem este e-mail porque aceitaram receber novidades da KeyToTwo.', `Descadastrar (vale na hora): ${page}`, `Minha conta: ${account}`]
+    ${paragraph(`Você recebe este e-mail porque aceitou receber novidades da KeyToTwo. Para parar, é só ${link(page, 'descadastrar')} (vale na hora) ou ajustar em ${link(account, 'Minha conta')}.`, true)}`
+  const text = ['', '--', 'Você recebe este e-mail porque aceitou receber novidades da KeyToTwo.', `Descadastrar (vale na hora): ${page}`, `Minha conta: ${account}`]
   const headers = {
     'List-Unsubscribe': `<${env.apiPublicUrl()}/email/unsubscribe?token=${token}>`,
     'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
@@ -162,24 +167,25 @@ export async function renderDelivery(row: OutboxRow, apiBase: string): Promise<M
   return { to: row.to_email, subject, html, text, tag: row.kind }
 }
 
-// Lembrete de carrinho (marketing): o que ficou no carrinho e o botão de volta. Sem preço nem condição nova.
+// Lembrete de sacola (marketing): o que ficou na sacola e o botão de volta. Sem preço nem condição nova.
 export async function renderCartReminder(row: OutboxRow): Promise<Message> {
   const items = row.payload.items ?? []
   if (!items.length) throw new PermanentEmailError('lembrete_sem_itens')
   const cart = `${env.siteUrl()}/carrinho`
   const { footer, text: footerText, headers } = await unsubscribeParts(row)
-  const subject = 'Ficou um jogo no carrinho'
+  const subject = 'Esqueceram algo na sacola'
   const names = listNames(items)
-  const html = layout(subject, 'Ficou um jogo no carrinho', [
-    paragraph(`Vocês deixaram ${escapeHtml(names)} no carrinho. Ele continua lá, esperando a próxima noite em que a dúvida for "o que a gente faz hoje?".`),
-    button(cart, 'Voltar ao carrinho'),
-    paragraph('Se já resolveram isso por outro caminho, pode ignorar este e-mail.', true),
+  const waiting = `${items.length > 1 ? 'continuam' : 'continua'} na sacola, esperando a próxima vez que alguém perguntar "o que a gente faz hoje?".`
+  const html = layout(subject, subject, [
+    paragraph(`${escapeHtml(names)} ${waiting}`),
+    button(cart, 'Voltar à sacola'),
+    paragraph('Se já resolveram isso por outro caminho, podem ignorar este e-mail.', true),
   ].join('\n    '), footer)
   const text = [
-    'KeyToTwo', '', 'Ficou um jogo no carrinho', '',
-    `Vocês deixaram ${names} no carrinho. Ele continua lá, esperando a próxima noite em que a dúvida for "o que a gente faz hoje?".`, '',
-    `Voltar ao carrinho: ${cart}`, '',
-    'Se já resolveram isso por outro caminho, pode ignorar este e-mail.',
+    'KeyToTwo', '', subject, '',
+    `${names} ${waiting}`, '',
+    `Voltar à sacola: ${cart}`, '',
+    'Se já resolveram isso por outro caminho, podem ignorar este e-mail.',
     ...footerText,
     ...textSignature,
   ].join('\n')
@@ -195,14 +201,15 @@ export async function renderPostPurchase(row: OutboxRow): Promise<Message> {
   const { footer, text: footerText, headers } = await unsubscribeParts(row)
   const subject = 'Já rolou a primeira partida?'
   const names = listNames(games)
+  const invite = `Se ainda não ${games.length > 1 ? 'saíram' : 'saiu'} da pasta de downloads, fica o convite: imprimam, escolham quem começa e deixem as notificações para depois.`
   const html = layout(subject, 'Já rolou a primeira partida?', [
-    paragraph(`Faz alguns dias que ${escapeHtml(names)} ${games.length > 1 ? 'chegaram' : 'chegou'}. Se ainda não saíram da pasta de downloads, fica o convite: imprimam, escolham um jogo e deixem o celular em outro cômodo por uma rodada.`),
+    paragraph(`Faz alguns dias que ${escapeHtml(names)} ${games.length > 1 ? 'chegaram' : 'chegou'}. ${invite}`),
     button(library, 'Abrir Meus jogos'),
     paragraph(`Os arquivos ficam sempre em Meus jogos. Dicas para imprimir: ${link(printing, 'Ajuda')}.`, true),
   ].join('\n    '), footer)
   const text = [
     'KeyToTwo', '', 'Já rolou a primeira partida?', '',
-    `Faz alguns dias que ${names} ${games.length > 1 ? 'chegaram' : 'chegou'}. Se ainda não saíram da pasta de downloads, fica o convite: imprimam, escolham um jogo e deixem o celular em outro cômodo por uma rodada.`, '',
+    `Faz alguns dias que ${names} ${games.length > 1 ? 'chegaram' : 'chegou'}. ${invite}`, '',
     `Meus jogos: ${library}`,
     `Dicas para imprimir: ${printing}`,
     ...footerText,

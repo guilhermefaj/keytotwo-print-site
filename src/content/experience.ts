@@ -11,9 +11,9 @@ export const experience = {
   cta: { label: 'Ver os jogos', href: '/loja' },
   secondary: { label: 'Como funciona', href: '/#como-funciona' },
   steps: [
-    { title: 'Escolham.', text: 'Levem a ideia para a sacola. Entrem na conta para seguir com a compra.', icon: 'sacola' },
-    { title: 'Imprimam.', text: 'Depois da compra, os arquivos ficam em Meus jogos e chegam por e-mail.', icon: 'impressora' },
-    { title: 'Divirtam-se.', text: 'Preparem os materiais e escolham quem começa.', icon: 'dado' },
+    { title: 'Escolham.', text: 'Um jogo ou o pacote vai para a sacola. Para pagar, é preciso entrar na conta.', icon: 'sacola' },
+    { title: 'Imprimam.', text: 'O PDF fica em Meus jogos e chega por e-mail. Papel A4 comum resolve.', icon: 'impressora' },
+    { title: 'Joguem.', text: 'Recortem o que o jogo pedir e decidam quem começa. Boa sorte nessa negociação.', icon: 'dado' },
   ],
   // Portão 1: relatos de exemplo na voz da marca, marcados placeholder: true. Aparecem só no stage
   // test; em live só entram relatos reais (placeholder: false) e, sem nenhum, a seção não renderiza.
@@ -32,7 +32,7 @@ export const experience = {
   freebie: {
     tag: 'Grátis',
     title: 'Jogos para começar, por nossa conta.',
-    text: 'Ao criar sua conta, vocês ganham jogos para conhecer a proposta antes do pacote.',
+    text: 'Quem cria a conta leva esses jogos de graça. Dá para testar a impressora (e a dupla) antes de comprar qualquer coisa.',
     cta: { label: 'Criar conta', href: '/entrar' },
   },
 }

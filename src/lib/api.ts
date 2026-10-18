@@ -39,7 +39,7 @@ export function apiErrorMessage(error: unknown) {
   if (code === 'ALREADY_OWNED') return 'Você já tem todos os jogos deste produto. Eles estão em Meus jogos.'
   if (code === 'PRODUCT_UNAVAILABLE') return 'Este produto não está disponível para compra.'
   if (code === 'EMAIL_NOT_CONFIRMED') return 'Confirme seu e-mail para continuar.'
-  return 'Não foi possível carregar ou salvar os dados. Tente novamente.'
+  return 'Não deu certo agora. Tente de novo em instantes.'
 }
 
 export const money = (amount: number, currency: string) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(amount / 100)

@@ -9,7 +9,7 @@ import { CutLine } from '../ui/CutLine'
 export function ProductExperience() {
   return <section className="page-section experience-section" aria-labelledby="experiencia"><CutLine /><div className="content-width experience-layout">
     <figure className="experience-art"><img src="/media/experience/kito-tabuleiro-480.webp" srcSet="/media/experience/kito-tabuleiro-240.webp 240w, /media/experience/kito-tabuleiro-480.webp 480w" sizes="(max-width: 767px) 70vw, 420px" alt="" width="480" height="480" loading="lazy" decoding="async" /></figure>
-    <div className="experience-copy"><h2 id="experiencia" tabIndex={-1}>A próxima rodada sai da impressora.</h2><p className="lead">Cartas na mesa, uma tentativa duvidosa e aquela vontade de jogar de novo.</p><p>Um dia é desenho, no outro é tabuleiro ou investigação. Cada jogo é um jeito diferente de passar a noite juntos: vocês imprimem em casa, puxam uma cadeira e o resto fica com a dupla.</p><Link className="button button-primary" to="/loja">Ver os jogos</Link></div>
+    <div className="experience-copy"><h2 id="experiencia" tabIndex={-1}>A próxima rodada sai da impressora.</h2><p className="lead">Cartas na mesa, uma tentativa duvidosa e aquela vontade de jogar de novo.</p><p>Um dia é desenho, no outro é tabuleiro ou investigação. Vocês imprimem em casa e o resto fica com a dupla.</p><Link className="button button-primary" to="/loja">Ver os jogos</Link></div>
   </div></section>
 }
 

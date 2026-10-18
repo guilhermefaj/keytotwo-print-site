@@ -60,8 +60,8 @@ test('acceptance gates API and form; coupon invalid/apply/remove; confirmation',
   await expect(page.locator('#checkout-form')).toHaveCount(0)
   await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
   await page.getByRole('button', { name: 'Pagar (simulação de teste)' }).click()
-  await expect(page.getByRole('heading', { name: 'O próximo encontro é de vocês!' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Baixar agora', exact: true })).toHaveAttribute('href', '/meus-jogos')
+  await expect(page.getByRole('heading', { name: 'Pronto. Os jogos são de vocês.' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir Meus jogos', exact: true })).toHaveAttribute('href', '/meus-jogos')
 })
 
 for (const [code, message] of [['CART_CHANGED', 'Sua sacola mudou'], ['TERMS_CHANGED', 'Os termos foram atualizados'], ['PAYMENT_PROVIDER_ERROR', 'Não conseguimos abrir o pagamento']]) {
@@ -74,7 +74,7 @@ for (const [code, message] of [['CART_CHANGED', 'Sua sacola mudou'], ['TERMS_CHA
     await expect(page.locator('#checkout-form')).toHaveCount(0)
   })
 }
-for (const [state, title] of [['paid', 'O próximo encontro é de vocês!'], ['processing', 'Estamos preparando seus jogos'], ['pending_payment', 'Aguardando o pagamento'], ['failed', 'Vamos tentar de novo?'], ['expired', 'Vamos tentar de novo?'], ['not_found', 'Não encontramos esse pedido'], ['other_account', 'Este pedido é de outra conta']]) {
+for (const [state, title] of [['paid', 'Pronto. Os jogos são de vocês.'], ['processing', 'Estamos preparando seus jogos'], ['pending_payment', 'Aguardando o pagamento'], ['failed', 'Vamos tentar de novo?'], ['expired', 'Vamos tentar de novo?'], ['not_found', 'Não encontramos esse pedido'], ['other_account', 'Este pedido é de outra conta']]) {
   test(`confirmation ${state}`, async ({ page }) => {
     await page.route('**/api/order-status?*', route => route.fulfill({ json: state === 'other_account' ? { state: 'paid', next: 'other_account' } : { state, next: state === 'paid' ? 'open_library' : undefined } }))
     await page.goto('/pedido/confirmacao?session_id=cs_test_synthetic123456')
@@ -94,7 +94,7 @@ test('processing polls with backoff, then shows paid', async ({ page }) => {
   await page.goto('/pedido/confirmacao?session_id=cs_test_synthetic123456')
   test.skip(page.url().includes('/entrar'), 'Requires configured stage=test build')
   await expect(page.getByRole('heading', { name: 'Estamos preparando seus jogos' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'O próximo encontro é de vocês!' })).toBeVisible({ timeout: 10000 })
+  await expect(page.getByRole('heading', { name: 'Pronto. Os jogos são de vocês.' })).toBeVisible({ timeout: 10000 })
   expect(calls).toBe(3)
 })
 

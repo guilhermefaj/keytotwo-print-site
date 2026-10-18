@@ -44,7 +44,7 @@ test('one PDF per game, native download, a fresh URL on every click', async ({ p
     const result = await downloaded
     expect(result.suggestedFilename()).toBe('jogo-teste.pdf')
     expect(await result.failure()).toBeNull()
-    await expect(page.locator('.download-action [role="status"]')).toContainText('Seu navegador recebeu o link')
+    await expect(page.locator('.download-action [role="status"]')).toContainText('Abrimos o PDF')
   }
   expect(calls).toBe(2)
   await expect(page).toHaveURL(/\/meus-jogos#jogo-TESTE-J01$/)
@@ -64,7 +64,7 @@ test('unavailable file preserves purchase, offers help and can retry', async ({ 
   await page.route('**/api/download-url', route => route.fulfill({ status: 503, json: { error: { code: 'FILE_UNAVAILABLE' } } }))
   await library(page)
   await page.getByRole('button', { name: 'Baixar PDF', exact: true }).click()
-  await expect(page.locator('.download-action [role="alert"]')).toContainText('Sua compra continua na sua conta')
+  await expect(page.locator('.download-action [role="alert"]')).toContainText('a compra continua na sua conta')
   await expect(page.locator('.download-action').getByRole('link', { name: 'Preciso de ajuda' })).toHaveAttribute('href', '/ajuda')
   await expect(page.locator('.library-grid > li')).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toBeEnabled()
@@ -81,7 +81,7 @@ test('retired file refreshes library, next click requests replacement', async ({
   const refreshed = page.waitForResponse(response => response.url().endsWith('/api/library'))
   await page.getByRole('button', { name: 'Baixar PDF', exact: true }).click()
   await refreshed
-  await expect(page.locator('.download-action [role="alert"]')).toContainText('O arquivo foi atualizado')
+  await expect(page.locator('.download-action [role="alert"]')).toContainText('Este jogo ganhou uma versão nova do arquivo')
   const downloaded = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Baixar PDF', exact: true }).click()
   await downloaded

@@ -14,7 +14,7 @@ import { signUnsubscribeToken } from '../_shared/tokens.ts'
 
 const DB_CONTAINER = 'supabase_db_keytotwo-print-site'
 const FUNCTIONS_URL = `${Deno.env.get('API_URL') || 'http://127.0.0.1:54321'}/functions/v1`
-const REMINDER = 'Ficou um jogo no carrinho'
+const REMINDER = 'Esqueceram algo na sacola'
 const POST_PURCHASE = 'Já rolou a primeira partida?'
 
 if (enabled) {

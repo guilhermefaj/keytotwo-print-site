@@ -50,7 +50,7 @@ function SupportContact() {
 // Central de ajuda (DESIGN.md › Ajuda): cards de tema que levam às seções, guia de impressão e atendimento.
 export default function Ajuda() {
   return <main id="conteudo" tabIndex={-1} className="reading-page help-page content-width">
-    <BackLink to="/">Voltar ao início</BackLink><h1>Ajuda</h1><p className="reading-intro">Vamos preparar o próximo encontro? Encontre aqui orientações sobre sua conta, compra e impressão.</p>
+    <BackLink to="/">Voltar ao início</BackLink><h1>Ajuda</h1><p className="reading-intro">Como comprar, entrar na conta, imprimir e falar com a gente. Se a dúvida não estiver aqui, é só escrever.</p>
     <nav className="help-topics" aria-label="Temas da ajuda"><ul>{help.map(section => <li key={section.id}><a href={`#${section.id}`}>
       <Icon component={icons[section.icon]} size={24} /><span className="help-topic-title">{section.title}</span><span className="help-topic-summary">{section.summary}</span>
     </a></li>)}</ul></nav>

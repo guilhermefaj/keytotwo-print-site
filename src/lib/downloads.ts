@@ -40,8 +40,8 @@ export function downloadError(error: unknown) {
   const code = error instanceof ApiError ? error.code : ''
   const messages: Record<string, string> = {
     LINK_EXPIRED: 'O link venceu antes de abrir. Clique em Baixar PDF para gerar um novo.',
-    FILE_UNAVAILABLE: 'Sua compra continua na sua conta. O arquivo está temporariamente indisponível; tente novamente mais tarde ou procure ajuda.',
-    FILE_NOT_FOUND: 'O arquivo foi atualizado. Estamos conferindo a versão disponível; tente baixar novamente.',
+    FILE_UNAVAILABLE: 'O arquivo não abriu agora, mas a compra continua na sua conta. Tente de novo em alguns minutos ou fale com a gente pela Ajuda.',
+    FILE_NOT_FOUND: 'Este jogo ganhou uma versão nova do arquivo. A lista já foi atualizada. Tente baixar de novo.',
     NOT_ENTITLED: 'Não foi possível confirmar seu acesso a este arquivo. Confira o pedido na sua conta ou procure ajuda.',
   }
   return messages[code] || apiErrorMessage(error)

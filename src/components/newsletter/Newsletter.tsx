@@ -11,10 +11,10 @@ export function Newsletter() {
   const id = useId()
   if (!newsletterVisible || (!session && !guestNewsletterPreview)) return null
   return <section className="newsletter" aria-labelledby={`${id}-title`}>
-    <div className="newsletter-intro"><h2 id={`${id}-title`}>Ideias de encontro no seu e-mail</h2><p>Um jogo, uma conversa, uma boa desculpa para ficarem juntos.</p></div>
+    <div className="newsletter-intro"><h2 id={`${id}-title`}>O Kito no seu e-mail</h2><p>Jogos novos e ideias para jogar a dois.</p></div>
     <div className="newsletter-form">
       {session ? account.data ? account.data.marketing.opted_in
-        ? <div className="newsletter-subscribed"><p>Você já recebe nossas ideias. A próxima pode virar um encontro.</p><Link className="inline-link" to="/conta">Minha preferência de e-mail</Link></div>
+        ? <div className="newsletter-subscribed"><p>Você já está na lista. As próximas ideias chegam por e-mail.</p><Link className="inline-link" to="/conta">Minha preferência de e-mail</Link></div>
         : <MarketingPreference key={session.user.id} marketing={account.data.marketing} source="signup_prompt" onSaved={account.reload} />
         : account.error ? <div className="data-error"><p role="alert">Não conseguimos abrir sua preferência agora.</p><button type="button" className="button button-secondary" onClick={account.reload}>Tentar novamente</button></div> : <p role="status">Carregando sua preferência…</p>
       : <form onSubmit={event => event.preventDefault()} aria-describedby={`${id}-notice`}>

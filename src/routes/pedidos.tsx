@@ -8,7 +8,7 @@ import { useShop } from '../lib/shop-context'
 
 export default function Pedidos() {
   const { account } = useShop()
-  return <section aria-labelledby="portal-title"><div className="portal-heading"><h1 id="portal-title" tabIndex={-1}>Pedidos</h1><p>Acompanhe suas compras e volte para a próxima rodada.</p></div>
+  return <section aria-labelledby="portal-title"><div className="portal-heading"><h1 id="portal-title" tabIndex={-1}>Pedidos</h1><p>Suas compras, com data, valor e número do pedido.</p></div>
     <DataStatus {...account} retry={account.reload} />
     {account.data && (account.data.orders.length === 0 ? <div className="portal-orders-empty"><h2>Você ainda não tem pedidos</h2><p>Quando fizer sua primeira compra, os detalhes ficam aqui.</p><Link className="button button-primary" to="/loja">Ver os jogos</Link></div>
       : <ul className="order-list portal-orders">{account.data.orders.map(order => <li key={order.ref} className="portal-order">

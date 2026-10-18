@@ -110,7 +110,7 @@ contractTest('lembrete de carrinho: itens, botão do carrinho, rodapé e headers
   onExternal(() => ok({ ID: 'mp-1' }))
   assertEquals(await dispatch(), { claimed: 1, sent: 1, failed: 0, rejected: 0 })
   const mail = externalCalls[0].body as unknown as MailpitBody
-  assertEquals([mail.Subject, mail.Tags], ['Ficou um jogo no carrinho', ['cart_reminder']])
+  assertEquals([mail.Subject, mail.Tags], ['Esqueceram algo na sacola', ['cart_reminder']])
   assert(mail.HTML.includes('Pacote &lt;inicial&gt;') && mail.HTML.includes(`${SITE}/carrinho`))
   assertEquals(mail.Headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click')
   await unsubscribeTokenOf(mail)
@@ -151,7 +151,7 @@ contractTest('marketing sem usuário ou sem itens é recusado; entrega não leva
   }])
   await dispatch()
   assertEquals(externalCalls[0].body.headers, undefined)
-  assert(!String(externalCalls[0].body.htmlContent).includes('Descadastrar'))
+  assert(!String(externalCalls[0].body.htmlContent).toLowerCase().includes('descadastrar'))
   Deno.env.set('EMAIL_MODE', 'log')
 })
 

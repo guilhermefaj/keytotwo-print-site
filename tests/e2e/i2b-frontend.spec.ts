@@ -94,7 +94,7 @@ test('guest add → Mailpit code → persistent cart; marketing and private view
   await expect(form.getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeVisible()
   await noOverflow(page)
   await page.goto('/meus-jogos')
-  await expect(page.getByText('Você ainda não tem jogos liberados.')).toBeVisible()
+  await expect(page.getByText('Por enquanto, só o Kito mora aqui.')).toBeVisible()
   await noOverflow(page)
   await page.goto('/carrinho')
   await page.getByRole('button', { name: /^Remover / }).click()
