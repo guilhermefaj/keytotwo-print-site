@@ -20,8 +20,9 @@ export const publicPages = {
   '/blog': { title: 'Blog — KeyToTwo', description: 'Acompanhe os artigos e as próximas ideias da KeyToTwo.' },
   '/': { title: 'Jogos para casais imprimirem em casa — KeyToTwo', description: 'Jogos em PDF para casais imprimirem e jogarem juntos em casa. Comprem um jogo ou o pacote e baixem na conta, sem prazo para acessar.' },
   '/ajuda': { title: 'Ajuda com jogos, impressão e acesso — KeyToTwo', description: 'Como comprar, baixar e imprimir os jogos da KeyToTwo, o que cada jogo pede e como falar com o atendimento.' },
-  '/termos': { title: 'Termos de uso — KeyToTwo', description: 'Consulte o estado dos termos de uso da KeyToTwo, incluindo licença dos jogos, condições de acesso e validações pendentes.' },
-  '/privacidade': { title: 'Privacidade e dados pessoais — KeyToTwo', description: 'Veja o estado da política de privacidade da KeyToTwo e as informações sobre dados pessoais que aguardam validação.' },
+  '/termos': { title: 'Termos de uso — KeyToTwo', description: 'Termos de uso da KeyToTwo, marca da Chalk Labs: conta, licença dos jogos em PDF, pagamento, entrega digital, reembolso e responsabilidades.' },
+  '/reembolsos': { title: 'Política de reembolso — KeyToTwo', description: 'Quando há reembolso na KeyToTwo: jogos digitais liberados na hora, arquivo com defeito, jogo não entregue, cobrança indevida e contestações.' },
+  '/privacidade': { title: 'Política de privacidade — KeyToTwo', description: 'Como a KeyToTwo trata seus dados pessoais: o que guarda, para quê, com quem compartilha, por quanto tempo e como exercer seus direitos.' },
 } as const
 
 export const otherPages = {

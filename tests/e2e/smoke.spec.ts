@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './fixtures/test'
 
-// The 15 routes pre-rendered into build/client/<route>/index.html.
+// The 16 routes pre-rendered into build/client/<route>/index.html.
 const routes = [
   '/',
   '/preview/hero',
@@ -13,6 +13,7 @@ const routes = [
   '/email/preferencias',
   '/ajuda',
   '/termos',
+  '/reembolsos',
   '/privacidade',
   '/404',
 ]
@@ -81,13 +82,21 @@ for (const route of routes) {
   })
 }
 
-test('rota /reembolsos redireciona para /termos#reembolso', async ({ page }) => {
-  const errors = trackErrors(page)
-  await page.goto('/reembolsos')
-  await page.waitForURL(/\/termos#reembolso$/)
-  await expect(page.getByRole('heading', { name: 'Termos de uso', exact: true })).toBeVisible()
-  await expect(page.locator('#reembolso')).toBeVisible()
-  expect(errors, 'erros no redirecionamento de /reembolsos').toEqual([])
+test('textos jurídicos: versão no topo, índice das seções e identificação do fornecedor no rodapé', async ({ page }) => {
+  for (const [route, title] of [['/termos', 'Termos de uso'], ['/reembolsos', 'Política de reembolso'], ['/privacidade', 'Política de privacidade']]) {
+    await page.goto(route)
+    await expect(page.getByRole('heading', { level: 1, name: title, exact: true })).toBeVisible()
+    await expect(page.locator('main time')).toHaveText(/^Versão de \d+ de \w+ de \d{4}$/)
+    const index = page.getByRole('navigation', { name: 'Nesta página' }).getByRole('link')
+    expect(await index.count(), `índice de ${route}`).toBeGreaterThan(2)
+    for (const href of await index.evaluateAll(links => links.map(link => link.getAttribute('href')))) await expect(page.locator(href!)).toHaveCount(1)
+    await expect(page.locator('main')).not.toContainText(/PENDENTE|em preparação/i)
+    await expect(page.locator('footer')).toContainText('KeyToTwo é uma marca da Chalk Labs Consultoria em TI Ltda · CNPJ 66.782.936/0001-20 · contato@keytotwo.com.br')
+    await expect(page.getByRole('navigation', { name: 'Informações legais' }).getByRole('link', { name: 'Reembolsos', exact: true })).toHaveAttribute('href', '/reembolsos')
+  }
+  await page.goto('/termos')
+  await expect(page.locator('#fornecedor + p')).toContainText('CHALK LABS CONSULTORIA EM TI LTDA, inscrita no CNPJ sob o nº 66.782.936/0001-20')
+  await expect(page.locator('#reembolso')).toHaveText('Reembolso e contestações')
 })
 
 test('H1 da hero em /', async ({ page }) => {

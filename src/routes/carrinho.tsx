@@ -3,6 +3,7 @@ import { EmptyCart, PurchaseSkeleton, PurchaseThumbnail } from '../components/ch
 import { Summary } from '../components/ui/Summary'
 import { gameName, itemName } from '../components/checkout/purchase-names'
 import { products } from '../content/products'
+import { refundNotice } from '../content/legal'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { DataStatus } from '../components/account/AccountUi'
@@ -80,7 +81,7 @@ export default function Carrinho() {
     </section><aside className="cart-summary" aria-labelledby="cart-summary-title"><h2 id="cart-summary-title">Resumo</h2><p className="cart-subtotal">Subtotal <strong>{cart.data?.subtotal ? money(cart.data.subtotal.amount, cart.data.subtotal.currency) : 'A confirmar'}</strong></p>
       {!canCheckout(cart.data) && <p>Não conseguimos conferir todos os preços. <button className="text-button inline-link" onClick={cart.reload}>Carregar novamente</button></p>}
       <p className="field-help">Tem cupom? Aplique no pagamento.</p>
-      <button className="button button-primary" disabled={busy || Boolean(cart.error) || !canCheckout(cart.data)} onClick={() => navigate('/pagamento')} aria-describedby="checkout-help">Finalizar compra</button><p id="checkout-help" className="field-help">{checkoutMock ? 'Demonstração de pagamento. Nenhuma cobrança será feita.' : 'Assim que o pagamento for confirmado, os jogos aparecem em Meus jogos.'}</p>{checkoutMock && !canCheckout(cart.data) && <Link className="inline-link" to="/pagamento">Ver demonstração do pagamento</Link>}
+      <button className="button button-primary" disabled={busy || Boolean(cart.error) || !canCheckout(cart.data)} onClick={() => navigate('/pagamento')} aria-describedby="checkout-help">Finalizar compra</button><p id="checkout-help" className="field-help">{checkoutMock ? 'Demonstração de pagamento. Nenhuma cobrança será feita.' : 'Assim que o pagamento for confirmado, os jogos aparecem em Meus jogos.'}</p><p className="field-help">{refundNotice} <Link className="inline-link" to="/reembolsos">Política de reembolso</Link></p>{checkoutMock && !canCheckout(cart.data) && <Link className="inline-link" to="/pagamento">Ver demonstração do pagamento</Link>}
     </aside></div>}
   </main>
 }

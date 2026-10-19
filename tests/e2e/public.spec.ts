@@ -4,16 +4,15 @@ import { expect, test, type Page } from './fixtures/test'
 
 // Checks for the public sales pages, run against the prerendered build (build/client).
 // Stage-specific assertions follow the stage the build was made for (robots.txt tells which).
-const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/ajuda', '/termos', '/privacidade', '/loja', '/loja/p001', '/loja/j001', '/404']
-// A rota ainda existe, mas redireciona para /termos#reembolso; links internos continuam resolvendo.
-const redirectRoutes = ['/reembolsos']
+const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/ajuda', '/termos', '/reembolsos', '/privacidade', '/loja', '/loja/p001', '/loja/j001', '/404']
+const redirectRoutes: string[] = []
 const blogRoutes = readdirSync('build/client/blog', { withFileTypes: true }).filter(file => file.isDirectory()).map(file => `/blog/${file.name}`)
 routes.push('/blog', ...blogRoutes)
 const shopRoutes = readdirSync('build/client/loja', { withFileTypes: true }).filter(file => file.isDirectory()).map(file => `/loja/${file.name}`)
 routes.push(...shopRoutes.filter(route => !routes.includes(route)))
 const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/404']
 const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao']
-const refundNotice = /N[ãa]o h[áa] reembolso ap[óo]s a libera[çc][ãa]o do download/i
+const refundNotice = /Depois da libera[çc][ãa]o, n[ãa]o h[áa] reembolso, salvo arquivo com defeito ou cobran[çc]a indevida/i
 
 async function builtFile(name: string) {
   return readFile(new URL(`../../build/client/${name}`, import.meta.url), 'utf8')
@@ -130,17 +129,20 @@ test.describe('conteúdo', () => {
     expect((await visibleText(page)).match(/\bP\d{3}\b/g) ?? [], 'códigos de produto além de P001').toEqual([])
   })
 
-  test('condição de reembolso: nos termos de uso, não nas páginas de venda', async ({ page }) => {
-    // The refund condition belongs in the terms of use, not in the buyer's face.
-    for (const route of ['/', '/ajuda']) {
+  test('condição de reembolso: avisada antes da compra e detalhada na política', async ({ page }) => {
+    // Responsável, 2026-10-19: aviso claro no produto, na sacola e no pagamento; a home continua sem a linha.
+    for (const route of ['/loja/p001', '/loja/j001']) {
       await page.goto(route)
       await page.waitForLoadState('networkidle')
-      expect(await visibleText(page), `sem condição de reembolso em ${route}`).not.toMatch(refundNotice)
+      expect(await visibleText(page), `aviso de reembolso em ${route}`).toMatch(refundNotice)
+      await expect(page.locator('.shop-delivery').getByRole('link', { name: 'Política de reembolso' })).toHaveAttribute('href', '/reembolsos')
     }
-    await page.goto('/termos')
+    await page.goto('/reembolsos')
     await page.waitForLoadState('networkidle')
-    expect(await visibleText(page), 'condição nos termos de uso').toMatch(refundNotice)
-    await expect(page.locator('#reembolso')).toHaveText('Reembolsos e contestações')
+    await expect(page.getByRole('heading', { level: 1, name: 'Política de reembolso' })).toBeVisible()
+    for (const id of ['regra', 'excecoes', 'como-pedir', 'contestacoes']) await expect(page.locator(`#${id}`)).toHaveCount(1)
+    expect(await visibleText(page)).toMatch(/Arquivo com defeito/)
+    expect(await visibleText(page)).toMatch(/Cobrança em duplicidade ou com erro/)
   })
 
   // The refund condition must not appear on the home; it moved to the terms.
