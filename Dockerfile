@@ -6,7 +6,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY react-router.config.ts vite.config.ts tsconfig.json site.config.json ./
-COPY scripts/seo-files.mjs scripts/check-release.mjs ./scripts/
+# Os scripts que o `npm run build` chama e o bloqueio de release; tests/unit/docker-build.test.mjs confere a lista.
+COPY scripts/seo-files.mjs scripts/html-priorities.mjs scripts/check-release.mjs ./scripts/
 COPY src/ ./src/
 COPY content/ ./content/
 COPY public/ ./public/
