@@ -304,9 +304,14 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .print-sheet { --steps-gap: 28px; position: relative; isolation: isolate; padding-top: 20px; }
 .steps-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--steps-gap); }
 .steps-list > li { position: relative; min-width: 0; display: flex; }
-.steps-list > li:nth-child(1) { --tilt: -1deg; --join-x: calc(var(--steps-gap) + 2px); }
-.steps-list > li:nth-child(2) { --tilt: .5deg; }
-.steps-list > li:nth-child(3) { --tilt: -.6deg; --join-x: calc(-1 * var(--steps-gap) - 2px); }
+/* Baralho da animação: as três cartas começam empilhadas no lugar da do meio, cada uma num ângulo (--deck-*), com
+   "Escolham." por cima, e são distribuídas na ordem de --deck-order. Sem a animação, só --tilt vale. */
+.steps-list > li:nth-child(1) { --tilt: -1deg; --deck-x: calc(100% + var(--steps-gap) + 6px); --deck-tilt: -5deg; --deck-order: 0; }
+.steps-list > li:nth-child(2) { --tilt: .5deg; --deck-tilt: 3deg; --deck-order: 0; }
+.steps-list > li:nth-child(3) { --tilt: -.6deg; --deck-x: calc(-100% - var(--steps-gap) - 6px); --deck-tilt: -2deg; --deck-order: 1; }
+.steps-list > li:nth-child(1) .step-card { z-index: 3; }
+.steps-list > li:nth-child(2) .step-card { z-index: 1; }
+.steps-list > li:nth-child(3) .step-card { z-index: 2; }
 .step-cut { position: absolute; z-index: -1; top: -18px; bottom: -14px; left: calc(var(--steps-gap) / -2 - 1px); border-left: var(--line-cut); }
 .step-cut svg { position: absolute; top: -14px; left: -11px; width: 20px; height: 20px; max-width: none; color: var(--color-deep-teal); background: var(--color-paper); transform: rotate(90deg); }
 .step-card { position: relative; flex: 1; min-width: 0; margin-inline: 3px; overflow: hidden; padding: calc(var(--space-xl) + 8px) var(--space-xl) var(--space-xl); border: var(--line-card); border-radius: var(--radius-lg); background: var(--color-paper); transform: rotate(var(--tilt, 0deg)); }
@@ -580,8 +585,8 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .steps-list > li:nth-child(3) { --tilt: -.4deg; }
   .steps-list > li:nth-child(2) { --tilt: .3deg; }
   .steps-list { grid-template-columns: minmax(0, 1fr); }
-  .steps-list > li:nth-child(1) { --join-x: 0px; --join-y: calc(var(--steps-gap) + 2px); }
-  .steps-list > li:nth-child(3) { --join-x: 0px; --join-y: calc(-1 * var(--steps-gap) - 2px); }
+  .steps-list > li:nth-child(1) { --deck-x: 0px; --deck-y: calc(100% + var(--steps-gap)); }
+  .steps-list > li:nth-child(3) { --deck-x: 0px; --deck-y: calc(-100% - var(--steps-gap)); }
   .step-cut { top: calc(var(--steps-gap) / -2 - 1px); bottom: auto; left: 0; right: 0; border-left: 0; border-top: var(--line-cut); }
   .step-cut svg { top: -11px; left: 0; transform: none; }
   .step-top { margin-bottom: var(--space-md); }
