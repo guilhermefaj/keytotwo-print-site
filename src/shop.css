@@ -40,7 +40,7 @@
 /* Página do pacote: o card apresenta o jogo com a ficha, sem compra avulsa. */
 .shop-game-facts { margin: 0 0 var(--space-md); }
 .shop-game-facts > div { padding-block: 4px; }
-[data-variant="included"] .shop-game-body > .shop-details { margin-top: auto; justify-content: flex-start; }
+[data-variant="included"] .shop-game-body > .shop-details { margin: auto 0 0; }
 .shop-game .shop-soon { align-self: flex-start; margin: auto 0 0; padding: 6px 12px; border: var(--line-cut); border-radius: var(--radius-sm); font-size: var(--text-label); font-weight: 600; }
 /* Card de jogo indefinido (segundo freebie): o quadro tracejado diz "ainda não". */
 .shop-game-soon { border-style: dashed; }
@@ -53,7 +53,8 @@
 .page-section .shop-freebies-heading h2 { font-size: var(--text-headline); }
 .shop-freebies-heading > p:last-child { color: var(--color-ink-soft); max-width: 40ch; margin: 0; }
 .shop-freebie-cta { width: 100%; margin-top: var(--space-md); }
-.shop-details { display: flex; align-items: center; justify-content: center; min-height: 44px; margin-top: var(--space-sm); font-size: var(--text-label); }
+/* Só a largura do texto, com 44 px de alvo pelo padding: o marca-texto acompanha a palavra e a linha. */
+.shop-details { display: block; width: fit-content; margin: var(--space-sm) auto 0; padding-block: 11px; font-size: var(--text-label); }
 .shop-price { font-family: var(--font-display); font-size: var(--text-headline-sm); font-weight: 700; letter-spacing: var(--tracking-headline); font-variant-numeric: tabular-nums; margin: 0; }
 .shop-price-note { font-size: var(--text-caption); color: var(--color-ink-soft); margin: var(--space-xs) 0 var(--space-md); }
 .shop-status { font-size: var(--text-body); color: var(--color-ink-soft); }
