@@ -17,6 +17,12 @@ function buildScripts(name, seen = new Set()) {
   return [...new Set([...command.matchAll(/scripts\/[\w.-]+\.mjs/g)].map(match => match[0]).concat(nested))]
 }
 
+// Glob do .dockerignore como regex: `**` cruza pastas, `*` não; o padrão vale para a pasta e o que está dentro dela.
+function globToRegex(pattern) {
+  const body = pattern.split('**').map(part => part.replace(/[.+^${}()|[\]\\]/g, '\\$&').replaceAll('*', '[^/]*')).join('.*')
+  return new RegExp(`^(?:.*/)?${body}(?:/.*)?$`)
+}
+
 // Padrões do .dockerignore em ordem; o último que casa decide (com `!`, o arquivo volta para o contexto).
 function ignored(file) {
   let excluded = false
@@ -24,9 +30,7 @@ function ignored(file) {
     const line = raw.trim()
     if (!line || line.startsWith('#')) continue
     const negated = line.startsWith('!')
-    const pattern = (negated ? line.slice(1) : line).replace(/^\*\*\//, '')
-    const regex = new RegExp(`^(?:.*/)?${pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '\u0000').replace(/\*/g, '[^/]*').replace(/\u0000/g, '.*')}(?:/.*)?$`)
-    if (regex.test(file)) excluded = !negated
+    if (globToRegex((negated ? line.slice(1) : line).replace(/^\*\*\//, '')).test(file)) excluded = !negated
   }
   return excluded
 }
