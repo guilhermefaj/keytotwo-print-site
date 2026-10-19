@@ -1,6 +1,5 @@
 import { games, packageGames, j001, cover, type Game, type GameCoverArt } from './games.ts'
-import { packageOffer, type ProductOffer } from './offer.ts'
-import { pending } from '../lib/pending.ts'
+import { offerTerms, packageOffer, type ProductOffer } from './offer.ts'
 
 export type Product = {
   code: string
@@ -27,8 +26,9 @@ export const packageContents = ['Todos os jogos da coleção num só pedido', 'U
 
 const byCode = (code: string) => games.find(game => game.code === code)!
 
-// Avulso: todo jogo pago também se vende sozinho (responsável, 2026-10-16). Preço vem do /catalog.
-function single(game: Game, contents: readonly string[], materials: string, seo: Product['seo']): Product {
+// Avulso: todo jogo pago também se vende sozinho (responsável, 2026-10-16). O preço exibido vem do /catalog;
+// `price` é o valor aprovado pelo responsável em 2026-10-16, conferido só pela trava de release.
+function single(game: Game, price: string, contents: readonly string[], materials: string, seo: Product['seo']): Product {
   const code = game.code!
   return {
     code, slug: code.toLowerCase(), kind: 'single', availability: 'sale',
@@ -36,13 +36,8 @@ function single(game: Game, contents: readonly string[], materials: string, seo:
     delivery: ['O PDF aparece em Meus jogos assim que o pagamento é confirmado e também chega por e-mail.', 'Dá para baixar de novo quando precisar, sem prazo.'],
     games: [game], thumbnail: { src: game.cover!.src, alt: '' }, seo,
     offer: {
-      code, name: game.name, price: null, priceApproved: false, purchaseAction: 'cart',
-      payment: pending(`preço real, moeda e formas de pagamento do ${code}.`),
-      access: packageOffer.access, delivery: packageOffer.delivery,
-      updates: pending(`direito a futuras versões e condições de atualização do ${code}.`),
-      license: pending(`licença de uso e condições de atendimento do ${code}.`),
-      materials,
-      legalReview: pending(`texto final e validação jurídica da política de não reembolso do ${code}.`),
+      code, name: game.name, price, priceApproved: true, purchaseAction: 'cart',
+      ...offerTerms, materials,
     },
   }
 }
@@ -53,16 +48,15 @@ function single(game: Game, contents: readonly string[], materials: string, seo:
 export const products: readonly Product[] = [
   { code: packageOffer.code, slug: 'p001', kind: 'bundle', availability: 'sale', title: 'Coleção KeyToTwo: Fundadores', tagline: 'Os primeiros jogos da KeyToTwo, num só pedido.', shopHeadline: 'Pacote de jogos', contents: packageContents, delivery: ['Os PDFs aparecem em Meus jogos assim que o pagamento é confirmado e também chegam por e-mail.', 'Dá para baixar de novo quando precisar, sem prazo.'], games: packageGames, cover: cover('p001'), thumbnail: { src: cover('p001').src, alt: '' }, offer: packageOffer,
     seo: { title: 'Coleção KeyToTwo: Fundadores, pacote de jogos para casais', description: 'Os primeiros jogos da KeyToTwo num só pedido, em PDF para casais imprimirem e jogarem em casa.' } },
-  single(byCode('J001'), ['O jogo completo em PDF para imprimir', 'Cartas para recortar e as instruções do jogo'], j001.materials,
+  single(byCode('J001'), 'R$ 9,90', ['O jogo completo em PDF para imprimir', 'Cartas para recortar e as instruções do jogo'], j001.materials,
     { title: 'Rabisque e Adivinhe, jogo de desenho para casais', description: 'Jogo cooperativo de desenho e adivinhação para casais, em PDF para imprimir em casa. Rodadas de um minuto e placar da dupla.' }),
-  single(byCode('J003'), ['O jogo completo em PDF para imprimir', 'Tabuleiro, cartas, moedas, dado e pinos para montar'], 'Impressão, tesoura, cola, uma caneta por pessoa, cronômetro e celular para os desafios de foto.',
+  single(byCode('J003'), 'R$ 9,90', ['O jogo completo em PDF para imprimir', 'Tabuleiro, cartas, moedas, dado e pinos para montar'], 'Impressão, tesoura, cola, uma caneta por pessoa, cronômetro e celular para os desafios de foto.',
     { title: 'Tabuleiro da Sorte, jogo de tabuleiro para casais', description: 'Perguntas, desafios e moedas num tabuleiro para dois, com um pedido secreto valendo. PDF para imprimir e montar em casa.' }),
-  single(byCode('J002'), ['O jogo completo em PDF para imprimir', 'Desafios, envelopes e cartões de dica'], 'Impressão, tesoura, estilete com base de corte, fita adesiva, uma caneta por pessoa, um copo para as dicas e luz do dia ou um abajur.',
+  single(byCode('J002'), 'R$ 12,90', ['O jogo completo em PDF para imprimir', 'Desafios, envelopes e cartões de dica'], 'Impressão, tesoura, estilete com base de corte, fita adesiva, uma caneta por pessoa, um copo para as dicas e luz do dia ou um abajur.',
     { title: 'O Sumiço de Rapadura, escape room para casais', description: 'Escape room de papel para dois: ajudem o Kito a encontrar Rapadura. PDF para imprimir, recortar e resolver juntos em casa.' }),
 ]
 
-// PENDENTE: licença, atualizações e validação jurídica de cada oferta (campos pending acima).
-// Um produto soon deve declarar offer.purchaseAction: null; não cadastrar exemplos públicos.
+// Licença, atualizações e pagamento de cada oferta: offerTerms (Termos de uso). Um produto soon deve declarar offer.purchaseAction: null; não cadastrar exemplos públicos.
 
 // O prerender é editorial. A venda na tela exige também presença no /catalog em runtime.
 export const productPages = products.filter(product => product.availability === 'sale')

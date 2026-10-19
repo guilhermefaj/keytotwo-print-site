@@ -8,11 +8,11 @@ import { spawnSync } from 'node:child_process'
 import { products, productPages } from '../../src/content/products.ts'
 import { publicPages } from '../../src/content/site.ts'
 
-test('cada jogo pago tem oferta avulsa própria, sem preço aprovado; vagas sem ficha não viram produtos', () => {
+test('cada jogo pago tem oferta avulsa própria, com o preço aprovado (2026-10-16); vagas sem ficha não viram produtos', () => {
   const single = products.find(product => product.code === 'J001')
   assert.equal(single.slug, 'j001')
-  assert.equal(single.offer.price, null)
-  assert.equal(single.offer.priceApproved, false)
+  assert.equal(single.offer.price, 'R$ 9,90')
+  assert.equal(single.offer.priceApproved, true)
   assert.deepEqual(single.games.map(game => game.code), ['J001'])
   assert.notEqual(single.offer, products.find(product => product.code === 'P001').offer)
   // Todo jogo pago também se vende sozinho (responsável, 2026-10-16), na ordem do pacote.
@@ -21,8 +21,9 @@ test('cada jogo pago tem oferta avulsa própria, sem preço aprovado; vagas sem 
     const other = products.find(product => product.code === code)
     assert.equal(other.kind, 'single')
     assert.deepEqual(other.games.map(game => game.code), [code])
-    assert.equal(other.offer.priceApproved, false)
+    assert.equal(other.offer.priceApproved, true)
   }
+  assert.deepEqual(products.map(product => [product.code, product.offer.price]), [['P001', 'R$ 29,90'], ['J001', 'R$ 9,90'], ['J003', 'R$ 9,90'], ['J002', 'R$ 12,90']])
   for (const slug of ['hora-dos-artistas', 'tabuleiro-da-sorte', 'jogo-4', 'jogo-5']) assert.equal(Object.hasOwn(publicPages, `/loja/${slug}`), false)
 })
 

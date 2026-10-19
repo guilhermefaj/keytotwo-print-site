@@ -1,10 +1,10 @@
-// Draft used only in stage=test until the owner approves the consent copy/version.
+// Texto do consentimento de marketing (LGPD, art. 8º): o que chega, por onde e como sair. Mudou o texto, muda a versão:
+// cada aceite grava a versão que a pessoa viu (marketing_consents.text_version).
 export const marketingConsent = {
-  label: 'Quero receber ideias da KeyToTwo por e-mail.',
-  detail: 'Dá para sair quando quiser.',
-  pending: 'PENDENTE: texto de consentimento em validação. Preferência disponível para teste.',
-  version: 'mkt-test-v2',
-  approved: false,
+  label: 'Quero receber ideias',
+  detail: 'Jogos novos, ofertas, lembrete da sacola e dicas depois da compra, por e-mail. Dá para sair quando quiser.',
+  version: 'mkt-2026-10-19',
+  approved: true,
 }
 
 export const orderStatus: Record<string, string> = {
