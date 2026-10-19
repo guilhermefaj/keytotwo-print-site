@@ -1,4 +1,4 @@
-import { rpc, rpcRow } from '../../_shared/admin.ts'
+import { deleteAuthUser, rpc, rpcRow } from '../../_shared/admin.ts'
 import { requireSessionUser } from '../../_shared/auth.ts'
 import { HttpError, json, readJsonObject } from '../../_shared/http.ts'
 
@@ -59,4 +59,35 @@ export async function markPrompt(req: Request): Promise<Response> {
   const user = await requireSessionUser(req)
   await rpc('mark_marketing_prompt', { p_user_id: user.id })
   return json({ marketing: (await loadAccount(user.id)).marketing })
+}
+
+// GET /account/export: a cópia dos dados da conta (LGPD, art. 18), salva pelo site como arquivo JSON.
+export async function exportAccount(req: Request): Promise<Response> {
+  const user = await requireSessionUser(req)
+  const data = await rpc<Record<string, unknown>>('export_account_data', { p_user_id: user.id })
+  return json(data, 200, { 'Content-Disposition': 'attachment; filename="keytotwo-meus-dados.json"' })
+}
+
+const DELETION_BLOCKED: Record<string, string> = {
+  payment_pending: 'Há um pagamento em andamento nesta conta. Tente de novo quando ele terminar.',
+  checkout_open: 'Há um pagamento em andamento nesta conta. Tente de novo quando ele terminar.',
+  dispute_open: 'Há uma contestação de pagamento aberta nesta conta. Tente de novo quando ela terminar.',
+}
+
+// POST /account/delete { confirmation: "EXCLUIR" }: anonimiza os pedidos e apaga o resto (delete_account_data);
+// depois apaga o usuário no Auth. Se o Auth falhar, repetir é seguro: a RPC é idempotente.
+export async function deleteAccount(req: Request): Promise<Response> {
+  const user = await requireSessionUser(req)
+  const { confirmation } = await readJsonObject(req)
+  if (typeof confirmation !== 'string' || confirmation.trim().toUpperCase() !== 'EXCLUIR') {
+    throw new HttpError(400, 'INVALID_REQUEST', 'Digite EXCLUIR para confirmar a exclusão da conta.')
+  }
+  const result = await rpcRow<{ outcome: string; reason: string | null; orders_anonymized: number }>('delete_account_data', { p_user_id: user.id })
+  if (result.outcome === 'blocked') {
+    const reason = result.reason ?? 'payment_pending'
+    throw new HttpError(409, 'ACCOUNT_DELETION_BLOCKED', DELETION_BLOCKED[reason] ?? DELETION_BLOCKED.payment_pending, { details: { reason } })
+  }
+  if (result.outcome !== 'deleted') throw new Error(`delete_account_data: outcome inesperado (${result.outcome})`)
+  await deleteAuthUser(user.id)
+  return json({ deleted: true })
 }

@@ -1,4 +1,4 @@
-import { rpcRow } from '../../_shared/admin.ts'
+import { RpcError, rpcRow } from '../../_shared/admin.ts'
 import { env } from '../../_shared/env.ts'
 import { HttpError, isContentType, json, readJsonObject, readText } from '../../_shared/http.ts'
 import { verifyUnsubscribeToken } from '../../_shared/tokens.ts'
@@ -32,6 +32,11 @@ async function tokenFrom(req: Request, url: URL): Promise<string> {
 export async function unsubscribe(req: Request, url: URL): Promise<Response> {
   const verified = await verifyUnsubscribeToken(await tokenFrom(req, url))
   if (!verified.ok) throw invalid()
-  await rpcRow('unsubscribe', { p_user_id: verified.claims.u, p_source: 'unsubscribe_link' })
+  try {
+    await rpcRow('unsubscribe', { p_user_id: verified.claims.u, p_source: 'unsubscribe_link' })
+  } catch (error) {
+    // Com o token válido, KT001 só vem de conta excluída (D-28): ela já não recebe nada.
+    if (!(error instanceof RpcError && error.code === 'KT001')) throw error
+  }
   return json({ status: 'unsubscribed' })
 }

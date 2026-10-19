@@ -1,6 +1,6 @@
 import { allowedOrigin, preflight, withCors } from '../_shared/cors.ts'
 import { errorResponse, HttpError, json, toErrorResponse } from '../_shared/http.ts'
-import { getAccount, markPrompt, putMarketing } from './routes/account.ts'
+import { deleteAccount, exportAccount, getAccount, markPrompt, putMarketing } from './routes/account.ts'
 import { addCartItem, getCart, removeCartItem } from './routes/cart.ts'
 import { catalog } from './routes/catalog.ts'
 import { checkout } from './routes/checkout.ts'
@@ -40,6 +40,8 @@ const routes: Route[] = [
   route('/account', { GET: getAccount }),
   route('/account/marketing', { PUT: putMarketing }),
   route('/account/marketing/prompt', { POST: markPrompt }),
+  route('/account/export', { GET: exportAccount }),
+  route('/account/delete', { POST: deleteAccount }),
   route('/library', { GET: library }),
   route('/checkout', { POST: checkout }),
   route('/order-status', { GET: orderStatus }),

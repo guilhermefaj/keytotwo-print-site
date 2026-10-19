@@ -113,6 +113,21 @@ export function onStripe(reply: (call: StripeCall) => Reply) {
   stripeReply = reply
 }
 
+// Auth admin (exclusão de conta): método, id do usuário e se veio com a chave secreta.
+export interface AuthAdminCall {
+  method: string
+  userId: string
+  secretKeyOk: boolean
+}
+
+export const authAdminCalls: AuthAdminCall[] = []
+let authAdminReply: (call: AuthAdminCall) => Reply = () => ({ status: 200, body: {} })
+
+export function onAuthAdmin(reply: (call: AuthAdminCall) => Reply) {
+  authAdminCalls.length = 0
+  authAdminReply = reply
+}
+
 // Outros serviços externos (Brevo, Mailpit): URL, corpo JSON e headers.
 export interface ExternalCall {
   url: string
@@ -142,6 +157,12 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
     const args = JSON.parse(String(init?.body ?? '{}'))
     rpcCalls.push({ fn: rpcMatch, args, secretKeyOk: headers.get('apikey') === SECRET_KEY, hasAuthorization: headers.has('Authorization') })
     return Promise.resolve(respond(rpcReply(rpcMatch, args)))
+  }
+  if (url.href.startsWith(`${SUPABASE_URL}/auth/v1/admin/users/`)) {
+    const headers = new Headers(init?.headers)
+    const call = { method: (init?.method ?? 'GET').toUpperCase(), userId: decodeURIComponent(url.pathname.split('/').pop()!), secretKeyOk: headers.get('apikey') === SECRET_KEY }
+    authAdminCalls.push(call)
+    return Promise.resolve(respond(authAdminReply(call)))
   }
   if (url.origin === 'https://api.stripe.com' && url.pathname.startsWith('/v1/prices/')) {
     return Promise.resolve(respond(priceReply(decodeURIComponent(url.pathname.slice('/v1/prices/'.length)))))
