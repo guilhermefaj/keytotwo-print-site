@@ -59,15 +59,20 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await page.setViewportSize({ width, height: 900 })
   await page.goto('/carrinho')
   await expect(page.locator('[data-cart-product]')).toBeVisible()
-  await expect(page.locator('main')).not.toContainText(/reembolso|Stripe|indisponível|nova aba/i)
+  await expect(page.locator('main')).not.toContainText(/Stripe|indisponível|nova aba/i)
+  // Aviso de reembolso antes do pagamento (responsável, 2026-10-19), com o link para a política.
+  await expect(page.locator('.cart-summary')).toContainText('Depois da liberação, não há reembolso')
+  await expect(page.locator('.cart-summary').getByRole('link', { name: 'Política de reembolso' })).toHaveAttribute('href', '/reembolsos')
   await capture(page, `carrinho-item-${width}`); await axe(page)
   await page.getByRole('button', { name: 'Finalizar compra', exact: true }).focus(); await page.keyboard.press('Enter')
   await expect(page.locator('main').getByRole('checkbox')).toHaveCount(1)
-  const terms = page.getByRole('checkbox', { name: 'Li e aceito os termos de uso', exact: true })
+  // Aceite expresso (Política de reembolso): termos, reembolso e entrega imediata no nome da caixa.
+  const terms = page.getByRole('checkbox', { name: /^Li e aceito os termos de uso e a política de reembolso ?\. Estou ciente de que os jogos são conteúdo digital, liberado para download assim que o pagamento é confirmado, e de que, por isso, não há reembolso depois da liberação\.$/ })
   await expect(terms).not.toBeChecked()
   await expect(page.getByRole('link', { name: 'Voltar à sacola', exact: true })).toHaveCount(1)
   await expect(page.locator('#checkout-form')).toHaveCount(0)
-  await expect(page.locator('main')).not.toContainText(/reembolso|Stripe|nova aba/i)
+  await expect(page.locator('main')).not.toContainText(/Stripe|nova aba/i)
+  await expect(page.locator('.payment-card').getByRole('link', { name: 'política de reembolso' })).toHaveAttribute('href', '/reembolsos')
   await capture(page, `pagamento-antes-${width}`); await axe(page)
   await terms.focus(); await page.keyboard.press('Space')
   await expect(page.locator('.stripe-payment')).toHaveAttribute('data-ready', 'true')
@@ -167,7 +172,8 @@ test('logged-in: newsletter hidden everywhere, Conta keeps the e-mail preference
   // Pagamento em modo foco: só a linha legal, sem o chão nem os convites do rodapé público.
   await page.goto('/pagamento')
   await expect(page.locator('footer .footer-ground')).toHaveCount(0)
-  await expect(page.getByRole('navigation', { name: 'Informações legais', exact: true }).getByRole('link')).toHaveText(['Termos de uso', 'Privacidade', 'Ajuda'])
+  await expect(page.getByRole('navigation', { name: 'Informações legais', exact: true }).getByRole('link')).toHaveText(['Termos de uso', 'Reembolsos', 'Privacidade', 'Ajuda'])
+  await expect(page.locator('footer')).toContainText('CNPJ 66.782.936/0001-20')
   await page.goto('/conta')
   await expect(page.locator('.marketing-form').getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeEnabled()
 })
@@ -181,7 +187,7 @@ test('purchase and home fit 320–1440 with doubled text', async ({ page }) => {
     for (const path of ['/', '/carrinho', '/pagamento', '/pedido/confirmacao?session_id=cs_test_synthetic123456']) {
       await page.goto(path)
       await expect(page.locator('main h1')).toBeVisible()
-      if (path === '/pagamento') { await page.getByRole('checkbox', { name: 'Li e aceito os termos de uso' }).check(); await expect(page.locator('.stripe-payment')).toHaveAttribute('data-ready', 'true') }
+      if (path === '/pagamento') { await page.getByRole('checkbox', { name: /^Li e aceito os termos de uso/ }).check(); await expect(page.locator('.stripe-payment')).toHaveAttribute('data-ready', 'true') }
       for (const size of ['16px', '32px']) {
         await page.evaluate(value => { document.documentElement.style.fontSize = value }, size)
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `${path} at ${width}/${size}`).toBe(true)

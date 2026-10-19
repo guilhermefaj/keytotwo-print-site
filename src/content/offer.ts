@@ -1,6 +1,8 @@
-import { pending } from '../lib/pending.ts'
+import { needLabels, packageGames } from './games.ts'
 
-// P001 + subsequent responsible-owner decisions in Plano do site P1 (2026-10-08).
+// P001 + decisões seguintes do responsável no Plano do site P1 (2026-10-08); preços aprovados em 2026-10-16.
+// O preço exibido vem sempre do /catalog (Stripe); `price` aqui é o valor aprovado, para a trava de release.
+// Validação jurídica dos textos: um único item em legal.ts (legalReview).
 export type ProductOffer = {
   code: string
   name: string
@@ -14,22 +16,28 @@ export type ProductOffer = {
   updates: string
   license: string
   materials: string
-  legalReview: string
 }
+
+/** Condições comuns a toda oferta (Termos de uso: pagamento, entrega, atualizações e licença). */
+export const offerTerms = {
+  payment: 'Pix ou cartão, processados pela Stripe.',
+  access: 'Os jogos ficam em Meus jogos, sem prazo de expiração enquanto o serviço KeyToTwo estiver em funcionamento.',
+  delivery: 'É preciso criar uma conta para comprar. Os jogos ficam em Meus jogos e também são enviados por e-mail.',
+  updates: 'Versões corrigidas ou melhoradas, quando houver, ficam em Meus jogos sem custo. Jogos novos são vendidos à parte.',
+  license: 'Licença pessoal e intransferível, para uso doméstico e não comercial. Não é permitido revender, compartilhar ou publicar os arquivos.',
+} as const
+
+// O que a dupla providencia para os jogos do pacote: a soma das listas de cada jogo, sem repetir.
+const packageNeeds = [...new Set(packageGames.flatMap(game => game.needs ?? []))].map(need => needLabels[need])
 
 export const packageOffer: ProductOffer = {
   code: 'P001',
-  name: pending('nome comercial do pacote.'),
-  price: pending('preço e moeda.'),
-  priceApproved: false,
+  name: 'Coleção KeyToTwo: Fundadores',
+  price: 'R$ 29,90',
+  priceApproved: true,
   purchaseAction: 'cart',
-  payment: pending('modalidade e formas de pagamento.'),
-  access: 'O acesso aos jogos não tem prazo de expiração.',
-  delivery: 'É preciso criar uma conta para comprar. Os jogos ficam em Meus jogos e também são enviados por e-mail.',
-  updates: pending('direito a futuras versões e condições de atualização.'),
-  license: pending('licença de uso e condições de atendimento.'),
-  materials: pending('lista completa de materiais e instruções de impressão dos jogos do pacote.'),
-  legalReview: pending('texto final e validação jurídica da política de não reembolso.'),
+  ...offerTerms,
+  materials: `${packageNeeds.map((label, index) => index ? label.charAt(0).toLowerCase() + label.slice(1) : label).join(', ')}. Cada jogo mostra a sua lista na página dele.`,
 }
 
 // Compatibilidade dos textos institucionais atuais, ainda referentes ao P001.

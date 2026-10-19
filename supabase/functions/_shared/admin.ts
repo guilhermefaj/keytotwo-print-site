@@ -40,3 +40,22 @@ export async function rpcRow<T>(fn: string, args: Record<string, unknown> = {}):
   if (!rows?.length) throw new RpcError(fn, 'EMPTY_RESULT', 200)
   return rows[0]
 }
+
+// Apaga o usuário no Auth (admin API), com a chave secreta. 404 conta como feito: a exclusão é idempotente.
+// Só depois de delete_account_data: com pedido, consentimento ou fila ainda ligados, o Auth recusa (FK RESTRICT).
+export async function deleteAuthUser(userId: string): Promise<void> {
+  const response = await fetch(`${env.supabaseUrl()}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+    method: 'DELETE',
+    headers: { apikey: env.secretKey() },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  })
+  await response.body?.cancel()
+  if (!response.ok && response.status !== 404) throw new AuthAdminError(response.status)
+}
+
+export class AuthAdminError extends Error {
+  constructor(readonly status: number) {
+    super(`Auth admin falhou (HTTP ${status})`)
+    this.name = 'AuthAdminError'
+  }
+}

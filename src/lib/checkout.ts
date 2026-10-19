@@ -1,8 +1,9 @@
 import { type Cart, ApiError, apiErrorMessage } from './api'
 import { siteConfig } from './seo'
+import { termsVersion as publishedTermsVersion } from '../content/legal'
 
-// Pending D11: replace together with the legally reviewed text and server TERMS_VERSION.
-export const termsVersion = import.meta.env.VITE_TERMS_VERSION || 'rascunho-2026-10-08'
+// A versão dos termos publicados (legal.ts); o servidor precisa ter o mesmo TERMS_VERSION, senão TERMS_CHANGED.
+export const termsVersion = import.meta.env.VITE_TERMS_VERSION || publishedTermsVersion
 export const checkoutMock = siteConfig.stage !== 'live' && import.meta.env.VITE_CHECKOUT_MODE !== 'stripe'
 export const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ''
 

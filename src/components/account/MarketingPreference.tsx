@@ -8,6 +8,7 @@ export function MarketingPreference({ marketing, source = 'account', onSaved, on
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  // Conceder exige o texto aprovado; retirar o consentimento nunca fica bloqueado (LGPD, art. 8º, § 5º).
   const allowed = marketingConsent.approved || siteConfig.stage === 'test'
   async function put(granted: boolean) {
     setBusy(true); setError(''); setMessage('')
@@ -24,12 +25,12 @@ export function MarketingPreference({ marketing, source = 'account', onSaved, on
   }
   if (marketing.opted_in) return <div className="marketing-form" aria-busy={busy}>
     <p>Você recebe nossas ideias</p>
-    <button className="text-button" disabled={busy || !allowed} onClick={() => put(false)}>Parar de receber</button>
+    <button className="text-button" disabled={busy} onClick={() => put(false)}>Parar de receber</button>
     <p className="form-error" role="alert">{error}</p><p role="status">{message}</p>
   </div>
   return <form className="marketing-form" onSubmit={event => { event.preventDefault(); put(true) }} aria-busy={busy}>
-    <button className="button button-primary" disabled={busy || !allowed}>Quero receber ideias</button>
-    <p className="field-help">Dá para sair quando quiser. <Link className="inline-link" to="/privacidade">Privacidade</Link></p>
+    <button className="button button-primary" disabled={busy || !allowed}>{marketingConsent.label}</button>
+    <p className="field-help">{marketingConsent.detail} <Link className="inline-link" to="/privacidade">Privacidade</Link></p>
     {onDismiss && <button type="button" className="text-button" onClick={dismiss} disabled={busy}>Agora não</button>}
     <p className="form-error" role="alert">{error}</p><p role="status">{message}</p>
   </form>

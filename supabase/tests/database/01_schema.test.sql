@@ -161,9 +161,10 @@ select pg_temp.assert('v0.3.3: sem entitlements.expires_at, orders.product_id e 
   not exists (select 1 from information_schema.columns where table_schema = 'public' and
     ((table_name = 'entitlements' and column_name = 'expires_at') or (table_name = 'orders' and column_name = 'product_id')
      or (table_name = 'email_outbox' and column_name = 'product_name'))));
-select pg_temp.assert('orders.user_id e orders.terms_accepted_at são NOT NULL',
-  (select count(*) = 2 from information_schema.columns where table_schema = 'public' and table_name = 'orders'
-     and column_name in ('user_id','terms_accepted_at') and is_nullable = 'NO'));
+select pg_temp.assert('orders.terms_accepted_at é NOT NULL; user_id e email só ficam nulos com anonymized_at (D-28)',
+  (select count(*) = 1 from information_schema.columns where table_schema = 'public' and table_name = 'orders'
+     and column_name = 'terms_accepted_at' and is_nullable = 'NO')
+  and exists (select 1 from pg_constraint where conname = 'orders_anonymized_check' and conrelid = 'public.orders'::regclass));
 select pg_temp.assert('triggers em auth.users existem (2) e são os nossos',
   (select count(*) = 2 from pg_trigger where tgrelid = 'auth.users'::regclass and not tgisinternal and tgname in ('on_auth_user_created','on_auth_user_confirmed')));
 
@@ -191,7 +192,8 @@ select pg_temp.expect('suppression: motivo inválido', $q$insert into public.ema
 select pg_temp.expect('suppression: repetida (e-mail, motivo)', $q$insert into public.email_suppressions (email,reason,source) values ('y@pgtap.test','hard_bounce','brevo_webhook'), ('y@pgtap.test','hard_bounce','support')$q$, '23505');
 
 -- ===== pedidos e itens ============================================================================
-select pg_temp.expect('orders: user_id nulo', $q$insert into public.orders (email,cart_version,terms_version,terms_accepted_at,livemode) values ('a@b.test',0,'v',now(),false)$q$, '23502');
+select pg_temp.expect('orders: user_id nulo sem anonimização (D-28)', $q$insert into public.orders (email,cart_version,terms_version,terms_accepted_at,livemode) values ('a@b.test',0,'v',now(),false)$q$, '23514');
+select pg_temp.expect('orders: e-mail nulo sem anonimização (D-28)', format($q$insert into public.orders (user_id,cart_version,terms_version,terms_accepted_at,livemode) values (%L,0,'v',now(),false)$q$, pg_temp.uid('u1')), '23514');
 select pg_temp.expect('orders: sem aceite dos termos (terms_accepted_at NOT NULL)', format($q$insert into public.orders (user_id,email,cart_version,terms_version,livemode) values (%L,'a@b.test',0,'v',false)$q$, pg_temp.uid('u1')), '23502');
 select pg_temp.expect('orders: e-mail maiúsculo', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode) values (%L,'A@b.test',0,'v',now(),false)$q$, pg_temp.uid('u1')), '23514');
 select pg_temp.expect('orders: terms_version vazio', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode) values (%L,'a@b.test',0,'  ',now(),false)$q$, pg_temp.uid('u1')), '23514');

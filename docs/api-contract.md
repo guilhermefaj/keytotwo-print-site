@@ -1,8 +1,8 @@
-# Contrato da API — KeyToTwo (v0.3.2)
+# Contrato da API — KeyToTwo (v0.3.3)
 
 | | |
 | --- | --- |
-| Versão | 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
+| Versão | 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
 | Dono | Ferrolho (Backend sênior). Banco, permissões e RPCs: `docs/data-contract.md` v0.3 (Lastro). |
 | Estado | I4: além do I3 (`POST /checkout`, `GET /order-status`, `stripe-webhook`), implementadas `POST /download-url`, `GET /d/{token}`, `GET /free-game`, `POST /free-download` e a função `email-dispatch` (entrega; modo log no local). I5: e-mails de marketing (`cart_reminder`, `post_purchase`) no `email-dispatch`, `GET`/`POST /email/unsubscribe`, a função `brevo-webhook` e a agenda (`pg_cron` + `pg_net`, migração do Lastro). Testes em `supabase/functions/tests`. Passos restantes da Stripe: `STRIPE_INTEGRATION_TODO.md`. |
 | Fontes | Nota "Plano do site P2" (ajustes do orquestrador, seções 4 e 5) e decisões do responsável registradas nas notas P1 e P2. |
@@ -91,6 +91,7 @@ Headers enviados pelo site:
 | 409 | `CART_EMPTY` | Checkout com carrinho vazio |
 | 409 | `CART_CHANGED` | `cart_version` diferente da atual: o site recarrega o carrinho |
 | 409 | `TERMS_CHANGED` | `terms_version` diferente da vigente: o site mostra o texto atual e pede o aceite de novo |
+| 409 | `ACCOUNT_DELETION_BLOCKED` | Exclusão de conta com pagamento em andamento, checkout aberto ou contestação aberta (`details.reason`) |
 | 413 | `PAYLOAD_TOO_LARGE` | Corpo acima de 16 KB |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | Corpo com tipo não aceito |
 | 500 | `INTERNAL_ERROR` | Falha inesperada ou de configuração |
@@ -120,6 +121,8 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `PUT /account/marketing` | `set_marketing_consent(uid, granted, source, text_version)` → `get_account(uid)` | I2b |
 | `POST /account/marketing/prompt` | `mark_marketing_prompt(uid)` → `get_account(uid)` | I2b |
 | `GET /library` | `get_library(uid)` | I2b |
+| `GET /account/export` | `export_account_data(uid)` | LGPD |
+| `POST /account/delete` | `delete_account_data(uid)` → Auth admin `DELETE /auth/v1/admin/users/{uid}` (só com `deleted`) | LGPD |
 | `POST /checkout` | `create_order_from_cart(uid, livemode, cart_version, terms_version, terms_accepted)` → Stripe Customer, se faltar → `set_stripe_customer(uid, customer_id)` → Checkout Session do formulário embutido → `attach_checkout_session(order_id, session_id, expires_at)` | I3 |
 | `GET /order-status` | Stripe lê a sessão → `fulfill_order` ou `set_order_status`, se preciso → `get_order_status(order_id, uid)` | I3 |
 | `POST /download-url` | `resolve_download(uid, file_id)` → assina no B2 | I4 |
@@ -131,6 +134,7 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `brevo-webhook` | `record_email_event(...)` | I5 |
 | `email-dispatch` | `claim_email_batch(limit, outbox_id)` → Brevo → `mark_email_result(id, sent \| failed \| rejected, ...)` | I4 |
 | Agenda (`pg_cron`, só SQL) | `private.enqueue_followups()` e chamada ao `email-dispatch` | I5 |
+| Agenda diária (`pg_cron`, só SQL) | `private.purge_email_outbox()`: apaga da fila o que saiu há mais de 90 dias | LGPD |
 
 Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 
@@ -143,6 +147,7 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `GET /cart` · `POST /cart/items` · `DELETE /cart/items/{code}` | Sessão | I2b | Implementada |
 | `GET /account` · `PUT /account/marketing` · `POST /account/marketing/prompt` | Sessão | I2b | Implementada |
 | `GET /library` | Sessão | I2b | Implementada |
+| `GET /account/export` · `POST /account/delete` | Sessão | LGPD | Implementada |
 | `POST /checkout` · `GET /order-status` | Sessão | I3 | Implementada |
 | `POST /download-url` | Sessão | I4 | Planejada |
 | `GET /d/{token}` | Token HMAC | I4 | Planejada |
@@ -457,6 +462,36 @@ Autenticado pelo token de propósito `u` (seção 7), presente em todo e-mail de
 - O link no rodapé dos e-mails de marketing aponta para `/email/preferencias?token=...` (página do site, a construir pela Aquarela: mostra o pedido de descadastro, chama o `POST` com `{ "token" }` e confirma). O rodapé também leva a Minha conta (`/conta`).
 - Transacionais (entrega, códigos do Auth) não dependem de consentimento e não levam descadastro.
 
+### 6.11 Direitos do titular: `GET /account/export` e `POST /account/delete`
+
+LGPD, art. 18 (Política de privacidade › Seus direitos). Sessão obrigatória; a pessoa resolve sozinha em Minha conta, sem e-mail ao atendimento. Decisão de retenção e anonimização: `docs/data-contract.md` D-28.
+
+`GET /account/export` → `export_account_data(uid)`. Responde `200` com o JSON da cópia e `Content-Disposition: attachment; filename="keytotwo-meus-dados.json"`; o site salva o arquivo. Sem ids internos (pedidos pelo `ref` de 8 caracteres):
+
+```json
+{
+  "generated_at": "2026-10-19T12:00:00Z",
+  "account": { "email": "…", "created_at": "…", "email_confirmed_at": "…", "last_sign_in_at": "…", "sign_in_methods": ["email"], "name": null, "avatar_url": null, "has_password": false, "stripe_customer_id": null },
+  "marketing": { "opted_in": false, "opted_in_at": null, "prompted_at": null },
+  "consents": [{ "action": "granted", "source": "account", "text_version": "mkt-2026-10-19", "email": "…", "occurred_at": "…" }],
+  "cart": [{ "code": "J001", "name": "…", "added_at": "…" }],
+  "orders": [{ "ref": "A1B2C3D4", "status": "paid", "email": "…", "created_at": "…", "paid_at": "…", "refunded_at": null, "amount_subtotal": 990, "amount_discount": 0, "amount_total": 990, "currency": "brl", "promotion_code": null, "terms_version": "termos-2026-10-19", "terms_accepted_at": "…", "items": [{ "code": "J001", "name": "…", "unit_amount": 990, "currency": "brl" }] }],
+  "library": [{ "order_ref": "A1B2C3D4", "product": { "code": "J001", "name": "…" }, "status": "active", "granted_at": "…", "revoked_at": null, "revoke_reason": null, "games": [{ "code": "J001", "name": "…" }] }],
+  "downloads": [{ "game": "J001", "file": "….pdf", "version": "1.0", "at": "…" }],
+  "emails": [{ "kind": "delivery", "category": "transactional", "to": "…", "status": "sent", "created_at": "…", "sent_at": "…" }],
+  "email_suppressions": [],
+  "activity": [{ "type": "order_paid", "at": "…", "product": null, "order_ref": "A1B2C3D4" }]
+}
+```
+
+`POST /account/delete`, corpo `{ "confirmation": "EXCLUIR" }` (sem diferença de maiúsculas; o site pede que a pessoa digite a palavra) → `delete_account_data(uid)`:
+
+- `deleted` → a rota apaga o usuário no Auth (`DELETE /auth/v1/admin/users/{uid}`, chave secreta no `apikey`; `404` conta como feito) e responde `200 { "deleted": true }`. O site encerra a sessão local e volta ao início.
+- `blocked` → `409 ACCOUNT_DELETION_BLOCKED`, `details: { "reason": "payment_pending" | "checkout_open" | "dispute_open" }`. Nada muda.
+- Confirmação ausente ou diferente → `400 INVALID_REQUEST`, sem tocar no banco. `KT009` → `403 EMAIL_NOT_CONFIRMED`.
+- Falha do Auth depois da RPC → `500 INTERNAL_ERROR` (log só com o status HTTP). Repetir é seguro: a RPC é idempotente e o Auth recebe a exclusão de novo.
+- Depois da exclusão, um link de entrega antigo responde como direito revogado e um link de descadastro antigo responde `200` (a conta já não recebe nada).
+
 ## 7. Tokens HMAC (entrega e descadastro)
 
 Formato: `<payload>.<assinatura>`, ambos em base64url sem preenchimento.
@@ -573,7 +608,7 @@ Contestação e reembolso valem para o pedido inteiro.
 | **`EMAIL_LINK_SECRET`** (+ `EMAIL_LINK_SECRET_PREVIOUS` opcional) | `api`, `email-dispatch` | **Nova, secreta** |
 | **`BREVO_WEBHOOK_SECRET`** | `brevo-webhook` | **Nova, secreta**, já no modelo. É o token Bearer cadastrado no webhook da Brevo |
 | **`BREVO_TEMPLATE_DELIVERY`**, **`BREVO_TEMPLATE_CART_REMINDER`**, **`BREVO_TEMPLATE_POST_PURCHASE`** | `email-dispatch` | **Novas**, ids (não secretos) |
-| **`TERMS_VERSION`** | `api` | **Nova**, não secreta. Versão vigente dos termos mostrada na página de checkout; o aceite precisa vir com ela **[D11]** |
+| **`TERMS_VERSION`** | `api` | **Nova**, não secreta. Versão vigente dos termos mostrada na página de checkout; o aceite precisa vir com ela. Desde 2026-10-19: `termos-2026-10-19` (`src/content/legal.ts`, `termsVersion`); o site manda a mesma, salvo `VITE_TERMS_VERSION` **[D11]** |
 
 `STRIPE_PRICE_ID_P001` deixa de ser lida pelas funções: o Price de cada ambiente fica em `products.stripe_price_id`, gravado pelo script do ambiente.
 
@@ -609,9 +644,16 @@ Contestação e reembolso valem para o pedido inteiro.
 - `brevo-webhook`: autenticação definida (Bearer), eventos conferidos, lote aceito e resposta com contagem (8.1).
 - Agenda por `private.dispatch_tick()` e segredos do Vault (8.2).
 
+### 11.3 O que mudou na v0.3.3 (LGPD)
+
+- `GET /account/export` e `POST /account/delete` (6.11), com o erro `409 ACCOUNT_DELETION_BLOCKED`.
+- `POST /email/unsubscribe` de conta já excluída responde `200` (o `KT001` do banco, com token válido, só vem de conta inexistente).
+- Agenda diária `private.purge_email_outbox()` (90 dias depois do envio).
+- `TERMS_VERSION` passa a `termos-2026-10-19`, com os Termos, a Política de reembolso e a Política de privacidade publicados.
+
 ## 12. Pendências
 
-- **[D1]** Catálogo além do P001. **[D2]** Posse sobreposta (padrão provisório na seção 6.2). **[D3]** Fluxos e prazos de follow-up. **[D4]** Links ou anexos e validade do link. **[D5]** Reembolso parcial. **[D6]** Texto e versão do consentimento. **[D7]** Remetentes. **[D8]** Plano da Brevo e conteúdo promocional pela API. **[D9]** Métodos de pagamento, URL dos termos e validade da sessão. **[D11]** Texto de sem-reembolso validado por advogado. **[D12]** Condições do jogo gratuito.
+- **[D1]** Catálogo além do P001. **[D2]** Posse sobreposta (padrão provisório na seção 6.2). **[D3]** Fluxos e prazos de follow-up. **[D4]** Links ou anexos e validade do link. **[D5]** Reembolso parcial. **[D6]** Texto e versão do consentimento. **[D7]** Remetentes. **[D8]** Plano da Brevo e conteúdo promocional pela API. **[D9]** Métodos de pagamento, URL dos termos e validade da sessão. **[D11]** Termos, Política de reembolso e Política de privacidade escritos (2026-10-19); falta a validação jurídica. **[D12]** Condições do jogo gratuito.
 - Webhook da Brevo: cadastrar na conta (tipo `transactional`, eventos `hard_bounce`, `invalid_email`, `blocked`, `spam` e `unsubscribed`, `auth` bearer com o `BREVO_WEBHOOK_SECRET`) quando houver URL pública (I6). Os eventos de marketing da Brevo (campanhas) não são usados.
 - Página `/email/preferencias` no site (Aquarela).
 - Limite de abuso nas rotas públicas que gravam (`/free-download`) e no carrinho: taxa ou CAPTCHA antes da produção.

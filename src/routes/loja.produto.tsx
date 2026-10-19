@@ -1,5 +1,6 @@
 import { Link, isRouteErrorResponse, useLoaderData, useRouteError, type ClientLoaderFunctionArgs, type LoaderFunctionArgs } from 'react-router'
 import { productPages, products, type Product } from '../content/products'
+import { refundNotice } from '../content/legal'
 import type { Game } from '../content/games'
 import { ProductAvailability } from '../components/shop/ProductAvailability'
 import { GameGrid } from '../components/shop/GameGrid'
@@ -49,7 +50,7 @@ export default function ShopProduct() {
         <h2 id="shop-includes-title">O que está incluído</h2>
         <ul className="shop-includes">{product.contents.map(line => <li key={line}>{line}</li>)}</ul>
         <ProductAvailability product={product} detail />
-        <div className="shop-delivery">{product.delivery.map(line => <p key={line}>{line}</p>)}</div>
+        <div className="shop-delivery">{product.delivery.map(line => <p key={line}>{line}</p>)}<p>{refundNotice} <Link className="inline-link" to="/reembolsos">Política de reembolso</Link></p></div>
       </section>
     </div>
     {game && <ProductMoments game={game} />}
