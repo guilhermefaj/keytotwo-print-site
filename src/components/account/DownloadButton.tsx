@@ -22,7 +22,7 @@ export function DownloadButton({ fileId, gameCode, isFree = false, onRefresh }: 
       const link = await freshDownload(fileId, isFree, controller.signal)
       if (controller.signal.aborted) return
       openDownload(link)
-      setMessage('Seu navegador recebeu o link. Se o arquivo não abrir, clique em Baixar PDF para gerar outro.')
+      setMessage('Abrimos o PDF. Se ele não aparecer, clique em Baixar PDF de novo.')
     } catch (cause) {
       if (controller.signal.aborted) return
       setError(downloadError(cause))

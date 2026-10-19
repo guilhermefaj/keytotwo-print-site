@@ -11,28 +11,35 @@ export const experience = {
   cta: { label: 'Ver os jogos', href: '/loja' },
   secondary: { label: 'Como funciona', href: '/#como-funciona' },
   steps: [
-    { title: 'Escolham.', text: 'Levem a ideia para a sacola. Entrem na conta para seguir com a compra.', icon: 'sacola' },
-    { title: 'Imprimam.', text: 'Depois da compra, os arquivos ficam em Meus jogos e chegam por e-mail.', icon: 'impressora' },
-    { title: 'Divirtam-se.', text: 'Preparem os materiais e escolham quem começa.', icon: 'dado' },
+    { title: 'Escolham.', text: 'Um jogo ou o pacote vai para a sacola. Para pagar, é preciso entrar na conta.', icon: 'sacola' },
+    { title: 'Imprimam.', text: 'O PDF fica em Meus jogos e chega por e-mail. Papel A4 comum resolve.', icon: 'impressora' },
+    { title: 'Joguem.', text: 'Recortem o que o jogo pedir e decidam quem começa. Boa sorte nessa negociação.', icon: 'cartas' },
   ],
   // Portão 1: relatos de exemplo na voz da marca, marcados placeholder: true. Aparecem só no stage
   // test; em live só entram relatos reais (placeholder: false) e, sem nenhum, a seção não renderiza.
-  // Sem nota, número de avaliações ou estrelas. O responsável substitui pelos relatos autorizados.
+  // Estrelas e foto do casal a pedido do responsável (2026-10-18). Num relato real, a nota é a que o casal deu,
+  // nunca preenchida por nós, e a foto só entra com autorização; sem ela, a silhueta de exemplo. Sem número de
+  // avaliações nem média. O responsável substitui pelos relatos autorizados.
   social: {
     heading: 'Cada dupla, uma história.',
     placeholderLabel: 'Relato de exemplo',
     testimonials: [
-      { id: 'exemplo-1', placeholder: true, quote: 'A gente demorou mais para escolher quem desenhava do que para jogar. Valeu a pena: rimos até das cartas erradas.', author: 'Marina e Léo' },
-      { id: 'exemplo-2', placeholder: true, quote: 'Imprimi no trabalho, recortei no ônibus e, à noite, a mesa da cozinha virou arena. Fazia tempo que não ríamos tanto.', author: 'Bia e Caio' },
-      { id: 'exemplo-3', placeholder: true, quote: 'Descobri que ele desenha um cachorro igual a uma batata. Dez rodadas depois, já queríamos outra partida.', author: 'Júlia e Renan' },
-    ] as ReadonlyArray<{ id: string; placeholder: boolean; quote: string; author: string }>,
+      { id: 'exemplo-1', placeholder: true, rating: 5, quote: 'A gente demorou mais para escolher quem desenhava do que para jogar. Valeu a pena: rimos até das cartas erradas.', author: 'Marina e Léo' },
+      { id: 'exemplo-2', placeholder: true, rating: 5, quote: 'Imprimi no trabalho, recortei no ônibus e, à noite, a mesa da cozinha virou arena. Fazia tempo que não ríamos tanto.', author: 'Bia e Caio' },
+      { id: 'exemplo-3', placeholder: true, rating: 5, quote: 'Descobri que ele desenha um cachorro igual a uma batata. Dez rodadas depois, já queríamos outra partida.', author: 'Júlia e Renan' },
+      { id: 'exemplo-4', placeholder: true, rating: 5, quote: 'Passamos a noite de abajur aceso atrás do Rapadura. Ela jura que achou a pista primeiro. Eu tenho minhas dúvidas.', author: 'Carla e Diego' },
+      { id: 'exemplo-5', placeholder: true, rating: 5, quote: 'Perdi todas as moedas no Tabuleiro da Sorte e tive que cumprir o pedido secreto dela. Já estou treinando para a revanche.', author: 'Paula e Thiago' },
+      { id: 'exemplo-6', placeholder: true, rating: 5, quote: 'A gente trocou a série de sexta por uma partida. Agora quem decide a sexta é o dado.', author: 'Fernanda e Rafa' },
+      { id: 'exemplo-7', placeholder: true, rating: 5, quote: 'Não temos impressora. Imprimimos na papelaria da esquina e no mesmo dia já estávamos jogando.', author: 'Camila e Bruno' },
+      { id: 'exemplo-8', placeholder: true, rating: 5, quote: 'Eu desenho mal e ela adivinha qualquer rabisco. Somando os dois, a dupla até que vai bem.', author: 'André e Lia' },
+    ] as ReadonlyArray<{ id: string; placeholder: boolean; rating: number; quote: string; author: string; photo?: { src: string; alt: string } }>,
   },
   // Freebies resgatados ao criar a conta (Portão 2, 2026-10-14; dois jogos desde 2026-10-16). O resgate é
   // backend e vem depois; até lá a seção só aparece no stage test.
   freebie: {
     tag: 'Grátis',
     title: 'Jogos para começar, por nossa conta.',
-    text: 'Ao criar sua conta, vocês ganham jogos para conhecer a proposta antes do pacote.',
+    text: 'Quem cria a conta leva esses jogos de graça. Dá para testar a impressora (e a dupla) antes de comprar qualquer coisa.',
     cta: { label: 'Criar conta', href: '/entrar' },
   },
 }

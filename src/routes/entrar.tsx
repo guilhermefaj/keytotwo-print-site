@@ -18,11 +18,13 @@ export default function Entrar() {
   const [confirmation, setConfirmation] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
-  const [error, setError] = useState(params.has('error') ? 'Não foi possível entrar com o provedor. Tente novamente ou use seu e-mail.' : '')
+  const [error, setError] = useState(params.has('error') ? 'Não deu para entrar com o Google. Tente de novo ou use seu e-mail.' : '')
   const [cooldown, setCooldown] = useState(0)
   const next = safeNext(params.get('next'))
   const add = params.get('add')
   const destination = add && /^[A-Z0-9_-]{1,40}$/.test(add) ? `/carrinho?${new URLSearchParams({ add })}` : next
+  // Quem chega no meio da compra já escolheu algo; quem só clicou em Entrar precisa saber que o código cria a conta.
+  const buying = Boolean(add) || /^\/(carrinho|pagamento)(?:[/?#]|$)/.test(next)
   const settingPassword = Boolean(session) && (step === 'set-password' || recovery || method === 'recover')
 
   useEffect(() => {
@@ -53,7 +55,7 @@ export default function Entrar() {
       : await supabase().auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true, emailRedirectTo: callbackUrl() } })
     if (result.error) throw result.error
     setStep('verify'); setCooldown(60)
-    setMessage('Se o endereço puder receber a mensagem, o código chegará em instantes. Confira também a pasta de spam. Ele vale por 10 minutos.')
+    setMessage('O código deve chegar em instantes e vale por 10 minutos. Se não aparecer, confira a pasta de spam.')
   }
   async function submit(event: FormEvent) {
     event.preventDefault()
@@ -94,8 +96,8 @@ export default function Entrar() {
   }
 
   return <main id="conteudo" tabIndex={-1} className="account-page content-width auth-page">
-    {(add || /^\/(carrinho|pagamento)(?:[/?#]|$)/.test(next)) && <CheckoutSteps current={2} />}
-    <div className="auth-intro"><h1>{settingPassword ? 'Definir senha' : method === 'recover' ? 'Redefinir senha' : 'Entrar'}</h1><p>Sua escolha fica guardada. Entre ou crie sua conta para continuar.</p><Link className="inline-link" to="/ajuda">Precisa de ajuda?</Link></div>
+    {buying && <CheckoutSteps current={2} />}
+    <div className="auth-intro"><h1>{settingPassword ? 'Definir senha' : method === 'recover' ? 'Redefinir senha' : 'Entrar'}</h1><p>{buying ? 'Sua escolha fica guardada. Entre ou crie sua conta para continuar.' : 'Primeira vez aqui? Entrar com o código por e-mail já cria sua conta.'}</p><Link className="inline-link" to="/ajuda">Precisa de ajuda?</Link></div>
     <section className="account-card" aria-label="Acesso à conta">
       {!authConfigured ? <p className="legal-pending">O acesso à conta estará disponível em breve.</p> : <>
         {step === 'email' && !settingPassword && <div className="auth-methods" role="group" aria-label="Como entrar"><button className="text-button" aria-pressed={method === 'code'} onClick={() => selectMethod('code')} disabled={busy}>Código por e-mail</button><button className="text-button" aria-pressed={method === 'password'} onClick={() => selectMethod('password')} disabled={busy}>E-mail e senha</button></div>}
@@ -111,7 +113,7 @@ export default function Entrar() {
         </form>
         {step === 'verify' && !settingPassword && <div className="form-actions"><button className="text-button" disabled={busy || cooldown > 0} onClick={resend}>{cooldown ? `Reenviar em ${cooldown}s` : 'Reenviar código'}</button><button className="text-button" disabled={busy} onClick={() => selectMethod(method)}>Usar outro e-mail</button></div>}
         {step === 'email' && !settingPassword && <div className="auth-alternatives"><button className="google-sign-in" disabled={busy} onClick={google}><img src="/media/auth/google-g.png" width="20" height="20" alt="" /><span>Continuar com Google</span></button><button className="text-button" disabled={busy} onClick={() => selectMethod(method === 'create' ? 'code' : 'create')}>{method === 'create' ? 'Prefiro entrar com código' : 'Criar conta com senha'}</button></div>}
-        <p className="field-help auth-privacy">A preferência de receber novidades é opcional e separada do acesso à conta. <Link className="inline-link" to="/privacidade">Privacidade</Link> · <Link className="inline-link" to="/termos">Termos de uso</Link>.</p>
+        <p className="field-help auth-privacy">Entrar não inscreve você em nenhuma lista. Novidades por e-mail, só se você pedir. <Link className="inline-link" to="/privacidade">Privacidade</Link> · <Link className="inline-link" to="/termos">Termos de uso</Link>.</p>
       </>}
     </section>
   </main>

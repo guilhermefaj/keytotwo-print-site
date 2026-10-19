@@ -51,7 +51,7 @@ const j001Facts = [{ label: 'Pessoas', value: '2, em equipe' }, { label: 'Jeito 
 export const games: readonly Game[] = [
   {
     id: 'rabisque-e-adivinhe', code: 'J001', name: 'Rabisque e Adivinhe', confirmed: true,
-    description: 'Um desenha, o outro adivinha. Vocês alternam os papéis de Artista e Adivinhador e somam os acertos da dupla.',
+    description: 'Uma caneta, uma folha em branco e a certeza de que algum desenho vai sair parecendo uma batata.',
     pending: pending('testes de impressão e playtest.'),
     summary: 'Um desenha, o outro adivinha. Os acertos são da dupla.',
     cover: cover('j001'),
@@ -60,8 +60,8 @@ export const games: readonly Game[] = [
     needs: ['impressora', 'tesoura', 'folha', 'caneta', 'cronometro'],
     moments: [
       { title: 'Desenho torto vale.', text: 'Ninguém precisa saber desenhar. A graça é ver o outro tentando entender o que saiu no papel.' },
-      { title: 'Rodadas rápidas.', text: 'Um minuto por vez, risada atrás de risada, e sempre a vontade de jogar só mais uma.' },
-      { title: 'O time é a dupla.', text: 'Vocês jogam juntos, não um contra o outro. Cada acerto conta para os dois.' },
+      { title: 'Rodadas rápidas.', text: 'Um minuto por rodada. É pouco tempo, e é aí que o traço desanda.' },
+      { title: 'O time é a dupla.', text: 'Ninguém perde para ninguém. Se a rodada for um desastre, o vexame é dos dois.' },
     ],
   },
   // Códigos atribuídos nas fichas do Drive (capa e PDF por código); jogo ainda sem ficha usa apenas id interno.
@@ -69,7 +69,7 @@ export const games: readonly Game[] = [
   // Fatos das fichas do segundo cérebro (Jogos/J003 e J002, conferidas em 2026-10-16); duração não medida não entra.
   {
     id: 'tabuleiro-da-sorte', code: 'J003', name: 'Tabuleiro da Sorte', confirmed: true,
-    description: 'Jogo de tabuleiro para duas pessoas, com perguntas sobre o relacionamento, desafios e moedas. Cada um escreve um pedido secreto no Tesouro; quem terminar com mais moedas entrega o seu ao par.',
+    description: 'Um dado, um tabuleiro e uma disputa de moedas. Cada casa pode render uma pergunta, um desafio ou um prejuízo.',
     pending: pending('testes de impressão e playtest.'),
     summary: 'Perguntas, desafios e moedas no tabuleiro. Quem juntar mais faz o par cumprir um pedido secreto.',
     cover: cover('j003'),
@@ -77,7 +77,7 @@ export const games: readonly Game[] = [
     accent: '#f2b33c',
     needs: ['impressora', 'tesoura', 'cola', 'caneta', 'cronometro', 'celular'],
     moments: [
-      { title: 'Perguntas que puxam conversa.', text: 'Entre um lance de dado e outro, cada pergunta é uma chance de descobrir algo novo sobre o par.' },
+      { title: 'Perguntas que puxam conversa.', text: 'Entre um lance e outro vem uma pergunta, e às vezes a resposta surpreende quem jurava que já sabia.' },
       { title: 'Desafios para rir juntos.', text: 'Alguns pedem criatividade, outros um pouco de coragem. Deixem o celular por perto.' },
       { title: 'Um pedido em jogo.', text: 'Cada um guarda um pedido secreto. Quem juntar mais moedas no fim faz o outro cumprir o seu.' },
     ],
@@ -85,21 +85,21 @@ export const games: readonly Game[] = [
   // J002 (escape room) entra no P001 por decisão do responsável (2026-10-16).
   {
     id: 'o-sumico-de-rapadura', code: 'J002', name: 'O Sumiço de Rapadura', confirmed: true,
-    description: 'Escape room cooperativo para duas pessoas: ajudem o Kito a descobrir o que aconteceu com Rapadura, o cachorro dele, antes do forró da vila. São seis desafios com papel, recorte, dobra, luz e conversa.',
+    description: 'Rapadura, o vira-lata caramelo do Kito, sumiu antes do forró da vila. Vocês investigam juntos, desafio por desafio, com tesoura, dobra, luz e muita conversa.',
     pending: pending('testes de impressão e playtest.'),
-    summary: 'Escape room em dupla: seis desafios de papel, recorte e conversa para encontrar Rapadura.',
+    summary: 'Escape room em dupla, de papel e recorte, para descobrir onde foi parar Rapadura.',
     cover: cover('j002'),
-    facts: [{ label: 'Pessoas', value: '2, em cooperação' }, { label: 'Jeito de jogar', value: 'Escape room de papel' }, { label: 'Desafios', value: 'Seis, com dicas para quem travar' }, { label: 'Formato', value: 'PDF para imprimir em casa' }],
+    facts: [{ label: 'Pessoas', value: '2, em cooperação' }, { label: 'Jeito de jogar', value: 'Escape room de papel' }, { label: 'Dicas', value: 'Para quando a dupla travar' }, { label: 'Formato', value: 'PDF para imprimir em casa' }],
     accent: '#d9772e',
     needs: ['impressora', 'tesoura', 'estilete', 'fita', 'caneta', 'copo', 'luz'],
     moments: [
-      { title: 'Um mistério para dois.', text: 'Rapadura sumiu e o Kito precisa de ajuda. Vocês investigam juntos, de pista em pista.' },
+      { title: 'Um mistério para dois.', text: 'Ninguém aqui é detetive. O Kito também não, por isso chamou vocês.' },
       { title: 'Conversa é a melhor pista.', text: 'Cada um vê coisas que o outro não vê. Só descrevendo e perguntando a dupla avança.' },
       { title: 'Mãos no papel.', text: 'Recortar, dobrar e olhar contra a luz fazem parte da investigação.' },
     ],
   },
   // Freebies (código F): dois no início; o segundo ainda está em desenvolvimento.
-  { id: 'hora-dos-artistas', code: 'F001', name: 'Hora dos Artistas', confirmed: true, freebie: true, description: 'Jogo grátis para quem cria a conta.', pending: pending('ficha, regras, materiais e prévia do jogo.'), summary: 'Detalhes e prévia em breve.', cover: cover('f001'), accent: '#c94050' },
+  { id: 'hora-dos-artistas', code: 'F001', name: 'Hora dos Artistas', confirmed: true, freebie: true, description: 'Jogo grátis para quem cria a conta.', pending: pending('ficha, regras, materiais e prévia do jogo.'), summary: 'Grátis para quem cria a conta. Mais detalhes em breve.', cover: cover('f001'), accent: '#c94050' },
   { id: 'freebie-2', name: 'Jogo a definir', confirmed: false, freebie: true, description: 'Segundo jogo grátis.', pending: pending('definição do jogo e de seus materiais.'), summary: 'O segundo jogo grátis está em preparação.' },
 ]
 

@@ -108,7 +108,7 @@ test('RSS e sitemap respeitam stage; admin é estático, fixado e noindex', asyn
 test('live sem artigos mostra estado vazio e mantém CTA útil', async ({ page }) => {
   test.skip(!live || exampleExists, 'Somente para build live sem artigos publicados')
   await page.goto('/blog')
-  await expect(page.getByRole('heading', { name: 'Ainda não há artigos publicados.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Nenhum texto publicado ainda.' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Ver os jogos' })).toHaveAttribute('href', '/loja')
   await expect(page.locator('.blog-draft')).toHaveCount(0)
 })

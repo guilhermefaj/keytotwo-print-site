@@ -31,8 +31,8 @@ export default function Blog({ loaderData }: Route.ComponentProps) {
         </article>
       </li>)}
     </ul> : <section className="blog-empty" aria-labelledby="blog-empty-title">
-      <h2 id="blog-empty-title">Ainda não há artigos publicados.</h2>
-      <p>Quando houver um artigo publicado, ele aparece neste espaço. Enquanto isso, conheça os jogos para levar à mesa.</p>
+      <h2 id="blog-empty-title">Nenhum texto publicado ainda.</h2>
+      <p>Enquanto isso, os jogos já estão na Loja.</p>
       <Link className="inline-link" to="/loja">Ver os jogos</Link>
     </section>}
     <a className="inline-link blog-rss" href="/blog/rss.xml">Acompanhar pelo RSS</a>

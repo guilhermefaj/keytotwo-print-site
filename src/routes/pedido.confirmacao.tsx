@@ -12,7 +12,7 @@ import { Celebration } from '../components/checkout/Celebration'
 import { Newsletter } from '../components/newsletter/Newsletter'
 
 const copy = {
-  paid: { title: 'O próximo encontro é de vocês!', text: 'Pagamento confirmado. Escolham um jogo e preparem a mesa.', cta: 'Baixar agora', to: '/meus-jogos' },
+  paid: { title: 'Pronto. Os jogos são de vocês.', text: 'Pagamento confirmado. Escolham um jogo e preparem a mesa.', cta: 'Abrir Meus jogos', to: '/meus-jogos' },
   processing: { title: 'Estamos preparando seus jogos', text: 'O pagamento está sendo conferido. Não é preciso pagar novamente; a confirmação pode levar alguns instantes.', cta: 'Ver Meus jogos', to: '/meus-jogos' },
   pending_payment: { title: 'Aguardando o pagamento', text: 'Assim que o pagamento for confirmado, seus jogos aparecem em Meus jogos. Você pode voltar para acompanhar.', cta: 'Ver Meus jogos', to: '/meus-jogos' },
   failed: { title: 'Vamos tentar de novo?', text: 'Este pagamento não foi concluído. Volte à sacola para conferir sua escolha e tentar novamente.', cta: 'Voltar à sacola', to: '/carrinho' },

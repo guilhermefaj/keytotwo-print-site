@@ -25,10 +25,10 @@ export const help: readonly HelpSection[] = [
     id: 'acesso', title: 'Conta e acesso aos jogos', icon: 'conta',
     summary: 'Entrar, encontrar os jogos e baixar de novo.',
     paragraphs: [
-      'É preciso ter uma conta para comprar. Dá para entrar com um código enviado por e-mail, com senha ou com a conta Google.',
+      'É preciso ter uma conta para comprar. Dá para entrar com um código enviado por e-mail, com senha ou com a conta Google. Na primeira vez, o código por e-mail já cria a conta.',
       'Depois do pagamento, os jogos aparecem em Meus jogos e chegam também por e-mail.',
       'Os botões de download do e-mail valem por 30 dias. Em Meus jogos, o acesso não tem prazo de expiração.',
-      'Esqueceram a senha? Em Entrar, escolham "E-mail e senha" e depois "Esqueci minha senha".',
+      'Esqueceu a senha? Em Entrar, escolha "E-mail e senha" e depois "Esqueci minha senha". Quem entra com código não precisa de senha.',
     ],
   },
   {

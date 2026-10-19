@@ -13,7 +13,7 @@ export function MarketingPreference({ marketing, source = 'account', onSaved, on
     setBusy(true); setError(''); setMessage('')
     try {
       await api('/account/marketing', { method: 'PUT', body: { granted, source, text_version: marketingConsent.version } })
-      setMessage(granted ? 'Combinado! Ideias a caminho.' : 'Combinado. Você não recebe mais ideias.')
+      setMessage(granted ? 'Combinado. As próximas ideias chegam por e-mail.' : 'Combinado. Você não recebe mais ideias.')
       onSaved()
     } catch (cause) { setError(apiErrorMessage(cause)) }
     finally { setBusy(false) }

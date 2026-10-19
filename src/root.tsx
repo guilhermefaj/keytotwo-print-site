@@ -101,13 +101,13 @@ export function PendingPage({ title, children, error = false, retry = false }: {
 }
 
 export function HydrateFallback() {
-  return <PendingPage title="Carregando">Preparando seu próximo encontro.</PendingPage>
+  return <PendingPage title="Carregando">Embaralhando as cartas…</PendingPage>
 }
 
 export function ErrorBoundary() {
   const error = useRouteError()
   const notFound = isRouteErrorResponse(error) && error.status === 404
   return <PendingPage title={notFound ? 'Página não encontrada' : 'Não foi possível abrir esta página'} error retry={!notFound}>
-    {notFound ? 'O endereço solicitado não está disponível.' : 'Tente voltar ao início e abrir a página novamente.'}
+    {notFound ? 'O Kito procurou por todo canto e não achou nada neste endereço.' : 'Tente voltar ao início e abrir a página novamente.'}
   </PendingPage>
 }
