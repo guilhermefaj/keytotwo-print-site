@@ -13,7 +13,7 @@ export const experience = {
   steps: [
     { title: 'Escolham.', text: 'Um jogo ou o pacote vai para a sacola. Para pagar, é preciso entrar na conta.', icon: 'sacola' },
     { title: 'Imprimam.', text: 'O PDF fica em Meus jogos e chega por e-mail. Papel A4 comum resolve.', icon: 'impressora' },
-    { title: 'Joguem.', text: 'Recortem o que o jogo pedir e decidam quem começa. Boa sorte nessa negociação.', icon: 'dado' },
+    { title: 'Joguem.', text: 'Recortem o que o jogo pedir e decidam quem começa. Boa sorte nessa negociação.', icon: 'cartas' },
   ],
   // Portão 1: relatos de exemplo na voz da marca, marcados placeholder: true. Aparecem só no stage
   // test; em live só entram relatos reais (placeholder: false) e, sem nenhum, a seção não renderiza.

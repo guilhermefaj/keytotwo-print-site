@@ -253,6 +253,8 @@ test('home: matriz responsiva, texto 200%, cena preservada e capturas', async ({
         if (!el.checkVisibility() || el.closest('[aria-hidden="true"]') || el.classList.contains('skip-link')) return false
         const rect = el.getBoundingClientRect()
         // Cards outside a scroll-snap viewport (carousels, testimonial row) are intentional; text must still fit each card.
+        // Folha de recortar: a carta inclinada passa alguns px da coluna de propósito; o texto é conferido na própria carta.
+        if (el.matches('.steps-list > li')) return rect.left < -1 || rect.right > innerWidth + 1
         const track = el.closest('.snap-track, .social-marquee')
         if (track && getComputedStyle(track).overflowX === 'auto') {
           return el === track ? rect.left < -1 || rect.right > innerWidth + 1 : el.scrollWidth > el.clientWidth + 2

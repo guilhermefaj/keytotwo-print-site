@@ -142,6 +142,7 @@
 @media (prefers-reduced-motion: no-preference) {
   .button { transition: transform var(--duration-press) var(--ease-out), background-color var(--duration-press), border-color var(--duration-press); }
   .button:not(:disabled):active { transform: scale(.98); }
+  .inline-link, .offer-links a, .legal-links a { transition: background-size var(--duration-ui) var(--ease-out); }
   [data-reveal] { transition: opacity var(--duration-reveal) var(--ease-out) var(--reveal-delay, 0ms), transform var(--duration-reveal) var(--ease-out) var(--reveal-delay, 0ms); }
   [data-reveal="pending"] { opacity: 0; transform: translateY(8px); transition: none; }
   [data-reveal="visible"] { opacity: 1; transform: none; }
@@ -153,7 +154,11 @@
   .kito-empty { animation: d1-kito 650ms var(--ease-out) 1; }
   /* Vitrine do Início: as capas entram uma a uma quando a folha aparece (8 px, 240 ms, 40 ms entre elas). */
   [data-reveal="visible"] .cover-tile { animation: tile-deal var(--duration-ui) var(--ease-out) both; animation-delay: calc(var(--reveal-delay, 0ms) + 120ms + var(--tile-order, 0) * var(--stagger)); }
+  /* Folha de recortar: as cartas chegam juntas, como a folha impressa, e se afastam nas linhas de corte. */
+  [data-reveal="visible"] .step-card { animation: cut-apart 560ms var(--ease-out) both; animation-delay: calc(var(--reveal-delay, 0ms) + 280ms); }
+  [data-reveal="visible"] .step-cut { animation: tile-deal var(--duration-ui) var(--ease-out) both; animation-delay: calc(var(--reveal-delay, 0ms) + 420ms); }
 }
+@keyframes cut-apart { from { transform: translate(var(--join-x, 0px), var(--join-y, 0px)); } to { transform: rotate(var(--tilt, 0deg)); } }
 @keyframes tile-deal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes d1-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes d1-sheet { from { transform: translateX(100%); } to { transform: translateX(0); } }
