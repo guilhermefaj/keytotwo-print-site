@@ -9,7 +9,7 @@ const routes = [
   '/meus-jogos', '/pedidos',
   '/conta',
   '/pedido/confirmacao',
-  '/jogo-gratuito',
+  '/gratuitos',
   '/email/preferencias',
   '/ajuda',
   '/termos',

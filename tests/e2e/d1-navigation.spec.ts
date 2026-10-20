@@ -20,7 +20,7 @@ async function fixture(page: Page, { filled = false, owned = false, failCart = f
     if (path.startsWith('/cart/items')) items = route.request().method() === 'DELETE' ? [] : [product]
     const cart = { version: 1, items, subtotal: { amount: items.length * 1990, currency: 'brl' }, warnings: [] }
     const orders = owned ? [{ ref: 'synthetic-d1', status: 'paid', created_at: '2026-01-01', paid_at: '2026-01-01', amount_total: 1990, currency: 'brl', items: [product] }] : []
-    const body = path.startsWith('/cart') ? cart : path === '/catalog' ? { products: [product] } : path === '/account' ? { email: fakeSession.user.email, marketing: { opted_in: false, prompted_at: '2026-01-01', text_version: null }, orders } : path === '/free-game' ? { available: false } : { games: [], pending: [] }
+    const body = path.startsWith('/cart') ? cart : path === '/catalog' ? { products: [product] } : path === '/account' ? { email: fakeSession.user.email, marketing: { opted_in: false, prompted_at: '2026-01-01', text_version: null }, orders } : path === '/free-games' ? { games: [] } : { games: [], pending: [] }
     return route.fulfill({ json: body })
   })
 }
@@ -52,7 +52,7 @@ test('desktop header: shared navigation, active page, transparent top and sticky
   const requested: string[] = []
   page.on('request', request => requested.push(request.url()))
   await page.goto('/')
-  await expect(page.locator('.desktop-nav a')).toHaveText(['Início', 'Loja', 'Blog'])
+  await expect(page.locator('.desktop-nav a')).toHaveText(['Início', 'Loja', 'Gratuitos', 'Blog'])
   await expect(page.locator('.desktop-action')).toContainText('Ver os jogos')
   await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('header')).toHaveAttribute('data-scrolled', 'false')
@@ -127,7 +127,7 @@ test('checkout focus header agrees in server HTML and hydration, with or without
 test('account menu, catalog CTA regardless of ownership and the simplified private header', async ({ page }) => {
   await fixture(page, { owned: true })
   await page.goto('/')
-  await expect(page.locator('.desktop-nav a')).toHaveText(['Início', 'Loja', 'Blog'])
+  await expect(page.locator('.desktop-nav a')).toHaveText(['Início', 'Loja', 'Gratuitos', 'Blog'])
   await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('href', '/')
   await expect(page.locator('.desktop-action > .button')).toHaveText('Ver os jogos')
   await expect(page.locator('.desktop-action > .button')).toHaveAttribute('href', '/loja')

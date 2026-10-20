@@ -51,8 +51,8 @@
 .shop-freebies-heading h2 { font-size: var(--text-headline-sm); margin: var(--space-md) 0 var(--space-sm); }
 /* No Início a seção Grátis é uma folha: H2 de seção, como as vizinhas (na Loja é bloco, sob o H1). */
 .page-section .shop-freebies-heading h2 { font-size: var(--text-headline); }
-.shop-freebies-heading > p:last-child { color: var(--color-ink-soft); max-width: 40ch; margin: 0; }
-.shop-freebie-cta { width: 100%; margin-top: var(--space-md); }
+.shop-freebies-heading > p:not(.tag) { color: var(--color-ink-soft); max-width: 40ch; margin: 0; }
+.shop-freebie-cta { margin-top: var(--space-lg); }
 /* Só a largura do texto, com 44 px de alvo pelo padding: o marca-texto acompanha a palavra e a linha. */
 .shop-details { display: block; width: fit-content; margin: var(--space-sm) auto 0; padding-block: 11px; font-size: var(--text-label); }
 .shop-price { font-family: var(--font-display); font-size: var(--text-headline-sm); font-weight: 700; letter-spacing: var(--tracking-headline); font-variant-numeric: tabular-nums; margin: 0; }
@@ -144,4 +144,34 @@
 }
 @media (max-width: 599px) {
   .shop-game-body { padding: var(--space-md) var(--space-lg) var(--space-lg); }
+}
+
+/* Gratuitos (DESIGN.md › Gratuitos): a troca numa folha tracejada, os cards com o download e o convite da comunidade. */
+.free-page { padding-block: var(--space-2xl) var(--space-section); }
+.free-page h1 { font-size: var(--text-headline); }
+.free-page .shop-heading h1 { margin-top: var(--space-md); }
+/* Título e a troca lado a lado no desktop; empilham abaixo de 960 px. */
+.free-top { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--space-2xl); align-items: start; margin-bottom: var(--space-2xl); }
+.free-top .shop-heading { margin-bottom: 0; }
+.free-access { padding: var(--space-xl); border: var(--line-cut); border-radius: var(--radius-lg); }
+.free-access h2 { font-size: var(--text-title-lg); margin: 0 0 var(--space-md); }
+.free-access ol { list-style: decimal; margin: 0 0 var(--space-md); padding-left: var(--space-lg); }
+.free-access li + li { margin-top: var(--space-xs); }
+.free-access > .button, .free-access-action { margin-top: var(--space-md); }
+.free-access-done { margin: var(--space-md) 0 0; font-weight: 600; color: var(--color-deep-teal); }
+.free-games .file-meta { margin: 0 0 var(--space-sm); font-size: var(--text-caption); color: var(--color-ink-soft); }
+.free-community { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2xl); align-items: center; margin-top: var(--space-3xl); padding: var(--space-xl); border: var(--line-card); border-radius: var(--radius-lg); }
+.free-community h2 { font-size: var(--text-headline-sm); margin: var(--space-md) 0; }
+.free-community-copy > p:not(.tag) { max-width: 60ch; margin: 0 0 var(--space-sm); }
+.free-community-invite { font-weight: 600; }
+.instagram-button { gap: 10px; margin-top: var(--space-sm); }
+.free-community-kito { width: 192px; height: auto; }
+@media (max-width: 960px) {
+  .free-top { grid-template-columns: minmax(0, 1fr); gap: var(--space-xl); }
+}
+@media (max-width: 767px) {
+  .free-access, .free-community { padding: var(--space-lg); }
+  .free-community { grid-template-columns: minmax(0, 1fr); gap: var(--space-md); }
+  .free-community-kito { grid-row: 1; justify-self: center; width: 128px; }
+  .instagram-button { width: 100%; }
 }

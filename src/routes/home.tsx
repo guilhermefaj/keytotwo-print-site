@@ -5,7 +5,7 @@ import { FaqSection } from '../components/sections/FaqSection'
 import { ClosingCta } from '../components/sections/ClosingCta'
 import { ProductExperience, Testimonials } from '../components/sections/ExperienceSections'
 import { ShopShowcase } from '../components/sections/ShopShowcase'
-import { FreebieSection, showFreebies } from '../components/shop/FreebieSection'
+import { FreebieSection } from '../components/shop/FreebieSection'
 import { experience } from '../content/experience'
 import { useRef } from 'react'
 import { useScrollReveal } from '../lib/use-scroll-reveal'
@@ -36,6 +36,6 @@ export default function Home() {
       <HeroScene obscured={menuOpen} />
     </div>
     {/* Início como landing (decisão 9): a oferta e a folha completa ficam só na Loja. */}
-    <ProductExperience /><HowItWorks /><Testimonials /><ShopShowcase />{showFreebies && <div className="page-section"><div className="content-width"><FreebieSection /></div></div>}<FaqSection /><FromBlog posts={posts} /><ClosingCta />
+    <ProductExperience /><HowItWorks /><Testimonials /><ShopShowcase /><div className="page-section"><div className="content-width"><FreebieSection /></div></div><FaqSection /><FromBlog posts={posts} /><ClosingCta />
   </main>
 }

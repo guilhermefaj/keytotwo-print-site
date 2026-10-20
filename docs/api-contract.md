@@ -82,6 +82,7 @@ Headers enviados pelo site:
 | 401 | `UNAUTHENTICATED` | Rota de sessão sem sessão válida; função interna sem chave válida |
 | 403 | `EMAIL_NOT_CONFIRMED` | Sessão de conta sem e-mail confirmado |
 | 403 | `NOT_ENTITLED` | Sem direito ao arquivo |
+| 403 | `FREE_GAMES_LOCKED` | Gratuito pedido por conta que nunca aceitou os e-mails (6.9) |
 | 403 | `ORIGIN_NOT_ALLOWED` | `Origin` fora da lista |
 | 404 | `NOT_FOUND` | Rota inexistente |
 | 404 | `FILE_NOT_FOUND` | Arquivo inexistente, não publicado, trocado por versão nova ou fora do escopo |
@@ -127,8 +128,8 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `GET /order-status` | Stripe lê a sessão → `fulfill_order` ou `set_order_status`, se preciso → `get_order_status(order_id, uid)` | I3 |
 | `POST /download-url` | `resolve_download(uid, file_id)` → assina no B2 | I4 |
 | `GET /d/{token}` | `resolve_delivery(entitlement_id, game_id)` → assina no B2 | I4 |
-| `GET /free-game` | `get_free_game()` | I4 |
-| `POST /free-download` | `resolve_free_download(file_id)` → assina no B2 | I4 |
+| `GET /free-games` | `list_free_games()` | Gratuitos (2026-10-20) |
+| `POST /free-download` | `resolve_free_download(user_id, file_id)` → assina no B2 | Gratuitos (2026-10-20) |
 | `POST /email/unsubscribe` | `unsubscribe(user_id, 'unsubscribe_link')` | I5 |
 | `stripe-webhook` | `fulfill_order` ou `set_order_status` (seção 9) | I3 |
 | `brevo-webhook` | `record_email_event(...)` | I5 |
@@ -151,7 +152,8 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `POST /checkout` · `GET /order-status` | Sessão | I3 | Implementada |
 | `POST /download-url` | Sessão | I4 | Planejada |
 | `GET /d/{token}` | Token HMAC | I4 | Planejada |
-| `GET /free-game` · `POST /free-download` | Pública **[D12]** | I4 | Planejada |
+| `GET /free-games` | Pública | Gratuitos | Implementada |
+| `POST /free-download` | Sessão + aceite de e-mails registrado alguma vez | Gratuitos | Implementada |
 | `GET` e `POST /email/unsubscribe` | Token HMAC | I5 | Planejada |
 
 Rota ainda não implementada responde `404 NOT_FOUND`.
@@ -258,7 +260,7 @@ Um carrinho por usuário, guardado no banco (vale entre aparelhos). Não há car
 
 `PUT /account/marketing`, corpo `{ "granted": true, "source": "account", "text_version": "mkt-2026-10" }` → `set_marketing_consent(uid, granted, source, text_version)`. Responde `200 { "marketing": { ... } }`.
 
-- `source` aceito do site: `account`, `signup_prompt` ou `cart`. `signup_prompt` e `cart` só concedem; para retirar, `source` é `account`. As demais origens (`unsubscribe_link`, `brevo_webhook`, `support`) são só do servidor. Fora dessas regras, `400 INVALID_REQUEST`.
+- `source` aceito do site: `account`, `signup_prompt`, `cart` ou `free_games` (página Gratuitos). `signup_prompt`, `cart` e `free_games` só concedem; para retirar, `source` é `account`. As demais origens (`unsubscribe_link`, `brevo_webhook`, `support`) são só do servidor. Fora dessas regras, `400 INVALID_REQUEST`.
 - `text_version` é obrigatório para conceder e opcional para revogar. Segue `^[A-Za-z0-9._-]{1,40}$`, o mesmo formato do banco, e é a versão do texto que a pessoa viu **[D6]**.
 - Consentimento é sempre opcional: comprar não depende dele. Cada mudança vira uma linha no histórico; repetir o mesmo estado não cria linha (`noop`).
 
@@ -443,12 +445,13 @@ Pública, autenticada pelo token (seção 7). Um botão por jogo no e-mail de en
 - Respostas com `Cache-Control: no-store` e `Referrer-Policy: no-referrer`. Só `GET`; fora o `401`, não há resposta JSON. O redirecionamento leva só `link=`, sem o jogo.
 - Quem tem o link baixa sem login enquanto o direito estiver ativo e o link valer, como um anexo encaminhado. A validade padrão é de 30 dias **[D4]**.
 
-### 6.9 `GET /free-game` e `POST /free-download`
+### 6.9 `GET /free-games` e `POST /free-download`
 
-Públicas.
+Gratuitos (responsável, 2026-10-20): mais de um jogo grátis publicado; para baixar, conta confirmada e o aceite de e-mails registrado **alguma vez**. Quem retira o aceite depois continua baixando.
 
-- `GET /free-game` → `get_free_game()`: `200 { "available": false }` enquanto não houver jogo gratuito publicado, ou `200 { "available": true, "game": { "name": "…" }, "file": { "id": "<uuid>", "version": "1.0", "size_bytes": 123 } }`.
-- `POST /free-download` com `{ "file_id": "<uuid>" }` → `resolve_free_download(file_id)`: `ok` → `200 { "url", "expires_at" }` (300 s, anexo como em 6.7); `not_found`, inclusive id de arquivo pago, → `404 FILE_NOT_FOUND`. Corpo inválido → `400`.
+- `GET /free-games` (pública) → `list_free_games()`: `200 { "games": [] }` enquanto não houver gratuito publicado, ou `200 { "games": [{ "code": "F001", "name": "…", "file": { "id": "<uuid>", "version": "1.0", "size_bytes": 123 } }] }`, em ordem de código. Sem bucket, chave nem nome do arquivo.
+- `POST /free-download` (sessão) com `{ "file_id": "<uuid>" }` → `resolve_free_download(user_id, file_id)`: `ok` → `200 { "url", "expires_at" }` (300 s, anexo como em 6.7); `locked` (nunca aceitou os e-mails) → `403 FREE_GAMES_LOCKED`; `not_found`, inclusive id de arquivo pago, → `404 FILE_NOT_FOUND`. Sem sessão → `401`; e-mail não confirmado → como nas outras rotas de conta; corpo inválido → `400`.
+- O site libera pelo `PUT /account/marketing` com `source: "free_games"` (6.6) e lê `free_games_unlocked` em `GET /account`.
 
  As condições do jogo gratuito e a eventual exigência de login estão pendentes **[D12]**. Rota pública que grava no banco: limite de abuso pendente (seção 12).
 
@@ -632,7 +635,7 @@ Contestação e reembolso valem para o pedido inteiro.
 ### 11.1 O que mudou na v0.3.1 (I4)
 
 - `GET /d/{token}`: token adulterado ou malformado → `401 INVALID_TOKEN`, em vez de `302` (pedido da tarefa I4); vencido continua `302 ?link=expirado`.
-- `GET /free-game` e `POST /free-download`: formato da resposta descrito (6.9).
+- `GET /free-games` e `POST /free-download`: formato da resposta descrito (6.9); o download gratuito exige sessão desde 2026-10-20.
 - URL do B2 com `response-content-disposition=attachment` e `response-content-type` (6.7).
 - E-mail: template da entrega no código, `EMAIL_MODE` (`log`/`brevo`), `EMAIL_LOG_MAILPIT_URL`, `EMAIL_ALLOWED_RECIPIENTS` e `API_PUBLIC_URL` (seções 8 e 10); a resposta do `email-dispatch` conta `rejected`, não `skipped`; `401`/`403` da Brevo viram `failed`.
 - Webhook e `/order-status` despacham a entrega em segundo plano.

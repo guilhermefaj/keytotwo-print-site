@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { expect, test, type Page } from './fixtures/test'
 import { authStorageKey } from './fixtures/session'
+import { marketingConsent } from '../../src/content/account'
 
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 const fileId = '11111111-1111-4111-8111-111111111111'
@@ -15,7 +16,7 @@ async function fixture(page: Page) {
   await page.route('**/auth/v1/**', route => route.fulfill({ json: fakeSession.user }))
   await page.route('**/functions/v1/api/**', route => {
     const path = new URL(route.request().url()).pathname.split('/api')[1]
-    const data = path === '/library' ? { games: [game], pending: [] } : path === '/free-game' ? { available: false } : path === '/account' ? { email: fakeSession.user.email, marketing: { opted_in: false, prompted_at: '2026-01-01' }, orders: [] } : path === '/catalog' ? { products: [] } : path === '/download-url' || path === '/free-download' ? { url: fileURL, expires_at: new Date(Date.now() + 300000).toISOString(), filename: 'jogo-teste.pdf' } : { items: [], version: 0, subtotal: null, warnings: [] }
+    const data = path === '/library' ? { games: [game], pending: [] } : path === '/free-games' ? { games: [] } : path === '/account' ? { email: fakeSession.user.email, marketing: { opted_in: false, prompted_at: '2026-01-01' }, orders: [] } : path === '/catalog' ? { products: [] } : path === '/download-url' || path === '/free-download' ? { url: fileURL, expires_at: new Date(Date.now() + 300000).toISOString(), filename: 'jogo-teste.pdf' } : { items: [], version: 0, subtotal: null, warnings: [] }
     return route.fulfill({ json: data })
   })
   await page.route(fileURL, route => route.fulfill({ contentType: 'application/pdf', headers: { 'Content-Disposition': 'attachment; filename="jogo-teste.pdf"' }, body: '%PDF-1.4\n% Synthetic test response only; not a game\n%%EOF' }))
@@ -115,23 +116,41 @@ test('no published PDF: preparation message, retained game and disabled download
   await expect(page.locator('.library-grid > li')).toHaveCount(1)
 })
 
-test('free game unavailable: no navigation, download button or invented game', async ({ page }) => {
-  await page.goto('/jogo-gratuito')
-  await expect(page.getByRole('heading', { name: 'Jogo gratuito', exact: true })).toBeVisible()
-  await expect(page.getByRole('link', { name: /Jogo gr(átis|atuito)/ })).toHaveCount(0)
+const freeGames = { games: [{ code: 'F001', name: 'Hora dos Artistas', file }, { code: 'F002', name: 'Pote de Planos', file: { ...file, id: newerFileId } }] }
+
+test('gratuitos sem sessão: passo a passo à vista, entrada que volta para a página e nenhum download', async ({ browser }) => {
+  const page = await browser.newPage()
+  await page.route('**/functions/v1/api/**', route => route.fulfill({ json: freeGames }))
+  await page.goto('/gratuitos')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Dois jogos de graça para começar.')
+  await expect(page.getByRole('heading', { name: 'Como baixar', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Criar conta ou entrar', exact: true })).toHaveAttribute('href', '/entrar?next=%2Fgratuitos')
+  await expect(page.locator('.free-games [data-shop-game]')).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: /Seguir @keytotwo no Instagram/ })).toHaveAttribute('href', 'https://www.instagram.com/keytotwo/')
+  await page.close()
 })
 
-test('free game available: public download uses free endpoint', async ({ page }) => {
-  await library(page)
-  await page.route('**/api/free-game', route => route.fulfill({ json: { available: true, game: { name: 'Gratuito de TESTE' }, file } }))
-  await page.goto('/jogo-gratuito')
-  await expect(page.getByRole('heading', { name: 'Gratuito de TESTE' })).toBeVisible()
-  await expect(page.locator('header .desktop-nav').getByRole('link', { name: 'Jogo grátis' })).toBeVisible()
+test('gratuitos com sessão: aceitar os e-mails libera os dois jogos e o download vai com a sessão', async ({ page }) => {
+  let unlocked = false
+  let consent: unknown
+  await page.route('**/functions/v1/api/free-games', route => route.fulfill({ json: freeGames }))
+  await page.route('**/functions/v1/api/account', route => route.fulfill({ json: { email: fakeSession.user.email, marketing: { opted_in: unlocked, prompted_at: '2026-01-01' }, free_games_unlocked: unlocked, orders: [] } }))
+  await page.route('**/functions/v1/api/account/marketing', route => { consent = route.request().postDataJSON(); unlocked = true; return route.fulfill({ json: { marketing: { opted_in: true } } }) })
+  await page.route('**/functions/v1/api/free-download', route => route.fulfill({ json: { url: fileURL, expires_at: new Date(Date.now() + 300_000).toISOString() } }))
+  await page.goto('/gratuitos')
+  test.skip(await page.getByText(/Prévia da entrega \(mock\)/).count() > 0, 'Requires VITE_DELIVERY_MODE=api build')
+  await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Aceitar e liberar os jogos', exact: true }).click()
+  await expect(page.getByText('Os jogos estão liberados na sua conta. É só baixar.')).toBeVisible()
+  expect(consent).toEqual({ granted: true, source: 'free_games', text_version: marketingConsent.version })
+  await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(2)
   const response = page.waitForResponse(result => result.url().endsWith('/api/free-download'))
   const downloaded = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Baixar PDF' }).click()
-  expect((await response).request().headers().authorization).toBeUndefined()
+  await page.locator('[data-shop-game="pote-de-planos"]').getByRole('button', { name: 'Baixar PDF' }).click()
+  const request = (await response).request()
+  expect(request.headers().authorization).toBe(`Bearer ${fakeSession.access_token}`)
+  expect(request.postDataJSON()).toEqual({ file_id: newerFileId })
   await downloaded
 })
 

@@ -8,6 +8,7 @@ const hasBlogPosts = (await readBlogPosts({ stage: buildSiteConfig().stage })).l
 export default [
   index('routes/home.tsx'),
   route('loja', 'routes/loja.tsx'),
+  route('gratuitos', 'routes/gratuitos.tsx'),
   ...(productPages.length ? [route('loja/:slug', 'routes/loja.produto.tsx')] : []),
   route('preview/hero', 'routes/home.tsx', { id: 'preview-hero' }),
   route('entrar', 'routes/entrar.tsx'),
@@ -26,7 +27,6 @@ export default [
   // React Router forbids server loaders with no prerendered URLs in SPA mode.
   // An empty live blog therefore resolves unknown slugs through the existing 404.
   ...(hasBlogPosts ? [route('blog/:slug', 'routes/blog.post.tsx')] : []),
-  route('jogo-gratuito', 'routes/jogo-gratuito.tsx'),
   route('email/preferencias', 'routes/email.preferencias.tsx'),
   route('termos', 'routes/termos.tsx'),
   route('privacidade', 'routes/privacidade.tsx'),

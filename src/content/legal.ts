@@ -145,8 +145,8 @@ const reembolso: LegalContent = {
 
 const privacidade: LegalContent = {
   title: 'Política de privacidade',
-  version: '2026-10-19',
-  versionLabel: 'Versão de 19 de outubro de 2026',
+  version: '2026-10-20',
+  versionLabel: 'Versão de 20 de outubro de 2026',
   intro: 'Esta política explica quais dados pessoais a KeyToTwo trata, para quê, com quem compartilha, por quanto tempo guarda e como você exerce seus direitos, conforme a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).',
   sections: [
     { title: 'Quem cuida dos seus dados', id: 'controladora', paragraphs: [
@@ -157,7 +157,7 @@ const privacidade: LegalContent = {
       [
         'Conta: e-mail, data de criação, confirmação do e-mail e data do último acesso. Se você entra com o Google, também o nome e a foto do perfil que o Google compartilha. Se você cria uma senha, ela é guardada só de forma cifrada (hash).',
         'Compras: itens da sacola, pedidos, produtos, valores, cupom usado, datas, a versão dos termos aceita e o momento do aceite, e as referências do pagamento na Stripe.',
-        'Acesso aos jogos: a sua biblioteca em Meus jogos e o registro de cada download (qual arquivo e quando).',
+        'Acesso aos jogos: a sua biblioteca em Meus jogos e o registro de cada download, inclusive dos gratuitos (qual arquivo e quando).',
         'Preferência de e-mail: se você aceita receber novidades, com o histórico de quando aceitou ou retirou o aceite, por onde e qual versão do texto viu.',
         'E-mails enviados: tipo da mensagem (entrega, lembrete ou novidade), endereço, situação do envio e, quando a Brevo avisa, devolução, reclamação de spam ou descadastro.',
         'Uso da loja: eventos como conta confirmada, item colocado ou tirado da sacola, pagamento iniciado e pedido pago, ligados à sua conta.',
@@ -176,6 +176,7 @@ const privacidade: LegalContent = {
         'Enviar novidades, ofertas, lembrete da sacola e dicas depois da compra: consentimento (art. 7º, I), que você dá e retira em Minha conta ou pelo link de cada e-mail.',
       ],
       'Comprar não depende de aceitar e-mails de novidades. Retirar o consentimento não afeta os e-mails de acesso e de pedido. Não vendemos dados pessoais.',
+      'Os jogos gratuitos são a exceção: para baixá-los, é preciso ter conta e aceitar os e-mails de novidades (LGPD, art. 9º, § 3º). Quem retira o aceite depois continua baixando os gratuitos.',
     ] },
     { title: 'Com quem compartilhamos', id: 'compartilhamento', paragraphs: [
       'Usamos fornecedores que tratam dados em nosso nome (operadores), só para as finalidades acima:',

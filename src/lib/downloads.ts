@@ -3,7 +3,7 @@ import { siteConfig } from './seo'
 
 // I4 is integrated: test/live use the API; preview and an explicit local mock stay isolated.
 export const deliveryMock = siteConfig.stage === 'preview' || (siteConfig.stage !== 'live' && import.meta.env.VITE_DELIVERY_MODE === 'mock')
-export type FreeGame = { available: false } | { available: true; game: { name: string }; file: { id: string; version: string; size_bytes: number } }
+export type FreeGames = { games: { code: string; name: string; file: { id: string; version: string; size_bytes: number } }[] }
 export type DownloadLink = { url: string; expires_at: string; filename?: string | null }
 
 export function fileSize(bytes: number) {
@@ -15,7 +15,7 @@ export function fileSize(bytes: number) {
 export async function freshDownload(fileId: string, isFree = false, signal?: AbortSignal): Promise<DownloadLink> {
   // No signed URL is cached or stored. Every click rechecks entitlement on the server.
   for (let attempt = 0; attempt < 2; attempt++) {
-    const link = await api<DownloadLink>(isFree ? '/free-download' : '/download-url', { method: 'POST', body: { file_id: fileId }, public: isFree, signal })
+    const link = await api<DownloadLink>(isFree ? '/free-download' : '/download-url', { method: 'POST', body: { file_id: fileId }, signal })
     const url = new URL(link.url)
     if (url.protocol !== 'https:' || url.username || url.password) throw new Error('INVALID_DOWNLOAD_URL')
     if (Date.parse(link.expires_at) > Date.now() + 5000) return link
@@ -43,6 +43,7 @@ export function downloadError(error: unknown) {
     FILE_UNAVAILABLE: 'O arquivo não abriu agora, mas a compra continua na sua conta. Tente de novo em alguns minutos ou fale com a gente pela Ajuda.',
     FILE_NOT_FOUND: 'Este jogo ganhou uma versão nova do arquivo. A lista já foi atualizada. Tente baixar de novo.',
     NOT_ENTITLED: 'Não foi possível confirmar seu acesso a este arquivo. Confira o pedido na sua conta ou procure ajuda.',
+    FREE_GAMES_LOCKED: 'Para baixar, aceite receber nossos e-mails em Como baixar, no topo da página.',
   }
   return messages[code] || apiErrorMessage(error)
 }

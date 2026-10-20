@@ -13,6 +13,7 @@
 | Implementado (I4) | Migração `20261008183123_i4_delivery_downloads_queue.sql` (nenhuma tabela muda): `resolve_download`, `resolve_delivery`, `get_free_game`, `resolve_free_download`, `claim_email_batch` e `mark_email_result`. Seed com tamanho e sha256 reais dos 5 PDFs de TESTE no bucket de teste do B2 (D-26). pgTAP `09_email_queue` e `10_downloads`, T125 no `90_concurrency` (dois despachantes e a marcação simultânea), I4 sobre o seed no `11`. **21 RPCs** no banco. Verificado na stack local: `supabase db reset` do zero com as 6 migrações e o seed; `supabase test db` com 12 arquivos e **831** testes (PASS); `supabase db advisors --local` sem WARN nem ERROR (INFO: 4 FKs compostas sem índice e índices ainda não usados). |
 | Implementado (I5) | Migração `20261008190749_i5_followups_suppressions_agenda.sql` (nenhuma tabela muda): extensões `pg_cron`, `pg_net` e `supabase_vault`; `record_email_event` (público, só `service_role`); `private.enqueue_followups` e `private.dispatch_tick` (sem EXECUTE para papel de API); o job `email-dispatch-tick` a cada 5 minutos. Passo local `supabase/local/aplicar-dispatch-vault.mjs` (grava no Vault a URL e a chave do despacho, sem imprimir). pgTAP `12_followups` (T65, T88 e T89). **22 RPCs** no banco, todas as do contrato. Verificado na stack local: `supabase db reset` do zero com as 7 migrações e o seed; `supabase test db` com 13 arquivos e **879** testes (PASS, também depois de o despacho já ter enviado as entregas do seed); `supabase db advisors --local` sem WARN nem ERROR; o primeiro disparo real do `pg_cron` rodou (`succeeded`), o `pg_net` chamou o `email-dispatch` pelo Kong com a chave do Vault e recebeu **HTTP 200**, e o despacho enviou (modo log) as 2 entregas do seed. |
 | Implementado (LGPD) | Migração `20261019120000_lgpd_direitos_titular.sql`: `orders.user_id` e `orders.email` passam a aceitar NULL só com `anonymized_at` (CHECK `orders_anonymized_check`); `entitlements.user_id` NULL só revogado, motivo novo `account_deleted` (a I-5 o trata como o `manual`); `guard_order_changes` aceita a anonimização só dentro da exclusão de conta, sem volta; `forbid_modification` deixa a exclusão de conta apagar o histórico de consentimento; `export_account_data` e `delete_account_data` (públicas, só `service_role`); `private.purge_email_outbox` e o job diário `email-outbox-purge`. pgTAP `13_account_rights` (T140 a T147), `01` e `02` atualizados. **24 RPCs** no banco. Verificado sem Docker num PGlite (PG 17) com `auth.users`, `cron` e Vault simulados: as 8 migrações aplicam e passam `01` a `10` e `13`; a stack local completa fica para o job de integração do CI. |
+| Implementado (Gratuitos) | Migração `20261020150000_gratuitos.sql`: cai `games_one_published_free` (vários gratuitos publicados); `get_free_game` vira `list_free_games()`; `resolve_free_download(p_user_id, p_file_id)` exige conta confirmada e algum aceite de e-mails (`private.free_games_unlocked`), com o novo outcome `locked`; `marketing_consents` e `set_marketing_consent` aceitam a origem `free_games` (só concede); `get_account` devolve `free_games_unlocked`. pgTAP `02`, `08`, `10` e `11` atualizados. |
 | Não verificado | Fora do I5: o despacho real pela Brevo, o `brevo-webhook` e o link `GET /d/{token}` (Ferrolho, só se provam na integração); a chave `dispatch` e os segredos do Vault na nuvem (I6, à mão no painel); a assinatura da URL no B2; o login com Google (exige credenciais do Google; verificação manual). O Checkout real da Stripe (sessão embutida, cupom, retorno) é do Ferrolho e só se prova na integração. Regras de plataforma (Data API) não foram lidas do projeto remoto. |
 
 Os blocos `sql` marcados com `-- @ddl` são o DDL de referência (exequível). Os demais são assinaturas e exemplos. Nome comercial, preço, composição de avulsos, textos legais e remetentes **não são decididos aqui**: aparecem como `PENDENTE` (seção 11).
@@ -118,9 +119,7 @@ create table public.games (
   constraint games_status_check check (status in ('draft', 'published')),
   constraint games_id_access_key unique (id, access)   -- alvo das FKs compostas
 );
--- no máximo UM jogo gratuito publicado (P-10)
-create unique index games_one_published_free on public.games ((true))
-  where access = 'free' and status = 'published';
+-- O índice games_one_published_free (no máximo UM gratuito publicado, P-10) caiu na migração dos gratuitos (2026-10-20).
 
 -- @ddl
 create table public.product_games (
@@ -238,12 +237,12 @@ create table public.marketing_consents (
   constraint marketing_consents_email_check  check (email = lower(btrim(email)) and email ~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'),
   constraint marketing_consents_action_check check (action in ('granted', 'revoked')),
   constraint marketing_consents_source_check check (source in
-    ('signup_prompt', 'account', 'cart', 'unsubscribe_link', 'brevo_webhook', 'support')),
+    ('signup_prompt', 'account', 'cart', 'free_games', 'unsubscribe_link', 'brevo_webhook', 'support')),
   constraint marketing_consents_text_check   check (action <> 'granted' or text_version is not null),
   constraint marketing_consents_version_check check (text_version is null or text_version ~ '^[A-Za-z0-9._-]{1,40}$'),
   -- origens que só concedem ou só revogam
   constraint marketing_consents_source_action_check check (
-    (source in ('signup_prompt', 'cart') and action = 'granted')
+    (source in ('signup_prompt', 'cart', 'free_games') and action = 'granted')
     or (source in ('unsubscribe_link', 'brevo_webhook') and action = 'revoked')
     or source in ('account', 'support'))
 );
@@ -1055,8 +1054,8 @@ unsubscribe(uuid, text)
 record_email_event(text, text, text, timestamptz)
 resolve_download(uuid, uuid)
 resolve_delivery(uuid, bigint)
-get_free_game()
-resolve_free_download(uuid)
+list_free_games()
+resolve_free_download(uuid, uuid)
 claim_email_batch(integer, uuid, timestamptz)
 mark_email_result(uuid, text, text, text)
 ```
@@ -1315,7 +1314,7 @@ create function public.set_marketing_consent(p_user_id uuid, p_granted boolean, 
                                              p_text_version text default null)
   returns table (outcome text, opted_in boolean);   -- 'applied' | 'noop'
 ```
-- `p_source` ∈ `signup_prompt`, `account`, `cart` (origens do usuário). Conceder exige `p_text_version` (`KT001`). **Mesmo estado não cria linha** no histórico (`noop`). Insere em `marketing_consents` (e-mail da conta como fotografia); a trigger atualiza `profiles`. Revogar cancela o marketing ainda na fila (`no_opt_in`). Com `p_source = 'signup_prompt'`, preenche também `profiles.marketing_prompted_at` se estiver nulo (inclusive em `noop`: a pessoa viu o convite).
+- `p_source` ∈ `signup_prompt`, `account`, `cart`, `free_games` (origens do usuário; `free_games` desde 2026-10-20, só concede). Conceder exige `p_text_version` (`KT001`). **Mesmo estado não cria linha** no histórico (`noop`). Insere em `marketing_consents` (e-mail da conta como fotografia); a trigger atualiza `profiles`. Revogar cancela o marketing ainda na fila (`no_opt_in`). Com `p_source = 'signup_prompt'`, preenche também `profiles.marketing_prompted_at` se estiver nulo (inclusive em `noop`: a pessoa viu o convite).
 
 ```sql
 create function public.mark_marketing_prompt(p_user_id uuid) returns timestamptz;
@@ -1424,15 +1423,15 @@ create function public.resolve_delivery(p_entitlement_id uuid, p_game_id bigint)
 - Serve a versão **vigente** do jogo (P-2). Com `ok`, grava `download_events (kind='paid', user_id do direito)`. `size_bytes` permite ao despachante decidir **anexo** em vez de link (D4); anexar exige PDFs medidos abaixo do limite da Brevo.
 
 ```sql
-create function public.get_free_game() returns jsonb;
--- {"available": false}
--- {"available": true, "game": {"code","name"}, "file": {"id","version","size_bytes","filename"}}
-create function public.resolve_free_download(p_file_id uuid)
+create function public.list_free_games() returns jsonb;
+-- [] ou [{"code","name","file": {"id","version","size_bytes","filename"}}, ...] em ordem de código
+create function public.resolve_free_download(p_user_id uuid, p_file_id uuid)
   returns table (outcome text, bucket text, object_key text, filename text,
-                 content_type text, size_bytes bigint);   -- 'ok' | 'not_found'
+                 content_type text, size_bytes bigint);   -- 'ok' | 'locked' | 'not_found'
+create function private.free_games_unlocked(p_user_id uuid) returns boolean;   -- algum 'granted' em marketing_consents
 ```
-- Disponível = jogo `access='free'` e `published` com PDF `free` `published` (e objeto no B2). Senão `available=false` (nenhum botão no site). A resposta não traz bucket nem chave.
-- `resolve_free_download`: `ok` só para arquivo `access='free'` e `published` de jogo grátis `published`; qualquer outro id (inclusive pago) é `not_found`. Sem login. Grava `download_events (kind='free', user_id NULL)`. **Não captura e-mail nem contato** (condições do gratuito pendentes, P-10); `download_events` não tem coluna de IP, agente nem e-mail.
+- Listado = jogo `access='free'` e `published` com PDF `free` `published` (e objeto no B2); vários podem estar publicados (migração de 2026-10-20). A resposta não traz bucket nem chave.
+- `resolve_free_download`: exige `p_user_id` e `p_file_id` (`KT001`) e e-mail confirmado (`KT009`). `not_found` para qualquer id que não seja PDF `free` `published` de jogo grátis `published` (inclusive pago), antes de olhar o desbloqueio; `locked` se a conta nunca aceitou os e-mails (`private.free_games_unlocked`); `ok` grava `download_events (kind='free', user_id)`. Retirar o aceite depois não bloqueia (decisão do responsável, 2026-10-20). `get_account` devolve `free_games_unlocked`.
 
 ### 6.9 Rota → RPC (para o Ferrolho)
 
@@ -1452,7 +1451,7 @@ create function public.resolve_free_download(p_file_id uuid)
 | `POST /account/delete` | `delete_account_data(uid)` → só com `deleted`, Auth admin `DELETE /auth/v1/admin/users/{uid}` |
 | `POST /download-url` | `resolve_download(uid, file_id)` → assina a URL no B2 |
 | `GET /d/{token}` (pública) | `resolve_delivery(entitlement_id, game_id)` → 302 para a URL assinada ou `/meus-jogos` |
-| `GET /free-game`, `POST /free-download` | `get_free_game()`, `resolve_free_download(file_id)` |
+| `GET /free-games`, `POST /free-download` | `list_free_games()`, `resolve_free_download(user_id, file_id)` |
 | `POST /email/unsubscribe` (pública, token HMAC) | `unsubscribe(uid, 'unsubscribe_link')` |
 | `stripe-webhook` | `fulfill_order`/`set_order_status` com `p_stripe_event_id` e `p_event_type` (e, na liberação, subtotal, desconto e código promocional da sessão); `deferred` → responde `500` (a Stripe reenvia); `send_delivery` → despacho imediato |
 | `brevo-webhook` | `record_email_event(email, event, message_id, occurred_at)` |
@@ -1529,7 +1528,7 @@ O seed grava os pedidos direto, como dono, com ids fixos (`subtotal` e `desconto
 | `08_b2_metadata` | **T80** `object_key` rejeita `https://…`, `..`, barra inicial, `?`, espaço e prefixo diferente de `access`; `bucket` fora do formato. **T81** `unique (bucket, object_key)`; `sha256`, `size_bytes`, extensão × `kind`. **T82** publicar novo exige aposentar o anterior (sequência na mesma transação passa). **T83** apagar arquivo publicado → `KT010`; rascunho com `download_events` → 23503. **T84** `bucket`/`object_key` imutáveis depois de `draft`. |
 | `09_email_queue` | O arquivo é dono da fila (tira da fila, só dentro da transação, o que já existia). **T85** `delivery` nunca duplica (`dedupe_key` repetida: 23505). **T86** `claim_email_batch`: `KT001` (`p_limit`, `p_now`); pega só o vencido, respeita `p_limit`, a ordem e o `p_outbox_id`; não pega `sent`/`failed`/`canceled`; `sending` fresco não volta e parado há mais de 10 min volta contando tentativa (na 5ª falha de vez); **entrega**: paga com direitos ativos segue, contestada/perdida/reembolsada ou com direito revogado à mão → `canceled` (`entitlement_revoked`), em outro estado → `canceled` (`order_not_paid`); **marketing**: sem opt-in → `no_opt_in`, bounce/queixa/descadastro geral depois do opt-in → `suppressed` (antes do opt-in não bloqueia), e-mail não confirmado → `email_not_confirmed`; lembrete com `version` diferente, sem `cart_version`, carrinho vazio ou inexistente → `cart_changed`/`cart_empty`; pós-compra com o pedido fora de `paid` → `order_not_paid`; **limite de 1 marketing por 24 h** adia sem pular (no mesmo lote, quem recebeu há 2 h, quem recebeu há 25 h passa, a entrega não conta). **T87** `mark_email_result`: `KT001`, `not_found`, `noop` em linha que não está em envio; `sent` (mensagem do provedor, `sent_at`, funil `delivery_sent` uma vez na entrega e nenhum no marketing; repetir é `noop`); `failed` volta à fila com 5, 20, 45 e 80 min e a 5ª falha é final; `rejected` vai a `failed`; erro de 900 caracteres cortado em 500; só sai de novo quando a data vence. De ponta a ponta: `fulfill_order` → `claim` por `p_outbox_id` → `mark sent` → a fila não envia duas vezes, nem pelo lote nem pelo reenvio da página de retorno. Papel da API: `service_role` executa, `anon` e `authenticated` não (`42501`). |
 
-| `10_downloads` | **T100** `resolve_download`: `ok` com bucket, chave, nome, tipo e tamanho e grava `download_events` (pago, usuário e arquivo; cada download um evento); `not_entitled` (quem não comprou, dono de outro jogo, **direito revogado por reembolso ou por contestação**); `not_found` (id inexistente, arquivo grátis mesmo com direito, **`retired` com sucessor publicado**, rascunho e aposentado sem direito); `unavailable` (direito ok com `draft` ou com `retired` sem sucessor); o dono de **outro produto que contém o jogo** também baixa; ZIP do pacote pelo direito do produto; localização nula e nenhum evento quando `outcome ≠ ok`; `KT009`/`KT001`. **`download_events` sem IP**: só `id`, `user_id`, `file_id`, `kind` e `created_at`, e só inserção. A chave do B2 não aparece em `get_library`, `get_account` nem `get_catalog`. **T101** `resolve_delivery`: `ok` (grava o evento do dono do direito, serve a versão vigente 1.1 e devolve o tamanho), `not_found` (direito inexistente, jogo fora da fotografia, que vem antes de `revoked`), `revoked` (reembolso e contestação), `unavailable` (sem PDF pago publicado); as recusas não gravam evento. **T102** `get_free_game`/`resolve_free_download`: `false` com jogo ou arquivo em rascunho; `true` só com os dois publicados (sem bucket nem chave na resposta); `ok` sem login e evento `free` com `user_id` nulo; id de arquivo pago, rascunho ou inexistente → `not_found`. Só o `service_role` executa. |
+| `10_downloads` | **T100** `resolve_download`: `ok` com bucket, chave, nome, tipo e tamanho e grava `download_events` (pago, usuário e arquivo; cada download um evento); `not_entitled` (quem não comprou, dono de outro jogo, **direito revogado por reembolso ou por contestação**); `not_found` (id inexistente, arquivo grátis mesmo com direito, **`retired` com sucessor publicado**, rascunho e aposentado sem direito); `unavailable` (direito ok com `draft` ou com `retired` sem sucessor); o dono de **outro produto que contém o jogo** também baixa; ZIP do pacote pelo direito do produto; localização nula e nenhum evento quando `outcome ≠ ok`; `KT009`/`KT001`. **`download_events` sem IP**: só `id`, `user_id`, `file_id`, `kind` e `created_at`, e só inserção. A chave do B2 não aparece em `get_library`, `get_account` nem `get_catalog`. **T101** `resolve_delivery`: `ok` (grava o evento do dono do direito, serve a versão vigente 1.1 e devolve o tamanho), `not_found` (direito inexistente, jogo fora da fotografia, que vem antes de `revoked`), `revoked` (reembolso e contestação), `unavailable` (sem PDF pago publicado); as recusas não gravam evento. **T102** `list_free_games`/`resolve_free_download`: lista vazia com jogo ou arquivo em rascunho; os dois gratuitos publicados em ordem de código (sem bucket nem chave); `locked` para conta sem nenhum aceite; `ok` para quem aceitou pela página Gratuitos e para quem aceitou e saiu da lista, com evento `free` do usuário; `get_account.free_games_unlocked`; arquivo pago e id inexistente `not_found` antes de `locked`; recusas sem evento; argumentos nulos `KT001`, e-mail não confirmado `KT009`; `free_games` não revoga; só `service_role` executa. |
 
 | `11_seed_smoke` | **T110** após `db reset`: contagens da seção 8; todo nome, arquivo e e-mail com `TESTE`/`.test`; ids Stripe com `TESTE`; pedidos nos estados esperados; perfis criados pela trigger; A possui os 5 jogos; `cart_add(A, J001)` → `already_owned`; o avulso J001 (single, 1 jogo, ligado ao `TESTE-J01`); carrinho de B mostra a sobreposição parcial; C (não confirmado) → `KT009`. |
 | `12_followups` | O arquivo é dono da fila e das supressões (o que já existia sai de toda elegibilidade, só dentro da transação). **T65** `record_email_event`: `KT001`; `hard_bounce` suprime sem mexer no consentimento nem na fila (barrado no envio); `complaint` e `unsubscribe` revogam o consentimento (origem `brevo_webhook`) e cancelam o marketing na fila sem tocar a entrega; idempotente por e-mail e motivo (noop devolve o usuário; e-mail com maiúsculas e espaços); e-mail sem conta e conta removida (`user_id` nulo); horário do evento (futuro vira agora; descadastro anterior ao opt-in não revoga nem bloqueia; reenvio de evento velho é noop; opt-in de novo e novo descadastro revoga); mensagem do provedor em branco ou longa; só inserção; só `service_role`. **T88** `enqueue_followups`: lembrete só 3 h depois da última mudança (limite inclusivo), um por `version`, só itens vendáveis e não possuídos, nunca sem opt-in, com bounce, com descadastro depois do opt-in, com e-mail não confirmado, carrinho vazio, jogos já possuídos ou pagamento assíncrono em curso; a compra cancela o lembrete da fila e nenhum novo nasce; pós-compra só entre D+3 (inclusivo) e D+14 (exclusivo), um por pedido, com direito ativo (não com reembolso, contestação, direito revogado, sem opt-in, com queixa nem pedido não pago); payloads; `scheduled_at`; a contagem devolvida; o claim refaz as checagens (descadastro e carrinho que mudou). **T89** agenda: job `email-dispatch-tick` a cada 5 min e ativo; ninguém de API executa `dispatch_tick` nem `enqueue_followups`; sem os segredos no Vault só enfileira; com só um dos dois não chama; com os dois chama o despacho por `pg_net` (POST, JSON, `apikey` e `{"limit": 20}`); erro no enfileiramento vira aviso e o despacho ainda é chamado. |

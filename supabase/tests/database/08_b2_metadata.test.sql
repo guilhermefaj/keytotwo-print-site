@@ -171,7 +171,8 @@ select pg_temp.expect('files: ZIP do pacote em rascunho passa', $q$insert into p
 select pg_temp.expect('publicar o novo sem aposentar o anterior', $q$update public.files set status='published' where filename='GM-PK1-1-v2.0.pdf'$q$, '23505');
 select pg_temp.expect('sequência aposentar → publicar na mesma transação passa', $q$update public.files set status='retired' where filename='GM-PK1-1-v1.0.pdf'; update public.files set status='published' where filename='GM-PK1-1-v2.0.pdf'$q$, 'OK');
 select pg_temp.assert('exatamente um publicado por jogo e tipo', (select count(*) = 1 from public.files where game_id = (select id from public.games where code='GM-PK1-1') and kind='pdf' and access='paid' and status='published'));
-select pg_temp.expect('um segundo jogo grátis publicado não existe', $q$update public.games set status='published' where code='PG-FREE'; insert into public.games (code,slug,name,access,status) values ('PG-FREE2','pg-free2','Outro grátis [TESTE]','free','published')$q$, '23505');
+-- Desde a migração dos gratuitos (2026-10-20), vários jogos grátis podem estar publicados ao mesmo tempo.
+select pg_temp.expect('dois jogos grátis publicados convivem', $q$update public.games set status='published' where code='PG-FREE'; insert into public.games (code,slug,name,access,status) values ('PG-FREE2','pg-free2','Outro grátis [TESTE]','free','published')$q$, 'OK');
 
 -- ===== bucket e chave imutáveis depois de draft ======================================================
 select pg_temp.expect('rascunho: a chave ainda pode mudar', $q$update public.file_objects set object_key = 'free/PG-FREE/0.1/novo.pdf' where file_id = (select id from public.files where filename='PG-FREE-v0.1.pdf')$q$, 'OK');

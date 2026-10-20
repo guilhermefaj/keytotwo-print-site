@@ -4,13 +4,14 @@ import { HttpError, json, readJsonObject } from '../../_shared/http.ts'
 
 // Mesmo formato do CHECK de marketing_consents.text_version (data-contract 2.4).
 const TEXT_VERSION = /^[A-Za-z0-9._-]{1,40}$/
-// Origens aceitas do site; signup_prompt e cart só concedem (data-contract 2.4).
-const SOURCES = ['account', 'signup_prompt', 'cart'] as const
+// Origens aceitas do site; signup_prompt, cart e free_games só concedem (data-contract 2.4).
+const SOURCES = ['account', 'signup_prompt', 'cart', 'free_games'] as const
 type Source = typeof SOURCES[number]
 
 interface Account {
   email: string | null
   marketing: { opted_in: boolean; updated_at: string | null; text_version: string | null; prompted_at: string | null }
+  free_games_unlocked: boolean
   orders: unknown[]
 }
 
@@ -19,6 +20,7 @@ async function loadAccount(userId: string): Promise<Account> {
   return account ?? {
     email: null,
     marketing: { opted_in: false, updated_at: null, text_version: null, prompted_at: null },
+    free_games_unlocked: false,
     orders: [],
   }
 }

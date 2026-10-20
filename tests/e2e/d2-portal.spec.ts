@@ -22,7 +22,7 @@ async function fixture(page: Page, { empty = false, failLibrary = false } = {}) 
     if (path === '/library' && failLibrary && !failed) { failed = true; return route.fulfill({ status: 503, json: { error: { code: 'INTERNAL_ERROR' } } }) }
     if (path === '/account/marketing') { const body = route.request().postDataJSON(); writes.push(body); optedIn = body.granted; return route.fulfill({ json: { opted_in: optedIn } }) }
     const orders = empty ? [] : ['paid', 'pending_payment'].map((status, i) => ({ ref: `synthetic-d2-${i}`, status, created_at: '2026-10-01T12:00:00Z', paid_at: status === 'paid' ? '2026-10-01T12:00:00Z' : null, amount_total: 1990, currency: 'brl', items: [product] }))
-    const json = path === '/library' ? { games: empty ? [] : games, pending: [] } : path === '/account' ? { email: user.email, marketing: { opted_in: optedIn, prompted_at: null, updated_at: null, text_version: null }, orders } : path === '/catalog' ? { products: [] } : path === '/free-game' ? { available: false } : { version: 0, items: [], subtotal: null, warnings: [] }
+    const json = path === '/library' ? { games: empty ? [] : games, pending: [] } : path === '/account' ? { email: user.email, marketing: { opted_in: optedIn, prompted_at: null, updated_at: null, text_version: null }, orders } : path === '/catalog' ? { products: [] } : path === '/free-games' ? { games: [] } : { version: 0, items: [], subtotal: null, warnings: [] }
     return route.fulfill({ json })
   })
   return writes

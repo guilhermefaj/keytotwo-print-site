@@ -399,6 +399,8 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .footer-grid { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: var(--space-3xl); }
 .footer-brand .brand img { width: 178px; height: auto; }
 .footer-brand p { font-size: var(--text-body); line-height: 1.55; max-width: 260px; margin-top: 18px; }
+.footer-instagram { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; padding-block: 10px; font-size: var(--text-label); text-underline-offset: 4px; }
+.footer-instagram:hover { text-decoration: underline; color: var(--color-deep-teal); }
 .footer-grid h2 { font-family: var(--font-sans); font-size: var(--text-label); letter-spacing: 0; margin: 0 0 12px; line-height: 1.5; font-weight: 600; }
 .site-footer nav a { display: block; padding-block: 10px; font-size: var(--text-label); line-height: 1.5; text-underline-offset: 4px; }
 .site-footer nav a:hover { text-decoration: underline; color: var(--color-deep-teal); }

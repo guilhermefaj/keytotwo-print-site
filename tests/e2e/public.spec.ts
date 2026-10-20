@@ -4,13 +4,13 @@ import { expect, test, type Page } from './fixtures/test'
 
 // Checks for the public sales pages, run against the prerendered build (build/client).
 // Stage-specific assertions follow the stage the build was made for (robots.txt tells which).
-const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/ajuda', '/termos', '/reembolsos', '/privacidade', '/loja', '/loja/p001', '/loja/j001', '/404']
+const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/gratuitos', '/email/preferencias', '/ajuda', '/termos', '/reembolsos', '/privacidade', '/loja', '/loja/p001', '/loja/j001', '/404']
 const redirectRoutes: string[] = []
 const blogRoutes = readdirSync('build/client/blog', { withFileTypes: true }).filter(file => file.isDirectory()).map(file => `/blog/${file.name}`)
 routes.push('/blog', ...blogRoutes)
 const shopRoutes = readdirSync('build/client/loja', { withFileTypes: true }).filter(file => file.isDirectory()).map(file => `/loja/${file.name}`)
 routes.push(...shopRoutes.filter(route => !routes.includes(route)))
-const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/jogo-gratuito', '/email/preferencias', '/404']
+const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/email/preferencias', '/404']
 const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao']
 const refundNotice = /Depois da libera[çc][ãa]o, n[ãa]o h[áa] reembolso, salvo arquivo com defeito ou cobran[çc]a indevida/i
 

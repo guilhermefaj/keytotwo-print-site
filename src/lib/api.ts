@@ -4,7 +4,7 @@ export type Price = { unit_amount: number; currency: string }
 export type CatalogProduct = { code: string; kind: 'bundle' | 'single'; name: string; games: { code: string; name: string }[]; price: Price | null }
 export type Cart = { version: number; items: (CatalogProduct & { status: 'ok' | 'unavailable' | 'already_owned'; available: boolean; owned_games: string[]; shared_with: string[] })[]; subtotal: { amount: number; currency: string } | null; warnings: { code: string; product_code: string }[] }
 export type Marketing = { opted_in: boolean; updated_at: string | null; text_version: string | null; prompted_at?: string | null }
-export type Account = { email: string; marketing: Marketing; orders: { ref: string; created_at: string; paid_at: string | null; status: string; amount_total: number; currency: string; items: { code: string; name: string; unit_amount: number; currency: string }[] }[] }
+export type Account = { email: string; marketing: Marketing; free_games_unlocked?: boolean; orders: { ref: string; created_at: string; paid_at: string | null; status: string; amount_total: number; currency: string; items: { code: string; name: string; unit_amount: number; currency: string }[] }[] }
 export type Library = { games: { code: string; name: string; acquired_at: string; products: { code: string; name: string }[]; files: { id: string; kind: string; version: string; size_bytes: number }[] }[]; pending: { ref: string; created_at: string; products: { code: string; name: string }[] }[] }
 
 export class ApiError extends Error {

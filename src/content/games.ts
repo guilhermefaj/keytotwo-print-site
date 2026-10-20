@@ -98,9 +98,21 @@ export const games: readonly Game[] = [
       { title: 'Mãos no papel.', text: 'Recortar, dobrar e olhar contra a luz fazem parte da investigação.' },
     ],
   },
-  // Freebies (código F): dois no início; o segundo ainda está em desenvolvimento.
-  { id: 'hora-dos-artistas', code: 'F001', name: 'Hora dos Artistas', confirmed: true, freebie: true, description: 'Jogo grátis para quem cria a conta.', pending: pending('ficha, regras, materiais e prévia do jogo.'), summary: 'Grátis para quem cria a conta. Mais detalhes em breve.', cover: cover('f001'), accent: '#c94050' },
-  { id: 'freebie-2', name: 'Jogo a definir', confirmed: false, freebie: true, description: 'Segundo jogo grátis.', pending: pending('definição do jogo e de seus materiais.'), summary: 'O segundo jogo grátis está em preparação.' },
+  // Gratuitos (código F, fichas do segundo cérebro de 2026-10-20): liberados para quem tem conta e aceita os e-mails.
+  {
+    id: 'hora-dos-artistas', code: 'F001', name: 'Hora dos Artistas', confirmed: true, freebie: true,
+    description: 'Os dois desenham o mesmo personagem de memória, contra o relógio, e decidem juntos quem chegou mais perto. No fim, cada um faz o retrato do outro.',
+    pending: pending('playtest e duração medida.'),
+    summary: 'Desenho de memória contra o relógio. Quem chegou mais perto, a dupla decide junto.',
+    cover: cover('f001'), accent: '#c94050', needs: ['impressora', 'tesoura', 'caneta', 'cronometro'],
+  },
+  {
+    id: 'pote-de-planos', code: 'F002', name: 'Pote de Planos', confirmed: true, freebie: true,
+    description: 'Vocês recortam os planos, dobram, jogam num pote e sorteiam um quando bate o "o que a gente faz hoje?". Tem date fora, date em casa, gentileza secreta, papo sem celular e desafio valendo prenda.',
+    pending: pending('playtest e teste de impressão.'),
+    summary: 'Um pote de planos para sortear quando bate o "o que a gente faz hoje?". O que sair, vale.',
+    cover: cover('f002'), accent: '#e39a2d', needs: ['impressora', 'tesoura', 'caneta'],
+  },
 ]
 
 export const packageGames = games.filter(game => !game.freebie)

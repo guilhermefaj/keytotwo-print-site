@@ -7,7 +7,7 @@ import { builtStage } from './fixtures/stage'
 
 const stage = builtStage()
 const hasBlogPosts = readFileSync('build/client/blog/index.html', 'utf8').includes('class="blog-entry')
-const links = ['Início', 'Loja', ...(hasBlogPosts ? ['Blog'] : [])]
+const links = ['Início', 'Loja', 'Gratuitos', ...(hasBlogPosts ? ['Blog'] : [])]
 
 async function capture(page: Page, name: string) {
   if (process.env.MENU_CAPTURE !== '1') return
@@ -47,7 +47,7 @@ test('menu: Loja ativa nos detalhes e CTA oculto; rodapé preserva Como funciona
     await expect(page.locator('header').getByRole('link', { name: 'Ver os jogos' })).toHaveCount(0)
   }
   const footer = page.getByRole('navigation', { name: 'Explorar', exact: true })
-  await expect(footer.getByRole('link')).toHaveText(['Início', 'Loja', 'Como funciona', ...(hasBlogPosts ? ['Blog'] : [])])
+  await expect(footer.getByRole('link')).toHaveText(['Início', 'Loja', 'Como funciona', 'Gratuitos', ...(hasBlogPosts ? ['Blog'] : [])])
   await expect(footer.getByRole('link', { name: 'Como funciona' })).toHaveAttribute('href', '/#como-funciona')
   await page.goto('/ajuda')
   const cta = page.locator('.desktop-action').getByRole('link', { name: 'Ver os jogos' })
@@ -100,17 +100,11 @@ test('menu: cabeçalho e painel cabem em 320–1440 com texto 200%', async ({ pa
   }
 })
 
-test('menu: Jogo grátis depende da disponibilidade, em desktop e celular', async ({ page }) => {
-  test.skip(stage === 'preview', 'Preview não consulta o jogo gratuito')
-  for (const available of [false, true]) {
-    await page.setViewportSize({ width: 1280, height: 900 })
-    await page.route('**/functions/v1/api/free-game', route => route.fulfill({ json: { available } }))
-    await page.goto('/ajuda')
-    await expect(page.locator('.desktop-nav').getByRole('link', { name: 'Jogo grátis' })).toHaveCount(available ? 1 : 0)
-    await page.setViewportSize({ width: 375, height: 900 })
-    await page.getByRole('button', { name: 'Abrir menu' }).click()
-    await expect(page.getByRole('dialog').getByRole('link', { name: 'Jogo grátis' })).toHaveCount(available ? 1 : 0)
-    await page.keyboard.press('Escape')
-    await page.unroute('**/functions/v1/api/free-game')
-  }
+test('menu: Gratuitos leva à página dos jogos grátis, em desktop e celular', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/ajuda')
+  await expect(page.locator('.desktop-nav').getByRole('link', { name: 'Gratuitos', exact: true })).toHaveAttribute('href', '/gratuitos')
+  await page.setViewportSize({ width: 375, height: 900 })
+  await page.getByRole('button', { name: 'Abrir menu' }).click()
+  await expect(page.getByRole('dialog').getByRole('link', { name: 'Gratuitos', exact: true })).toHaveAttribute('href', '/gratuitos')
 })
