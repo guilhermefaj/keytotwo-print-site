@@ -12,7 +12,7 @@ export type LegalContent = { title: string; intro: string; version: string; vers
 export const company = {
   brand: 'KeyToTwo',
   legalName: 'CHALK LABS CONSULTORIA EM TI LTDA',
-  name: 'Chalk Labs Consultoria em TI Ltda',
+  name: 'Chalk Labs',
   cnpj: '66.782.936/0001-20',
   email: supportEmail,
 }

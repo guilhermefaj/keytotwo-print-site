@@ -91,7 +91,9 @@ test('textos jurídicos: versão no topo, índice das seções e identificação
     expect(await index.count(), `índice de ${route}`).toBeGreaterThan(2)
     for (const href of await index.evaluateAll(links => links.map(link => link.getAttribute('href')))) await expect(page.locator(href!)).toHaveCount(1)
     await expect(page.locator('main')).not.toContainText(/PENDENTE|em preparação/i)
-    await expect(page.locator('footer')).toContainText('KeyToTwo é uma marca da Chalk Labs Consultoria em TI Ltda · CNPJ 66.782.936/0001-20 · contato@keytotwo.com.br')
+    // Rodapé com o nome curto e o CNPJ; o e-mail de atendimento fica na Ajuda e nos próprios textos.
+    await expect(page.locator('footer .footer-legal')).toHaveText(/^© \d{4} KeyToTwo, uma marca da Chalk Labs CNPJ 66\.782\.936\/0001-20$/)
+    await expect(page.locator('footer')).not.toContainText('contato@keytotwo.com.br')
     await expect(page.getByRole('navigation', { name: 'Informações legais' }).getByRole('link', { name: 'Reembolsos', exact: true })).toHaveAttribute('href', '/reembolsos')
   }
   await page.goto('/termos')

@@ -395,7 +395,8 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - **Erro, falha de pagamento e 404:** pose neutra = **quadro 01 do atlas** (`.kito-still`, fundo `kito-walk-v31-right-atlas.webp` em `0 0 / 600% 200%`, 128–160 px), sem lágrima, sem aceno. Nenhuma imagem nova é gerada para isso.
 - **Favicon:** o Kito em pixel art (`kito_favicon.png` do Drive), de frente e sorrindo, é o ícone do site: `favicon.ico` (16/32/48), `kito-192.png` e o ícone da tela inicial do iPhone sobre Céu. Gerados por `scripts/prepare-favicon.mjs`; não se edita à mão.
 - **Área privada:** Kito acenando pequeno (56–64 px), ao lado do nome na saudação.
-- **Rodapé público:** o chão da hero volta como faixa de borda a borda (`.footer-ground`: grama, terra, um arbusto da cena) e o Kito acenando (`kito-hi`, 104 px; 84 px no celular) se despede em pé sobre ela, parado. Decorativo (`aria-hidden`). Não entra no rodapé privado, no da compra nem no do modo foco.
+- **Rodapé público:** o chão da hero volta como faixa de borda a borda (`.footer-ground`: grama, terra, um arbusto da cena) e o Kito sentado de frente na grama (`kito-pixel-sit`, 120 px de altura; 96 px no celular), que de vez em quando balança os pés uma ou duas vezes; com movimento reduzido, fica parado. Decorativo (`aria-hidden`). Não entra no rodapé privado, no da compra nem no do modo foco.
+- **Linha legal (todo rodapé, inclusive o do pagamento):** © KeyToTwo, uma marca da Chalk Labs · CNPJ, numa linha só e alinhada aos links legais; no celular o CNPJ desce para a linha de baixo. O e-mail de atendimento fica na Ajuda e nos textos jurídicos.
 
 ### Estados
 - **Carregando:** esqueleto em aguada de Tinta com `role="status"` e texto visível ("Carregando seu carrinho…"); preço em "Consultando preço…" em Body Tinta suave, nunca em Display.
