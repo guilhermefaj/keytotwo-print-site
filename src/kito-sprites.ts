@@ -1,7 +1,6 @@
-// Gerado por scripts/prepare-kito-pixel.mjs a partir de art-source/kito-pixel/ e art-source/dice-pixel/. Não editar à mão.
+// Gerado por scripts/prepare-kito-pixel.mjs a partir de art-source/kito-pixel/. Não editar à mão.
 export const kitoSprites = {
   "atlas": "/media/hero/kito-pixel-atlas.webp",
-  "dieAtlas": "/media/hero/dice-pixel-atlas.webp",
   "cell": 256,
   "columns": 12,
   "rows": 10,
@@ -81,18 +80,13 @@ export const kitoSprites = {
       "count": 9,
       "ground": 237
     },
-    "dizzyFront": {
+    "point": {
       "start": 95,
       "count": 9,
       "ground": 232
     },
-    "point": {
-      "start": 104,
-      "count": 9,
-      "ground": 232
-    },
     "carry": {
-      "start": 113,
+      "start": 104,
       "count": 5,
       "ground": 0,
       "angles": [
@@ -132,35 +126,5 @@ export const kitoSprites = {
         236
       ]
     }
-  },
-  "dice": {
-    "cell": 136,
-    "columns": 9,
-    "rows": 2,
-    "faces": {
-      "start": 0,
-      "count": 6
-    },
-    "roll": {
-      "start": 6,
-      "count": 9
-    },
-    "feet": [
-      118,
-      119,
-      119,
-      119,
-      118,
-      120,
-      112,
-      115,
-      117,
-      112,
-      108,
-      105,
-      108,
-      112,
-      115
-    ]
   }
 } as const

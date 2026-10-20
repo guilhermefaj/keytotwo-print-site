@@ -230,21 +230,17 @@ input, select, textarea { font: inherit; color: inherit; }
 /* O Kito da hero: a camada cobre a hero inteira para ele ser carregado por cima do texto; só o corpo recebe o ponteiro.
    O servidor desenha a pose de frente a 64 % da largura, com os pés no chão; o motor (src/lib/kito-playground.ts)
    assume dali com o atlas. */
-.kito-layer { --die-size: calc(var(--sprite-size) * 136 / 256); position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
+.kito-layer { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; }
 .kito-sprite { position: absolute; left: calc(64% - var(--sprite-size) / 2); bottom: calc(var(--floor-height) - var(--foot-sink) - var(--sprite-size) * 24 / 256); width: var(--sprite-size); height: var(--sprite-size); background: url('/media/hero/kito-pixel-pose.webp') 0 0 / 100% 100% no-repeat; image-rendering: auto; }
 .kito-layer[data-live] .kito-sprite { left: 0; top: 0; bottom: auto; background-image: url('/media/hero/kito-pixel-atlas.webp'); will-change: transform; }
 /* Sombra em degraus sob os pés, na grama: ancora o Kito no chão e encolhe quando ele sobe. */
 .kito-shadow { position: absolute; left: 64%; bottom: calc(var(--floor-height) - var(--foot-sink) - var(--sprite-size) * .03); width: calc(var(--sprite-size) * .5); height: calc(var(--sprite-size) * .06); background: var(--scene-grass-dark); opacity: .55; transform: translateX(-50%); clip-path: polygon(22% 0, 78% 0, 78% 34%, 94% 34%, 94% 67%, 78% 67%, 78% 100%, 22% 100%, 22% 67%, 6% 67%, 6% 34%, 22% 34%); }
 .kito-layer[data-live] .kito-shadow { left: 0; will-change: transform; }
 .kito-hitbox { position: absolute; inset: 14% 24% 6%; }
-/* O dado, na mesma escala de pixel do Kito; parado a 24 % da largura, com a base na grama. */
-.kito-die { position: absolute; left: calc(24% - var(--die-size) / 2); bottom: calc(var(--floor-height) - var(--foot-sink) - var(--die-size) * 18 / 136); width: var(--die-size); height: var(--die-size); background: url('/media/hero/dice-pixel-pose.webp') 0 0 / 100% 100% no-repeat; image-rendering: auto; }
-.kito-layer[data-live] .kito-die { left: 0; top: 0; bottom: auto; background-image: url('/media/hero/dice-pixel-atlas.webp'); will-change: transform; }
-.kito-die-hitbox { position: absolute; inset: 16%; }
-.hero-scene-region[data-running='true'] :is(.kito-hitbox, .kito-die-hitbox) { pointer-events: auto; cursor: grab; touch-action: none; }
+.hero-scene-region[data-running='true'] .kito-hitbox { pointer-events: auto; cursor: grab; touch-action: none; }
 html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !important; user-select: none; }
 /* A arte tem 256 px: vizinho mais próximo quando a tela tem pixels de sobra; abaixo disso a redução filtrada não some com o contorno. */
-@media (min-width: 768px) and (min-resolution: 1.33dppx), (max-width: 767px) and (min-resolution: 2dppx) { .kito-sprite, .kito-die { image-rendering: pixelated; } }
+@media (min-width: 768px) and (min-resolution: 1.33dppx), (max-width: 767px) and (min-resolution: 2dppx) { .kito-sprite { image-rendering: pixelated; } }
 /* Pose neutra do Kito: quadro 01 do atlas da caminhada v3.1, sem imagem nova. */
 .kito-still { display: block; width: 160px; height: 160px; background: url('/media/hero/kito-walk-v31-right-atlas.webp') 0 0 / 600% 200% no-repeat; image-rendering: pixelated; }
 @media (min-width: 768px) and (max-height: 760px) {
