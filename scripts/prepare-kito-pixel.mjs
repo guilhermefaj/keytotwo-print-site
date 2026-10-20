@@ -134,6 +134,21 @@ const dieFrames = []
 for (const file of [...faces, ...roll]) dieFrames.push(await readFrame('art-source/dice-pixel', file, DIE))
 const dice = { cell: DIE, columns: 9, rows: 0, faces: { start: 0, count: faces.length }, roll: { start: faces.length, count: roll.length }, feet: dieFrames.map(pixels => bounds(pixels, DIE).bottom + 1) }
 
+// Kito sentado do rodapé (Kito-sitting_down_the_ch.zip, 2026-10-20): de frente, balançando os pés; o quadro 0 é a pose
+// parada. Os nove quadros numa fileira, recortados no contorno comum com 2 px de folga, para o vizinho não vazar na escala.
+const sitFrames = []
+for (let i = 0; i < 9; i++) sitFrames.push(await readFrame('art-source/kito-pixel', frame('sitting_down_the_ch/animations/The_character_sits_firmly_rhythmically_swinging_bo', 'south', i), KITO))
+const sitBounds = sitFrames.map(pixels => bounds(pixels, KITO))
+const sitLeft = Math.min(...sitBounds.map(box => box.left)) - 2, sitTop = Math.min(...sitBounds.map(box => box.top)) - 2
+const sitWidth = Math.max(...sitBounds.map(box => box.right)) + 3 - sitLeft, sitHeight = Math.max(...sitBounds.map(box => box.bottom)) + 3 - sitTop
+const sitStrip = Buffer.alloc(sitWidth * sitFrames.length * sitHeight * 4)
+sitFrames.forEach((pixels, index) => {
+  const bytes = Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength)
+  for (let y = 0; y < sitHeight; y++) bytes.copy(sitStrip, (y * sitFrames.length + index) * sitWidth * 4, ((sitTop + y) * KITO + sitLeft) * 4, ((sitTop + y) * KITO + sitLeft + sitWidth) * 4)
+})
+// O chão é a mediana da base, como nas animações da hero: o corpo assenta nela e os pés esticados afundam na grama.
+const sitGround = sitBounds.map(box => box.bottom + 1).sort((a, b) => a - b)[4] - sitTop
+
 const kitoAtlas = await pack(kitoFrames, KITO, 12)
 const dieAtlas = await pack(dieFrames, DIE, dice.columns)
 dice.rows = dieAtlas.rows
@@ -142,6 +157,7 @@ const files = {
   'public/media/hero/kito-pixel-pose.webp': await webp(Buffer.from(kitoFrames[animations.front.start].buffer), KITO, KITO),
   'public/media/hero/dice-pixel-atlas.webp': dieAtlas.webp,
   'public/media/hero/dice-pixel-pose.webp': await webp(Buffer.from(dieFrames[0].buffer), DIE, DIE),
+  'public/media/hero/kito-pixel-sit.webp': await webp(sitStrip, sitWidth * sitFrames.length, sitHeight),
 }
 await mkdir(path.join(root, 'public/media/hero'), { recursive: true })
 for (const [file, buffer] of Object.entries(files)) {
@@ -151,3 +167,5 @@ for (const [file, buffer] of Object.entries(files)) {
 const sprites = { atlas: '/media/hero/kito-pixel-atlas.webp', dieAtlas: '/media/hero/dice-pixel-atlas.webp', cell: KITO, columns: 12, rows: kitoAtlas.rows, animations, dice }
 await writeFile(path.join(root, 'src/kito-sprites.ts'), `// Gerado por scripts/prepare-kito-pixel.mjs a partir de art-source/kito-pixel/ e art-source/dice-pixel/. Não editar à mão.\nexport const kitoSprites = ${JSON.stringify(sprites, null, 2)} as const\n`)
 console.log(`src/kito-sprites.ts: Kito ${kitoFrames.length} quadros (12×${kitoAtlas.rows}), dado ${dieFrames.length} quadros`)
+// O rodapé (SiteFooter e .footer-kito) usa estes números à mão; se mudarem, atualizar lá.
+console.log(`Kito sentado: ${sitFrames.length} quadros de ${sitWidth}×${sitHeight}, chão a ${sitHeight - sitGround} px da base`)

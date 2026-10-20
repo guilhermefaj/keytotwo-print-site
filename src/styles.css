@@ -404,17 +404,26 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .site-footer nav a:hover { text-decoration: underline; color: var(--color-deep-teal); }
 .footer-bottom { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; align-items: center; border-top: var(--line-rule); margin-top: 44px; padding-top: 24px; font-size: var(--text-label); }
 .footer-bottom p { margin: 0; }
+/* Linha legal numa linha só, alinhada aos links; no celular o CNPJ desce para a linha de baixo. */
+.footer-legal { display: flex; flex-wrap: wrap; color: var(--color-ink-soft); }
+.footer-legal span + span::before { content: '·'; margin-inline: .5em; }
 .footer-bottom nav { display: flex; flex-wrap: wrap; gap: 24px; }
 .footer-bottom nav a { font-size: var(--text-label); }
 /* Pagamento em modo foco: só a linha legal. */
 .site-footer[data-focus="true"] .site-footer-rule { margin-bottom: 0; }
 .site-footer[data-focus="true"] .footer-bottom { border-top: 0; margin-top: 0; }
-/* O chão volta: a faixa de chão da hero fecha o rodapé público, com um arbusto e o Kito acenando. */
+/* O chão volta: a faixa de chão da hero fecha o rodapé público, com um arbusto e o Kito sentado na grama. */
 .site-footer[data-public="true"] { padding-bottom: 0; }
-.footer-ground { --floor-height: 40px; position: relative; height: 136px; margin-top: 40px; overflow: hidden; pointer-events: none; }
-.footer-ground img { position: absolute; image-rendering: pixelated; object-fit: contain; }
-.footer-foliage { width: 240px; height: auto; left: -24px; bottom: calc(var(--floor-height) - 9px); }
-.footer-kito { width: 104px; height: 104px; right: max(24px, calc(50% - var(--container) / 2 + 16px)); bottom: calc(var(--floor-height) - 10px); }
+.footer-ground { --floor-height: 40px; --foot-sink: 8px; --kito-height: 120px; position: relative; height: calc(var(--floor-height) + var(--kito-height)); margin-top: 16px; overflow: hidden; pointer-events: none; }
+.footer-foliage { position: absolute; width: 240px; height: auto; left: -24px; bottom: calc(var(--floor-height) - 9px); image-rendering: pixelated; }
+/* Kito sentado (scripts/prepare-kito-pixel.mjs): fileira de nove quadros de 201×208, com o chão a 7 px da base. A caixa
+   mostra um quadro; o balanço dos pés (data-swing, SiteFooter) anda a fileira de quadro em quadro. */
+.footer-kito { position: absolute; right: max(24px, calc(50% - var(--container) / 2 + 16px)); bottom: calc(var(--floor-height) - var(--foot-sink) - var(--kito-height) * 7 / 208); height: var(--kito-height); aspect-ratio: 201 / 208; overflow: hidden; z-index: 1; }
+.footer-kito img { width: auto; max-width: none; height: 100%; }
+.footer-kito[data-swing] img { animation: kito-swing .9s steps(9) var(--swings, 1); }
+.footer-kito[data-swing='2'] { --swings: 2; }
+@keyframes kito-swing { to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .footer-kito img { animation: none; } }
 
 /* --------------------------------------------------------------------------
    Páginas de leitura (ajuda, termos, privacidade, jogo gratuito, e-mail)
@@ -576,6 +585,7 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .auth-page { gap: 40px; }
   .library-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .footer-brand { grid-column: 1 / -1; }
 }
 @media (max-width: 767px) {
   .content-width { width: calc(100% - 40px); }
@@ -602,12 +612,13 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .faq-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .site-footer > .cut-line { margin-bottom: 8px; }
   .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 20px; }
-  .footer-brand { grid-column: 1 / -1; }
   .footer-brand .brand img { width: 150px; }
   .footer-bottom { margin-top: 32px; }
-  .footer-ground { height: 112px; margin-top: 24px; --floor-height: 32px; }
+  .footer-legal { flex-direction: column; }
+  .footer-legal span + span::before { content: none; }
+  .footer-ground { --floor-height: 32px; --foot-sink: 6px; --kito-height: 96px; margin-top: 8px; }
   .footer-foliage { width: 176px; left: -36px; bottom: calc(var(--floor-height) - 7px); }
-  .footer-kito { width: 84px; height: 84px; right: 20px; bottom: calc(var(--floor-height) - 8px); }
+  .footer-kito { right: 20px; }
   .footer-bottom nav { gap: 12px 20px; }
   .reading-page, .cart-page, .account-page { padding-block: 32px 56px; }
   .auth-page { padding-block: 24px 56px; grid-template-columns: minmax(0, 1fr); gap: 24px; }

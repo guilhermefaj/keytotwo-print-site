@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Link, useLocation, useRouteLoaderData } from 'react-router'
 import type { loader as rootLoader } from '../../root'
 import { siteConfig } from '../../lib/seo'
@@ -9,7 +10,26 @@ import { company } from '../../content/legal'
 
 // Identificação do fornecedor (Termos de uso › Quem fornece), em todo rodapé, inclusive no pagamento.
 function LegalLine() {
-  return <div><p>© {new Date().getFullYear()} KeyToTwo</p><p className="break-anywhere">KeyToTwo é uma marca da {company.name} · CNPJ {company.cnpj} · <a className="break-anywhere" href={`mailto:${company.email}`}>{company.email}</a></p></div>
+  return <p className="footer-legal"><span>© {new Date().getFullYear()} KeyToTwo, uma marca da {company.name}</span> <span>CNPJ {company.cnpj}</span></p>
+}
+
+// O Kito do rodapé fica sentado de frente e, de vez em quando, balança os pés uma ou duas vezes (os nove quadros da
+// fileira; o quadro 0 é a pose parada). Com movimento reduzido, fica parado.
+function FooterKito() {
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    const kito = ref.current
+    if (!kito || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let timer = 0
+    const rest = () => {
+      delete kito.dataset.swing
+      timer = window.setTimeout(() => { kito.dataset.swing = Math.random() < .6 ? '1' : '2' }, 2500 + Math.random() * 5000)
+    }
+    kito.addEventListener('animationend', rest)
+    rest()
+    return () => { window.clearTimeout(timer); kito.removeEventListener('animationend', rest) }
+  }, [])
+  return <span className="footer-kito" ref={ref}><img src="/media/hero/kito-pixel-sit.webp" width="1809" height="208" alt="" loading="lazy" decoding="async" /></span>
 }
 
 export function SiteFooter() {
@@ -24,7 +44,7 @@ export function SiteFooter() {
     <nav aria-label="Explorar"><h2>Vamos jogar</h2><Link to="/">Início</Link><Link to="/loja">Loja</Link><a href="/#como-funciona">Como funciona</a>{hasBlogPosts && <Link to="/blog">Blog</Link>}{freeGame.data?.available && <Link to="/jogo-gratuito">Jogo gratuito</Link>}</nav>
     <nav aria-label="Ajuda e acesso"><h2>Conta e ajuda</h2><Link to="/meus-jogos">Meus jogos</Link><Link to="/conta">Minha conta</Link>{siteConfig.showCartAccess && <Link to="/carrinho">Sacola</Link>}<Link to="/ajuda">Ajuda</Link></nav>
   </div><div className="content-width footer-bottom"><LegalLine /><nav aria-label="Informações legais"><Link to="/termos">Termos de uso</Link><Link to="/reembolsos">Reembolsos</Link><Link to="/privacidade">Privacidade</Link></nav></div>
-    {/* O chão volta (DESIGN.md › Rodapé): a página começa e termina no mundo do Kito, que se despede acenando. */}
-    {publicFooter && <div className="footer-ground" aria-hidden="true"><img className="footer-foliage" src="/media/hero/foliage-left.webp" width="360" height="119" alt="" loading="lazy" decoding="async" /><img className="footer-kito" src="/media/experience/kito-hi-256.webp" width="256" height="256" alt="" loading="lazy" decoding="async" /><div className="ground"><div className="ground-grass" /><div className="ground-soil" /></div></div>}
+    {/* O chão volta (DESIGN.md › Rodapé): a página começa e termina no mundo do Kito, sentado na grama. */}
+    {publicFooter && <div className="footer-ground" aria-hidden="true"><img className="footer-foliage" src="/media/hero/foliage-left.webp" width="360" height="119" alt="" loading="lazy" decoding="async" /><FooterKito /><div className="ground"><div className="ground-grass" /><div className="ground-soil" /></div></div>}
   </footer>
 }
