@@ -3,13 +3,11 @@ import { useLocation } from 'react-router'
 import { api, type Account, type Cart, type CatalogProduct } from '../../lib/api'
 import { ShopContext } from '../../lib/shop-context'
 import { useApiResource } from '../../lib/use-api-resource'
-import { deliveryMock, type FreeGame } from '../../lib/downloads'
 
 export function ShopProvider({ children }: { children: ReactNode }) {
   const cart = useApiResource<Cart>('/cart')
   const account = useApiResource<Account>('/account')
   const catalog = useApiResource<{ products: CatalogProduct[] }>('/catalog', true)
-  const freeGame = useApiResource<FreeGame>('/free-game', true, deliveryMock)
   const [busy, setBusy] = useState(false)
   const [cartOpen, setOpen] = useState(false)
   // The drawer is a shortcut for pages that are not the cart; on /carrinho and /pagamento the page itself shows the cart.
@@ -30,5 +28,5 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       if (!remove && !onCartRoute) setOpen(true)
     } finally { mutation.current = false; setBusy(false) }
   }
-  return <ShopContext.Provider value={{ cart, account, catalog, freeGame: deliveryMock ? { ...freeGame, data: { available: false } } : freeGame, busy, cartOpen, cartOpener, setCartOpen, add: code => mutate(code, false), remove: code => mutate(code, true) }}>{children}</ShopContext.Provider>
+  return <ShopContext.Provider value={{ cart, account, catalog, busy, cartOpen, cartOpener, setCartOpen, add: code => mutate(code, false), remove: code => mutate(code, true) }}>{children}</ShopContext.Provider>
 }

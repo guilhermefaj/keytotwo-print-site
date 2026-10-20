@@ -34,12 +34,11 @@ export const experience = {
       { id: 'exemplo-8', placeholder: true, rating: 5, quote: 'Eu desenho mal e ela adivinha qualquer rabisco. Somando os dois, a dupla até que vai bem.', author: 'André e Lia' },
     ] as ReadonlyArray<{ id: string; placeholder: boolean; rating: number; quote: string; author: string; photo?: { src: string; alt: string } }>,
   },
-  // Freebies resgatados ao criar a conta (Portão 2, 2026-10-14; dois jogos desde 2026-10-16). O resgate é
-  // backend e vem depois; até lá a seção só aparece no stage test.
+  // Atalho para a página Gratuitos (responsável, 2026-10-20): conta + aceite dos e-mails libera os dois jogos.
   freebie: {
     tag: 'Grátis',
     title: 'Jogos para começar, por nossa conta.',
-    text: 'Quem cria a conta leva esses jogos de graça. Dá para testar a impressora (e a dupla) antes de comprar qualquer coisa.',
-    cta: { label: 'Criar conta', href: '/entrar' },
+    text: 'Quem tem conta e aceita nossos e-mails leva esses jogos de graça. Dá para testar a impressora (e a dupla) antes de comprar qualquer coisa.',
+    cta: { label: 'Ver os gratuitos', href: '/gratuitos' },
   },
 }

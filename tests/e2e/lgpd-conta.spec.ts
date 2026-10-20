@@ -24,7 +24,7 @@ async function fixture(page: Page) {
     if (path === '/account/export') return route.fulfill({ json: exported })
     if (path === '/account/delete') return route.fulfill({ status: state.deletion.status, json: state.deletion.json })
     const json = path === '/account' ? { email: user.email, marketing: { opted_in: true, prompted_at: '2026-01-01', updated_at: '2026-01-01', text_version: 'mkt-2026-10-19' }, orders: [] }
-      : path === '/library' ? { games: [], pending: [] } : path === '/catalog' ? { products: [] } : path === '/free-game' ? { available: false } : { version: 0, items: [], subtotal: null, warnings: [] }
+      : path === '/library' ? { games: [], pending: [] } : path === '/catalog' ? { products: [] } : path === '/free-games' ? { games: [] } : { version: 0, items: [], subtotal: null, warnings: [] }
     return route.fulfill({ json })
   })
   page.on('dialog', dialog => { throw new Error(`diálogo do navegador inesperado: ${dialog.type()} ${dialog.message()}`) })

@@ -5,7 +5,7 @@ import { addCartItem, getCart, removeCartItem } from './routes/cart.ts'
 import { catalog } from './routes/catalog.ts'
 import { checkout } from './routes/checkout.ts'
 import { deliveryLink, downloadUrl } from './routes/downloads.ts'
-import { freeDownload, freeGame } from './routes/free.ts'
+import { freeDownload, freeGames } from './routes/free.ts'
 import { orderStatus } from './routes/order-status.ts'
 import { unsubscribe, unsubscribePage } from './routes/unsubscribe.ts'
 import { library } from './routes/library.ts'
@@ -47,7 +47,7 @@ const routes: Route[] = [
   route('/order-status', { GET: orderStatus }),
   route('/download-url', { POST: downloadUrl }),
   route('/d/:token', { GET: deliveryLink }),
-  route('/free-game', { GET: freeGame }),
+  route('/free-games', { GET: freeGames }),
   route('/free-download', { POST: freeDownload }),
   route('/email/unsubscribe', { GET: unsubscribePage, POST: unsubscribe }),
 ]

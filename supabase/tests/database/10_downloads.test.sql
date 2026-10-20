@@ -1,4 +1,4 @@
--- 10_downloads: resolve_download, resolve_delivery, get_free_game e resolve_free_download (docs/data-contract.md v0.3.4, seção 6.8).
+-- 10_downloads: resolve_download, resolve_delivery, list_free_games e resolve_free_download (docs/data-contract.md, seção 6.8).
 -- Roda com `supabase test db` (pgTAP). Dados de teste só existem dentro da transação (rollback no fim).
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -299,36 +299,66 @@ select pg_temp.expect_as('entrega: service_role executa', 'service_role', format
 select pg_temp.expect_as('entrega: anon não executa', 'anon', format($q$select * from public.resolve_delivery(%L, %s)$q$, pg_temp.fxv('ent_da')::uuid, pg_temp.fxv('g_pk1-1')), '42501');
 select pg_temp.expect_as('entrega: authenticated não executa', 'authenticated', format($q$select * from public.resolve_delivery(%L, %s)$q$, pg_temp.fxv('ent_da')::uuid, pg_temp.fxv('g_pk1-1')), '42501');
 
--- ===== T102 jogo gratuito ============================================================================
-select pg_temp.assert('grátis: sem jogo publicado, available = false (e nada mais)', public.get_free_game() = '{"available": false}'::jsonb);
+-- ===== T102 jogos gratuitos: conta confirmada e algum aceite de e-mails (migração de 2026-10-20) =============
+-- fa nunca aceitou; fb aceitou e saiu da lista (continua baixando); fc aceitou pela página Gratuitos.
+do $s$ begin
+  perform pg_temp.mk_user('fa'); perform pg_temp.mk_user('fb'); perform pg_temp.mk_user('fc');
+  perform public.set_marketing_consent(pg_temp.uid('fb'), true, 'account', 'v1-pgtap');
+  perform public.set_marketing_consent(pg_temp.uid('fb'), false, 'account');
+  perform public.set_marketing_consent(pg_temp.uid('fc'), true, 'free_games', 'v1-pgtap');
+end $s$;
+create function pg_temp.free_events() returns bigint language sql as $$
+  select count(*) from public.download_events d
+   where d.kind = 'free' and d.file_id in (select f.id from public.files f where f.filename like 'FG-%')
+$$;
+select pg_temp.assert('grátis: sem jogo publicado, lista vazia', public.list_free_games() = '[]'::jsonb);
 update public.games set status = 'published' where code = 'FG-1';
-select pg_temp.assert('grátis: jogo publicado mas arquivo em rascunho = available false', public.get_free_game() = '{"available": false}'::jsonb);
+select pg_temp.assert('grátis: jogo publicado mas arquivo em rascunho fica fora da lista', public.list_free_games() = '[]'::jsonb);
 update public.games set status = 'draft' where code = 'FG-1';
 update public.files set status = 'published' where filename = 'FG-1-v0.1.pdf';
-select pg_temp.assert('grátis: arquivo publicado mas jogo em rascunho = available false', public.get_free_game() = '{"available": false}'::jsonb);
+select pg_temp.assert('grátis: arquivo publicado mas jogo em rascunho fica fora da lista', public.list_free_games() = '[]'::jsonb);
 select pg_temp.assert('grátis: resolve_free_download não serve arquivo publicado de jogo em rascunho (not_found)',
-  (select outcome = 'not_found' and object_key is null from public.resolve_free_download(pg_temp.fid('FG-1-v0.1.pdf'))));
+  (select outcome = 'not_found' and object_key is null from public.resolve_free_download(pg_temp.uid('fc'), pg_temp.fid('FG-1-v0.1.pdf'))));
 update public.games set status = 'published' where code = 'FG-1';
-select pg_temp.assert('grátis: jogo e arquivo publicados = available true, com jogo e arquivo',
-  (select (j->>'available')::boolean and j->'game' = '{"code": "FG-1", "name": "Jogo gratuito [TESTE]"}'::jsonb
-          and (j->'file'->>'id')::uuid = pg_temp.fid('FG-1-v0.1.pdf') and j->'file'->>'version' = '0.1' and (j->'file'->>'size_bytes')::int = 2000
-          and j->'file'->>'filename' = 'FG-1-v0.1.pdf'
-   from (select public.get_free_game() j) s));
-select pg_temp.assert('grátis: get_free_game não traz bucket nem chave', public.get_free_game()::text !~ '(object_key|bucket|free/FG)');
-select pg_temp.assert('grátis: resolve_free_download ok (sem login), com localização, tipo e tamanho',
+do $s$ begin
+  insert into public.games (code, slug, name, access, status) values ('FG-2', 'fg-2', 'Outro gratuito [TESTE]', 'free', 'published');
+  perform pg_temp.mk_file('FG-2', '0.1', 'published', 'pdf', 'free');
+end $s$;
+select pg_temp.assert('grátis: os dois publicados, em ordem de código, com jogo e arquivo',
+  (select jsonb_array_length(j) = 2 and j->0->>'code' = 'FG-1' and j->0->>'name' = 'Jogo gratuito [TESTE]' and j->1->>'code' = 'FG-2'
+          and (j->0->'file'->>'id')::uuid = pg_temp.fid('FG-1-v0.1.pdf') and j->0->'file'->>'version' = '0.1'
+          and (j->0->'file'->>'size_bytes')::int = 2000 and j->0->'file'->>'filename' = 'FG-1-v0.1.pdf'
+   from (select public.list_free_games() j) s));
+select pg_temp.assert('grátis: list_free_games não traz bucket nem chave', public.list_free_games()::text !~ '(object_key|bucket|free/FG)');
+select pg_temp.assert('grátis: conta sem nenhum aceite = locked, sem localização',
+  (select outcome = 'locked' and object_key is null and bucket is null from public.resolve_free_download(pg_temp.uid('fa'), pg_temp.fid('FG-1-v0.1.pdf'))));
+select pg_temp.assert('grátis: aceite pela página Gratuitos = ok, com localização, tipo e tamanho',
   (select outcome = 'ok' and bucket = 'bucket-pgtap-teste' and object_key = 'free/FG-1/0.1/FG-1-v0.1.pdf' and filename = 'FG-1-v0.1.pdf'
-          and content_type = 'application/pdf' and size_bytes = 2000 from public.resolve_free_download(pg_temp.fid('FG-1-v0.1.pdf'))));
-select pg_temp.assert('grátis: o evento é free, SEM usuário (e sem e-mail, IP ou contato)',
-  (select count(*) = 1 and bool_and(kind = 'free' and user_id is null) from public.download_events where kind = 'free' and file_id = pg_temp.fid('FG-1-v0.1.pdf')));
-select pg_temp.assert('grátis: arquivo PAGO pelo id = not_found, sem localização', (select outcome = 'not_found' and object_key is null from public.resolve_free_download(pg_temp.fid('GM-PK1-2-v1.0.pdf'))));
-select pg_temp.assert('grátis: id inexistente = not_found', (select outcome = 'not_found' from public.resolve_free_download(gen_random_uuid())));
-select pg_temp.assert('grátis: as recusas não gravam evento', (select count(*) = 1 from public.download_events where kind = 'free' and file_id = pg_temp.fid('FG-1-v0.1.pdf')));
-select pg_temp.expect('grátis: id nulo', $q$select * from public.resolve_free_download(null)$q$, 'KT001');
-select pg_temp.expect_as('grátis: service_role executa', 'service_role', $q$select public.get_free_game()$q$, 'OK');
-select pg_temp.expect_as('grátis: anon não executa get_free_game', 'anon', $q$select public.get_free_game()$q$, '42501');
-select pg_temp.expect_as('grátis: authenticated não executa resolve_free_download', 'authenticated', format($q$select * from public.resolve_free_download(%L)$q$, pg_temp.fid('FG-1-v0.1.pdf')), '42501');
-update public.games set status = 'draft' where code = 'FG-1';
-select pg_temp.assert('grátis: voltando o jogo a rascunho, available = false de novo', public.get_free_game() = '{"available": false}'::jsonb);
+          and content_type = 'application/pdf' and size_bytes = 2000 from public.resolve_free_download(pg_temp.uid('fc'), pg_temp.fid('FG-1-v0.1.pdf'))));
+select pg_temp.assert('grátis: aceitou e saiu da lista depois = continua baixando (ok)',
+  (select outcome = 'ok' from public.resolve_free_download(pg_temp.uid('fb'), pg_temp.fid('FG-2-v0.1.pdf'))));
+select pg_temp.assert('grátis: os eventos são free e guardam quem baixou',
+  (select count(*) = 2 and array_agg(d.user_id order by d.id) = array[pg_temp.uid('fc'), pg_temp.uid('fb')]
+     from public.download_events d where d.kind = 'free' and d.file_id in (pg_temp.fid('FG-1-v0.1.pdf'), pg_temp.fid('FG-2-v0.1.pdf'))));
+select pg_temp.assert('grátis: get_account diz quem já desbloqueou (fb e fc sim, fa não)',
+  not (public.get_account(pg_temp.uid('fa'))->>'free_games_unlocked')::boolean
+  and (public.get_account(pg_temp.uid('fb'))->>'free_games_unlocked')::boolean
+  and (public.get_account(pg_temp.uid('fc'))->>'free_games_unlocked')::boolean);
+select pg_temp.assert('grátis: arquivo PAGO pelo id = not_found, mesmo desbloqueado',
+  (select outcome = 'not_found' and object_key is null from public.resolve_free_download(pg_temp.uid('fc'), pg_temp.fid('GM-PK1-2-v1.0.pdf'))));
+select pg_temp.assert('grátis: id inexistente = not_found, antes de locked',
+  (select outcome = 'not_found' from public.resolve_free_download(pg_temp.uid('fa'), gen_random_uuid())));
+select pg_temp.assert('grátis: as recusas não gravam evento', pg_temp.free_events() = 2);
+select pg_temp.expect('grátis: id nulo', format($q$select * from public.resolve_free_download(%L, null)$q$, pg_temp.uid('fc')), 'KT001');
+select pg_temp.expect('grátis: usuário nulo', format($q$select * from public.resolve_free_download(null, %L)$q$, pg_temp.fid('FG-1-v0.1.pdf')), 'KT001');
+select pg_temp.expect('grátis: e-mail não confirmado não baixa', format($q$select * from public.resolve_free_download(%L, %L)$q$, pg_temp.uid('de'), pg_temp.fid('FG-1-v0.1.pdf')), 'KT009');
+select pg_temp.expect('grátis: a origem free_games só concede', format($q$select * from public.set_marketing_consent(%L, false, 'free_games')$q$, pg_temp.uid('fc')), 'KT001');
+select pg_temp.expect_as('grátis: service_role executa', 'service_role', $q$select public.list_free_games()$q$, 'OK');
+select pg_temp.expect_as('grátis: anon não executa list_free_games', 'anon', $q$select public.list_free_games()$q$, '42501');
+select pg_temp.expect_as('grátis: authenticated não executa resolve_free_download', 'authenticated',
+  format($q$select * from public.resolve_free_download(%L, %L)$q$, pg_temp.uid('fc'), pg_temp.fid('FG-1-v0.1.pdf')), '42501');
+update public.games set status = 'draft' where code in ('FG-1', 'FG-2');
+select pg_temp.assert('grátis: voltando os jogos a rascunho, a lista fica vazia de novo', public.list_free_games() = '[]'::jsonb);
 
 select * from finish();
 rollback;

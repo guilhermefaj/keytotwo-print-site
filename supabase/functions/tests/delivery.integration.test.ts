@@ -191,9 +191,11 @@ Deno.test({
         assertMatch((await link(tokens[0])).location!, /^https:\/\//)
       })
 
-      await t.step('gratuito: indisponível e free-download não serve arquivo pago', async () => {
-        assertEquals((await call('/free-game', null)).body, { available: false })
-        const paid = await call('/free-download', null, 'POST', { file_id: games[0].files[0].id })
+      await t.step('gratuitos: lista vazia; free-download pede sessão e não serve arquivo pago', async () => {
+        assertEquals((await call('/free-games', null)).body, { games: [] })
+        const anonymous = await call('/free-download', null, 'POST', { file_id: games[0].files[0].id })
+        assertEquals([anonymous.status, anonymous.body.error.code], [401, 'UNAUTHENTICATED'])
+        const paid = await call('/free-download', a.token, 'POST', { file_id: games[0].files[0].id })
         assertEquals([paid.status, paid.body.error.code], [404, 'FILE_NOT_FOUND'])
       })
     } finally {

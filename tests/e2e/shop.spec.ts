@@ -3,7 +3,6 @@ import AxeBuilder from '@axe-core/playwright'
 import { readFile, mkdir } from 'node:fs/promises'
 import sharp from 'sharp'
 import { builtStage } from './fixtures/stage'
-import { authStorageKey } from './fixtures/session'
 
 const stage = builtStage()
 const single = { code: 'J001', kind: 'single', name: 'Rabisque e Adivinhe', games: [{ code: 'J001', name: 'Rabisque e Adivinhe' }], price: { unit_amount: 990, currency: 'brl' } }
@@ -36,16 +35,11 @@ test('loja: pacote fora do catálogo fica em breve; jogos do pacote sem avulso f
   }
   await expect(page.locator('.shop-games .game-cover-art img')).toHaveCount(3)
   await expect(page.locator('[data-shop-game] img[src*="/media/experience/j001-page"]')).toHaveCount(0)
-  // Freebies: Hora dos Artistas grátis e o segundo em preparação; a seção só existe no stage test.
+  // Gratuitos: os dois jogos com o selo e o atalho para a página Gratuitos, em todos os stages.
   const freebies = page.locator('[data-shop-freebies]')
-  if (stage === 'test') {
-    await expect(freebies.locator('[data-shop-game]')).toHaveCount(2)
-    await expect(freebies.locator('[data-shop-game="hora-dos-artistas"]')).toContainText('Grátis')
-    await expect(freebies.getByRole('link', { name: 'Criar conta', exact: true })).toHaveAttribute('href', '/entrar')
-    await expect(freebies.locator('[data-shop-game="freebie-2"] .game-cover-soon')).toHaveText('Em breve')
-  } else {
-    await expect(freebies).toHaveCount(0)
-  }
+  await expect(freebies.locator('[data-shop-game]')).toHaveCount(2)
+  for (const id of ['hora-dos-artistas', 'pote-de-planos']) await expect(freebies.locator(`[data-shop-game="${id}"]`)).toContainText('Grátis')
+  await expect(freebies.getByRole('link', { name: 'Ver os gratuitos', exact: true })).toHaveAttribute('href', '/gratuitos')
   const details = page.getByRole('link', { name: 'Ver detalhes: Rabisque e Adivinhe', exact: true })
   if (stage === 'preview') {
     await expect(details).toHaveCount(0)
@@ -57,25 +51,6 @@ test('loja: pacote fora do catálogo fica em breve; jogos do pacote sem avulso f
     await details.focus()
     await page.keyboard.press('Enter')
     await expect(page).toHaveURL(/\/loja\/j001$/)
-  }
-})
-
-test('freebies: quem já entrou não vê "Criar conta"', async ({ page }) => {
-  test.skip(stage !== 'test', 'A seção de freebies só existe no stage test')
-  const session = { access_token: 'synthetic-freebie-token', refresh_token: 'synthetic-freebie-refresh', expires_at: 4102444800, expires_in: 3600, token_type: 'bearer', user: { id: 'qa-freebie', email: 'freebie@example.test', email_confirmed_at: '2026-01-01T00:00:00Z', is_anonymous: false, aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: {} } }
-  await page.addInitScript(([key, value]) => localStorage.setItem(key, JSON.stringify(value)), [authStorageKey, session] as const)
-  await page.route('**/auth/v1/**', route => route.fulfill({ json: session.user }))
-  await page.route('**/functions/v1/api/**', route => {
-    const path = new URL(route.request().url()).pathname.replace(/^.*\/api/, '')
-    const json = path === '/catalog' ? { products: [single] } : path === '/account' ? { email: session.user.email, marketing: { opted_in: false, prompted_at: '2026-01-01', text_version: null }, orders: [] } : path === '/free-game' ? { available: false } : path.startsWith('/cart') ? { version: 0, items: [], subtotal: null, warnings: [] } : { games: [], pending: [] }
-    return route.fulfill({ json })
-  })
-  for (const path of ['/loja', '/']) {
-    await page.goto(path)
-    const freebies = page.locator('[data-shop-freebies]')
-    await expect(freebies.locator('[data-shop-game="hora-dos-artistas"]')).toContainText('Grátis')
-    // O HTML pré-renderizado traz o botão; ele precisa sumir quando a sessão é lida.
-    await expect(freebies.getByRole('link', { name: 'Criar conta', exact: true })).toHaveCount(0)
   }
 })
 

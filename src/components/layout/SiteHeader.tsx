@@ -24,7 +24,7 @@ const privateNavigation = [
 
 export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boolean) => void }) {
   const { session, ready } = useAuth()
-  const { cart, freeGame, cartOpen, setCartOpen } = useShop()
+  const { cart, cartOpen, setCartOpen } = useShop()
   const { hasBlogPosts } = useRouteLoaderData<typeof rootLoader>('root')!
   const location = useLocation()
   // Prerender URLs may end in a slash; the server and hydrated header must agree.
@@ -44,8 +44,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
   const purchaseFlow = pathname === '/carrinho' || pathname.startsWith('/pedido/')
   const showPrimary = !privateArea && !purchaseFlow && pathname !== '/loja' && !pathname.startsWith('/loja/')
   const mainNavigation = navigation.filter(item => item.href !== '/blog' || hasBlogPosts)
-  const publicNavigation = freeGame.data?.available ? [...mainNavigation, { label: 'Jogo grátis', href: '/jogo-gratuito' }] : mainNavigation
-  const visibleNavigation: ReadonlyArray<{ label: string; href: string }> = privateArea ? privateNavigation : publicNavigation
+  const visibleNavigation: ReadonlyArray<{ label: string; href: string }> = privateArea ? privateNavigation : mainNavigation
   const showCart = siteConfig.showCartAccess && !privateArea
   const count = cart.data?.items.length ?? 0
   const cartLabel = cart.error ? 'Sacola, não foi possível atualizar' : cart.loading ? 'Sacola, carregando itens' : `Sacola, ${count} ${count === 1 ? 'item' : 'itens'}`

@@ -9,7 +9,7 @@ const destination = `/email/preferencias?token=${token}`
 test.beforeEach(async ({ page }) => {
   const html = await readFile(new URL('../../build/client/index.html', import.meta.url), 'utf8')
   test.skip(!html.includes('Ambiente de teste'), 'Requires stage=test')
-  await page.route('**/functions/v1/api/**', route => route.fulfill({ json: route.request().url().endsWith('/free-game') ? { available: false } : { products: [] } }))
+  await page.route('**/functions/v1/api/**', route => route.fulfill({ json: route.request().url().endsWith('/free-games') ? { games: [] } : { products: [] } }))
 })
 
 async function open(page: Page, apiMode = true) {

@@ -110,17 +110,25 @@ contractTest('link do e-mail: válido redireciona ao B2; adulterado 401; vencido
 
 // ---------- jogo gratuito ----------
 
-contractTest('jogo gratuito: indisponível por padrão; free-download só assina arquivo gratuito', async () => {
-  onRpc(() => ok({ available: false }))
-  assertEquals(await (await handleRequest(request('/free-game'))).json(), { available: false })
-  onRpc(() => ok({ available: true, game: { code: 'TESTE-GRATIS', name: 'Gratuito' }, file: { id: FILE_ID, version: '0.1', size_bytes: 10, filename: 'g.pdf' } }))
-  assertEquals(await (await handleRequest(request('/free-game'))).json(), { available: true, game: { name: 'Gratuito' }, file: { id: FILE_ID, version: '0.1', size_bytes: 10 } })
+contractTest('jogos gratuitos: lista pública sem o nome do arquivo; free-download exige sessão e o aceite de e-mails', async () => {
+  onRpc(() => ok([]))
+  assertEquals(await (await handleRequest(request('/free-games'))).json(), { games: [] })
+  onRpc(() => ok([{ code: 'TESTE-GRATIS', name: 'Gratuito', file: { id: FILE_ID, version: '0.1', size_bytes: 10, filename: 'g.pdf' } }]))
+  assertEquals(await (await handleRequest(request('/free-games'))).json(), { games: [{ code: 'TESTE-GRATIS', name: 'Gratuito', file: { id: FILE_ID, version: '0.1', size_bytes: 10 } }] })
 
-  onRpc(() => row(outcome('not_found')))
-  const paid = await handleRequest(request('/free-download', { method: 'POST', body: { file_id: FILE_ID } }))
-  assertEquals([paid.status, (await paid.json()).error.code], [404, 'FILE_NOT_FOUND'])
   onRpc(() => row({ ...FILE_OK, object_key: 'free/TESTE-GRATIS/0.1/TESTE-GRATIS-v0.1.pdf' }))
-  const free = await handleRequest(request('/free-download', { method: 'POST', body: { file_id: FILE_ID } }))
+  const anonymous = await handleRequest(request('/free-download', { method: 'POST', body: { file_id: FILE_ID } }))
+  assertEquals([anonymous.status, (await anonymous.json()).error.code, rpcCalls.length], [401, 'UNAUTHENTICATED', 0])
+  const token = await sessionToken()
+  onRpc(() => row(outcome('not_found')))
+  const paid = await handleRequest(request('/free-download', { method: 'POST', token, body: { file_id: FILE_ID } }))
+  assertEquals([paid.status, (await paid.json()).error.code], [404, 'FILE_NOT_FOUND'])
+  assertEquals(rpcCalls.at(-1)!.args, { p_user_id: userId(token), p_file_id: FILE_ID })
+  onRpc(() => row(outcome('locked')))
+  const locked = await handleRequest(request('/free-download', { method: 'POST', token, body: { file_id: FILE_ID } }))
+  assertEquals([locked.status, (await locked.json()).error.code], [403, 'FREE_GAMES_LOCKED'])
+  onRpc(() => row({ ...FILE_OK, object_key: 'free/TESTE-GRATIS/0.1/TESTE-GRATIS-v0.1.pdf' }))
+  const free = await handleRequest(request('/free-download', { method: 'POST', token, body: { file_id: FILE_ID } }))
   assertEquals(free.status, 200)
   assertEquals(new URL((await free.json()).url).pathname, '/free/TESTE-GRATIS/0.1/TESTE-GRATIS-v0.1.pdf')
 })

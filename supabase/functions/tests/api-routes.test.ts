@@ -42,7 +42,7 @@ contractTest('rotas privadas recusam sem sessão, sessão vencida e papel errado
   onRpc(() => ({ status: 200, body: null }))
   const expired = await sessionToken({ exp: Math.floor(Date.now() / 1000) - 60 })
   const anon = await sessionToken({ role: 'anon' })
-  for (const [path, method] of [['/cart', 'GET'], ['/cart/items', 'POST'], ['/cart/items/P001', 'DELETE'], ['/account', 'GET'], ['/account/marketing', 'PUT'], ['/account/marketing/prompt', 'POST'], ['/library', 'GET']]) {
+  for (const [path, method] of [['/cart', 'GET'], ['/cart/items', 'POST'], ['/cart/items/P001', 'DELETE'], ['/account', 'GET'], ['/account/marketing', 'PUT'], ['/account/marketing/prompt', 'POST'], ['/library', 'GET'], ['/free-download', 'POST']]) {
     for (const token of [undefined, expired, anon, 'lixo.lixo.lixo']) {
       const res = await handleRequest(request(path, { method, token, body: method === 'GET' || method === 'DELETE' ? undefined : {} }))
       assertEquals(res.status, 401, `${method} ${path}`)
@@ -164,6 +164,7 @@ contractTest('PUT /account/marketing grava o consentimento e devolve a preferên
     { granted: 'sim', source: 'account', text_version: 'v1' },
     { granted: true, source: 'brevo_webhook', text_version: 'v1' },
     { granted: false, source: 'cart' },
+    { granted: false, source: 'free_games' },
     { granted: true, source: 'account', text_version: 'versão com espaço' },
   ]) {
     assertEquals((await handleRequest(request('/account/marketing', { method: 'PUT', token, body }))).status, 400, JSON.stringify(body))
