@@ -40,7 +40,7 @@ test('desktop: persegue o cursor pelo chão, vai no colo e volta ao chão', asyn
   expect(resting).toBeLessThan(32)
 })
 
-test('desktop: aponta o botão, fica em cima dele quando solto ali e o dado rola ao clique', async ({ page }) => {
+test('desktop: aponta o botão e fica em cima dele quando solto ali', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
   await expect(page.locator('.kito-layer')).toHaveAttribute('data-live', 'true')
@@ -62,11 +62,6 @@ test('desktop: aponta o botão, fica em cima dele quando solto ali e o dado rola
   const feetOnButton = (await kito(page)).bottom - cta.y
   expect(feetOnButton).toBeGreaterThanOrEqual(0)
   expect(feetOnButton).toBeLessThan(32)
-
-  const die = (await page.locator('.kito-die-hitbox').boundingBox())!
-  await page.mouse.click(die.x + die.width / 2, die.y + die.height / 2)
-  await expect(page.locator('.kito-die')).toHaveAttribute('data-mode', /^(air|roll)$/)
-  await expect(page.locator('.kito-die')).toHaveAttribute('data-mode', 'rest', { timeout: 5_000 })
 })
 
 test('movimento reduzido: o Kito fica parado de frente e o motor só desce sem a preferência', async ({ page }) => {

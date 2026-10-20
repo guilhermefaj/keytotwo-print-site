@@ -2,17 +2,17 @@ import sharp from 'sharp'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
-// Kito e o dado da hero em pixel art real, enviados pelo responsável em 2026-10-18 (Kito.zip em art-source/kito-pixel/,
-// 256 px; Dice.zip em art-source/dice-pixel/, 136 px, trocado pelo novo em 2026-10-20). Grava:
-// - public/media/hero/kito-pixel-atlas.webp e dice-pixel-atlas.webp: os quadros numa grade de células, WebP sem perda;
-// - public/media/hero/kito-pixel-pose.webp e dice-pixel-pose.webp: a pose parada que o servidor entrega antes dos atlas;
-// - src/kito-sprites.ts: posição de cada animação nos atlas, linha do chão e pontos de pega.
+// O Kito da hero em pixel art real, enviado pelo responsável em 2026-10-18 (Kito.zip em art-source/kito-pixel/, 256 px).
+// O dado que ficava ao lado dele saiu em 2026-10-20, a pedido do responsável. Grava:
+// - public/media/hero/kito-pixel-atlas.webp: os quadros numa grade de células, WebP sem perda;
+// - public/media/hero/kito-pixel-pose.webp: a pose parada que o servidor entrega antes do atlas;
+// - src/kito-sprites.ts: posição de cada animação no atlas, linha do chão e pontos de pega.
 // Animações com lado só entram viradas para a direita: as da esquerda são o espelho exato delas (0 pixel de diferença)
-// e a hero espelha no CSS. O dado parado mostra as seis faces de verdade, uma por valor no topo (vista 3/4).
+// e a hero espelha no CSS.
 // O balanço de quando o Kito é carregado sai do quadro mais alto do "erguido no ar" (pés pendurados), girado com
 // RotSprite (Scale2x três vezes, giro por vizinho mais próximo, volta ao tamanho original), para o pixel continuar limpo.
 const root = path.resolve(import.meta.dirname, '..')
-const KITO = 256, DIE = 136
+const KITO = 256
 
 const frame = (folder, direction, i) => `${folder}/${direction}/frame_${String(i).padStart(3, '0')}.png`
 const anim = (folder, direction, count) => Array.from({ length: count }, (_, i) => frame(`Idle/animations/${folder}`, direction, i))
@@ -32,17 +32,11 @@ const kitoAnimations = {
   hoist: anim('The_character_is_suddenly_hoisted_into_the_air_by', 'south', 9),
   sleep: Array.from({ length: 9 }, (_, i) => frame('sleeping/animations/The_character_rhythmically_inhales_and_exhales_cau', 'south', i)),
   dizzy: anim('The_character_wobbles_unsteadily_head_swaying_with', 'east', 9),
-  dizzyFront: anim('The_character_wobbles_unsteadily_head_swaying_with', 'south', 9),
   point: anim('The_penguin_raises_its_right_arm_in_a_sharp_enthus', 'south', 9),
 }
 // Ângulos em graus, sentido horário positivo (o mesmo do CSS). ±18° ainda cabe na célula.
 const carryAngles = [-18, -9, 0, 9, 18]
 const carryBase = kitoAnimations.hoist[4]
-// Dice.zip de 2026-10-20: o dado base tem o 5 no topo e cada "Number_X_on_top" tem o seu valor. A face 0 (a pose do servidor)
-// é o 6; depois 1 a 5. O giro levanta o dado do chão girando; o oeste é o espelho exato do leste.
-const dieBase = '6-sided_die._Each_frame_must_s'
-const faces = ['Number_6_on_top', 'Number_one_on_top', 'Number_2_on_top', 'Number_3_on_top', 'Number_4_on_top', dieBase].map(state => `${state}/rotations/south-east.png`)
-const roll = Array.from({ length: 9 }, (_, i) => frame(`${dieBase}/animations/The_die_lifts_slightly_off_the_ground_rotating_ra`, 'east', i))
 
 async function readFrame(source, file, cell) {
   const { data, info } = await sharp(path.join(root, source, file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
@@ -132,10 +126,6 @@ const carry = carryAngles.map(angle => rotSprite(base, angle, [centerX, headTop 
 animations.carry = { start: kitoFrames.length, count: carry.length, ground: 0, angles: carryAngles, grab: carry.map(frame => frame.grab), feet: carry.map(frame => bounds(frame.pixels, KITO).bottom + 1) }
 kitoFrames.push(...carry.map(frame => frame.pixels))
 
-// Dado: cada quadro apoia pela própria base, para a face de baixo tocar o chão em qualquer giro.
-const dieFrames = []
-for (const file of [...faces, ...roll]) dieFrames.push(await readFrame('art-source/dice-pixel', file, DIE))
-const dice = { cell: DIE, columns: 9, rows: 0, faces: { start: 0, count: faces.length }, roll: { start: faces.length, count: roll.length }, feet: dieFrames.map(pixels => bounds(pixels, DIE).bottom + 1) }
 
 // Kito sentado do rodapé (Kito-sitting_down_the_ch.zip, 2026-10-20): de frente, balançando os pés; o quadro 0 é a pose
 // parada. Os nove quadros numa fileira, recortados no contorno comum com 2 px de folga, para o vizinho não vazar na escala.
@@ -153,13 +143,9 @@ sitFrames.forEach((pixels, index) => {
 const sitGround = sitBounds.map(box => box.bottom + 1).sort((a, b) => a - b)[4] - sitTop
 
 const kitoAtlas = await pack(kitoFrames, KITO, 12)
-const dieAtlas = await pack(dieFrames, DIE, dice.columns)
-dice.rows = dieAtlas.rows
 const files = {
   'public/media/hero/kito-pixel-atlas.webp': kitoAtlas.webp,
   'public/media/hero/kito-pixel-pose.webp': await webp(Buffer.from(kitoFrames[animations.front.start].buffer), KITO, KITO),
-  'public/media/hero/dice-pixel-atlas.webp': dieAtlas.webp,
-  'public/media/hero/dice-pixel-pose.webp': await webp(Buffer.from(dieFrames[0].buffer), DIE, DIE),
   'public/media/hero/kito-pixel-sit.webp': await webp(sitStrip, sitWidth * sitFrames.length, sitHeight),
 }
 await mkdir(path.join(root, 'public/media/hero'), { recursive: true })
@@ -167,8 +153,8 @@ for (const [file, buffer] of Object.entries(files)) {
   await writeFile(path.join(root, file), buffer)
   console.log(`${file} ${(buffer.length / 1024).toFixed(1)} KB`)
 }
-const sprites = { atlas: '/media/hero/kito-pixel-atlas.webp', dieAtlas: '/media/hero/dice-pixel-atlas.webp', cell: KITO, columns: 12, rows: kitoAtlas.rows, animations, dice }
-await writeFile(path.join(root, 'src/kito-sprites.ts'), `// Gerado por scripts/prepare-kito-pixel.mjs a partir de art-source/kito-pixel/ e art-source/dice-pixel/. Não editar à mão.\nexport const kitoSprites = ${JSON.stringify(sprites, null, 2)} as const\n`)
-console.log(`src/kito-sprites.ts: Kito ${kitoFrames.length} quadros (12×${kitoAtlas.rows}), dado ${dieFrames.length} quadros`)
+const sprites = { atlas: '/media/hero/kito-pixel-atlas.webp', cell: KITO, columns: 12, rows: kitoAtlas.rows, animations }
+await writeFile(path.join(root, 'src/kito-sprites.ts'), `// Gerado por scripts/prepare-kito-pixel.mjs a partir de art-source/kito-pixel/. Não editar à mão.\nexport const kitoSprites = ${JSON.stringify(sprites, null, 2)} as const\n`)
+console.log(`src/kito-sprites.ts: Kito ${kitoFrames.length} quadros (12×${kitoAtlas.rows})`)
 // O rodapé (SiteFooter e .footer-kito) usa estes números à mão; se mudarem, atualizar lá.
 console.log(`Kito sentado: ${sitFrames.length} quadros de ${sitWidth}×${sitHeight}, chão a ${sitHeight - sitGround} px da base`)
