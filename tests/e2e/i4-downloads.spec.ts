@@ -154,6 +154,28 @@ test('gratuitos com sessão: aceitar os e-mails libera os dois jogos e o downloa
   await downloaded
 })
 
+test('Meus jogos: gratuitos liberados entram na grade e baixam pela rota gratuita; sem liberação, só o convite', async ({ page }) => {
+  let unlocked = false
+  await page.route('**/functions/v1/api/free-games', route => route.fulfill({ json: freeGames }))
+  await page.route('**/functions/v1/api/account', route => route.fulfill({ json: { email: fakeSession.user.email, marketing: { opted_in: false, prompted_at: '2026-01-01' }, free_games_unlocked: unlocked, orders: [] } }))
+  await page.route('**/functions/v1/api/free-download', route => route.fulfill({ json: { url: fileURL, expires_at: new Date(Date.now() + 300_000).toISOString() } }))
+  await library(page)
+  await expect(page.locator('.library-grid > li')).toHaveCount(1)
+  await expect(page.getByRole('link', { name: 'Ver os gratuitos', exact: true })).toHaveAttribute('href', '/gratuitos')
+  unlocked = true
+  await page.reload()
+  await expect(page.locator('.library-grid > li')).toHaveCount(3)
+  await expect(page.getByRole('link', { name: 'Ver os gratuitos', exact: true })).toHaveCount(0)
+  const free = page.locator('#jogo-F002')
+  await expect(free).toContainText('Gratuito')
+  await expect(free.locator('.game-acquired')).toHaveText('Liberado na sua conta.')
+  const response = page.waitForResponse(result => result.url().endsWith('/api/free-download'))
+  const downloaded = page.waitForEvent('download')
+  await free.getByRole('button', { name: 'Baixar PDF', exact: true }).click()
+  expect((await response).request().postDataJSON()).toEqual({ file_id: newerFileId })
+  await downloaded
+})
+
 test('delivery mock is explicit and requests no signed URL', async ({ page }) => {
   let requested = false
   page.on('request', request => { if (request.url().endsWith('/api/download-url')) requested = true })

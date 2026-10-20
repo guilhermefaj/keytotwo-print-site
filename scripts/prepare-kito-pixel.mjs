@@ -3,12 +3,12 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 // Kito e o dado da hero em pixel art real, enviados pelo responsável em 2026-10-18 (Kito.zip em art-source/kito-pixel/,
-// 256 px; Dice.zip em art-source/dice-pixel/, 136 px). Grava:
+// 256 px; Dice.zip em art-source/dice-pixel/, 136 px, trocado pelo novo em 2026-10-20). Grava:
 // - public/media/hero/kito-pixel-atlas.webp e dice-pixel-atlas.webp: os quadros numa grade de células, WebP sem perda;
 // - public/media/hero/kito-pixel-pose.webp e dice-pixel-pose.webp: a pose parada que o servidor entrega antes dos atlas;
 // - src/kito-sprites.ts: posição de cada animação nos atlas, linha do chão e pontos de pega.
 // Animações com lado só entram viradas para a direita: as da esquerda são o espelho exato delas (0 pixel de diferença)
-// e a hero espelha no CSS. As faces do dado não são espelho uma da outra, então entram as oito.
+// e a hero espelha no CSS. O dado parado mostra as seis faces de verdade, uma por valor no topo (vista 3/4).
 // O balanço de quando o Kito é carregado sai do quadro mais alto do "erguido no ar" (pés pendurados), girado com
 // RotSprite (Scale2x três vezes, giro por vizinho mais próximo, volta ao tamanho original), para o pixel continuar limpo.
 const root = path.resolve(import.meta.dirname, '..')
@@ -38,8 +38,11 @@ const kitoAnimations = {
 // Ângulos em graus, sentido horário positivo (o mesmo do CSS). ±18° ainda cabe na célula.
 const carryAngles = [-18, -9, 0, 9, 18]
 const carryBase = kitoAnimations.hoist[4]
-const faces = ['south', 'south-east', 'east', 'north-east', 'north', 'north-west', 'west', 'south-west'].map(side => `Dice/rotations/${side}.png`)
-const roll = Array.from({ length: 9 }, (_, i) => frame('Dice/animations/The_die_begins_to_tremble_violently_before_suddenl', 'east', i))
+// Dice.zip de 2026-10-20: o dado base tem o 5 no topo e cada "Number_X_on_top" tem o seu valor. A face 0 (a pose do servidor)
+// é o 6; depois 1 a 5. O giro levanta o dado do chão girando; o oeste é o espelho exato do leste.
+const dieBase = '6-sided_die._Each_frame_must_s'
+const faces = ['Number_6_on_top', 'Number_one_on_top', 'Number_2_on_top', 'Number_3_on_top', 'Number_4_on_top', dieBase].map(state => `${state}/rotations/south-east.png`)
+const roll = Array.from({ length: 9 }, (_, i) => frame(`${dieBase}/animations/The_die_lifts_slightly_off_the_ground_rotating_ra`, 'east', i))
 
 async function readFrame(source, file, cell) {
   const { data, info } = await sharp(path.join(root, source, file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
