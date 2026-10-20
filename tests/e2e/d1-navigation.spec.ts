@@ -53,7 +53,8 @@ test('desktop header: shared navigation, active page, transparent top and sticky
   page.on('request', request => requested.push(request.url()))
   await page.goto('/')
   await expect(page.locator('.desktop-nav a')).toHaveText(['Início', 'Loja', 'Gratuitos', 'Blog'])
-  await expect(page.locator('.desktop-action')).toContainText('Ver os jogos')
+  // Sem botão "Ver os jogos" no cabeçalho: a Loja já está na navegação.
+  await expect(page.locator('header').getByRole('link', { name: 'Ver os jogos' })).toHaveCount(0)
   await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('header')).toHaveAttribute('data-scrolled', 'false')
   // O carrinho existe nos stages test e live; em preview o header não o mostra.
@@ -124,15 +125,13 @@ test('checkout focus header agrees in server HTML and hydration, with or without
   }
 })
 
-test('account menu, catalog CTA regardless of ownership and the simplified private header', async ({ page }) => {
+test('account menu and the simplified private header', async ({ page }) => {
   await fixture(page, { owned: true })
   await page.goto('/')
   await expect(page.locator('.desktop-nav a')).toHaveText(['Início', 'Loja', 'Gratuitos', 'Blog'])
   await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('href', '/')
-  await expect(page.locator('.desktop-action > .button')).toHaveText('Ver os jogos')
-  await expect(page.locator('.desktop-action > .button')).toHaveAttribute('href', '/loja')
   await page.goto('/conta')
-  // Minha área no desktop: logo, Ajuda e a conta (as abas levam aos destinos); sem CTA comercial nem carrinho.
+  // Minha área no desktop: logo, Ajuda e a conta (as abas levam aos destinos); sem carrinho.
   await expect(page.locator('header')).toHaveAttribute('data-private', 'true')
   await expect(page.locator('.desktop-nav')).toHaveCount(0)
   await expect(page.locator('.desktop-action > .nav-link')).toHaveText(['Ajuda'])

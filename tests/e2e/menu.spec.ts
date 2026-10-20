@@ -40,19 +40,19 @@ test('menu: Blog corresponde aos posts do build, inclusive no fallback e na nave
   expect(errors).toEqual([])
 })
 
-test('menu: Loja ativa nos detalhes e CTA oculto; rodapé preserva Como funciona', async ({ page }) => {
-  for (const path of ['/loja', '/loja/j001', '/loja/p001/']) {
+test('menu: Loja ativa nos detalhes, sem botão Ver os jogos; rodapé preserva Como funciona', async ({ page }) => {
+  for (const path of ['/', '/ajuda', '/loja', '/loja/j001', '/loja/p001/']) {
     await page.goto(path)
-    await expect(page.locator('.desktop-nav [aria-current="page"]')).toHaveText('Loja')
+    if (path.startsWith('/loja')) await expect(page.locator('.desktop-nav [aria-current="page"]')).toHaveText('Loja')
     await expect(page.locator('header').getByRole('link', { name: 'Ver os jogos' })).toHaveCount(0)
   }
   const footer = page.getByRole('navigation', { name: 'Explorar', exact: true })
   await expect(footer.getByRole('link')).toHaveText(['Início', 'Loja', 'Como funciona', 'Gratuitos', ...(hasBlogPosts ? ['Blog'] : [])])
   await expect(footer.getByRole('link', { name: 'Como funciona' })).toHaveAttribute('href', '/#como-funciona')
   await page.goto('/ajuda')
-  const cta = page.locator('.desktop-action').getByRole('link', { name: 'Ver os jogos' })
-  await cta.focus()
-  expect(await cta.evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none')
+  const shop = page.locator('.desktop-nav').getByRole('link', { name: 'Loja', exact: true })
+  await shop.focus()
+  expect(await shop.evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none')
   await page.keyboard.press('Enter')
   await expect(page).toHaveURL(/\/loja$/)
 })
@@ -69,7 +69,7 @@ for (const width of [375, 1280]) test(`menu: teclado, axe e capturas em ${width}
     await page.keyboard.press('Enter')
     const dialog = page.getByRole('dialog')
     await expect(dialog.locator('.sheet-nav a')).toHaveText(links)
-    await expect(dialog.getByRole('link', { name: 'Ver os jogos' })).toHaveAttribute('href', '/loja')
+    await expect(dialog.getByRole('link', { name: 'Ver os jogos' })).toHaveCount(0)
     await capture(page, 'menu-aberto-375')
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([])
     await page.keyboard.press('Escape')

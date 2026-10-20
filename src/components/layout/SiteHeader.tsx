@@ -40,9 +40,6 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
   const home = pathname === '/'
   const focusMode = pathname === '/pagamento'
   const privateArea = privateRoutes.includes(pathname)
-  // Sem CTA comercial na Loja, na Minha área e nas telas de compra (sacola e confirmação).
-  const purchaseFlow = pathname === '/carrinho' || pathname.startsWith('/pedido/')
-  const showPrimary = !privateArea && !purchaseFlow && pathname !== '/loja' && !pathname.startsWith('/loja/')
   const mainNavigation = navigation.filter(item => item.href !== '/blog' || hasBlogPosts)
   const visibleNavigation: ReadonlyArray<{ label: string; href: string }> = privateArea ? privateNavigation : mainNavigation
   const showCart = siteConfig.showCartAccess && !privateArea
@@ -107,7 +104,6 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
             <Link className="nav-link" to="/ajuda" aria-current={pathname === '/ajuda' ? 'page' : undefined}>Ajuda</Link>
             {accountControl}
             {showCart && cartButton}
-            {showPrimary && <Link className="button button-primary" to="/loja">Ver os jogos</Link>}
           </div>
           <div className="mobile-navigation">
             {showCart && cartButton}
@@ -121,7 +117,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
                   {session && !privateArea && <SheetClose asChild><Link className="nav-link" to="/meus-jogos" aria-current={pathname === '/meus-jogos' ? 'page' : undefined}>Meus jogos</Link></SheetClose>}
                 </nav>
                 {!privateArea && <SheetClose asChild><Link className="sheet-help" to="/ajuda" aria-current={pathname === '/ajuda' ? 'page' : undefined}><span>Ajuda</span></Link></SheetClose>}
-                <div className="sheet-bottom">{showPrimary && <SheetClose asChild><Link className="button button-primary" to="/loja">Ver os jogos</Link></SheetClose>}<div className="sheet-legal"><SheetClose asChild><Link to="/termos">Termos de uso</Link></SheetClose><SheetClose asChild><Link to="/privacidade">Privacidade</Link></SheetClose></div></div>
+                <div className="sheet-bottom"><div className="sheet-legal"><SheetClose asChild><Link to="/termos">Termos de uso</Link></SheetClose><SheetClose asChild><Link to="/privacidade">Privacidade</Link></SheetClose></div></div>
               </SheetContent>
             </Sheet>
           </div>
