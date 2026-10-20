@@ -81,7 +81,7 @@ export function startKito({ hero, layer, sprite, hitbox, shadow, die, dieHitbox 
     drag: null as Drag | null,
     tap: null as null | { id: number; x: number; y: number; at: number },
   }
-  // O dado: parado mostra uma das oito faces; rolando, o giro; tremble é o tremor antes de pular quando clicado;
+  // O dado: parado mostra uma das seis faces (um valor no topo); rolando, o giro; tremble é o tremor antes de pular quando clicado;
   // thrown marca o arremesso da pessoa, que deixa o Kito tonto se acertá-lo.
   const d = { x: 0, y: 0, vx: 0, vy: 0, mode: 'rest' as 'rest' | 'air' | 'held', face: 0, phase: 0, rolling: false, thrown: false, tremble: 0, drag: null as Drag | null }
 
