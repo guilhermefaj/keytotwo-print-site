@@ -81,7 +81,7 @@ begin
                       (case v_file.kind when 'pdf' then 'application/pdf' else 'application/zip' end)::text, v_file.size_bytes;
 end $$;
 
--- ===== 6. get_account: diz se os gratuitos estão liberados (free_games_unlocked) =====================
+-- ===== 6. get_account (versão do I3, com cupom): diz se os gratuitos estão liberados (free_games_unlocked) =====
 create or replace function public.get_account(p_user_id uuid) returns jsonb
 language plpgsql stable security definer set search_path = '' as $$
 begin
@@ -110,8 +110,11 @@ begin
                  'created_at', o.created_at,
                  'paid_at', o.paid_at,
                  'status', o.status,
+                 'amount_subtotal', o.amount_subtotal,
+                 'amount_discount', o.amount_discount,
                  'amount_total', o.amount_total,
                  'currency', o.currency,
+                 'promotion_code', o.promotion_code,
                  'items', coalesce((
                    select jsonb_agg(
                             jsonb_build_object('code', p.code, 'name', p.name,
