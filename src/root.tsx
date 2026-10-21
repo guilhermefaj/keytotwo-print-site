@@ -7,6 +7,7 @@ import type { BlogPostSummary } from './lib/blog'
 import { readBlogPosts } from './lib/blog.server'
 import { buildSiteConfig } from './lib/site-build.server'
 import { AuthProvider } from './components/auth/AuthProvider'
+import { CookieNotice } from './components/layout/CookieNotice'
 import { ShopProvider } from './components/account/ShopProvider'
 import { useAuth } from './lib/auth-context'
 // Fase 4 (desempenho): o título da hero é o LCP e espera a Bricolage; o preload a busca junto com o CSS.
@@ -89,6 +90,7 @@ export default function Root() {
   return <AuthProvider><ShopProvider><InteractiveMarker />
     <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
     {siteConfig.stage === 'test' && <aside aria-label="Aviso de ambiente"><p className="stage-banner">Ambiente de teste — sem cobranças reais.</p></aside>}
+    <CookieNotice />
     <SiteHeader onMenuOpenChange={setMenuOpen} />
     <Outlet context={{ menuOpen }} />
     <SiteFooter />

@@ -145,8 +145,8 @@ const reembolso: LegalContent = {
 
 const privacidade: LegalContent = {
   title: 'Política de privacidade',
-  version: '2026-10-20',
-  versionLabel: 'Versão de 20 de outubro de 2026',
+  version: '2026-10-22',
+  versionLabel: 'Versão de 22 de outubro de 2026',
   intro: 'Esta política explica quais dados pessoais a KeyToTwo trata, para quê, com quem compartilha, por quanto tempo guarda e como você exerce seus direitos, conforme a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).',
   sections: [
     { title: 'Quem cuida dos seus dados', id: 'controladora', paragraphs: [
@@ -162,6 +162,7 @@ const privacidade: LegalContent = {
         'E-mails enviados: tipo da mensagem (entrega, lembrete ou novidade), endereço, situação do envio e, quando a Brevo avisa, devolução, reclamação de spam ou descadastro.',
         'Uso da loja: eventos como conta confirmada, item colocado ou tirado da sacola, pagamento iniciado e pedido pago, ligados à sua conta.',
         'Registros de acesso: o serviço de login e a hospedagem registram endereço IP, data e hora dos acessos e dados do navegador.',
+        'Navegação, só se você aceitar os cookies: páginas visitadas, de onde você chegou, tipo de aparelho e de navegador, cidade aproximada e ações como ver um jogo, colocar na sacola e comprar, medidas pelo Google Analytics sem o seu e-mail nem ligação com a sua conta.',
         'Pagamento: os dados do cartão ou do Pix (como número do cartão, nome e documento, quando pedidos) são informados direto à Stripe. A KeyToTwo não recebe nem guarda o número do cartão.',
       ],
       'Não pedimos dados pessoais sensíveis.',
@@ -172,7 +173,8 @@ const privacidade: LegalContent = {
         'Guardar pedidos e registros de pagamento e cumprir obrigações fiscais e contábeis: cumprimento de obrigação legal (art. 7º, II).',
         'Guardar registros de acesso pelo prazo do Marco Civil da Internet: cumprimento de obrigação legal (art. 7º, II).',
         'Prevenir fraude e abuso, proteger a conta, os arquivos e o serviço, tratar contestações e defender direitos: legítimo interesse (art. 7º, IX) e exercício regular de direitos (art. 7º, VI).',
-        'Entender o uso da loja para melhorar o site e os jogos, com eventos ligados à conta e sem ferramentas de rastreamento de terceiros: legítimo interesse (art. 7º, IX).',
+        'Entender o uso da loja para melhorar o site e os jogos, com eventos ligados à conta: legítimo interesse (art. 7º, IX).',
+        'Medir as visitas ao site com o Google Analytics, para saber o que funciona e de onde as pessoas chegam: consentimento (art. 7º, I), que você dá ou recusa no aviso de cookies e muda a qualquer momento em "Cookies", no rodapé.',
         'Enviar novidades, ofertas, lembrete da sacola e dicas depois da compra: consentimento (art. 7º, I), que você dá e retira em Minha conta ou pelo link de cada e-mail.',
       ],
       'Comprar não depende de aceitar e-mails de novidades. Retirar o consentimento não afeta os e-mails de acesso e de pedido. Não vendemos dados pessoais.',
@@ -185,7 +187,7 @@ const privacidade: LegalContent = {
         'Stripe: processamento dos pagamentos (Pix e cartão) e prevenção de fraude. A Stripe também trata dados de pagamento como controladora, para cumprir obrigações próprias, conforme a política dela.',
         'Brevo: envio dos e-mails.',
         'Backblaze B2: armazenamento dos arquivos dos jogos. O download sai direto do Backblaze, que registra o acesso técnico.',
-        'Google: login com a conta Google, quando você escolhe essa opção.',
+        'Google: login com a conta Google, quando você escolhe essa opção, e o Google Analytics, que mede as visitas só se você aceitar os cookies.',
         'Provedor de hospedagem: o servidor que publica o site.',
       ],
       'Também podemos compartilhar dados quando a lei exigir, por ordem judicial ou de autoridade competente, ou para defender direitos.',
@@ -199,6 +201,7 @@ const privacidade: LegalContent = {
         'Registros de acesso: 6 meses, como exige o Marco Civil da Internet (Lei nº 12.965/2014, art. 15).',
         'Lista de supressão: e-mails que voltaram, reclamaram de spam ou pediram descadastro continuam numa lista para não receberem novidades, mesmo depois da exclusão da conta. É ela que garante essa escolha.',
         'Eventos de uso e de download: enquanto a conta existir. Depois da exclusão, ficam sem ligação com você, só como estatística.',
+        'Google Analytics: 14 meses, o prazo configurado na ferramenta. A sua escolha sobre os cookies fica guardada no navegador por 12 meses; depois, o aviso pergunta de novo.',
       ],
     ] },
     { title: 'Seus direitos', id: 'direitos', paragraphs: [
@@ -217,8 +220,9 @@ const privacidade: LegalContent = {
       'Você também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD).',
     ] },
     { title: 'Cookies e armazenamento no navegador', id: 'navegador', paragraphs: [
-      'O site não usa cookies de publicidade nem ferramentas de análise ou rastreamento de terceiros.',
-      'Quando você entra na conta, o navegador guarda a sessão no armazenamento local (localStorage), para você continuar conectado. Ela é apagada quando você sai da conta.',
+      'Cookies de análise (Google Analytics): só com o seu aceite no aviso de cookies. Eles contam as visitas e as ações na loja, sem ligação com a sua conta. Não usamos cookies de publicidade, e os sinais do Google para anúncios ficam desligados.',
+      'Você muda a escolha a qualquer momento em "Cookies", no rodapé. Recusar não muda nada no uso do site e apaga os cookies do Google Analytics deste navegador.',
+      'Quando você entra na conta, o navegador guarda a sessão no armazenamento local (localStorage), para você continuar conectado. Ela é apagada quando você sai da conta. A sacola de quem ainda não entrou e a sua escolha sobre os cookies também ficam no armazenamento local do navegador.',
       'Na página de pagamento, o formulário da Stripe é carregado e pode gravar cookies próprios, usados para segurança e prevenção de fraude. Ao entrar com o Google, você passa pela página do Google, que segue a política dele.',
     ] },
     { title: 'Segurança', id: 'seguranca', paragraphs: [

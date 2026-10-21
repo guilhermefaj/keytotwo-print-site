@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth-context'
+import { trackPurchase } from '../lib/analytics'
 import { checkoutMock, type OrderStatus } from '../lib/checkout'
 import { useShop } from '../lib/shop-context'
 import { supabase } from '../lib/supabase'
@@ -41,7 +42,7 @@ function Status({ sessionId }: { sessionId: string }) {
           ? { state: 'not_found' } as OrderStatus : await api<OrderStatus>(`/order-status?session_id=${encodeURIComponent(sessionId)}`, { signal: controller.signal })
         if (controller.signal.aborted) return
         setResult(response); setError(''); setChecking(false)
-        if (response.state === 'paid' && response.next === 'open_library' && !demo) { refreshCart(); refreshAccount() }
+        if (response.state === 'paid' && response.next === 'open_library' && !demo) { refreshCart(); refreshAccount(); trackPurchase(sessionId) }
         if (['processing', 'pending_payment'].includes(response.state) && attempt < 6) {
           const delay = [1500, 3000, 6000, 10000, 15000, 20000][attempt++]
           timer = setTimeout(() => { if (!document.hidden) void check(); else { setChecking(false) } }, delay)

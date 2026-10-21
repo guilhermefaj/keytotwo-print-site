@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, isRouteErrorResponse, useLoaderData, useRouteError, type ClientLoaderFunctionArgs, type LoaderFunctionArgs } from 'react-router'
 import { productPages, products, type Product } from '../content/products'
 import { refundNotice } from '../content/legal'
@@ -8,6 +9,7 @@ import { ProductGallery, type GalleryImage } from '../components/shop/ProductGal
 import { ProductFacts, ProductMoments, ProductNeeds, ProductPackage } from '../components/shop/ProductSections'
 import { BackLink } from '../components/ui/BackLink'
 import NotFound from './not-found'
+import { offerValue, track } from '../lib/analytics'
 
 export function loader({ params }: LoaderFunctionArgs) {
   return loadProduct(params.slug)
@@ -40,6 +42,10 @@ export default function ShopProduct() {
   const { product } = useLoaderData<typeof loader>()
   const game = product.kind === 'single' ? product.games[0] : undefined
   const bundle = game && products.find(item => item.kind === 'bundle' && item.availability === 'sale' && item.games.some(included => included.id === game.id))
+  useEffect(() => {
+    const value = product.offer.price ? offerValue(product.offer.price) : undefined
+    track('view_item', { currency: 'BRL', value, items: [{ item_id: product.code, item_name: product.title, price: value }] })
+  }, [product])
   return <main id="conteudo" tabIndex={-1} className="shop-page shop-product-page content-width">
     <BackLink to="/loja">Loja</BackLink>
     <header className="shop-heading"><h1>{product.title}</h1><p>{product.shopHeadline || product.tagline}</p></header>

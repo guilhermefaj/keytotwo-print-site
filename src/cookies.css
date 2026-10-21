@@ -1,0 +1,29 @@
+/* Aviso de cookies (DESIGN.md › Aviso de cookies): um recorte de papel com a borda tracejada, preso no canto da tela,
+   com o Kito comendo o cookie dele. Só tokens da marca; as migalhas são Marca-texto. */
+.cookie-notice { position: fixed; z-index: 60; left: 12px; right: 12px; bottom: 12px; display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; max-width: 460px; margin-bottom: env(safe-area-inset-bottom); padding: 20px 20px 20px 14px; background: var(--color-paper); color: var(--color-ink); border: 2px dashed var(--color-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-menu); animation: cookie-notice-in 280ms steps(4) both; }
+.cookie-notice-art { position: relative; width: 94px; }
+.cookie-notice-art img { display: block; width: 94px; height: auto; image-rendering: pixelated; animation: kito-chew 900ms steps(1) infinite; }
+.cookie-crumbs i { position: absolute; top: 58px; width: 4px; height: 4px; background: var(--color-highlight); opacity: 0; animation: cookie-crumb 1800ms steps(6) infinite; }
+.cookie-crumbs i:nth-child(1) { left: 44px; }
+.cookie-crumbs i:nth-child(2) { left: 52px; animation-delay: 600ms; }
+.cookie-crumbs i:nth-child(3) { left: 38px; animation-delay: 1200ms; }
+.cookie-notice h2 { margin: 2px 0 6px; font-family: var(--font-display); font-size: var(--text-title-sm); line-height: 1.25; }
+.cookie-notice h2:focus { outline: none; }
+.cookie-notice h2:focus-visible { outline: 2px solid var(--color-deep-teal); outline-offset: 4px; }
+.cookie-notice p { margin: 0 0 14px; font-size: var(--text-small); line-height: 1.55; color: var(--color-ink-soft); }
+.cookie-notice-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cookie-notice-actions .button { min-height: 44px; }
+@media (min-width: 720px) { .cookie-notice { left: 24px; right: auto; bottom: 24px; } }
+@media (max-width: 380px) { .cookie-notice { grid-template-columns: 1fr; } .cookie-notice-art { width: 72px; } .cookie-notice-art img { width: 72px; } }
+
+@keyframes cookie-notice-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes kito-chew { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(2px); } }
+@keyframes cookie-crumb { 0% { transform: translateY(0); opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(30px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .cookie-notice, .cookie-notice-art img { animation: none; }
+  .cookie-crumbs { display: none; }
+}
+
+/* Rodapé: "Cookies" é um botão (reabre o aviso) com a cara dos links da linha legal. */
+.footer-cookies { padding: 10px 0; border: 0; background: none; color: inherit; font: inherit; font-size: var(--text-label); line-height: 1.5; cursor: pointer; text-underline-offset: 4px; }
+.footer-cookies:hover { text-decoration: underline; color: var(--color-deep-teal); }

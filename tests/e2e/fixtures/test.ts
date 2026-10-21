@@ -11,8 +11,14 @@ async function waitInteractive(page: Page) {
   if (isHtml) await page.locator('html[data-interactive="true"]').waitFor({ state: 'attached', timeout: 15_000 })
 }
 
+// O aviso de cookies fica fixo no canto da tela: nos testes, a escolha já vem feita ("Recusar"), para ele não cobrir
+// o que o teste clica. O próprio aviso é testado em cookies.spec.ts, que apaga essa escolha.
+export const cookieChoiceKey = 'keytotwo:cookies'
 export const test = base.extend({
   page: async ({ page }, use) => {
+    await page.addInitScript(key => {
+      try { if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ value: 'denied', at: new Date().toISOString(), version: 1 })) } catch { /* sem armazenamento */ }
+    }, cookieChoiceKey)
     const goto = page.goto.bind(page)
     const reload = page.reload.bind(page)
     page.goto = async (url, options) => { const response = await goto(url, options); await waitInteractive(page); return response }

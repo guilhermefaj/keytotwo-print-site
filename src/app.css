@@ -6,6 +6,7 @@
 @import '@fontsource/dm-sans/latin-600.css';
 @import './styles.css';
 @import './navigation.css';
+@import './cookies.css';
 @import './components/account/game-cover.css';
 @import './carousels.css';
 @import './shop.css';
