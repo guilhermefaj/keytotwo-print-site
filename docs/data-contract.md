@@ -1,8 +1,8 @@
-# Contrato de dados — KeyToTwo Print (v0.3.6)
+# Contrato de dados — KeyToTwo Print (v0.3.7)
 
 | | |
 | --- | --- |
-| Versão | 0.3.6, 2026-10-19: **direitos do titular (LGPD)**, com `export_account_data`, `delete_account_data` e a limpeza diária da fila de e-mail (D-28, seção 6.11; substitui a D-23). 0.3.5, 2026-10-08. Substitui a v0.2.2 (seção 13 lista o que mudou). A v0.3.1 incorporou a revisão cruzada do Ferrolho (checkout embutido, D-21). A v0.3.2 registrou o I2b implementado, decidiu o P-15 e acrescentou o marcador do convite de marketing (D-22). A v0.3.3 acrescenta os **cupons** (D-24 e D-25: `orders` ganha subtotal, desconto e código promocional; `order_items` guarda o preço cheio) e especifica as RPCs do I3 como implementadas (linha "Implementado (I3)"). A v0.3.4 especifica como implementadas as RPCs de download, entrega, jogo gratuito e fila de e-mail do I4 (linha "Implementado (I4)") e traz no seed os metadados reais dos 5 PDFs de TESTE (D-26). A v0.3.5 especifica como implementados `record_email_event`, `private.enqueue_followups` e a agenda do `pg_cron` com o Vault (D-27, linha "Implementado (I5)"): **as 22 RPCs do contrato existem no banco**. |
+| Versão | 0.3.7, 2026-10-21: **painel do administrador**, com `get_admin_metrics` e `private.is_admin` (D-29, seção 6.12). 0.3.6, 2026-10-19: **direitos do titular (LGPD)**, com `export_account_data`, `delete_account_data` e a limpeza diária da fila de e-mail (D-28, seção 6.11; substitui a D-23). 0.3.5, 2026-10-08. Substitui a v0.2.2 (seção 13 lista o que mudou). A v0.3.1 incorporou a revisão cruzada do Ferrolho (checkout embutido, D-21). A v0.3.2 registrou o I2b implementado, decidiu o P-15 e acrescentou o marcador do convite de marketing (D-22). A v0.3.3 acrescenta os **cupons** (D-24 e D-25: `orders` ganha subtotal, desconto e código promocional; `order_items` guarda o preço cheio) e especifica as RPCs do I3 como implementadas (linha "Implementado (I3)"). A v0.3.4 especifica como implementadas as RPCs de download, entrega, jogo gratuito e fila de e-mail do I4 (linha "Implementado (I4)") e traz no seed os metadados reais dos 5 PDFs de TESTE (D-26). A v0.3.5 especifica como implementados `record_email_event`, `private.enqueue_followups` e a agenda do `pg_cron` com o Vault (D-27, linha "Implementado (I5)"): **as 22 RPCs do contrato existem no banco**. |
 | Dono | Lastro (Dados e Supabase). Consumidor: Ferrolho (Edge Functions). |
 | Escopo | Referência para as migrações do I2b em diante. **Nenhuma migração, nenhuma escrita remota.** As migrações rascunho da v0.2.2 (sem commit, nunca aplicadas) serão reescritas no I2b. |
 | Ambiente | Postgres 17 (projeto de teste `keytotwo-print-db`, sa-east-1, plano Free). Desenvolvimento local com Supabase CLI. |
@@ -14,6 +14,7 @@
 | Implementado (I5) | Migração `20261008190749_i5_followups_suppressions_agenda.sql` (nenhuma tabela muda): extensões `pg_cron`, `pg_net` e `supabase_vault`; `record_email_event` (público, só `service_role`); `private.enqueue_followups` e `private.dispatch_tick` (sem EXECUTE para papel de API); o job `email-dispatch-tick` a cada 5 minutos. Passo local `supabase/local/aplicar-dispatch-vault.mjs` (grava no Vault a URL e a chave do despacho, sem imprimir). pgTAP `12_followups` (T65, T88 e T89). **22 RPCs** no banco, todas as do contrato. Verificado na stack local: `supabase db reset` do zero com as 7 migrações e o seed; `supabase test db` com 13 arquivos e **879** testes (PASS, também depois de o despacho já ter enviado as entregas do seed); `supabase db advisors --local` sem WARN nem ERROR; o primeiro disparo real do `pg_cron` rodou (`succeeded`), o `pg_net` chamou o `email-dispatch` pelo Kong com a chave do Vault e recebeu **HTTP 200**, e o despacho enviou (modo log) as 2 entregas do seed. |
 | Implementado (LGPD) | Migração `20261019120000_lgpd_direitos_titular.sql`: `orders.user_id` e `orders.email` passam a aceitar NULL só com `anonymized_at` (CHECK `orders_anonymized_check`); `entitlements.user_id` NULL só revogado, motivo novo `account_deleted` (a I-5 o trata como o `manual`); `guard_order_changes` aceita a anonimização só dentro da exclusão de conta, sem volta; `forbid_modification` deixa a exclusão de conta apagar o histórico de consentimento; `export_account_data` e `delete_account_data` (públicas, só `service_role`); `private.purge_email_outbox` e o job diário `email-outbox-purge`. pgTAP `13_account_rights` (T140 a T147), `01` e `02` atualizados. **24 RPCs** no banco. Verificado sem Docker num PGlite (PG 17) com `auth.users`, `cron` e Vault simulados: as 8 migrações aplicam e passam `01` a `10` e `13`; a stack local completa fica para o job de integração do CI. |
 | Implementado (Gratuitos) | Migração `20261020150000_gratuitos.sql`: cai `games_one_published_free` (vários gratuitos publicados); `get_free_game` vira `list_free_games()`; `resolve_free_download(p_user_id, p_file_id)` exige conta confirmada e algum aceite de e-mails (`private.free_games_unlocked`), com o novo outcome `locked`; `marketing_consents` e `set_marketing_consent` aceitam a origem `free_games` (só concede); `get_account` devolve `free_games_unlocked`. pgTAP `02`, `08`, `10` e `11` atualizados. |
+| Implementado (Painel) | Migração `20261021120000_painel_admin.sql` (nenhuma tabela muda): `private.is_admin(p_user_id)` e `get_admin_metrics(p_user_id, p_days, p_livemode)`, EXECUTE só `service_role`. pgTAP `14_admin_metrics`. |
 | Não verificado | Fora do I5: o despacho real pela Brevo, o `brevo-webhook` e o link `GET /d/{token}` (Ferrolho, só se provam na integração); a chave `dispatch` e os segredos do Vault na nuvem (I6, à mão no painel); a assinatura da URL no B2; o login com Google (exige credenciais do Google; verificação manual). O Checkout real da Stripe (sessão embutida, cupom, retorno) é do Ferrolho e só se prova na integração. Regras de plataforma (Data API) não foram lidas do projeto remoto. |
 
 Os blocos `sql` marcados com `-- @ddl` são o DDL de referência (exequível). Os demais são assinaturas e exemplos. Nome comercial, preço, composição de avulsos, textos legais e remetentes **não são decididos aqui**: aparecem como `PENDENTE` (seção 11).
@@ -49,6 +50,7 @@ Os blocos `sql` marcados com `-- @ddl` são o DDL de referência (exequível). O
 | D-25 | **Cupom de 100%:** `payment_status = 'no_payment_required'` com total 0 e desconto > 0 libera o acesso como pago (pedido `paid` com total 0, sem `payment_intent`). Sem desconto, ou com total > 0, continua `KT002`. | Padrão do Lastro para o cupom aprovado; confirmação do responsável em P-22. |
 | D-26 | **Arquivos do B2: o banco guarda só metadados e a chave sai só das RPCs de download.** `resolve_download`, `resolve_delivery` e `resolve_free_download` devolvem `bucket` e `object_key` a quem tem `EXECUTE` (só o `service_role`, ou seja, a API), que assina a URL no servidor; nenhuma outra RPC nem tabela expõe a chave e nenhuma coluna guarda URL. Publicar um arquivo novo segue **SQL do operador**, no ciclo da seção 7 (sem RPC de publicação na API: P-4). O seed traz os 5 PDFs de TESTE do bucket de teste com tamanho e sha256 reais (conteúdo fictício). | Decisão do Lastro (P-4) com os dados do Ferrolho; D-12. |
 | D-27 | **Agenda dos follow-ups e do despacho: `pg_cron` a cada 5 minutos chama `private.dispatch_tick()`**, que enfileira os follow-ups (`private.enqueue_followups`) e, se o **Vault** tem `email_dispatch_url` e `email_dispatch_key`, chama a função de borda `email-dispatch` por `pg_net` (`POST`, cabeçalhos `Content-Type` e `apikey`, corpo `{"limit": 20}`). **Nenhum valor secreto vai para migração ou para o git:** local = passo `supabase/local/aplicar-dispatch-vault.mjs` (lê `supabase status -o env` e grava a URL do Kong e a secret key `default`); nuvem = chave nomeada `dispatch` criada no painel e gravada no Vault à mão (I6). Sem os segredos o job só enfileira e avisa no log. | Proposta do Ferrolho, aceita pelo Lastro; D-12 e D3. |
+| D-29 | **Admin é `app_metadata.admin = true` no Auth, conferido no banco a cada chamada** (responsável, 2026-10-21). Só o servidor grava `raw_app_meta_data`; o site lê o JWT só para mostrar o link do painel. `get_admin_metrics` consulta `private.is_admin` (usuário não removido com o campo `true`), então tirar o admin vale na hora, sem esperar o token vencer. As métricas são agregadas, sem e-mail nem id de pessoa. | Pedido do responsável (painel focado em métricas). |
 
 ## 1. Convenções e fronteiras
 
@@ -1024,7 +1026,7 @@ O bloco de RLS e GRANT está em 2.10 (`-- @ddl`).
 
 | Função | anon | authenticated | service_role |
 | --- | --- | --- | --- |
-| as 22 RPCs da seção 6 | nada | nada | `EXECUTE` |
+| as 25 RPCs da seção 6 | nada | nada | `EXECUTE` |
 | `private.*` | nada | nada | nada (só o dono) |
 
 ```sql
@@ -1475,6 +1477,23 @@ public.delete_account_data(p_user_id uuid)
 - `delete_account_data`: trava pedidos, carrinho e perfil (nessa ordem, a mesma da `fulfill_order`). `blocked` com `reason` `payment_pending` (pedido `pending_payment`), `checkout_open` (pedido `open` com `coalesce(checkout_expires_at, created_at + 1 dia)` no futuro) ou `dispute_open` (pedido `disputed`); nada muda. `deleted`: liga `keytotwo.account_erasure` só na transação e faz, em ordem, direitos (`revoked`, `revoked_at` mantido ou agora, motivo mantido ou `account_deleted`, `user_id` NULL, antes do pedido por causa da FK composta), pedidos (`user_id` e `email` NULL, `anonymized_at = now()`), `delete` da fila e do histórico de consentimento e opt-in zerado no perfil; `orders_anonymized` conta os pedidos. Repetir é `deleted` com 0.
 - Depois da exclusão: contestação, reembolso e expiração do pedido anonimizado seguem pelo `set_order_status` (o funil grava `user_id` NULL); `resolve_delivery` responde `revoked`; a I-5 aceita `paid` com direitos `account_deleted`.
 
+### 6.12 Painel do administrador: `get_admin_metrics`
+
+```sql
+public.get_admin_metrics(p_user_id uuid, p_days integer, p_livemode boolean)
+  returns table (outcome text, metrics jsonb)   -- 'ok' | 'forbidden'; stable
+```
+
+- `KT001` com argumento nulo ou `p_days` fora de 1 a 366; `KT009` sem e-mail confirmado; `forbidden` (métricas nulas) quando `private.is_admin` é falso (D-29).
+- Período: os últimos `p_days` dias do calendário de Brasília, contando hoje (`since` a `until`).
+- `sales`: pedidos com `paid_at` no período, `livemode = p_livemode`, em `brl` e com estado `paid` ou `disputed` (reembolsados e contestações perdidas saem); `revenue` soma `amount_total` (centavos).
+- `accounts`: eventos `account_confirmed` no período.
+- `funnel`: pessoas distintas com `cart_item_added` e com `checkout_started` no período; `paid` são as pessoas distintas de `sales`.
+- `downloads`: linhas de `download_events` no período, por `kind`.
+- `free_unlocks`: pessoas cujo primeiro aceite de e-mails (o que libera os gratuitos) caiu no período.
+- `newsletter.subscribed`: perfis com `marketing_opt_in` agora, fora do período.
+- `daily`: um objeto por dia (`date`, `orders`, `revenue`, `accounts`), em ordem.
+
 ## 7. Arquivos do B2 (somente metadados)
 
 - **O banco guarda:** `files` (tipo, versão, nome de exibição, `size_bytes`, `sha256`, estado) e `file_objects` (`bucket`, `object_key`, `b2_file_id` opcional). **Nunca:** URL pública ou assinada, token, chave de aplicação, parâmetro de assinatura. O token do link de entrega **não** é guardado: o despachante o gera no envio. Teste T08 garante que nenhuma coluna se chama `*url*`.
@@ -1643,6 +1662,7 @@ Criar cada migração com `supabase migration new <nome>` (nunca inventar o nome
 | Cupons (v0.3.3) | Sem cupom | `orders` ganha `amount_subtotal`, `amount_discount` e `promotion_code` (valores gravados uma vez, `KT010`); `order_items.unit_amount` passa a ser o preço cheio; `fulfill_order` e `set_order_status` recebem subtotal, desconto, código e `p_event_type`; `no_payment_required` com total 0 e desconto > 0 libera como pago (D-25); `get_account` mostra o desconto; `get_order_status` só traz itens ao dono |
 | Convite de marketing (v0.3.2) | — | `profiles.marketing_prompted_at` e `mark_marketing_prompt(uuid)`; `set_marketing_consent` com `signup_prompt` preenche o marcador; `get_account` devolve `marketing.prompted_at`. Ver ou dispensar o convite não é consentimento |
 | Direitos do titular (v0.3.6) | Exclusão só por anonimização futura (D-23) | `export_account_data` e `delete_account_data` (24 RPCs); `orders.anonymized_at`, `user_id` e `email` nulos só anonimizados; `entitlements` com `account_deleted`; limpeza diária da fila (90 dias); pgTAP `13_account_rights` (D-28) |
+| Painel do administrador (v0.3.7) | — | `get_admin_metrics` e `private.is_admin` (25 RPCs); admin em `app_metadata.admin` (D-29); pgTAP `14_admin_metrics` |
 | Testes | T01–T104 (12 tabelas, 11 RPCs) | Reorganizados em 11 arquivos + concorrência, T01–T125 (19 tabelas, 22 RPCs); novos: carrinho, checkout multi-item, contestações, consentimento, fila de e-mail, follow-ups, trigger de senha |
 
 Histórico anterior (v0.1 a v0.2.2, mesmo dia): revisão do Ferrolho nas seções 5 e 6; `get_account` e `get_order_status`; `deferred`; aresta `open → failed`; `create_order` com `p_livemode` obrigatório; `service_role` sem `SELECT` (D-12); `product_name` na fila.

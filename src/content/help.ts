@@ -43,7 +43,7 @@ export const help: readonly HelpSection[] = [
     id: 'contato', title: 'Atendimento', icon: 'contato',
     summary: 'Falar com a KeyToTwo.',
     paragraphs: [
-      'Se for sobre uma compra, mandem o número do pedido. Ele aparece em Pedidos, na Minha área.',
+      'Se for sobre uma compra, mandem o número do pedido. Ele aparece em Pedidos, no Portal.',
       'Pedidos sobre dados pessoais também chegam por aqui. Respondemos às reclamações em até 5 dias.',
     ],
   },

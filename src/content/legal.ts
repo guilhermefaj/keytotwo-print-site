@@ -130,7 +130,7 @@ const reembolso: LegalContent = {
       'Dificuldade de impressão, falta de materiais, mudança de ideia ou o jogo não agradar não são defeito do arquivo. Para imprimir melhor, veja o guia na Ajuda.',
     ] },
     { title: 'Como pedir', id: 'como-pedir', paragraphs: [
-      `Escreva para ${company.email}, a partir do e-mail da sua conta, com o número do pedido (ele aparece em Pedidos, na Minha área) e a descrição do problema. Se puder, mande uma captura de tela.`,
+      `Escreva para ${company.email}, a partir do e-mail da sua conta, com o número do pedido (ele aparece em Pedidos, no Portal) e a descrição do problema. Se puder, mande uma captura de tela.`,
       'Respondemos em até 5 dias.',
       'A devolução, quando houver, é feita pela Stripe, no mesmo meio de pagamento. No cartão, o prazo para aparecer na fatura depende do banco emissor. No Pix, o valor volta para a conta de origem.',
       'Quando um pedido é reembolsado, o acesso aos jogos dele é encerrado.',

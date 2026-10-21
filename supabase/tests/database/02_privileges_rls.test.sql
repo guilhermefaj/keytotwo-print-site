@@ -151,14 +151,14 @@ select pg_temp.assert('funções de private sem EXECUTE para os papéis de API',
    where p.pronamespace = 'private'::regnamespace and has_function_privilege(r, p.oid, 'EXECUTE')));
 
 -- ===== RPCs do I2b e do I3: ACL e modo de execução ========================================================
-select pg_temp.assert('as RPCs de public são exatamente as 24 do I2b aos gratuitos (todas as do contrato)',
-  (select array_agg(p.proname::text order by p.proname collate "C") = array['attach_checkout_session','cart_add','cart_remove','claim_email_batch','create_order_from_cart','delete_account_data','export_account_data','fulfill_order','get_account','get_cart','get_catalog','get_library','get_order_status','list_free_games','mark_email_result','mark_marketing_prompt','record_email_event','resolve_delivery','resolve_download','resolve_free_download','set_marketing_consent','set_order_status','set_stripe_customer','unsubscribe']
+select pg_temp.assert('as RPCs de public são exatamente as 25 do I2b ao painel (todas as do contrato)',
+  (select array_agg(p.proname::text order by p.proname collate "C") = array['attach_checkout_session','cart_add','cart_remove','claim_email_batch','create_order_from_cart','delete_account_data','export_account_data','fulfill_order','get_account','get_admin_metrics','get_cart','get_catalog','get_library','get_order_status','list_free_games','mark_email_result','mark_marketing_prompt','record_email_event','resolve_delivery','resolve_download','resolve_free_download','set_marketing_consent','set_order_status','set_stripe_customer','unsubscribe']
    from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'));
 select pg_temp.assert('cada RPC: ACL = {dono, service_role} apenas',
-  (select count(*) = 24 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
+  (select count(*) = 25 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
      and p.proacl::text = '{postgres=X/postgres,service_role=X/postgres}'));
 select pg_temp.assert('cada RPC: SECURITY DEFINER com search_path vazio',
-  (select count(*) = 24 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
+  (select count(*) = 25 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
      and p.prosecdef and p.proconfig @> array['search_path=""']));
 
 -- ===== comportamento por papel ====================================================================

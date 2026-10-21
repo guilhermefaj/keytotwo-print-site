@@ -8,6 +8,7 @@ export type ErrorCode =
   | 'EMAIL_NOT_CONFIRMED'
   | 'NOT_ENTITLED'
   | 'FREE_GAMES_LOCKED'
+  | 'NOT_ADMIN'
   | 'ORIGIN_NOT_ALLOWED'
   | 'NOT_FOUND'
   | 'FILE_NOT_FOUND'

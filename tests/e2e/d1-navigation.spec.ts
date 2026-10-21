@@ -131,12 +131,12 @@ test('account menu and the simplified private header', async ({ page }) => {
   await expect(page.locator('.desktop-nav a')).toHaveText(['Início', 'Loja', 'Gratuitos', 'Blog'])
   await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('href', '/')
   await page.goto('/conta')
-  // Minha área no desktop: logo, Portal e a conta (as abas levam aos destinos); sem carrinho.
+  // Portal no desktop: logo, Portal e a conta (as abas levam aos destinos); sem carrinho.
   await expect(page.locator('header')).toHaveAttribute('data-private', 'true')
   await expect(page.locator('.desktop-nav')).toHaveCount(0)
   await expect(page.locator('.desktop-action > .nav-link')).toHaveText(['Portal'])
   await expect(page.locator('.desktop-action > .nav-link')).toHaveAttribute('aria-current', 'true')
-  await expect(page.getByRole('navigation', { name: 'Minha área', exact: true }).getByRole('link', { name: 'Minha conta', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByRole('navigation', { name: 'Portal', exact: true }).getByRole('link', { name: 'Minha conta', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('.desktop-action > .button')).toHaveCount(0)
   await expect(page.locator('header .cart-trigger')).toHaveCount(0)
   const trigger = page.getByRole('button', { name: 'Abrir opções da conta' })

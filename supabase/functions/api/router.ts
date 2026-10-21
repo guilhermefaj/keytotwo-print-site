@@ -1,6 +1,7 @@
 import { allowedOrigin, preflight, withCors } from '../_shared/cors.ts'
 import { errorResponse, HttpError, json, toErrorResponse } from '../_shared/http.ts'
 import { deleteAccount, exportAccount, getAccount, markPrompt, putMarketing } from './routes/account.ts'
+import { adminMetrics } from './routes/admin.ts'
 import { addCartItem, getCart, removeCartItem } from './routes/cart.ts'
 import { catalog } from './routes/catalog.ts'
 import { checkout } from './routes/checkout.ts'
@@ -50,6 +51,7 @@ const routes: Route[] = [
   route('/free-games', { GET: freeGames }),
   route('/free-download', { POST: freeDownload }),
   route('/email/unsubscribe', { GET: unsubscribePage, POST: unsubscribe }),
+  route('/admin/metrics', { GET: adminMetrics }),
 ]
 
 // Local e na nuvem o caminho chega como /api/<rota>; aceita também o prefixo /functions/v1.

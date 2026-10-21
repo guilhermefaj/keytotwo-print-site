@@ -1,8 +1,8 @@
-# Contrato da API — KeyToTwo (v0.3.3)
+# Contrato da API — KeyToTwo (v0.3.4)
 
 | | |
 | --- | --- |
-| Versão | 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
+| Versão | 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
 | Dono | Ferrolho (Backend sênior). Banco, permissões e RPCs: `docs/data-contract.md` v0.3 (Lastro). |
 | Estado | I4: além do I3 (`POST /checkout`, `GET /order-status`, `stripe-webhook`), implementadas `POST /download-url`, `GET /d/{token}`, `GET /free-game`, `POST /free-download` e a função `email-dispatch` (entrega; modo log no local). I5: e-mails de marketing (`cart_reminder`, `post_purchase`) no `email-dispatch`, `GET`/`POST /email/unsubscribe`, a função `brevo-webhook` e a agenda (`pg_cron` + `pg_net`, migração do Lastro). Testes em `supabase/functions/tests`. Passos restantes da Stripe: `STRIPE_INTEGRATION_TODO.md`. |
 | Fontes | Nota "Plano do site P2" (ajustes do orquestrador, seções 4 e 5) e decisões do responsável registradas nas notas P1 e P2. |
@@ -83,6 +83,7 @@ Headers enviados pelo site:
 | 403 | `EMAIL_NOT_CONFIRMED` | Sessão de conta sem e-mail confirmado |
 | 403 | `NOT_ENTITLED` | Sem direito ao arquivo |
 | 403 | `FREE_GAMES_LOCKED` | Gratuito pedido por conta que nunca aceitou os e-mails (6.9) |
+| 403 | `NOT_ADMIN` | Painel pedido por conta sem o admin (6.12) |
 | 403 | `ORIGIN_NOT_ALLOWED` | `Origin` fora da lista |
 | 404 | `NOT_FOUND` | Rota inexistente |
 | 404 | `FILE_NOT_FOUND` | Arquivo inexistente, não publicado, trocado por versão nova ou fora do escopo |
@@ -130,6 +131,7 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `GET /d/{token}` | `resolve_delivery(entitlement_id, game_id)` → assina no B2 | I4 |
 | `GET /free-games` | `list_free_games()` | Gratuitos (2026-10-20) |
 | `POST /free-download` | `resolve_free_download(user_id, file_id)` → assina no B2 | Gratuitos (2026-10-20) |
+| `GET /admin/metrics` | `get_admin_metrics(uid, days, livemode)` | Painel (2026-10-21) |
 | `POST /email/unsubscribe` | `unsubscribe(user_id, 'unsubscribe_link')` | I5 |
 | `stripe-webhook` | `fulfill_order` ou `set_order_status` (seção 9) | I3 |
 | `brevo-webhook` | `record_email_event(...)` | I5 |
@@ -154,6 +156,7 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `GET /d/{token}` | Token HMAC | I4 | Planejada |
 | `GET /free-games` | Pública | Gratuitos | Implementada |
 | `POST /free-download` | Sessão + aceite de e-mails registrado alguma vez | Gratuitos | Implementada |
+| `GET /admin/metrics` | Sessão de admin (`app_metadata.admin`) | Painel | Implementada |
 | `GET` e `POST /email/unsubscribe` | Token HMAC | I5 | Planejada |
 
 Rota ainda não implementada responde `404 NOT_FOUND`.
@@ -495,6 +498,29 @@ LGPD, art. 18 (Política de privacidade › Seus direitos). Sessão obrigatória
 - Falha do Auth depois da RPC → `500 INTERNAL_ERROR` (log só com o status HTTP). Repetir é seguro: a RPC é idempotente e o Auth recebe a exclusão de novo.
 - Depois da exclusão, um link de entrega antigo responde como direito revogado e um link de descadastro antigo responde `200` (a conta já não recebe nada).
 
+### 6.12 Painel do administrador: `GET /admin/metrics`
+
+Responsável, 2026-10-21: métricas da loja para quem é admin, na página `/painel` do site (`/admin` é o CMS do blog). Admin é quem tem `app_metadata.admin = true` no Auth; só o servidor grava esse campo (Auth admin ou SQL no painel do Supabase). O site lê o JWT só para mostrar o link "Painel"; quem decide é o banco, a cada chamada, então tirar o admin vale na hora.
+
+`GET /admin/metrics?days=7|30` (sessão; sem `days`, 7) → `get_admin_metrics(uid, days, livemode)`, com `livemode` da chave da Stripe do ambiente:
+
+```json
+{
+  "days": 7, "since": "2026-10-15", "until": "2026-10-21", "livemode": false,
+  "sales": { "orders": 4, "revenue": 9960, "currency": "brl" },
+  "accounts": 4,
+  "funnel": { "cart": 10, "checkout": 6, "paid": 3 },
+  "downloads": { "paid": 9, "free": 21 },
+  "free_unlocks": 5,
+  "newsletter": { "subscribed": 42 },
+  "daily": [{ "date": "2026-10-15", "orders": 1, "revenue": 2990, "accounts": 1 }]
+}
+```
+
+- O período são os últimos `days` dias do calendário de Brasília, contando hoje (`since` e `until` em `AAAA-MM-DD`); `daily` traz um dia por entrada, em ordem.
+- `ok` → `200` com o JSON acima, sem e-mail nem id de pessoa. `forbidden` → `403 NOT_ADMIN`. `days` fora de 7 e 30 → `400 INVALID_REQUEST`, sem tocar no banco. Sem sessão → `401`; `KT009` → `403 EMAIL_NOT_CONFIRMED`.
+- O que cada número conta está no `docs/data-contract.md`, seção 6.12.
+
 ## 7. Tokens HMAC (entrega e descadastro)
 
 Formato: `<payload>.<assinatura>`, ambos em base64url sem preenchimento.
@@ -653,6 +679,10 @@ Contestação e reembolso valem para o pedido inteiro.
 - `POST /email/unsubscribe` de conta já excluída responde `200` (o `KT001` do banco, com token válido, só vem de conta inexistente).
 - Agenda diária `private.purge_email_outbox()` (90 dias depois do envio).
 - `TERMS_VERSION` passa a `termos-2026-10-19`, com os Termos, a Política de reembolso e a Política de privacidade publicados.
+
+### 11.4 O que mudou na v0.3.4 (Painel)
+
+- `GET /admin/metrics` (6.12), com o erro `403 NOT_ADMIN`.
 
 ## 12. Pendências
 
