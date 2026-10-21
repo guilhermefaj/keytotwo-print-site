@@ -292,9 +292,14 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .experience-copy h2 { margin-bottom: var(--space-md); }
 .experience-copy p { max-width: 42ch; }
 .experience-copy .button { margin-top: var(--space-sm); }
-/* A experiência, não o conteúdo: o Kito comemora a rodada no tabuleiro (arte da marca, pixel, sem retoque). */
-.experience-art { margin: 0; display: grid; place-items: center; min-width: 0; }
-.experience-art img { width: min(100%, 420px); height: auto; image-rendering: pixelated; }
+/* Páginas dos gratuitos sobre um arco Marca-texto (o amarelo da marca), passando dele dos lados e embaixo. O arco tem a geometria que
+   scripts/prepare-free-pages.mjs usa para compor a arte (tela 780 × 910, arco de x 75 a 705 e de y 20 a 830), em %
+   da imagem: acompanha qualquer largura. O topo é meia-volta, raio de 315 nos dois eixos. */
+.experience-art { margin: 0; min-width: 0; width: min(100%, 560px); justify-self: center; }
+.experience-pages { position: relative; }
+.experience-pages::before { content: ''; position: absolute; inset: calc(100% * 20 / 910) calc(100% * 75 / 780) calc(100% * 80 / 910); border-radius: 50% 50% var(--radius-lg) var(--radius-lg) / calc(100% * 315 / 810) calc(100% * 315 / 810) var(--radius-lg) var(--radius-lg); background: var(--color-highlight); }
+.experience-pages img { position: relative; display: block; width: 100%; height: auto; }
+.experience-art figcaption { margin-top: var(--space-sm); text-align: center; font-size: var(--text-small); color: var(--color-ink-soft); }
 .how-section { background: var(--color-paper); }
 /* Como funciona: folha de recortar (DESIGN.md › Como funciona), sem caixa nem sombra. O wrapper isola o empilhamento para as linhas de
    corte ficarem atrás das cartas; cada carta tem a faixa de um jogo e uma leve inclinação, como peça recortada. */
@@ -600,7 +605,6 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .step-cut svg { top: -11px; left: 0; transform: none; }
   .step-top { margin-bottom: var(--space-md); }
   .experience-layout { grid-template-columns: minmax(0, 1fr); gap: 32px; }
-  .experience-art img { width: min(70%, 300px); }
   .social-card { padding: 24px; gap: 14px; }
   .social-track > li { width: min(336px, 84vw); padding-right: 16px; }
   .offer-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-lg); }

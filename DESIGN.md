@@ -186,7 +186,7 @@ Uma folha branca com tinta verde-azulada escura, linhas de corte turquesa e um �
 
 ### Secondary
 - **Turquesa J001** (`{colors.line}`): **só linhas decorativas**: linha de recorte, calhas tracejadas da folha de cartas, borda das cartas, pontilhado da ficha. Dá 2,41:1 sobre Papel, por isso nunca é texto, nem borda única de um controle (input, botão), nem ícone que precise ser lido.
-- **Marca-texto** (`{colors.highlight}`): um traço atrás de uma palavra em Tinta (7,24:1), como caneta marca-texto. Aparece uma vez por página, na hero ("encontro."). Nunca é fundo de bloco, de seção ou de botão.
+- **Marca-texto** (`{colors.highlight}`): um traço atrás de uma palavra em Tinta (7,24:1), como caneta marca-texto. Aparece uma vez por página, na hero ("encontro."). Nunca é fundo de bloco, de seção ou de botão, com uma exceção: o arco atrás das páginas dos gratuitos em "A próxima rodada sai da impressora", com topo em meia-volta e pé reto (responsável, 2026-10-21: o arco usa o amarelo da marca, não uma cor própria). As folhas passam dos lados e do pé dele.
 
 ### Neutral
 - **Papel** (`{colors.paper}`): fundo de toda a página abaixo da hero, de cards, inputs e do botão secundário.
@@ -394,7 +394,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
   - **Carregar:** pressionar e arrastar o Kito o leva para qualquer ponto da hero, por cima do texto, pendurado pelos pés soltos e balançando com a mão (quadros girados com RotSprite a partir do "erguido no ar"). Ao soltar ele cai com o impulso da mão: queda curta amortece, queda alta ou arremesso rola no chão. Uma sombra em degraus fica no chão e encolhe com a altura.
   - **Nuvens:** atravessam o céu em 150 a 300 s, cada uma num ritmo.
   - **Pausa:** fora de vista, aba oculta ou menu aberto congelam tudo, inclusive a interação. Não há botão de pausa (decisão do responsável em 2026-10-18); `prefers-reduced-motion` deixa o Kito parado, de frente, sem baixar o motor nem o atlas. O motor (`src/lib/kito-playground.ts`) só desce quando a cena roda pela primeira vez; o servidor entrega a pose de frente (3 KB).
-- **Na home, fora da hero:** no máximo uma participação, parada, como anfitrião de um convite: hoje, comemorando a rodada no tabuleiro (`kito-tabuleiro`) ao lado de "A próxima rodada sai da impressora", no lugar de qualquer página do PDF. O aceno do rodapé é da moldura do site, não da home. Nunca como ícone de pilar. Na arte oficial das capas dos jogos ele é o protagonista (as capas são peças aprovadas, não enfeite).
+- **Na home, fora da hero:** no máximo uma participação, parada, como anfitrião de um convite. Desde 2026-10-20 não há nenhuma: ao lado de "A próxima rodada sai da impressora" ficam três páginas dos jogos gratuitos (Hora dos Artistas e Pote de Planos) sobre o arco Marca-texto, uma sob a cúpula e duas na frente, passando só um pouco dele (o leque de 2026-10-21 escondia demais as páginas), numa imagem só gerada por `scripts/prepare-free-pages.mjs`, com 330 px por página na maior versão, pequena demais para imprimir. Dos jogos pagos, nenhuma página aparece no site. O aceno do rodapé é da moldura do site, não da home. Nunca como ícone de pilar. Na arte oficial das capas dos jogos ele é o protagonista (as capas são peças aprovadas, não enfeite).
 - **Vazios** (carrinho, biblioteca, gaveta): Kito na caixa (`kito-caixa`, 240 px; 180 px no celular), com a entrada curta de 650 ms.
 - **Celebração** (pagamento confirmado): Kito acenando (`kito-hi`) com o confete de 1,1 s. Único lugar de delícia longa.
 - **Erro, falha de pagamento e 404:** pose neutra = **quadro 01 do atlas** (`.kito-still`, fundo `kito-walk-v31-right-atlas.webp` em `0 0 / 600% 200%`, 128–160 px), sem lágrima, sem aceno. Nenhuma imagem nova é gerada para isso.
@@ -438,7 +438,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 ### Don't:
 - **Don't** usar rótulo, kicker ou caixa alta com tracking acima de um título.
 - **Don't** usar Turquesa J001 em texto, ícone informativo ou borda única de controle.
-- **Don't** usar Céu ou Marca-texto fora da hero, nem a paleta da paisagem fora da hero e do chão do rodapé (o marca-texto só atrás de uma palavra).
+- **Don't** usar Céu ou Marca-texto fora da hero (exceção: o arco dos gratuitos, em Marca-texto), nem a paleta da paisagem fora da hero e do chão do rodapé (o marca-texto só atrás de uma palavra).
 - **Don't** escrever texto na cor do jogo nem marcar um jogo do pacote como "Em breve".
 - **Don't** usar cápsula (999 px), sombra dura (`0 3px 0`), borda lateral colorida ou card com borda mais sombra.
 - **Don't** colocar o Kito como ícone ou em erro com expressão triste. A exceção é a arte oficial das capas.

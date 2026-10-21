@@ -10,8 +10,9 @@ test('real previews and catalog price on the home showcase', async ({ page }) =>
   await page.route('**/api/catalog', route => route.fulfill({ json: { products: [{ code: 'J001', kind: 'single', name: 'Rabisque e Adivinhe', price: { unit_amount: 1990, currency: 'brl' }, games: [{ code: 'J001', name: 'Rabisque e Adivinhe' }] }] } }))
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
-  // A experiência, não o conteúdo: arte da marca no lugar das páginas do PDF (responsável, 2026-10-16).
-  await expect(page.locator('.experience-art img')).toHaveAttribute('src', '/media/experience/kito-tabuleiro-480.webp')
+  // Páginas só dos gratuitos, numa arte (responsável, 2026-10-20); dos jogos pagos, nenhuma página (2026-10-16).
+  await expect(page.locator('.experience-art img')).toHaveAttribute('src', '/media/experience/gratuitos-paginas-780.webp')
+  await expect(page.locator('.experience-art figcaption').getByRole('link', { name: 'os jogos gratuitos' })).toHaveAttribute('href', '/gratuitos')
   await expect(page.locator('img[src*="j001-page"]')).toHaveCount(0)
   const showcase = page.locator('.shop-showcase')
   // Fileira de capas: cada jogo leva à própria página, com o preço do avulso quando o catálogo o lista.

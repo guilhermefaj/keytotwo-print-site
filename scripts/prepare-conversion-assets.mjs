@@ -14,7 +14,6 @@ const hash = value => createHash('sha256').update(value).digest('hex')
 const options = { lossless: true, exact: true, quality: 100, effort: 6 }
 const sourceFiles = {
   atlas: path.join(walkDir, 'kito_walk_right_atlas.png'),
-  board: path.join(vault, '95-Anexos/KeyToTwo/Marca/Pixel Art/kito_tabuleiro.png'),
   hi: path.join(vault, '95-Anexos/KeyToTwo/Marca/Pixel Art/kito_hi.png'),
 }
 const sources = {}
@@ -40,7 +39,7 @@ async function save(pipeline, output, source, transformation) {
 
 const atlas = await save(sharp(sourceFiles.atlas), 'hero/kito-walk-v31-right-atlas.webp', 'atlas', 'PNG to exact lossless WebP; no resize, crop, palette change or frame edit; 6x2 cells of 384x384')
 if (atlas.width !== 2304 || atlas.height !== 768) throw new Error('Unexpected atlas dimensions')
-for (const [source, name, widths] of [['board', 'kito-tabuleiro', [240, 480]], ['hi', 'kito-hi', [128, 256]]]) {
+for (const [source, name, widths] of [['hi', 'kito-hi', [128, 256]]]) {
   for (const width of widths) await save(sharp(sourceFiles[source]).resize({ width, kernel: sharp.kernel.nearest }), `experience/${name}-${width}.webp`, source, `Full canvas, proportional nearest-neighbor resize to ${width}px; exact lossless WebP; no crop or retouch`)
 }
 
@@ -68,7 +67,7 @@ await writeFile(path.join(root, 'docs/conversion-assets.md'), [
   '## Orientação para a fase 2', '',
   '- Substituir a URL do atlas no CSS e atualizar verify-hero; só então retirar o PNG antigo servido. Ritmo, chão, escala e frames ficam idênticos.',
   '- Usar materiais reais na composição e no card da oferta; reservar width/height, alt descritivo e carregamento lazy fora da primeira dobra.',
-  '- Kito tabuleiro: variantes 240/480; Kito hi: 128/256. Carregar somente a variante necessária, reutilizando a mesma URL nos pilares.',
+  '- Kito hi: 128/256. Carregar somente a variante necessária, reutilizando a mesma URL nos pilares.',
   '- As três páginas são do J001; não apresentá-las como três jogos do pacote. Rótulo sugerido: “Uma prévia de Rabisque e Adivinhe”.',
   '- A mídia da primeira dobra deve ser medida após a integração. Somente o atlas exato já ocupa quase 500 KB; a troca de formato não garante atingir a meta total.', '',
   'Guidelines consultadas: [Web Interface Guidelines](https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md), especialmente dimensões reservadas e lazy loading abaixo da dobra. Skills de direção: frontend-design, copywriting; inspeção do PDF: pdf.', '',
