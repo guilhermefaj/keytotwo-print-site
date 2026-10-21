@@ -1,4 +1,4 @@
-/* Minha área: os jogos comprados lideram. Tokens em styles.css. */
+/* Portal: os jogos comprados lideram. Tokens em styles.css. */
 .portal-page { --portal-tabs-offset: var(--header-height); min-height: 65svh; background: var(--color-paper); }
 /* O Kito acena ao lado do nome: a saudação é um cartão de boas-vindas, não um rótulo solto. */
 .portal-welcome { display: flex; align-items: center; justify-content: flex-start; gap: 16px; padding-block: 36px 28px; }

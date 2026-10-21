@@ -41,14 +41,16 @@ async function capture(page: Page, name: string) {
   await page.screenshot({ path: `.maestri/design-review/d2/${name}.png`, fullPage: true, animations: 'disabled' })
 }
 
-test('D1 touchups: zero badge hidden, help link and the private mobile menu', async ({ page }) => {
+test('D1 touchups: zero badge hidden, portal link and the private mobile menu', async ({ page }) => {
   await fixture(page)
   await page.goto('/')
   await expect(page.locator('.desktop-action .cart-trigger')).toHaveAttribute('aria-label', 'Sacola, 0 itens')
   await expect(page.locator('.cart-count')).toHaveCount(0)
-  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Ajuda', exact: true })).toHaveAttribute('href', '/ajuda')
+  // Na navbar, "Portal" no lugar da Ajuda para quem entrou (responsável, 2026-10-21); a Ajuda segue no rodapé e no menu móvel.
+  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Portal', exact: true })).toHaveAttribute('href', '/meus-jogos')
+  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Ajuda', exact: true })).toHaveCount(0)
   await page.goto('/meus-jogos')
-  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Ajuda', exact: true })).toHaveAttribute('href', '/ajuda')
+  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Portal', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('header .cart-trigger')).toHaveCount(0)
   await page.setViewportSize({ width: 320, height: 800 })
   const trigger = page.getByRole('button', { name: 'Abrir menu' })
@@ -77,7 +79,7 @@ test('portal: real preview, existing art, stagger and keyboard navigation betwee
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(5)
   for (const link of await page.getByRole('link', { name: 'Como imprimir', exact: true }).all()) await expect(link).toHaveAttribute('href', '/ajuda#impressao')
   await expect(page.locator('.portal-game').nth(1)).toHaveCSS('animation-delay', '0.04s')
-  const tabs = page.getByRole('navigation', { name: 'Minha área', exact: true })
+  const tabs = page.getByRole('navigation', { name: 'Portal', exact: true })
   await tabs.getByRole('link', { name: 'Meus jogos', exact: true }).focus()
   await page.keyboard.press('Tab')
   await expect(tabs.getByRole('link', { name: 'Pedidos', exact: true })).toBeFocused()
@@ -150,7 +152,7 @@ test('portal fits 320–1440 and 200% text; overflowing tabs stay reachable and 
   await page.setViewportSize({ width: 320, height: 800 })
   await page.goto('/meus-jogos')
   await page.evaluate(() => { document.documentElement.style.fontSize = '32px' })
-  const tabs = page.getByRole('navigation', { name: 'Minha área', exact: true })
+  const tabs = page.getByRole('navigation', { name: 'Portal', exact: true })
   const account = tabs.getByRole('link', { name: 'Minha conta', exact: true })
   await tabs.getByRole('link', { name: 'Meus jogos', exact: true }).focus()
   await page.keyboard.press('Tab'); await page.keyboard.press('Tab')
@@ -187,5 +189,5 @@ test('empty orders use the existing account response and keep portal navigation'
   await page.goto('/pedidos')
   await expect(page.getByRole('heading', { name: 'Você ainda não tem pedidos' })).toBeVisible()
   await expect(page.locator('.portal-orders')).toHaveCount(0)
-  await expect(page.getByRole('navigation', { name: 'Minha área', exact: true }).getByRole('link')).toHaveCount(3)
+  await expect(page.getByRole('navigation', { name: 'Portal', exact: true }).getByRole('link')).toHaveCount(3)
 })

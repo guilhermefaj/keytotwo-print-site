@@ -42,7 +42,7 @@ contractTest('rotas privadas recusam sem sessão, sessão vencida e papel errado
   onRpc(() => ({ status: 200, body: null }))
   const expired = await sessionToken({ exp: Math.floor(Date.now() / 1000) - 60 })
   const anon = await sessionToken({ role: 'anon' })
-  for (const [path, method] of [['/cart', 'GET'], ['/cart/items', 'POST'], ['/cart/items/P001', 'DELETE'], ['/account', 'GET'], ['/account/marketing', 'PUT'], ['/account/marketing/prompt', 'POST'], ['/library', 'GET'], ['/free-download', 'POST']]) {
+  for (const [path, method] of [['/cart', 'GET'], ['/cart/items', 'POST'], ['/cart/items/P001', 'DELETE'], ['/account', 'GET'], ['/account/marketing', 'PUT'], ['/account/marketing/prompt', 'POST'], ['/library', 'GET'], ['/free-download', 'POST'], ['/admin/metrics', 'GET']]) {
     for (const token of [undefined, expired, anon, 'lixo.lixo.lixo']) {
       const res = await handleRequest(request(path, { method, token, body: method === 'GET' || method === 'DELETE' ? undefined : {} }))
       assertEquals(res.status, 401, `${method} ${path}`)
@@ -195,6 +195,32 @@ contractTest('KT009 vira 403 EMAIL_NOT_CONFIRMED; outra falha de RPC vira 500 se
   assertEquals(logs.length, 1)
   assertEquals(logs[0].includes('@'), false)
   assertEquals(logs[0].includes('PGRST202'), true)
+})
+
+contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, 403 para quem não é admin', async () => {
+  const token = await sessionToken()
+  const METRICS = { days: 30, sales: { orders: 2, revenue: 1980, currency: 'brl' }, daily: [] }
+  onRpc(() => ({ status: 200, body: [{ outcome: 'ok', metrics: METRICS }] }))
+  const res = await handleRequest(request('/admin/metrics?days=30', { token }))
+  assertEquals(res.status, 200)
+  assertEquals(res.headers.get('Cache-Control'), 'no-store')
+  assertEquals(await res.json(), METRICS)
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['get_admin_metrics', { p_user_id: userId(token), p_days: 30, p_livemode: false }]])
+  assertEquals((await handleRequest(request('/admin/metrics', { token }))).status, 200)
+  assertEquals(rpcCalls[1].args.p_days, 7)
+
+  for (const days of ['0', '14', '366', 'sete', '']) {
+    const invalid = await handleRequest(request(`/admin/metrics?days=${days}`, { token }))
+    assertEquals(invalid.status, 400, days)
+    assertEquals((await invalid.json()).error.code, 'INVALID_REQUEST')
+  }
+  assertEquals(rpcCalls.length, 2)
+
+  onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden', metrics: null }] }))
+  const forbidden = await handleRequest(request('/admin/metrics?days=7', { token }))
+  assertEquals(forbidden.status, 403)
+  assertEquals((await forbidden.json()).error.code, 'NOT_ADMIN')
+  assertEquals((await handleRequest(request('/admin/metrics', { method: 'POST', token, body: {} }))).status, 405)
 })
 
 contractTest('router: 404, 405 com Allow e CORS com PUT e DELETE', async () => {

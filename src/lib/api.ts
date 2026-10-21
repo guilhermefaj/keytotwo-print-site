@@ -33,12 +33,15 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   return result as T
 }
 
+export const notAdminMessage = 'Esta área é só para a equipe da KeyToTwo.'
+
 export function apiErrorMessage(error: unknown) {
   const code = error instanceof ApiError ? error.code : ''
   if (code === 'UNAUTHENTICATED') return 'Sua sessão terminou. Entre novamente para continuar.'
   if (code === 'ALREADY_OWNED') return 'Você já tem todos os jogos deste produto. Eles estão em Meus jogos.'
   if (code === 'PRODUCT_UNAVAILABLE') return 'Este produto não está disponível para compra.'
   if (code === 'EMAIL_NOT_CONFIRMED') return 'Confirme seu e-mail para continuar.'
+  if (code === 'NOT_ADMIN') return notAdminMessage
   return 'Não deu certo agora. Tente de novo em instantes.'
 }
 

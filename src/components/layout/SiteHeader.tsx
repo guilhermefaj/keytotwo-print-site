@@ -4,7 +4,7 @@ import type { loader as rootLoader } from '../../root'
 import { IconChevronDown, IconLock, IconMenu2, IconShoppingBag } from '@tabler/icons-react'
 import { navigation } from '../../content/site'
 import { siteConfig } from '../../lib/seo'
-import { useAuth } from '../../lib/auth-context'
+import { isAdmin, useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
 import { authErrorMessage, supabase } from '../../lib/supabase'
 import { Icon } from '../ui/Icon'
@@ -12,9 +12,10 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTri
 
 const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: module.CartDrawer })))
 
-// Minha área: cabeçalho simplificado, sem estímulo comercial. No desktop as abas da Minha área já
-// levam a Meus jogos, Pedidos e Minha conta, então o cabeçalho fica com logo, Ajuda e a conta.
-// O menu móvel mantém os três links.
+// Portal (a área da conta, antes "Minha área"): cabeçalho simplificado, sem estímulo comercial. No desktop
+// as abas do Portal já levam a Meus jogos, Pedidos e Minha conta, então o cabeçalho fica com logo, Portal e a
+// conta. O menu móvel mantém os três links. No desktop, quem entrou vê "Portal" e quem não entrou vê só
+// "Entrar"; a Ajuda fica no rodapé e no menu móvel (responsável, 2026-10-21).
 const privateRoutes = ['/meus-jogos', '/pedidos', '/conta']
 const privateNavigation = [
   { label: 'Meus jogos', href: '/meus-jogos' },
@@ -46,6 +47,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
   const count = cart.data?.items.length ?? 0
   const cartLabel = cart.error ? 'Sacola, não foi possível atualizar' : cart.loading ? 'Sacola, carregando itens' : `Sacola, ${count} ${count === 1 ? 'item' : 'itens'}`
   const initial = session?.user.email?.charAt(0).toLocaleUpperCase('pt-BR') || 'K'
+  const admin = isAdmin(session)
 
   useEffect(() => { onMenuOpenChange?.(open || cartOpen) }, [open, cartOpen, onMenuOpenChange])
   useEffect(() => {
@@ -91,7 +93,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
   const cartButton = <button className="icon-button cart-trigger" disabled={!ready} aria-label={cartLabel} aria-haspopup="dialog" onClick={() => setCartOpen(true)}><Icon component={IconShoppingBag} size={24} />{(cart.loading || cart.error || count > 0) && <span className="cart-count" aria-hidden="true">{cart.loading || cart.error ? '…' : count}</span>}</button>
   const accountControl = session ? <div className="account-menu" ref={accountMenu} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setAccountOpen(false) }}>
     <button className="account-trigger" ref={accountTrigger} aria-label="Abrir opções da conta" aria-expanded={accountOpen} aria-controls="account-options" onClick={() => setAccountOpen(value => !value)}><span className="account-initial" aria-hidden="true">{initial}</span><Icon component={IconChevronDown} size={16} /></button>
-    {accountOpen && <div className="account-options" id="account-options"><nav aria-label="Sua conta"><Link className="nav-link" to="/meus-jogos" onClick={() => setAccountOpen(false)}>Meus jogos</Link><Link className="nav-link" to="/conta" onClick={() => setAccountOpen(false)}>Minha conta</Link><button className="text-button" disabled={signingOut} onClick={signOut}>{signingOut ? 'Saindo…' : 'Sair'}</button></nav><p className="form-error" role="alert">{error}</p></div>}
+    {accountOpen && <div className="account-options" id="account-options"><nav aria-label="Sua conta"><Link className="nav-link" to="/meus-jogos" onClick={() => setAccountOpen(false)}>Meus jogos</Link><Link className="nav-link" to="/conta" onClick={() => setAccountOpen(false)}>Minha conta</Link>{admin && <Link className="nav-link" to="/painel" onClick={() => setAccountOpen(false)}>Painel</Link>}<button className="text-button" disabled={signingOut} onClick={signOut}>{signingOut ? 'Saindo…' : 'Sair'}</button></nav><p className="form-error" role="alert">{error}</p></div>}
   </div> : <Link className="nav-link" aria-current={pathname === '/entrar' ? 'page' : undefined} to="/entrar">Entrar</Link>
 
   return <>
@@ -101,7 +103,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
         {focusMode ? <><span className="checkout-secure"><Icon component={IconLock} size={16} />Compra segura</span><Link className="text-button checkout-back" to="/carrinho">Voltar à sacola</Link></> : <>
           {!privateArea && <nav className="desktop-nav" aria-label="Navegação principal">{visibleNavigation.map(item => <Link className="nav-link" aria-current={current(item.href)} key={item.href} to={item.href}>{item.label}</Link>)}</nav>}
           <div className="desktop-action">
-            <Link className="nav-link" to="/ajuda" aria-current={pathname === '/ajuda' ? 'page' : undefined}>Ajuda</Link>
+            {session && <Link className="nav-link" to="/meus-jogos" aria-current={pathname === '/meus-jogos' ? 'page' : privateArea ? 'true' : undefined}>Portal</Link>}
             {accountControl}
             {showCart && cartButton}
           </div>
@@ -115,6 +117,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
                 </div>
                 <nav className="sheet-nav" aria-label="Navegação mobile">{visibleNavigation.map((item, index) => <SheetClose asChild key={item.href}><Link className="nav-link" style={{ '--link-order': index } as CSSProperties} aria-current={current(item.href)} to={item.href}>{item.label}</Link></SheetClose>)}
                   {session && !privateArea && <SheetClose asChild><Link className="nav-link" to="/meus-jogos" aria-current={pathname === '/meus-jogos' ? 'page' : undefined}>Meus jogos</Link></SheetClose>}
+                  {admin && <SheetClose asChild><Link className="nav-link" to="/painel" aria-current={pathname === '/painel' ? 'page' : undefined}>Painel</Link></SheetClose>}
                 </nav>
                 {!privateArea && <SheetClose asChild><Link className="sheet-help" to="/ajuda" aria-current={pathname === '/ajuda' ? 'page' : undefined}><span>Ajuda</span></Link></SheetClose>}
                 <div className="sheet-bottom"><div className="sheet-legal"><SheetClose asChild><Link to="/termos">Termos de uso</Link></SheetClose><SheetClose asChild><Link to="/privacidade">Privacidade</Link></SheetClose></div></div>
