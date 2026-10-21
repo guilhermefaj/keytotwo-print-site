@@ -2,7 +2,7 @@ import { allowedOrigin, preflight, withCors } from '../_shared/cors.ts'
 import { errorResponse, HttpError, json, toErrorResponse } from '../_shared/http.ts'
 import { deleteAccount, exportAccount, getAccount, markPrompt, putMarketing } from './routes/account.ts'
 import { adminMetrics } from './routes/admin.ts'
-import { addCartItem, getCart, removeCartItem } from './routes/cart.ts'
+import { addCartItem, getCart, mergeCart, quoteCart, removeCartItem } from './routes/cart.ts'
 import { catalog } from './routes/catalog.ts'
 import { checkout } from './routes/checkout.ts'
 import { deliveryLink, downloadUrl } from './routes/downloads.ts'
@@ -38,6 +38,8 @@ const routes: Route[] = [
   route('/cart', { GET: getCart }),
   route('/cart/items', { POST: addCartItem }),
   route('/cart/items/:code', { DELETE: removeCartItem }),
+  route('/cart/quote', { POST: quoteCart }),
+  route('/cart/merge', { POST: mergeCart }),
   route('/account', { GET: getAccount }),
   route('/account/marketing', { PUT: putMarketing }),
   route('/account/marketing/prompt', { POST: markPrompt }),

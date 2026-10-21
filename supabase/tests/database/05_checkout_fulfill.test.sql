@@ -292,17 +292,21 @@ do $c$ begin update public.products set status = 'active' where code = 'CS4'; en
 do $c$
 declare o uuid;
 begin
-  perform pg_temp.fill_cart(pg_temp.uid('kown'), array['CS1', 'CS2']);
   o := pg_temp.mk_order(pg_temp.uid('kown'), 'paid', array[(select id from public.products where code = 'CS1')], 'OWN1');
-  perform pg_temp.mk_ents(o);   -- comprado em outra aba, depois de pôr no carrinho
+  perform pg_temp.mk_ents(o);   -- já tinha o CS1 antes de montar a sacola
+  perform pg_temp.fill_cart(pg_temp.uid('kown'), array['CS1', 'CS2']);
 end $c$;
-select pg_temp.assert('checkout: produto já possuído por inteiro = already_owned, com os códigos',
-  (select outcome = 'already_owned' and detail = '{"product_codes": ["CS1"]}'::jsonb and order_id is null from public.create_order_from_cart(pg_temp.uid('kown'), false, 2, 'v1', true)));
+select pg_temp.assert('checkout: o produto já possuído fica fora do pedido, que leva só o resto',
+  (select outcome = 'ok' and (select jsonb_agg(jsonb_build_object('product_code', i->>'product_code', 'stripe_price_id', i->>'stripe_price_id')) from jsonb_array_elements(items) i) = '[{"product_code": "CS2", "stripe_price_id": "price_PGTAP_CS2"}]'::jsonb
+     from public.create_order_from_cart(pg_temp.uid('kown'), false, 2, 'v1', true)));
+do $c$ begin perform public.cart_remove(pg_temp.uid('kown'), 'CS2'); end $c$;
+select pg_temp.assert('checkout: nada a pagar (tudo já possuído) = already_owned, com os códigos',
+  (select outcome = 'already_owned' and detail = '{"product_codes": ["CS1"]}'::jsonb and order_id is null from public.create_order_from_cart(pg_temp.uid('kown'), false, 3, 'v1', true)));
 do $c$ begin
   update public.products set status = 'draft' where code = 'CS1';
 end $c$;
 select pg_temp.assert('checkout: product_unavailable vem antes de already_owned', (select outcome = 'product_unavailable' and detail = '{"product_codes": ["CS1"]}'::jsonb
-  from public.create_order_from_cart(pg_temp.uid('kown'), false, 2, 'v1', true)));
+  from public.create_order_from_cart(pg_temp.uid('kown'), false, 3, 'v1', true)));
 do $c$ begin update public.products set status = 'active' where code = 'CS1'; end $c$;
 
 -- ===== T41 create_order_from_cart: caminho feliz e reaproveitamento ================================
@@ -314,7 +318,7 @@ begin
 end $c$;
 select pg_temp.assert('checkout: ok com e-mail da conta, itens por position e sem cliente da Stripe ainda',
   (select outcome = 'ok' and email = 'khap@pgtap.test' and stripe_customer_id is null and not reused and detail is null
-      and items = '[{"product_code": "CS2", "stripe_price_id": "price_PGTAP_CS2"}, {"product_code": "CS1", "stripe_price_id": "price_PGTAP_CS1"}]'::jsonb
+      and (select jsonb_agg(jsonb_build_object('product_code', i->>'product_code', 'stripe_price_id', i->>'stripe_price_id')) from jsonb_array_elements(items) i) = '[{"product_code": "CS2", "stripe_price_id": "price_PGTAP_CS2"}, {"product_code": "CS1", "stripe_price_id": "price_PGTAP_CS1"}]'::jsonb
    from public.create_order_from_cart(pg_temp.uid('khap'), false, 2, 'termos-v1', true)));
 insert into pg_temp.oids select 'khap', id from public.orders where user_id = pg_temp.uid('khap');
 select pg_temp.assert('checkout: 1 pedido open com cart_version, termos, aceite gravado na criação e ambiente',
@@ -359,7 +363,7 @@ select pg_temp.assert('checkout: sessão vencida = pedido novo', (select not reu
 update public.orders set checkout_expires_at = null where id = pg_temp.oid('kreu1');
 update public.products set stripe_price_id = 'price_PGTAP_CS1_NOVO' where code = 'CS1';
 select pg_temp.assert('checkout: Price do produto mudou = pedido novo (não reaproveita o Price antigo)', (select not reused and order_id <> pg_temp.oid('kreu1')
-  and items = '[{"product_code": "CS1", "stripe_price_id": "price_PGTAP_CS1_NOVO"}]'::jsonb from public.create_order_from_cart(pg_temp.uid('kreu'), false, 1, 'v1', true)));
+  and (select jsonb_agg(jsonb_build_object('product_code', i->>'product_code', 'stripe_price_id', i->>'stripe_price_id')) from jsonb_array_elements(items) i) = '[{"product_code": "CS1", "stripe_price_id": "price_PGTAP_CS1_NOVO"}]'::jsonb from public.create_order_from_cart(pg_temp.uid('kreu'), false, 1, 'v1', true)));
 update public.products set stripe_price_id = 'price_PGTAP_CS1' where code = 'CS1';
 do $c$ begin perform public.cart_add(pg_temp.uid('kreu'), 'CS2'); end $c$;
 select pg_temp.assert('checkout: carrinho mudou (nova versão) = pedido novo; o antigo segue open',
@@ -369,6 +373,49 @@ select pg_temp.assert('checkout: cliente da Stripe do perfil volta no resultado'
   and (select stripe_customer_id = 'cus_PGTAP_KREU' from public.create_order_from_cart(pg_temp.uid('kreu'), false, 2, 'v1', true)));
 select pg_temp.expect_as('checkout: service_role executa', 'service_role', format($q$select * from public.create_order_from_cart(%L, false, 2, 'v1', true)$q$, pg_temp.uid('kreu')), 'OK');
 select pg_temp.expect_as('checkout: anon não executa', 'anon', format($q$select * from public.create_order_from_cart(%L, false, 2, 'v1', true)$q$, pg_temp.uid('kreu')), '42501');
+
+-- ===== jogo repetido: o avulso que já está no pacote, o pacote com jogo possuído, a poda da sacola ====
+do $c$
+declare v_ci bigint;
+begin
+  -- CI1: avulso do jogo 1 do pacote CP1
+  insert into public.products (code, slug, kind, name, status, stripe_price_id, games_expected)
+  values ('CI1', 'ci1', 'single', 'Avulso CI1 [TESTE]', 'active', 'price_PGTAP_CI1', 1) returning id into v_ci;
+  insert into public.product_games (product_id, game_id, position) select v_ci, id, 1 from public.games where code = 'GM-CP1-1';
+  perform pg_temp.mk_user('kinc');
+  perform pg_temp.fill_cart(pg_temp.uid('kinc'), array['CI1', 'CP1']);
+end $c$;
+create temp table rep_order as select * from public.create_order_from_cart(pg_temp.uid('kinc'), false, 2, 'v1', true);
+select pg_temp.assert('jogo repetido: o avulso que já está no pacote da sacola fica fora do pedido',
+  (select outcome = 'ok' and jsonb_path_query_array(items, '$[*].product_code') = '["CP1"]'::jsonb from rep_order));
+select pg_temp.assert('jogo repetido: o item traz tipo, jogos com o Price do avulso e os jogos possuídos',
+  (select items->0->>'kind' = 'bundle' and items->0->'owned_games' = '[]'::jsonb
+      and jsonb_path_query_array(items->0->'games', '$[*].single_price_id') = '["price_PGTAP_CI1", null, null]'::jsonb from rep_order));
+do $c$ begin perform pg_temp.mv((select order_id from rep_order), 'paid'); perform pg_temp.mk_ents((select order_id from rep_order)); end $c$;   -- liberação do pedido do pacote
+select pg_temp.assert('jogo repetido: liberar o pacote tira da sacola o avulso que veio nele',
+  (select count(*) = 0 from public.cart_items where user_id = pg_temp.uid('kinc')));
+do $c$
+declare o uuid;
+begin
+  perform pg_temp.mk_user('kset');
+  o := pg_temp.mk_order(pg_temp.uid('kset'), 'paid', array[(select id from public.products where code = 'CI1')], 'SET1');
+  perform pg_temp.mk_ents(o);
+  perform pg_temp.fill_cart(pg_temp.uid('kset'), array['CP1']);
+end $c$;
+create temp table set_order as select * from public.create_order_from_cart(pg_temp.uid('kset'), false, 1, 'v1', true);
+select pg_temp.assert('completar a coleção: o pacote vai para o pedido com o jogo que a pessoa já tem em owned_games',
+  (select outcome = 'ok' and items->0->>'product_code' = 'CP1' and items->0->'owned_games' = '["GM-CP1-1"]'::jsonb from set_order));
+select pg_temp.assert('completar a coleção: sem jogo novo, o mesmo pedido é reaproveitado',
+  (select reused and order_id = (select order_id from set_order) from public.create_order_from_cart(pg_temp.uid('kset'), false, 1, 'v1', true)));
+do $c$
+declare o uuid;
+begin
+  o := pg_temp.mk_order(pg_temp.uid('kset'), 'paid', array[(select id from public.products where code = 'CS4')], 'SET2');
+  perform pg_temp.mk_ents(o);   -- ganhou outro jogo depois do pedido (o teste roda numa transação só: o relógio é adiantado)
+  update public.entitlements set granted_at = now() + interval '1 second' where order_id = o;
+end $c$;
+select pg_temp.assert('completar a coleção: com jogo ganho depois do pedido, não reaproveita (o valor do pacote pode mudar)',
+  (select not reused and order_id <> (select order_id from set_order) from public.create_order_from_cart(pg_temp.uid('kset'), false, 1, 'v1', true)));
 
 -- ===== T43 attach_checkout_session ==================================================================
 do $c$

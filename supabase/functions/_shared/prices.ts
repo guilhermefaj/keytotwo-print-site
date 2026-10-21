@@ -10,36 +10,52 @@ export interface Price {
   currency: string
 }
 
-const cache = new Map<string, { price: Price | null; at: number }>()
+interface Entry {
+  price: Price | null
+  product: string | null
+}
 
-// Preço exibido, lido do Price da Stripe; o cobrado é sempre o da sessão do Checkout.
-// Sem chave, Price inativo ou Stripe fora do ar: null. Falha transitória devolve o último valor em cache.
-export async function stripePrice(priceId: string): Promise<Price | null> {
+const cache = new Map<string, Entry & { at: number }>()
+
+// Lê o Price na Stripe, com cache. Sem chave, Price inativo ou Stripe fora do ar: price null.
+// Falha transitória devolve o último valor em cache.
+async function load(priceId: string): Promise<Entry> {
   const hit = cache.get(priceId)
-  if (hit && Date.now() - hit.at < TTL_MS) return hit.price
+  if (hit && Date.now() - hit.at < TTL_MS) return hit
   const key = env.stripeSecretKey()
-  if (!key) return null
+  if (!key) return { price: null, product: null }
   try {
     const response = await fetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}`, {
       headers: { Authorization: `Bearer ${key}`, 'Stripe-Version': STRIPE_API_VERSION },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
     if (response.status === 404) {
-      cache.set(priceId, { price: null, at: Date.now() })
-      return null
+      cache.set(priceId, { price: null, product: null, at: Date.now() })
+      return { price: null, product: null }
     }
     if (!response.ok) {
       console.error(`stripe: preço não lido (HTTP ${response.status})`)
-      return hit?.price ?? null
+      return hit ?? { price: null, product: null }
     }
     const body = await response.json()
     const price = body.active === true && Number.isInteger(body.unit_amount) && typeof body.currency === 'string'
       ? { unit_amount: body.unit_amount as number, currency: body.currency as string }
       : null
-    cache.set(priceId, { price, at: Date.now() })
-    return price
+    const product = typeof body.product === 'string' ? body.product : null
+    cache.set(priceId, { price, product, at: Date.now() })
+    return { price, product }
   } catch (error) {
     console.error(`stripe: preço não lido (${error instanceof Error ? error.name : 'erro'})`)
-    return hit?.price ?? null
+    return hit ?? { price: null, product: null }
   }
+}
+
+// Preço exibido, lido do Price da Stripe; o cobrado é sempre o da sessão do Checkout.
+export async function stripePrice(priceId: string): Promise<Price | null> {
+  return (await load(priceId)).price
+}
+
+// Produto da Stripe do Price: o pacote de "completar a coleção" é cobrado com price_data nesse produto.
+export async function stripePriceProduct(priceId: string): Promise<string | null> {
+  return (await load(priceId)).product
 }

@@ -1,8 +1,11 @@
 import type Stripe from 'stripe'
 import { rpc, rpcRow } from '../../_shared/admin.ts'
 import { requireSessionUser } from '../../_shared/auth.ts'
+import { type ChargeableItem, orderItemCharge } from '../../_shared/cart-pricing.ts'
 import { env } from '../../_shared/env.ts'
+import { basePriceKey } from '../../_shared/fulfillment.ts'
 import { type ErrorCode, HttpError, json, readJsonObject } from '../../_shared/http.ts'
+import { stripePriceProduct } from '../../_shared/prices.ts'
 import { isStripeError, livemode, stripe, STRIPE_UI_MODE, stripeErrorLabel } from '../../_shared/stripe.ts'
 
 interface CheckoutOrder {
@@ -10,7 +13,7 @@ interface CheckoutOrder {
   order_id: string | null
   email: string | null
   stripe_customer_id: string | null
-  items: { product_code: string; stripe_price_id: string }[] | null
+  items: (ChargeableItem & { product_code: string })[] | null
   reused: boolean | null
   detail: Record<string, unknown> | null
 }
@@ -20,8 +23,10 @@ const REFUSALS: Record<string, [ErrorCode, string]> = {
   cart_empty: ['CART_EMPTY', 'Seu carrinho está vazio.'],
   cart_changed: ['CART_CHANGED', 'Seu carrinho mudou. Confira os itens antes de pagar.'],
   product_unavailable: ['PRODUCT_UNAVAILABLE', 'Um item do carrinho não está mais disponível.'],
-  already_owned: ['ALREADY_OWNED', 'Você já tem todos os jogos de um item do carrinho.'],
+  already_owned: ['ALREADY_OWNED', 'Tudo o que está na sacola já é seu ou já está num pacote dela.'],
 }
+type LineItem = NonNullable<Stripe.Checkout.SessionCreateParams['line_items']>[number]
+const providerError = () => new HttpError(502, 'PAYMENT_PROVIDER_ERROR', 'Não foi possível iniciar o pagamento. Tente de novo em instantes.')
 
 async function withStripe<T>(step: string, call: () => Promise<T>): Promise<T> {
   try {
@@ -29,8 +34,25 @@ async function withStripe<T>(step: string, call: () => Promise<T>): Promise<T> {
   } catch (error) {
     if (!isStripeError(error)) throw error
     console.error(`checkout: Stripe falhou em ${step} (${stripeErrorLabel(error)})`)
-    throw new HttpError(502, 'PAYMENT_PROVIDER_ERROR', 'Não foi possível iniciar o pagamento. Tente de novo em instantes.')
+    throw providerError()
   }
+}
+
+// Item cheio vai pelo Price. O pacote de "completar a coleção" vai com price_data no mesmo produto da Stripe, pelo
+// valor que falta; a metadata da sessão guarda o Price de tabela do produto, para a liberação reconhecer o item.
+async function lineItems(items: ChargeableItem[]) {
+  const metadata: Record<string, string> = {}
+  const lines = await Promise.all(items.map(async (item): Promise<LineItem> => {
+    if (item.kind !== 'bundle' || !item.owned_games.length) return { price: item.stripe_price_id, quantity: 1 }
+    const [charge, product] = await Promise.all([orderItemCharge(item), stripePriceProduct(item.stripe_price_id)])
+    if (!charge || !product) {
+      console.error('checkout: Price do pacote não lido na Stripe')
+      throw providerError()
+    }
+    metadata[basePriceKey(product)] = item.stripe_price_id
+    return { price_data: { currency: charge.currency, unit_amount: charge.unit_amount, product }, quantity: 1 }
+  }))
+  return { lines, metadata }
 }
 
 // Customer por usuário: criado no 1º checkout (idempotente) e gravado no perfil; o e-mail segue o da conta.
@@ -76,6 +98,7 @@ export async function checkout(req: Request): Promise<Response> {
   }
   const orderId = order.order_id
   const customer = await customerFor(user.id, order)
+  const { lines, metadata } = await lineItems(order.items)
 
   // Parâmetros fixos do Checkout Studio + os da nossa arquitetura (docs/api-contract.md 6.5).
   const params: Stripe.Checkout.SessionCreateParams = {
@@ -86,11 +109,11 @@ export async function checkout(req: Request): Promise<Response> {
     submit_type: 'auto',
     integration_identifier: 'custom_embedded_web_0001',
     mode: 'payment',
-    line_items: order.items.map((item) => ({ price: item.stripe_price_id, quantity: 1 })),
+    line_items: lines,
     allow_promotion_codes: true,
     client_reference_id: orderId,
     customer,
-    metadata: { order_id: orderId, terms_version: termsVersion },
+    metadata: { order_id: orderId, terms_version: termsVersion, ...metadata },
     payment_intent_data: { metadata: { order_id: orderId } },
     locale: 'pt-BR',
     return_url: `${env.siteUrl()}/pedido/confirmacao?session_id={CHECKOUT_SESSION_ID}`,

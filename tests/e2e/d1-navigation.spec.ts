@@ -7,7 +7,7 @@ import { builtStage } from './fixtures/stage'
 
 // Synthetic API boundary fixtures, confined to this browser; no backend writes or credentials.
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
-const product = { code: 'P001', kind: 'bundle', name: 'Coleção KeyToTwo: Fundadores', games: Array.from({ length: 5 }, (_, i) => ({ code: `J00${i + 1}`, name: 'Fixture de teste' })), price: { unit_amount: 1990, currency: 'brl' }, status: 'ok', available: true, owned_games: [], shared_with: [] }
+const product = { code: 'P001', kind: 'bundle', name: 'Coleção KeyToTwo: Fundadores', games: Array.from({ length: 5 }, (_, i) => ({ code: `J00${i + 1}`, name: 'Fixture de teste' })), price: { unit_amount: 1990, currency: 'brl' }, status: 'ok', available: true, owned_games: [], included_in: [], shared_with: [], charge: { unit_amount: 1990, currency: 'brl' } }
 const fakeSession = { access_token: 'synthetic-d1-token', refresh_token: 'synthetic-d1-refresh', expires_at: 4102444800, expires_in: 3600, token_type: 'bearer', user: { id: 'qa-d1', email: 'd1@example.test', email_confirmed_at: '2026-01-01T00:00:00Z', is_anonymous: false, aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: {} } }
 async function fixture(page: Page, { filled = false, owned = false, failCart = false } = {}) {
   test.skip(!readFileSync('build/client/index.html', 'utf8').includes('Ambiente de teste'), 'Authenticated fixtures require the configured local stage=test build')

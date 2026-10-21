@@ -22,7 +22,8 @@ const viewports = [
   { name: '320', width: 320, height: 640 },
   { name: '1440', width: 1440, height: 900 },
 ]
-const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao']
+// A sacola abre sem login (fica no navegador); o login vem no pagamento.
+const protectedRoutes = ['/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao']
 
 // Collects anything that signals a runtime or hydration failure.
 function trackErrors(page: Page) {

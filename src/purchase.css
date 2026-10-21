@@ -82,3 +82,10 @@
   .confirmation-result .form-actions { justify-content: center; }
   .purchase-page .confirmation-card { padding-top: 0; }
 }
+
+/* Preço riscado (DESIGN.md › Item de compra): o que não é cobrado (já no Portal ou já no pacote da sacola) e o pacote
+   que cobra só o que falta ("completar a coleção"). */
+.cart-item-price s, .drawer-price s, .payment-item-price s { margin-right: 4px; color: var(--color-ink-soft); font-weight: 400; }
+.price-waived { color: var(--color-ink-soft); font-weight: 400; }
+.payment-item-price { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.drawer-items .drawer-price { margin: 4px 0; color: var(--color-ink); font-size: inherit; font-weight: 600; font-variant-numeric: tabular-nums; }
