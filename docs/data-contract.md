@@ -1,8 +1,8 @@
-# Contrato de dados — KeyToTwo Print (v0.3.8)
+# Contrato de dados — KeyToTwo Print (v0.3.9)
 
 | | |
 | --- | --- |
-| Versão | 0.3.8, 2026-10-22: **sacola sem login e jogo repetido** (D-30, que substitui a D-16; seções 6.2 e 6.3): `quote_cart`, `private.cart_lines`, `cart_add` aceita o já possuído, o pedido leva só o que é cobrado e a sacola perde o que fica possuído. 0.3.7, 2026-10-21: **painel do administrador**, com `get_admin_metrics` e `private.is_admin` (D-29, seção 6.12). 0.3.6, 2026-10-19: **direitos do titular (LGPD)**, com `export_account_data`, `delete_account_data` e a limpeza diária da fila de e-mail (D-28, seção 6.11; substitui a D-23). 0.3.5, 2026-10-08. Substitui a v0.2.2 (seção 13 lista o que mudou). A v0.3.1 incorporou a revisão cruzada do Ferrolho (checkout embutido, D-21). A v0.3.2 registrou o I2b implementado, decidiu o P-15 e acrescentou o marcador do convite de marketing (D-22). A v0.3.3 acrescenta os **cupons** (D-24 e D-25: `orders` ganha subtotal, desconto e código promocional; `order_items` guarda o preço cheio) e especifica as RPCs do I3 como implementadas (linha "Implementado (I3)"). A v0.3.4 especifica como implementadas as RPCs de download, entrega, jogo gratuito e fila de e-mail do I4 (linha "Implementado (I4)") e traz no seed os metadados reais dos 5 PDFs de TESTE (D-26). A v0.3.5 especifica como implementados `record_email_event`, `private.enqueue_followups` e a agenda do `pg_cron` com o Vault (D-27, linha "Implementado (I5)"): **as 22 RPCs do contrato existem no banco**. |
+| Versão | 0.3.9, 2026-10-22: **preços da Stripe guardados no banco** (`private.stripe_prices`, `get_stripe_prices` e `remember_stripe_prices`, seção 6.13; 28 RPCs). 0.3.8, 2026-10-22: **sacola sem login e jogo repetido** (D-30, que substitui a D-16; seções 6.2 e 6.3): `quote_cart`, `private.cart_lines`, `cart_add` aceita o já possuído, o pedido leva só o que é cobrado e a sacola perde o que fica possuído. 0.3.7, 2026-10-21: **painel do administrador**, com `get_admin_metrics` e `private.is_admin` (D-29, seção 6.12). 0.3.6, 2026-10-19: **direitos do titular (LGPD)**, com `export_account_data`, `delete_account_data` e a limpeza diária da fila de e-mail (D-28, seção 6.11; substitui a D-23). 0.3.5, 2026-10-08. Substitui a v0.2.2 (seção 13 lista o que mudou). A v0.3.1 incorporou a revisão cruzada do Ferrolho (checkout embutido, D-21). A v0.3.2 registrou o I2b implementado, decidiu o P-15 e acrescentou o marcador do convite de marketing (D-22). A v0.3.3 acrescenta os **cupons** (D-24 e D-25: `orders` ganha subtotal, desconto e código promocional; `order_items` guarda o preço cheio) e especifica as RPCs do I3 como implementadas (linha "Implementado (I3)"). A v0.3.4 especifica como implementadas as RPCs de download, entrega, jogo gratuito e fila de e-mail do I4 (linha "Implementado (I4)") e traz no seed os metadados reais dos 5 PDFs de TESTE (D-26). A v0.3.5 especifica como implementados `record_email_event`, `private.enqueue_followups` e a agenda do `pg_cron` com o Vault (D-27, linha "Implementado (I5)"): **as 22 RPCs do contrato existem no banco**. |
 | Dono | Lastro (Dados e Supabase). Consumidor: Ferrolho (Edge Functions). |
 | Escopo | Referência para as migrações do I2b em diante. **Nenhuma migração, nenhuma escrita remota.** As migrações rascunho da v0.2.2 (sem commit, nunca aplicadas) serão reescritas no I2b. |
 | Ambiente | Postgres 17 (projeto de teste `keytotwo-print-db`, sa-east-1, plano Free). Desenvolvimento local com Supabase CLI. |
@@ -14,6 +14,7 @@
 | Implementado (I5) | Migração `20261008190749_i5_followups_suppressions_agenda.sql` (nenhuma tabela muda): extensões `pg_cron`, `pg_net` e `supabase_vault`; `record_email_event` (público, só `service_role`); `private.enqueue_followups` e `private.dispatch_tick` (sem EXECUTE para papel de API); o job `email-dispatch-tick` a cada 5 minutos. Passo local `supabase/local/aplicar-dispatch-vault.mjs` (grava no Vault a URL e a chave do despacho, sem imprimir). pgTAP `12_followups` (T65, T88 e T89). **22 RPCs** no banco, todas as do contrato. Verificado na stack local: `supabase db reset` do zero com as 7 migrações e o seed; `supabase test db` com 13 arquivos e **879** testes (PASS, também depois de o despacho já ter enviado as entregas do seed); `supabase db advisors --local` sem WARN nem ERROR; o primeiro disparo real do `pg_cron` rodou (`succeeded`), o `pg_net` chamou o `email-dispatch` pelo Kong com a chave do Vault e recebeu **HTTP 200**, e o despacho enviou (modo log) as 2 entregas do seed. |
 | Implementado (LGPD) | Migração `20261019120000_lgpd_direitos_titular.sql`: `orders.user_id` e `orders.email` passam a aceitar NULL só com `anonymized_at` (CHECK `orders_anonymized_check`); `entitlements.user_id` NULL só revogado, motivo novo `account_deleted` (a I-5 o trata como o `manual`); `guard_order_changes` aceita a anonimização só dentro da exclusão de conta, sem volta; `forbid_modification` deixa a exclusão de conta apagar o histórico de consentimento; `export_account_data` e `delete_account_data` (públicas, só `service_role`); `private.purge_email_outbox` e o job diário `email-outbox-purge`. pgTAP `13_account_rights` (T140 a T147), `01` e `02` atualizados. **24 RPCs** no banco. Verificado sem Docker num PGlite (PG 17) com `auth.users`, `cron` e Vault simulados: as 8 migrações aplicam e passam `01` a `10` e `13`; a stack local completa fica para o job de integração do CI. |
 | Implementado (Gratuitos) | Migração `20261020150000_gratuitos.sql`: cai `games_one_published_free` (vários gratuitos publicados); `get_free_game` vira `list_free_games()`; `resolve_free_download(p_user_id, p_file_id)` exige conta confirmada e algum aceite de e-mails (`private.free_games_unlocked`), com o novo outcome `locked`; `marketing_consents` e `set_marketing_consent` aceitam a origem `free_games` (só concede); `get_account` devolve `free_games_unlocked`. pgTAP `02`, `08`, `10` e `11` atualizados. |
+| Implementado (Preços) | Migração `20261022140000_cache_precos.sql`: tabela `private.stripe_prices` (sem privilégio para os papéis da API) e as RPCs `get_stripe_prices(p_price_ids)` e `remember_stripe_prices(p_prices)`, EXECUTE só `service_role`. pgTAP `15_stripe_prices` e `02` (28 RPCs). |
 | Implementado (Sacola) | Migração `20261022120000_sacola_regras.sql` (nenhuma tabela muda): `private.cart_lines`, `private.cart_lines_json`, `quote_cart(p_product_codes)` (EXECUTE só `service_role`), `get_cart`, `cart_add` e `create_order_from_cart` reescritas e o gatilho `entitlement_games_prune_cart`. pgTAP `04_cart`, `05_checkout_fulfill` e `02` (26 RPCs). |
 | Implementado (Painel) | Migração `20261021120000_painel_admin.sql` (nenhuma tabela muda): `private.is_admin(p_user_id)` e `get_admin_metrics(p_user_id, p_days, p_livemode)`, EXECUTE só `service_role`. pgTAP `14_admin_metrics`. |
 | Não verificado | Fora do I5: o despacho real pela Brevo, o `brevo-webhook` e o link `GET /d/{token}` (Ferrolho, só se provam na integração); a chave `dispatch` e os segredos do Vault na nuvem (I6, à mão no painel); a assinatura da URL no B2; o login com Google (exige credenciais do Google; verificação manual). O Checkout real da Stripe (sessão embutida, cupom, retorno) é do Ferrolho e só se prova na integração. Regras de plataforma (Data API) não foram lidas do projeto remoto. |
@@ -1028,7 +1029,7 @@ O bloco de RLS e GRANT está em 2.10 (`-- @ddl`).
 
 | Função | anon | authenticated | service_role |
 | --- | --- | --- | --- |
-| as 26 RPCs da seção 6 | nada | nada | `EXECUTE` |
+| as 28 RPCs da seção 6 | nada | nada | `EXECUTE` |
 | `private.*` | nada | nada | nada (só o dono) |
 
 ```sql
@@ -1105,7 +1106,7 @@ create function private.cart_lines(p_user_id uuid, p_product_ids bigint[])
 ```sql
 create function public.get_catalog() returns jsonb;
 ```
-- `[ { "code", "kind", "name", "stripe_price_id", "games": [ { "code", "name" } ] } ]`: produtos `active` e vendáveis (`product_is_sellable`), jogos por `position`. O preço mostrado vem da Stripe (Price), em cache curto na rota.
+- `[ { "code", "kind", "name", "stripe_price_id", "games": [ { "code", "name" } ] } ]`: produtos `active` e vendáveis (`product_is_sellable`), jogos por `position`. O preço mostrado vem do Price da Stripe, guardado no banco (6.13).
 
 ```sql
 create function public.get_cart(p_user_id uuid) returns jsonb;
@@ -1510,6 +1511,20 @@ public.get_admin_metrics(p_user_id uuid, p_days integer, p_livemode boolean)
 - `newsletter.subscribed`: perfis com `marketing_opt_in` agora, fora do período.
 - `daily`: um objeto por dia (`date`, `orders`, `revenue`, `accounts`), em ordem.
 
+### 6.13 Preços da Stripe guardados: `get_stripe_prices` e `remember_stripe_prices`
+
+```sql
+create table private.stripe_prices (price_id text primary key, unit_amount bigint not null, currency text not null,
+                                    product text, active boolean not null, fetched_at timestamptz not null default now());
+create function public.get_stripe_prices(p_price_ids text[])
+  returns table (price_id text, unit_amount bigint, currency text, product text, active boolean, fetched_at timestamptz);
+create function public.remember_stripe_prices(p_prices jsonb) returns integer;   -- linhas gravadas
+```
+- O valor e a moeda de um Price nunca mudam na Stripe; só o `active` muda (arquivar). A API lê daqui numa chamada só, consulta a Stripe só o que falta, guarda o que leu e confere de novo, em segundo plano, o que foi lido há mais de uma hora (pedido do responsável, 2026-10-22: cada chamada à Stripe custava ~0,6 s).
+- `get_stripe_prices`: até 100 ids (nulo ou mais: `KT001`); devolve só os guardados.
+- `remember_stripe_prices`: lista de `{ "price_id", "unit_amount", "currency", "product", "active" }`, até 100, nos formatos de `price_…`, `prod_…` e moeda ISO minúscula (fora disso: `KT001`, nada gravado). Upsert por `price_id`, com `fetched_at = now()`; repetido na lista vale o último.
+- A tabela fica em `private`, sem privilégio para os papéis da API; as duas RPCs têm EXECUTE só para `service_role`.
+
 ## 7. Arquivos do B2 (somente metadados)
 
 - **O banco guarda:** `files` (tipo, versão, nome de exibição, `size_bytes`, `sha256`, estado) e `file_objects` (`bucket`, `object_key`, `b2_file_id` opcional). **Nunca:** URL pública ou assinada, token, chave de aplicação, parâmetro de assinatura. O token do link de entrega **não** é guardado: o despachante o gera no envio. Teste T08 garante que nenhuma coluna se chama `*url*`.
@@ -1680,6 +1695,7 @@ Criar cada migração com `supabase migration new <nome>` (nunca inventar o nome
 | Direitos do titular (v0.3.6) | Exclusão só por anonimização futura (D-23) | `export_account_data` e `delete_account_data` (24 RPCs); `orders.anonymized_at`, `user_id` e `email` nulos só anonimizados; `entitlements` com `account_deleted`; limpeza diária da fila (90 dias); pgTAP `13_account_rights` (D-28) |
 | Painel do administrador (v0.3.7) | — | `get_admin_metrics` e `private.is_admin` (25 RPCs); admin em `app_metadata.admin` (D-29); pgTAP `14_admin_metrics` |
 | Sacola sem login (v0.3.8) | — | `quote_cart` (26 RPCs) e `private.cart_lines`; `cart_add` aceita o já possuído; o pedido só leva itens `ok`; gatilho `entitlement_games_prune_cart` (D-30) |
+| Preços guardados (v0.3.9) | — | `private.stripe_prices`, `get_stripe_prices` e `remember_stripe_prices` (28 RPCs); pgTAP `15_stripe_prices` |
 | Testes | T01–T104 (12 tabelas, 11 RPCs) | Reorganizados em 11 arquivos + concorrência, T01–T125 (19 tabelas, 22 RPCs); novos: carrinho, checkout multi-item, contestações, consentimento, fila de e-mail, follow-ups, trigger de senha |
 
 Histórico anterior (v0.1 a v0.2.2, mesmo dia): revisão do Ferrolho nas seções 5 e 6; `get_account` e `get_order_status`; `deferred`; aresta `open → failed`; `create_order` com `p_livemode` obrigatório; `service_role` sem `SELECT` (D-12); `product_name` na fila.

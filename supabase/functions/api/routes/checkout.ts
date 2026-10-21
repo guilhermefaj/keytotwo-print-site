@@ -5,7 +5,7 @@ import { type ChargeableItem, orderItemCharge } from '../../_shared/cart-pricing
 import { env } from '../../_shared/env.ts'
 import { basePriceKey } from '../../_shared/fulfillment.ts'
 import { type ErrorCode, HttpError, json, readJsonObject } from '../../_shared/http.ts'
-import { stripePriceProduct } from '../../_shared/prices.ts'
+import { primePrices, stripePriceProduct } from '../../_shared/prices.ts'
 import { isStripeError, livemode, stripe, STRIPE_UI_MODE, stripeErrorLabel } from '../../_shared/stripe.ts'
 
 interface CheckoutOrder {
@@ -42,6 +42,8 @@ async function withStripe<T>(step: string, call: () => Promise<T>): Promise<T> {
 // valor que falta; a metadata da sessão guarda o Price de tabela do produto, para a liberação reconhecer o item.
 async function lineItems(items: ChargeableItem[]) {
   const metadata: Record<string, string> = {}
+  const reduced = items.filter((item) => item.kind === 'bundle' && item.owned_games.length)
+  await primePrices(reduced.flatMap((item) => [item.stripe_price_id, ...item.games.map((game) => game.single_price_id)]))
   const lines = await Promise.all(items.map(async (item): Promise<LineItem> => {
     if (item.kind !== 'bundle' || !item.owned_games.length) return { price: item.stripe_price_id, quantity: 1 }
     const [charge, product] = await Promise.all([orderItemCharge(item), stripePriceProduct(item.stripe_price_id)])

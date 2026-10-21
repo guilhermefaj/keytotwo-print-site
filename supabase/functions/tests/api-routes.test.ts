@@ -20,6 +20,9 @@ const LIBRARY = {
   pending: [],
 }
 
+// Chamadas ao banco sem as do cache de preços (get_stripe_prices / remember_stripe_prices).
+const domainCalls = () => rpcCalls.filter((c) => !c.fn.endsWith('_stripe_prices'))
+
 function cartItem(code: string, extra: Record<string, unknown> = {}) {
   return { code, kind: 'bundle', name: `Produto ${code}`, stripe_price_id: `price_${code}`, games: [GAME], status: 'ok', available: true, owned_games: [], included_in: [], shared_with: [], ...extra }
 }
@@ -34,8 +37,27 @@ contractTest('GET /catalog é pública, lê preço da Stripe e não expõe o str
   const body = await res.json()
   assertEquals(body.products.map((p: { price: unknown }) => p.price), [{ unit_amount: 1990, currency: 'brl' }, null])
   assertEquals(body.products.some((p: Record<string, unknown>) => 'stripe_price_id' in p), false)
-  assertEquals(rpcCalls.map((c) => c.fn), ['get_catalog'])
+  assertEquals(domainCalls().map((c) => c.fn), ['get_catalog'])
   assertEquals(rpcCalls[0].secretKeyOk && !rpcCalls[0].hasAuthorization, true)
+})
+
+contractTest('preços: vêm do banco sem ir à Stripe; o que falta vem da Stripe e fica guardado', async () => {
+  const fetched: string[] = []
+  onPrice((id) => { fetched.push(id); return { status: 200, body: { id, active: true, unit_amount: 1990, currency: 'brl', product: 'prod_guardado_B' } } })
+  onRpc((fn) => fn === 'get_stripe_prices'
+    ? { status: 200, body: [{ price_id: 'price_guardado_A', unit_amount: 4590, currency: 'brl', product: 'prod_guardado_A', active: true, fetched_at: new Date().toISOString() }] }
+    : fn === 'remember_stripe_prices' ? { status: 200, body: 1 }
+      : { status: 200, body: [{ ...CATALOG[0], stripe_price_id: 'price_guardado_A' }, { ...CATALOG[1], stripe_price_id: 'price_guardado_B' }] })
+  const body = await (await handleRequest(request('/catalog'))).json()
+  assertEquals(body.products.map((p: { price: { unit_amount: number } }) => p.price.unit_amount), [4590, 1990])
+  assertEquals(fetched, ['price_guardado_B'])
+  assertEquals(rpcCalls.map((c) => c.fn), ['get_catalog', 'get_stripe_prices', 'remember_stripe_prices'])
+  assertEquals(rpcCalls[1].args, { p_price_ids: ['price_guardado_A', 'price_guardado_B'] })
+  assertEquals(rpcCalls[2].args, { p_prices: [{ price_id: 'price_guardado_B', unit_amount: 1990, currency: 'brl', product: 'prod_guardado_B', active: true }] })
+  // Na mesma instância, os dois ficam em memória: nem banco nem Stripe na próxima chamada.
+  await handleRequest(request('/catalog'))
+  assertEquals([rpcCalls.map((c) => c.fn).filter((fn) => fn.endsWith('_stripe_prices')).length, fetched.length], [2, 1])
+  onPrice((id) => (id === 'price_fora' ? { status: 404, body: {} } : { status: 200, body: { id, active: true, unit_amount: 1990, currency: 'brl' } }))
 })
 
 contractTest('rotas privadas recusam sem sessão, sessão vencida e papel errado', async () => {
@@ -98,7 +120,7 @@ contractTest('GET /cart: completar a coleção, avulso incluído no pacote, já 
     { code: 'PRODUCT_UNAVAILABLE', product_code: 'A004' },
   ])
   assertEquals(body.owned_products, ['A003'])
-  assertEquals(rpcCalls, [{ fn: 'get_cart', args: { p_user_id: userId(token) }, secretKeyOk: true, hasAuthorization: false }])
+  assertEquals(domainCalls(), [{ fn: 'get_cart', args: { p_user_id: userId(token) }, secretKeyOk: true, hasAuthorization: false }])
 })
 
 contractTest('GET /cart soma o subtotal dos itens a pagar e avisa preço faltando e pacotes que dividem jogos', async () => {

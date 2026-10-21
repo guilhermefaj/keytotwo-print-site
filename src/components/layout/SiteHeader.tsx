@@ -45,7 +45,9 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
   const visibleNavigation: ReadonlyArray<{ label: string; href: string }> = privateArea ? privateNavigation : mainNavigation
   const showCart = siteConfig.showCartAccess && !privateArea
   const count = cart.data?.items.length ?? 0
-  const cartLabel = cart.error ? 'Sacola, não foi possível atualizar' : cart.loading ? 'Sacola, carregando itens' : `Sacola, ${count} ${count === 1 ? 'item' : 'itens'}`
+  // Com a sacola já na tela (inclusive a prévia de um item que acabou de entrar), a contagem aparece sem esperar a API.
+  const counting = cart.loading && !cart.data
+  const cartLabel = cart.error ? 'Sacola, não foi possível atualizar' : counting ? 'Sacola, carregando itens' : `Sacola, ${count} ${count === 1 ? 'item' : 'itens'}`
   const initial = session?.user.email?.charAt(0).toLocaleUpperCase('pt-BR') || 'K'
   const admin = isAdmin(session)
 
@@ -90,7 +92,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
   }
   function current(href: string) { return active(href) ? 'page' : undefined }
 
-  const cartButton = <button className="icon-button cart-trigger" disabled={!ready} aria-label={cartLabel} aria-haspopup="dialog" onClick={() => setCartOpen(true)}><Icon component={IconShoppingBag} size={24} />{(cart.loading || cart.error || count > 0) && <span className="cart-count" aria-hidden="true">{cart.loading || cart.error ? '…' : count}</span>}</button>
+  const cartButton = <button className="icon-button cart-trigger" disabled={!ready} aria-label={cartLabel} aria-haspopup="dialog" onClick={() => setCartOpen(true)}><Icon component={IconShoppingBag} size={24} />{(counting || cart.error || count > 0) && <span className="cart-count" aria-hidden="true">{counting || cart.error ? '…' : count}</span>}</button>
   const accountControl = session ? <div className="account-menu" ref={accountMenu} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setAccountOpen(false) }}>
     <button className="account-trigger" ref={accountTrigger} aria-label="Abrir opções da conta" aria-expanded={accountOpen} aria-controls="account-options" onClick={() => setAccountOpen(value => !value)}><span className="account-initial" aria-hidden="true">{initial}</span><Icon component={IconChevronDown} size={16} /></button>
     {accountOpen && <div className="account-options" id="account-options"><nav aria-label="Sua conta"><Link className="nav-link" to="/meus-jogos" onClick={() => setAccountOpen(false)}>Meus jogos</Link><Link className="nav-link" to="/conta" onClick={() => setAccountOpen(false)}>Minha conta</Link>{admin && <Link className="nav-link" to="/painel" onClick={() => setAccountOpen(false)}>Painel</Link>}<button className="text-button" disabled={signingOut} onClick={signOut}>{signingOut ? 'Saindo…' : 'Sair'}</button></nav><p className="form-error" role="alert">{error}</p></div>}

@@ -197,7 +197,7 @@ contractTest('checkout: pacote de completar a coleção sem Price na Stripe vira
   const { result } = await captureErrors(() => handleRequest(request('/checkout', { method: 'POST', token, body: checkoutBody })))
   assertEquals([result.status, (await result.json()).error.code], [502, 'PAYMENT_PROVIDER_ERROR'])
   assertEquals(stripeCalls.some((c) => c.path === '/v1/checkout/sessions'), false)
-  assertEquals(rpcCalls.map((c) => c.fn), ['create_order_from_cart'])
+  assertEquals(rpcCalls.map((c) => c.fn).filter((fn) => !fn.endsWith('_stripe_prices')), ['create_order_from_cart'])
 })
 
 contractTest('checkout: Customer existente é atualizado; falha da Stripe vira 502 sem gravar a sessão', async () => {
@@ -214,7 +214,7 @@ contractTest('checkout: Customer existente é atualizado; falha da Stripe vira 5
   assertEquals((await result.json()).error.code, 'PAYMENT_PROVIDER_ERROR')
   assertEquals(stripeCalls.map((c) => [c.method, c.path]), [['POST', '/v1/customers/cus_antigo'], ['POST', '/v1/checkout/sessions']])
   assertEquals(stripeCalls[0].params.get('email'), 'novo@example.com')
-  assertEquals(rpcCalls.map((c) => c.fn), ['create_order_from_cart'])
+  assertEquals(rpcCalls.map((c) => c.fn).filter((fn) => !fn.endsWith('_stripe_prices')), ['create_order_from_cart'])
   assertEquals(logs.some((l) => l.includes('@')), false)
 })
 

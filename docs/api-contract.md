@@ -1,8 +1,8 @@
-# Contrato da API — KeyToTwo (v0.3.5)
+# Contrato da API — KeyToTwo (v0.3.6)
 
 | | |
 | --- | --- |
-| Versão | 0.3.5, 2026-10-22 (sacola sem login e jogo repetido: seções 6.2, 6.2.1 e 6.5). 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
+| Versão | 0.3.6, 2026-10-22 (preços da Stripe guardados no banco: seção 6.1). 0.3.5, 2026-10-22 (sacola sem login e jogo repetido: seções 6.2, 6.2.1 e 6.5). 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
 | Dono | Ferrolho (Backend sênior). Banco, permissões e RPCs: `docs/data-contract.md` v0.3 (Lastro). |
 | Estado | I4: além do I3 (`POST /checkout`, `GET /order-status`, `stripe-webhook`), implementadas `POST /download-url`, `GET /d/{token}`, `GET /free-game`, `POST /free-download` e a função `email-dispatch` (entrega; modo log no local). I5: e-mails de marketing (`cart_reminder`, `post_purchase`) no `email-dispatch`, `GET`/`POST /email/unsubscribe`, a função `brevo-webhook` e a agenda (`pg_cron` + `pg_net`, migração do Lastro). Testes em `supabase/functions/tests`. Passos restantes da Stripe: `STRIPE_INTEGRATION_TODO.md`. |
 | Fontes | Nota "Plano do site P2" (ajustes do orquestrador, seções 4 e 5) e decisões do responsável registradas nas notas P1 e P2. |
@@ -167,7 +167,7 @@ Rota ainda não implementada responde `404 NOT_FOUND`.
 
 ### 6.1 `GET /catalog`
 
-Produtos à venda (`get_catalog()`: produtos ativos e vendáveis, com jogos). O preço é lido da Stripe pelo `stripe_price_id` de cada produto (`GET /v1/prices/{id}`, `Stripe-Version: 2026-03-25.dahlia`), com cache em memória de 5 minutos. O `stripe_price_id` não é exposto. Sem `STRIPE_SECRET_KEY` (local sem Stripe), com Price inativo ou inexistente, o preço sai `null`; em falha transitória, vale o último valor em cache.
+Produtos à venda (`get_catalog()`: produtos ativos e vendáveis, com jogos). O preço é o do Price da Stripe de cada produto (`stripe_price_id`). Desde 2026-10-22 ele fica guardado no banco (`get_stripe_prices` e `remember_stripe_prices`, data-contract 6.13): a rota lê do banco numa chamada só e consulta a Stripe (`GET /v1/prices/{id}`, `Stripe-Version: 2026-03-25.dahlia`) só para o Price que falta, que passa a ficar guardado. O guardado há mais de uma hora é conferido de novo em segundo plano, porque só o "ativo" muda (o valor de um Price nunca muda). A instância ainda guarda em memória por 5 minutos. Vale para o catálogo, as rotas da sacola e o "completar a coleção" do checkout. Antes, cada chamada ia à Stripe e custava ~0,6 s. O `stripe_price_id` não é exposto. Sem `STRIPE_SECRET_KEY` (local sem Stripe), com Price inativo ou inexistente, o preço sai `null`; em falha transitória, vale o último valor em cache.
 
 `200`, com `Cache-Control: public, max-age=60`:
 
@@ -719,6 +719,11 @@ Contestação e reembolso valem para o pedido inteiro.
 - `POST /cart/items` não recusa mais o produto já possuído (deixa de responder `409 ALREADY_OWNED`); no checkout, `ALREADY_OWNED` passa a ser "nada a pagar".
 - Avisos novos `COMPLETE_THE_SET` e `INCLUDED_IN_BUNDLE`; `PARTIAL_OVERLAP` fica só para itens `ok` que dividem jogos.
 - O checkout cobra o pacote de "completar a coleção" com `price_data` e a metadata `base_price_<produto>`.
+
+### 11.6 O que mudou na v0.3.6 (preços guardados)
+
+- O catálogo, a sacola e o checkout leem os Prices da Stripe guardados no banco (6.1); o formato das respostas não muda.
+- No site, a sacola mostra a mudança na hora (o item novo com o preço do catálogo e o total "Atualizando…" até a API confirmar) e usa a resposta de `POST /cart/items`, `DELETE /cart/items/{code}` e `POST /cart/merge` sem buscar `GET /cart` de novo.
 
 ## 12. Pendências
 

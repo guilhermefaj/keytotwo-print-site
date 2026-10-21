@@ -8,6 +8,22 @@ import { authConfigured } from '../../lib/supabase'
 import { useApiResource } from '../../lib/use-api-resource'
 
 const emptyCart: Cart = { version: 0, items: [], subtotal: null, warnings: [] }
+type Resource<T> = { data?: T; error?: string; loading: boolean; reload: () => void }
+
+// Enquanto a API confirma uma mudança, a sacola já mostra o resultado esperado: o item novo entra com o preço do
+// catálogo e o total espera a confirmação (o riscado e o "completar a coleção" só a API sabe).
+function preview(cart: Resource<Cart>, codes: string[] | null, products: CatalogProduct[] | undefined): Resource<Cart> {
+  const items = cart.data?.items ?? []
+  if (!codes || cart.error || (codes.length === items.length && codes.every((code, index) => items[index].code === code))) return cart
+  const known = new Map(items.map(item => [item.code, item]))
+  const view = codes.flatMap(code => {
+    const item = known.get(code)
+    if (item) return [item]
+    const product = products?.find(entry => entry.code === code)
+    return product ? [{ ...product, status: 'ok' as const, available: true, owned_games: [], included_in: [], shared_with: [], charge: product.price }] : []
+  })
+  return { ...cart, data: { ...(cart.data ?? emptyCart), items: view, subtotal: null, warnings: [] }, loading: true }
+}
 
 // Sacola de quem ainda não entrou: os códigos guardados no navegador, cotados pela API com as mesmas regras da conta.
 function useGuestCart(active: boolean) {
@@ -42,9 +58,15 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const { session, ready } = useAuth()
   const server = useApiResource<Cart>('/cart')
   const guest = useGuestCart(ready && !session)
-  const cart = session ? server : ready ? guest.resource : { loading: authConfigured, reload: server.reload }
   const account = useApiResource<Account>('/account')
   const catalog = useApiResource<{ products: CatalogProduct[] }>('/catalog', true)
+  // Mudança na sacola da conta ainda sem resposta da API (a do navegador já muda na hora).
+  const [pending, setPending] = useState<{ code: string; remove: boolean } | null>(null)
+  const serverCodes = server.data?.items.map(item => item.code)
+  const expected = session
+    ? (serverCodes && pending ? (pending.remove ? serverCodes.filter(code => code !== pending.code) : serverCodes.includes(pending.code) ? serverCodes : [...serverCodes, pending.code]) : null)
+    : ready ? guest.codes : null
+  const cart = preview(session ? server : ready ? guest.resource : { loading: authConfigured, reload: server.reload }, expected, catalog.data?.products)
   const [busy, setBusy] = useState(false)
   const [cartOpen, setOpen] = useState(false)
   // The drawer is a shortcut for pages that are not the cart; on /carrinho and /pagamento the page itself shows the cart.
@@ -57,14 +79,14 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   // Ao entrar, a sacola do navegador se junta à da conta (na mesma ordem) e sai daqui. Falhou: tenta na próxima vez.
   const userId = session?.user.id
   const merging = useRef(false)
-  const reloadServer = server.reload
+  const replaceServer = server.replace
   useEffect(() => {
     if (!userId || !guest.codes.length || merging.current) return
     merging.current = true
     api<Cart>('/cart/merge', { method: 'POST', body: { product_codes: guest.codes } })
-      .then(() => { writeGuestCart([]); reloadServer() }, () => {})
+      .then(next => { writeGuestCart([]); replaceServer(next) }, () => {})
       .finally(() => { merging.current = false })
-  }, [userId, guest.codes, reloadServer])
+  }, [userId, guest.codes, replaceServer])
 
   const mutation = useRef(false)
   async function mutate(code: string, remove: boolean) {
@@ -79,11 +101,12 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     }
     mutation.current = true
     setBusy(true)
+    setPending({ code, remove })
+    if (!remove && !onCartRoute) setOpen(true)
     try {
-      await api<Cart>(remove ? `/cart/items/${encodeURIComponent(code)}` : '/cart/items', { method: remove ? 'DELETE' : 'POST', body: remove ? undefined : { product_code: code } })
-      server.reload()
-      if (!remove && !onCartRoute) setOpen(true)
-    } finally { mutation.current = false; setBusy(false) }
+      // A resposta já é a sacola atualizada: entra direto, sem buscar de novo.
+      server.replace(await api<Cart>(remove ? `/cart/items/${encodeURIComponent(code)}` : '/cart/items', { method: remove ? 'DELETE' : 'POST', body: remove ? undefined : { product_code: code } }))
+    } finally { mutation.current = false; setBusy(false); setPending(null) }
   }
   return <ShopContext.Provider value={{ cart, account, catalog, busy, cartOpen, cartOpener, setCartOpen, add: code => mutate(code, false), remove: code => mutate(code, true) }}>{children}</ShopContext.Provider>
 }
