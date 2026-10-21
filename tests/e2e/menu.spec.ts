@@ -32,7 +32,7 @@ test('menu: Blog corresponde aos posts do build, inclusive no fallback e na nave
   await page.locator('.desktop-nav').getByRole('link', { name: 'Loja', exact: true }).click()
   await expect(page).toHaveURL(/\/loja$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Loja' })).toBeVisible()
-  await page.locator('.desktop-action').getByRole('link', { name: 'Ajuda', exact: true }).click()
+  await page.locator('footer').getByRole('link', { name: 'Ajuda', exact: true }).first().click()
   await expect(page).toHaveURL(/\/ajuda$/)
   await expect(page.locator('.desktop-nav a')).toHaveText(links)
   await expect(page.locator('footer').getByRole('link', { name: 'Blog', exact: true })).toHaveCount(hasBlogPosts ? 1 : 0)

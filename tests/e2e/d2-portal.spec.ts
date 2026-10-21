@@ -41,14 +41,16 @@ async function capture(page: Page, name: string) {
   await page.screenshot({ path: `.maestri/design-review/d2/${name}.png`, fullPage: true, animations: 'disabled' })
 }
 
-test('D1 touchups: zero badge hidden, help link and the private mobile menu', async ({ page }) => {
+test('D1 touchups: zero badge hidden, portal link and the private mobile menu', async ({ page }) => {
   await fixture(page)
   await page.goto('/')
   await expect(page.locator('.desktop-action .cart-trigger')).toHaveAttribute('aria-label', 'Sacola, 0 itens')
   await expect(page.locator('.cart-count')).toHaveCount(0)
-  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Ajuda', exact: true })).toHaveAttribute('href', '/ajuda')
+  // Na navbar, "Portal" no lugar da Ajuda para quem entrou (responsável, 2026-10-21); a Ajuda segue no rodapé e no menu móvel.
+  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Portal', exact: true })).toHaveAttribute('href', '/meus-jogos')
+  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Ajuda', exact: true })).toHaveCount(0)
   await page.goto('/meus-jogos')
-  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Ajuda', exact: true })).toHaveAttribute('href', '/ajuda')
+  await expect(page.locator('.desktop-action').getByRole('link', { name: 'Portal', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('header .cart-trigger')).toHaveCount(0)
   await page.setViewportSize({ width: 320, height: 800 })
   const trigger = page.getByRole('button', { name: 'Abrir menu' })

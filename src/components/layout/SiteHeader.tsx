@@ -13,8 +13,9 @@ import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTri
 const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: module.CartDrawer })))
 
 // Minha área: cabeçalho simplificado, sem estímulo comercial. No desktop as abas da Minha área já
-// levam a Meus jogos, Pedidos e Minha conta, então o cabeçalho fica com logo, Ajuda e a conta.
-// O menu móvel mantém os três links.
+// levam a Meus jogos, Pedidos e Minha conta, então o cabeçalho fica com logo, Portal e a conta.
+// O menu móvel mantém os três links. No desktop, quem entrou vê "Portal" (a Minha área) e quem não
+// entrou vê só "Entrar"; a Ajuda fica no rodapé e no menu móvel (responsável, 2026-10-21).
 const privateRoutes = ['/meus-jogos', '/pedidos', '/conta']
 const privateNavigation = [
   { label: 'Meus jogos', href: '/meus-jogos' },
@@ -101,7 +102,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
         {focusMode ? <><span className="checkout-secure"><Icon component={IconLock} size={16} />Compra segura</span><Link className="text-button checkout-back" to="/carrinho">Voltar à sacola</Link></> : <>
           {!privateArea && <nav className="desktop-nav" aria-label="Navegação principal">{visibleNavigation.map(item => <Link className="nav-link" aria-current={current(item.href)} key={item.href} to={item.href}>{item.label}</Link>)}</nav>}
           <div className="desktop-action">
-            <Link className="nav-link" to="/ajuda" aria-current={pathname === '/ajuda' ? 'page' : undefined}>Ajuda</Link>
+            {session && <Link className="nav-link" to="/meus-jogos" aria-current={pathname === '/meus-jogos' ? 'page' : privateArea ? 'true' : undefined}>Portal</Link>}
             {accountControl}
             {showCart && cartButton}
           </div>
