@@ -293,11 +293,12 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .experience-copy h2 { margin-bottom: var(--space-md); }
 .experience-copy p { max-width: 42ch; }
 .experience-copy .button { margin-top: var(--space-sm); }
-/* Páginas dos gratuitos sobre o bloco Sol, passando dele em cima, embaixo e dos lados. O bloco tem o mesmo inset que
-   scripts/prepare-free-pages.mjs usa para compor a arte, em % da imagem: acompanha qualquer largura. */
+/* Páginas dos gratuitos sobre um arco Sol, passando dele dos lados e embaixo. O arco tem a geometria que
+   scripts/prepare-free-pages.mjs usa para compor a arte (tela 1120 × 1060, arco de x 160 a 960 e de y 20 a 880), em %
+   da imagem: acompanha qualquer largura. O topo é meia-volta, raio de 400 nos dois eixos. */
 .experience-art { margin: 0; min-width: 0; width: min(100%, 560px); justify-self: center; }
 .experience-pages { position: relative; }
-.experience-pages::before { content: ''; position: absolute; inset: 17% 5.36% 16%; border-radius: var(--radius-lg); background: var(--color-sun); }
+.experience-pages::before { content: ''; position: absolute; inset: calc(100% * 20 / 1060) calc(100% * 160 / 1120) calc(100% * 180 / 1060); border-radius: 50% 50% var(--radius-lg) var(--radius-lg) / calc(100% * 400 / 860) calc(100% * 400 / 860) var(--radius-lg) var(--radius-lg); background: var(--color-sun); }
 .experience-pages img { position: relative; display: block; width: 100%; height: auto; }
 .experience-art figcaption { margin-top: var(--space-sm); text-align: center; font-size: var(--text-small); color: var(--color-ink-soft); }
 .how-section { background: var(--color-paper); }

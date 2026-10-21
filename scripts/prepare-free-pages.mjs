@@ -7,19 +7,20 @@ import path from 'node:path'
 // Arte de "A próxima rodada sai da impressora" (responsável, 2026-10-20): quatro páginas dos jogos gratuitos
 // espalhadas, inclinadas e sobrepostas, como folhas recém-saídas da impressora. Só os gratuitos, e numa imagem só:
 // as páginas se cobrem umas às outras e cada uma tem 330 px de largura na maior versão, então a arte não serve para
-// imprimir o jogo sem a conta. O fundo amarelo é do CSS (.experience-art::before); aqui o fundo é transparente.
+// imprimir o jogo sem a conta. O arco amarelo é do CSS (.experience-pages::before); aqui o fundo é transparente.
 // Precisa do pdftoppm (Poppler) no PATH. Grava public/media/experience/gratuitos-paginas-{560,840,1120}.webp.
 const root = path.resolve(import.meta.dirname, '..')
 const sourceDir = process.env.KTT_PRINT_SOURCE || 'G:/Meu Drive/05-Projetos/KeyToTwo/Print'
 const pdfs = { f001: '[F001] Hora dos Artistas.pdf', f002: '[F002] Pote de Planos.pdf' }
-// Tela de 1120 × 1000; centro e giro de cada página, de trás para a frente. O amarelo do CSS ocupa o meio (inset
-// 17 % 5,36 % 16 %): as duas de cima passam dele em cima e nos lados, as da frente passam embaixo e cobrem parte delas.
-const WIDTH = 1120, HEIGHT = 1000, PAGE = 330
+// Tela de 1120 × 1060; centro e giro de cada página, de trás para a frente. O arco do CSS vai de x 160 a 960 e de
+// y 20 a 880, com o topo em meia-volta (raio 400): as duas de trás abrem em V sob a cúpula e passam dos lados do arco,
+// as duas da frente passam do pé dele. Mudou a tela ou o arco aqui, muda o calc() do CSS junto.
+const WIDTH = 1120, HEIGHT = 1060, PAGE = 330
 const pages = [
-  { game: 'f001', page: 14, x: 214, y: 302, angle: -9 }, // Superpoderes
-  { game: 'f002', page: 2, x: 896, y: 292, angle: 7 }, // Date fora
-  { game: 'f001', page: 12, x: 752, y: 716, angle: -5 }, // Grande final
-  { game: 'f002', page: 1, x: 410, y: 704, angle: 4 }, // Pote de Planos: como jogar, com o Kito, na frente de todas
+  { game: 'f001', page: 14, x: 288, y: 460, angle: -12 }, // Superpoderes
+  { game: 'f002', page: 2, x: 834, y: 440, angle: 10 }, // Date fora
+  { game: 'f001', page: 12, x: 716, y: 752, angle: 6 }, // Grande final
+  { game: 'f002', page: 1, x: 424, y: 790, angle: -4 }, // Pote de Planos: como jogar, com o Kito, na frente de todas
 ]
 const SHADOW = { pad: 48, offset: 12, blur: 14, alpha: 0.26 }
 const MARGIN = 120
