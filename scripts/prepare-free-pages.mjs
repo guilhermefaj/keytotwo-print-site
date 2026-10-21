@@ -5,23 +5,29 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 // Arte de "A próxima rodada sai da impressora" (responsável, 2026-10-20): quatro páginas dos jogos gratuitos
-// espalhadas, inclinadas e sobrepostas, como folhas recém-saídas da impressora. Só os gratuitos, e numa imagem só:
-// as páginas se cobrem umas às outras e cada uma tem 330 px de largura na maior versão, então a arte não serve para
+// abertas em leque (2026-10-21), como folhas recém-saídas da impressora. Só os gratuitos, e numa imagem só:
+// as páginas se cobrem umas às outras e cada uma tem 330 px de largura na maior versão (900 px), então a arte não serve para
 // imprimir o jogo sem a conta. O arco amarelo é do CSS (.experience-pages::before); aqui o fundo é transparente.
-// Precisa do pdftoppm (Poppler) no PATH. Grava public/media/experience/gratuitos-paginas-{560,840,1120}.webp.
+// Precisa do pdftoppm (Poppler) no PATH. Grava public/media/experience/gratuitos-paginas-{560,720,900}.webp.
 const root = path.resolve(import.meta.dirname, '..')
 const sourceDir = process.env.KTT_PRINT_SOURCE || 'G:/Meu Drive/05-Projetos/KeyToTwo/Print'
 const pdfs = { f001: '[F001] Hora dos Artistas.pdf', f002: '[F002] Pote de Planos.pdf' }
-// Tela de 1120 × 1060; centro e giro de cada página, de trás para a frente. O arco do CSS vai de x 160 a 960 e de
-// y 20 a 880, com o topo em meia-volta (raio 400): as duas de trás abrem em V sob a cúpula e passam dos lados do arco,
-// as duas da frente passam do pé dele. Mudou a tela ou o arco aqui, muda o calc() do CSS junto.
-const WIDTH = 1120, HEIGHT = 1060, PAGE = 330
+// Leque: as folhas giram em torno de um eixo abaixo delas, de 17 em 17 graus; `slot` é a posição no leque, da
+// esquerda para a direita, e a lista vai de trás para a frente: as de dentro cobrem as de fora e a da frente fica quase
+// reta. Tela de 900 × 880; o arco do CSS vai de x 100 a 800 e de y 20 a 727, com o topo em meia-volta (raio 350): a
+// cúpula fica livre acima das folhas, as de fora passam dos lados do arco e todas passam do pé dele. Mudou a tela ou o arco aqui,
+// muda o calc() do CSS junto.
+const WIDTH = 900, HEIGHT = 880, PAGE = 330
+const FAN = { x: 450, y: 862, radius: 340, step: 17 }
 const pages = [
-  { game: 'f001', page: 14, x: 288, y: 460, angle: -12 }, // Superpoderes
-  { game: 'f002', page: 2, x: 834, y: 440, angle: 10 }, // Date fora
-  { game: 'f001', page: 12, x: 716, y: 752, angle: 6 }, // Grande final
-  { game: 'f002', page: 1, x: 424, y: 790, angle: -4 }, // Pote de Planos: como jogar, com o Kito, na frente de todas
-]
+  { game: 'f002', page: 2, slot: 0 }, // Date fora
+  { game: 'f001', page: 14, slot: 3 }, // Superpoderes
+  { game: 'f001', page: 12, slot: 2 }, // Grande final
+  { game: 'f002', page: 1, slot: 1 }, // Pote de Planos: como jogar, com o Kito, na frente de todas
+].map(item => {
+  const angle = (item.slot - 1.5) * FAN.step, radians = angle * Math.PI / 180
+  return { ...item, angle, x: FAN.x + FAN.radius * Math.sin(radians), y: FAN.y - FAN.radius * Math.cos(radians) }
+})
 const SHADOW = { pad: 48, offset: 12, blur: 14, alpha: 0.26 }
 const MARGIN = 120
 
@@ -53,7 +59,7 @@ try {
   const art = await sharp(canvas).extract({ left: MARGIN, top: MARGIN, width: WIDTH, height: HEIGHT }).png().toBuffer()
   const output = path.join(root, 'public/media/experience')
   await mkdir(output, { recursive: true })
-  for (const width of [560, 840, 1120]) {
+  for (const width of [560, 720, WIDTH]) {
     const file = path.join(output, `gratuitos-paginas-${width}.webp`)
     const info = await sharp(art).resize({ width }).webp({ quality: 80, alphaQuality: 90, effort: 6 }).toFile(file)
     console.log(`${path.relative(root, file)} ${info.width}x${info.height} ${Math.round(info.size / 1024)} KB`)

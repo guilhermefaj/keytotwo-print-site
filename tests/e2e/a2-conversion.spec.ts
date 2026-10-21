@@ -11,7 +11,7 @@ test('real previews and catalog price on the home showcase', async ({ page }) =>
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
   // Páginas só dos gratuitos, numa arte (responsável, 2026-10-20); dos jogos pagos, nenhuma página (2026-10-16).
-  await expect(page.locator('.experience-art img')).toHaveAttribute('src', '/media/experience/gratuitos-paginas-840.webp')
+  await expect(page.locator('.experience-art img')).toHaveAttribute('src', '/media/experience/gratuitos-paginas-720.webp')
   await expect(page.locator('.experience-art figcaption').getByRole('link', { name: 'os jogos gratuitos' })).toHaveAttribute('href', '/gratuitos')
   await expect(page.locator('img[src*="j001-page"]')).toHaveCount(0)
   const showcase = page.locator('.shop-showcase')
