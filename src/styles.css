@@ -293,12 +293,12 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .experience-copy h2 { margin-bottom: var(--space-md); }
 .experience-copy p { max-width: 42ch; }
 .experience-copy .button { margin-top: var(--space-sm); }
-/* Páginas dos gratuitos em leque sobre um arco Sol, passando dele dos lados e embaixo. O arco tem a geometria que
-   scripts/prepare-free-pages.mjs usa para compor a arte (tela 900 × 880, arco de x 100 a 800 e de y 20 a 727), em %
-   da imagem: acompanha qualquer largura. O topo é meia-volta, raio de 350 nos dois eixos. */
+/* Páginas dos gratuitos sobre um arco Sol, passando dele dos lados e embaixo. O arco tem a geometria que
+   scripts/prepare-free-pages.mjs usa para compor a arte (tela 780 × 910, arco de x 75 a 705 e de y 20 a 830), em %
+   da imagem: acompanha qualquer largura. O topo é meia-volta, raio de 315 nos dois eixos. */
 .experience-art { margin: 0; min-width: 0; width: min(100%, 560px); justify-self: center; }
 .experience-pages { position: relative; }
-.experience-pages::before { content: ''; position: absolute; inset: calc(100% * 20 / 880) calc(100% * 100 / 900) calc(100% * 153 / 880); border-radius: 50% 50% var(--radius-lg) var(--radius-lg) / calc(100% * 350 / 707) calc(100% * 350 / 707) var(--radius-lg) var(--radius-lg); background: var(--color-sun); }
+.experience-pages::before { content: ''; position: absolute; inset: calc(100% * 20 / 910) calc(100% * 75 / 780) calc(100% * 80 / 910); border-radius: 50% 50% var(--radius-lg) var(--radius-lg) / calc(100% * 315 / 810) calc(100% * 315 / 810) var(--radius-lg) var(--radius-lg); background: var(--color-sun); }
 .experience-pages img { position: relative; display: block; width: 100%; height: auto; }
 .experience-art figcaption { margin-top: var(--space-sm); text-align: center; font-size: var(--text-small); color: var(--color-ink-soft); }
 .how-section { background: var(--color-paper); }
