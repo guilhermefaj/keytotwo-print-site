@@ -63,11 +63,13 @@ test('guest add → Mailpit code → persistent cart; marketing and private view
   page.on('pageerror', error => runtimeErrors.push(error.message))
   await page.goto('/loja/p001')
   await page.getByRole('button', { name: 'Adicionar à sacola', exact: true }).click()
-  await expect(page).toHaveURL(/\/entrar\?next=%2Fcarrinho&add=P001$/)
+  // Sem login, a escolha fica na sacola do navegador; ao entrar, ela se junta à sacola da conta.
+  await expect(page.getByRole('dialog', { name: 'Sua sacola' }).locator('.drawer-items li')).toHaveCount(1)
+  await page.keyboard.press('Escape')
+  await page.goto('/entrar?next=%2Fcarrinho')
   await noOverflow(page)
   await loginWithCode(page, email)
   await expect(page).toHaveURL(/\/carrinho$/)
-  // Na própria página da sacola o painel lateral não abre; o item entra direto na lista.
   await expect(page.locator('[data-cart-product="P001"]')).toBeVisible()
   await expect(page.locator('.desktop-action').getByRole('button', { name: 'Sacola, 1 item', exact: true })).toBeVisible()
   // I3 enables checkout only when the real catalog supplies a price.
@@ -177,7 +179,8 @@ test('seed account has library by game and orders; full ownership prevents addin
   expect(account.orders.length).toBeGreaterThan(0)
   await expect(page.locator('.order-list > li')).toHaveCount(account.orders.length)
   await noOverflow(page)
+  // Quem já tem o pacote vê o atalho para o Portal no lugar do botão.
   await page.goto('/loja/p001')
-  await page.getByRole('button', { name: 'Adicionar à sacola', exact: true }).click()
-  await expect(page.locator('.shop-purchase .offer-cart-action [role="alert"]')).toContainText('Você já tem todos os jogos')
+  await expect(page.locator('.shop-purchase').getByRole('link', { name: 'Já está no seu Portal' })).toHaveAttribute('href', '/meus-jogos')
+  await expect(page.locator('.shop-purchase').getByRole('button', { name: 'Adicionar à sacola' })).toHaveCount(0)
 })

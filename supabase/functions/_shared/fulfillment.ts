@@ -31,6 +31,15 @@ export function orderIdFromSession(session: { client_reference_id: string | null
 
 const idOf = (value: string | { id: string } | null | undefined) => (typeof value === 'string' ? value : value?.id ?? null)
 
+// Chave da metadata da sessão com o Price de tabela de um produto cobrado com price_data ("completar a coleção").
+export const basePriceKey = (product: string) => `base_price_${product}`
+
+// O Price do item como o pedido o conhece: o de tabela, mesmo quando a sessão cobrou o pacote com price_data.
+function orderPriceId(session: Stripe.Checkout.Session, item: Stripe.LineItem): string | null {
+  const product = idOf(item.price?.product as string | { id: string } | null | undefined)
+  return (product && session.metadata?.[basePriceKey(product)]) || item.price?.id || null
+}
+
 // Estado atual da sessão na Stripe, com o código promocional expandido e todos os itens.
 export async function loadSession(sessionId: string): Promise<{ session: Stripe.Checkout.Session; items: Stripe.LineItem[] }> {
   const session = await stripe().checkout.sessions.retrieve(sessionId, { expand: ['discounts.promotion_code'] })
@@ -72,9 +81,9 @@ export async function fulfill(session: Stripe.Checkout.Session, items: Stripe.Li
     p_payment_intent_id: idOf(session.payment_intent),
     p_customer_id: idOf(session.customer),
     p_livemode: session.livemode,
-    // Preço unitário CHEIO por item; o desconto do cupom vai no pedido.
+    // Preço unitário do item antes do cupom (no pacote de "completar a coleção", o valor que falta); o desconto do cupom vai no pedido.
     p_items: items.map((item) => ({
-      stripe_price_id: item.price?.id ?? null,
+      stripe_price_id: orderPriceId(session, item),
       quantity: item.quantity,
       unit_amount: item.price?.unit_amount ?? null,
       currency: item.currency,

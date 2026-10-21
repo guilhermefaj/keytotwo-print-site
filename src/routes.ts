@@ -12,8 +12,9 @@ export default [
   ...(productPages.length ? [route('loja/:slug', 'routes/loja.produto.tsx')] : []),
   route('preview/hero', 'routes/home.tsx', { id: 'preview-hero' }),
   route('entrar', 'routes/entrar.tsx'),
+  // A sacola funciona sem login (guardada no navegador); o login vem no pagamento.
+  route('carrinho', 'routes/carrinho.tsx'),
   layout('routes/private.tsx', [
-    route('carrinho', 'routes/carrinho.tsx'),
     route('pagamento', 'routes/pagamento.tsx'),
     layout('routes/minha-area.tsx', [
       route('meus-jogos', 'routes/meus-jogos.tsx'),

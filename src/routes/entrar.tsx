@@ -3,11 +3,13 @@ import { CheckoutSteps } from '../components/checkout/CheckoutSteps'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useAuth } from '../lib/auth-context'
 import { authConfigured, authErrorMessage, loginDestination, safeNext, supabase } from '../lib/supabase'
+import { useHydrated } from '../lib/use-hydrated'
 
 type Method = 'code' | 'password' | 'create' | 'recover'
 
 export default function Entrar() {
   const [params] = useSearchParams()
+  const hydrated = useHydrated()
   const navigate = useNavigate()
   const { session, ready, recovery, finishRecovery } = useAuth()
   const [method, setMethod] = useState<Method>(params.get('mode') === 'recover' ? 'recover' : 'code')
@@ -24,7 +26,8 @@ export default function Entrar() {
   const add = params.get('add')
   const destination = add && /^[A-Z0-9_-]{1,40}$/.test(add) ? `/carrinho?${new URLSearchParams({ add })}` : next
   // Quem chega no meio da compra já escolheu algo; quem só clicou em Entrar precisa saber que o código cria a conta.
-  const buying = Boolean(add) || /^\/(carrinho|pagamento)(?:[/?#]|$)/.test(next)
+  // O HTML pré-renderizado não conhece a URL: o aviso da compra entra depois da hidratação (recarregar no meio da compra).
+  const buying = hydrated && (Boolean(add) || /^\/(carrinho|pagamento)(?:[/?#]|$)/.test(next))
   const settingPassword = Boolean(session) && (step === 'set-password' || recovery || method === 'recover')
 
   useEffect(() => {
@@ -97,7 +100,7 @@ export default function Entrar() {
 
   return <main id="conteudo" tabIndex={-1} className="account-page content-width auth-page">
     {buying && <CheckoutSteps current={2} />}
-    <div className="auth-intro"><h1>{settingPassword ? 'Definir senha' : method === 'recover' ? 'Redefinir senha' : 'Entrar'}</h1><p>{buying ? 'Sua escolha fica guardada. Entre ou crie sua conta para continuar.' : 'Primeira vez aqui? Entrar com o código por e-mail já cria sua conta.'}</p><Link className="inline-link" to="/ajuda">Precisa de ajuda?</Link></div>
+    <div className="auth-intro"><h1>{settingPassword ? 'Definir senha' : method === 'recover' ? 'Redefinir senha' : 'Entrar'}</h1><p>{buying ? 'Sua sacola fica guardada. Entre ou crie sua conta para pagar.' : 'Primeira vez aqui? Entrar com o código por e-mail já cria sua conta.'}</p><Link className="inline-link" to="/ajuda">Precisa de ajuda?</Link></div>
     <section className="account-card" aria-label="Acesso à conta">
       {!authConfigured ? <p className="legal-pending">O acesso à conta estará disponível em breve.</p> : <>
         {step === 'email' && !settingPassword && <div className="auth-methods" role="group" aria-label="Como entrar"><button className="text-button" aria-pressed={method === 'code'} onClick={() => selectMethod('code')} disabled={busy}>Código por e-mail</button><button className="text-button" aria-pressed={method === 'password'} onClick={() => selectMethod('password')} disabled={busy}>E-mail e senha</button></div>}

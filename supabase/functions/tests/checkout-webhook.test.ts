@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assertEquals } from '@std/assert'
-import { captureErrors, onRpc, onStripe, request, rpcCalls, sessionToken, type StripeCall, stripeCalls, TERMS_VERSION, userId, WEBHOOK_SECRET, contractTest } from './contract-helpers.ts'
+import { captureErrors, onPrice, onRpc, onStripe, request, rpcCalls, sessionToken, type StripeCall, stripeCalls, TERMS_VERSION, userId, WEBHOOK_SECRET, contractTest } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { handleStripeWebhook } from '../stripe-webhook/handler.ts'
 import { cryptoProvider, stripe } from '../_shared/stripe.ts'
@@ -153,6 +153,51 @@ contractTest('checkout: cria Customer, sessão do formulário embutido com os pa
     locale: 'pt-BR',
     return_url: 'http://127.0.0.1:5176/pedido/confirmacao?session_id={CHECKOUT_SESSION_ID}',
   })
+})
+
+contractTest('checkout e liberação: o pacote de completar a coleção vai com price_data e volta pelo Price de tabela', async () => {
+  const prices: Record<string, number> = { price_col_P001: 2990, price_col_J001: 990, price_col_J002: 1290 }
+  onPrice((id) => (id in prices ? ok({ id, active: true, unit_amount: prices[id], currency: 'brl', product: 'prod_col_P001' }) : { status: 404, body: {} }))
+  const token = await sessionToken()
+  const games = [{ code: 'J001', name: 'Jogo 1', single_price_id: 'price_col_J001' }, { code: 'J002', name: 'Jogo 2', single_price_id: 'price_col_J002' }]
+  onRpc((fn) => fn === 'create_order_from_cart'
+    ? row({ outcome: 'ok', order_id: ORDER_ID, email: 'teste@example.com', stripe_customer_id: 'cus_teste', reused: false, detail: null,
+      items: [{ product_code: 'P001', stripe_price_id: 'price_col_P001', kind: 'bundle', games, owned_games: ['J001'] },
+        { product_code: 'A003', stripe_price_id: 'price_col_A003', kind: 'single', games: [], owned_games: [] }] })
+    : ok('applied'))
+  onStripe((call) => call.path === '/v1/checkout/sessions' ? ok(session({ status: 'open', payment_status: 'unpaid' })) : ok({ id: 'cus_teste', object: 'customer' }))
+  assertEquals((await handleRequest(request('/checkout', { method: 'POST', token, body: checkoutBody }))).status, 200)
+  const params = Object.fromEntries(stripeCalls.find((c) => c.path === '/v1/checkout/sessions')!.params)
+  assertEquals([params['line_items[0][price_data][currency]'], params['line_items[0][price_data][unit_amount]'], params['line_items[0][price_data][product]'], params['line_items[0][price]']],
+    ['brl', '1692', 'prod_col_P001', undefined])
+  assertEquals([params['line_items[1][price]'], params['metadata[base_price_prod_col_P001]']], ['price_col_A003', 'price_col_P001'])
+
+  const paid = session({ amount_subtotal: 2682, amount_total: 2682, total_details: { amount_discount: 0, amount_shipping: 0, amount_tax: 0 }, discounts: [],
+    metadata: { order_id: ORDER_ID, base_price_prod_col_P001: 'price_col_P001' } })
+  stripeWith(paid, (call) => call.path.endsWith('/line_items') ? ok({ object: 'list', has_more: false, url: call.path, data: [
+    { id: 'li_1', object: 'item', price: { id: 'price_avulso_gerado', object: 'price', unit_amount: 1692, product: 'prod_col_P001' }, quantity: 1, currency: 'brl' },
+    { id: 'li_2', object: 'item', price: { id: 'price_col_A003', object: 'price', unit_amount: 990, product: 'prod_col_A003' }, quantity: 1, currency: 'brl' },
+  ] }) : null)
+  onRpc(() => row({ outcome: 'applied', order_status: 'paid', send_delivery: false }))
+  assertEquals((await webhook(stripeEvent('checkout.session.completed', paid))).status, 200)
+  assertEquals(rpcCalls[0].args.p_items, [
+    { stripe_price_id: 'price_col_P001', quantity: 1, unit_amount: 1692, currency: 'brl' },
+    { stripe_price_id: 'price_col_A003', quantity: 1, unit_amount: 990, currency: 'brl' },
+  ])
+})
+
+contractTest('checkout: pacote de completar a coleção sem Price na Stripe vira 502 antes de criar a sessão', async () => {
+  onPrice(() => ({ status: 404, body: {} }))
+  const token = await sessionToken()
+  onRpc((fn) => fn === 'create_order_from_cart'
+    ? row({ outcome: 'ok', order_id: ORDER_ID, email: 'teste@example.com', stripe_customer_id: 'cus_teste', reused: false, detail: null,
+      items: [{ product_code: 'P001', stripe_price_id: 'price_sem_stripe', kind: 'bundle', games: [], owned_games: ['J001'] }] })
+    : ok('applied'))
+  onStripe(() => ok({ id: 'cus_teste', object: 'customer' }))
+  const { result } = await captureErrors(() => handleRequest(request('/checkout', { method: 'POST', token, body: checkoutBody })))
+  assertEquals([result.status, (await result.json()).error.code], [502, 'PAYMENT_PROVIDER_ERROR'])
+  assertEquals(stripeCalls.some((c) => c.path === '/v1/checkout/sessions'), false)
+  assertEquals(rpcCalls.map((c) => c.fn), ['create_order_from_cart'])
 })
 
 contractTest('checkout: Customer existente é atualizado; falha da Stripe vira 502 sem gravar a sessão', async () => {

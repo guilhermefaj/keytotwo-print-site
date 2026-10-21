@@ -1,8 +1,8 @@
-# Contrato da API — KeyToTwo (v0.3.4)
+# Contrato da API — KeyToTwo (v0.3.5)
 
 | | |
 | --- | --- |
-| Versão | 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
+| Versão | 0.3.5, 2026-10-22 (sacola sem login e jogo repetido: seções 6.2, 6.2.1 e 6.5). 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
 | Dono | Ferrolho (Backend sênior). Banco, permissões e RPCs: `docs/data-contract.md` v0.3 (Lastro). |
 | Estado | I4: além do I3 (`POST /checkout`, `GET /order-status`, `stripe-webhook`), implementadas `POST /download-url`, `GET /d/{token}`, `GET /free-game`, `POST /free-download` e a função `email-dispatch` (entrega; modo log no local). I5: e-mails de marketing (`cart_reminder`, `post_purchase`) no `email-dispatch`, `GET`/`POST /email/unsubscribe`, a função `brevo-webhook` e a agenda (`pg_cron` + `pg_net`, migração do Lastro). Testes em `supabase/functions/tests`. Passos restantes da Stripe: `STRIPE_INTEGRATION_TODO.md`. |
 | Fontes | Nota "Plano do site P2" (ajustes do orquestrador, seções 4 e 5) e decisões do responsável registradas nas notas P1 e P2. |
@@ -89,7 +89,7 @@ Headers enviados pelo site:
 | 404 | `FILE_NOT_FOUND` | Arquivo inexistente, não publicado, trocado por versão nova ou fora do escopo |
 | 405 | `METHOD_NOT_ALLOWED` | Método não aceito (header `Allow`) |
 | 409 | `PRODUCT_UNAVAILABLE` | Produto inexistente, inativo ou sem preço no ambiente |
-| 409 | `ALREADY_OWNED` | O usuário já tem todos os jogos do produto |
+| 409 | `ALREADY_OWNED` | No checkout: nada a pagar (tudo na sacola já é do usuário ou já está num pacote dela) |
 | 409 | `CART_EMPTY` | Checkout com carrinho vazio |
 | 409 | `CART_CHANGED` | `cart_version` diferente da atual: o site recarrega o carrinho |
 | 409 | `TERMS_CHANGED` | `terms_version` diferente da vigente: o site mostra o texto atual e pede o aceite de novo |
@@ -119,6 +119,8 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `GET /cart` | `get_cart(uid)` | I2b |
 | `POST /cart/items` | `cart_add(uid, product_code)` → `get_cart(uid)` (só com `added` ou `noop`) | I2b |
 | `DELETE /cart/items/{code}` | `cart_remove(uid, product_code)` → `get_cart(uid)` | I2b |
+| `POST /cart/quote` | `quote_cart(product_codes)` | Sacola sem login (2026-10-22) |
+| `POST /cart/merge` | `cart_add(uid, code)` para cada código, na ordem → `get_cart(uid)` | Sacola sem login (2026-10-22) |
 | `GET /account` | `get_account(uid)` | I2b |
 | `PUT /account/marketing` | `set_marketing_consent(uid, granted, source, text_version)` → `get_account(uid)` | I2b |
 | `POST /account/marketing/prompt` | `mark_marketing_prompt(uid)` → `get_account(uid)` | I2b |
@@ -148,6 +150,8 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `GET /health` | Pública | I0 | Implementada |
 | `GET /catalog` | Pública | I2b | Implementada |
 | `GET /cart` · `POST /cart/items` · `DELETE /cart/items/{code}` | Sessão | I2b | Implementada |
+| `POST /cart/quote` | Pública | Sacola sem login | Implementada |
+| `POST /cart/merge` | Sessão | Sacola sem login | Implementada |
 | `GET /account` · `PUT /account/marketing` · `POST /account/marketing/prompt` | Sessão | I2b | Implementada |
 | `GET /library` | Sessão | I2b | Implementada |
 | `GET /account/export` · `POST /account/delete` | Sessão | LGPD | Implementada |
@@ -182,22 +186,21 @@ Produtos à venda (`get_catalog()`: produtos ativos e vendáveis, com jogos). O 
 ```
 
 - `kind` é `bundle` ou `single`. Hoje só existe o P001 **[D1]**; o site não inventa produto nem preço.
-- `price: null` quando não há preço lido da Stripe: sem chave (local), Price inexistente ou placeholder (seed), ou Stripe fora do ar sem cache. O site mostra "preço indisponível". **Adicionar ao carrinho continua permitido**: quem decide se o produto é vendável é o banco (`cart_add`), não o preço. **Finalizar compra fica desativado** enquanto o carrinho tiver `subtotal: null` ou aviso `PRICE_UNAVAILABLE`, `PRODUCT_UNAVAILABLE` ou `ALREADY_OWNED`.
+- `price: null` quando não há preço lido da Stripe: sem chave (local), Price inexistente ou placeholder (seed), ou Stripe fora do ar sem cache. O site mostra "preço indisponível". **Adicionar ao carrinho continua permitido**: quem decide se o produto é vendável é o banco (`cart_add`), não o preço. **Finalizar compra fica desativado** enquanto o carrinho não tiver item a pagar, tiver `subtotal: null` ou aviso `PRICE_UNAVAILABLE` ou `PRODUCT_UNAVAILABLE`. Item riscado (`already_owned`, `included`) não impede: fica fora do pedido.
 
 ### 6.2 Carrinho: `GET /cart`, `POST /cart/items`, `DELETE /cart/items/{code}`
 
-Um carrinho por usuário, guardado no banco (vale entre aparelhos). Não há carrinho anônimo: sem sessão, o site leva a `/entrar?next=/carrinho&add=<code>` e adiciona o item depois do login.
+Um carrinho por usuário, guardado no banco (vale entre aparelhos). Desde 2026-10-22 o login só é pedido no pagamento: quem ainda não entrou guarda a sacola no navegador e a cota em `POST /cart/quote`; ao entrar, `POST /cart/merge` junta essa sacola à da conta (6.2.1).
 
-- `POST /cart/items`, corpo `{ "product_code": "P001" }` → `cart_add`:
+- `POST /cart/items`, corpo `{ "product_code": "P001" }` → `cart_add`. Produto que o usuário já tem entra e aparece riscado (`status: already_owned`):
 
   | `outcome` | HTTP |
   | --- | --- |
   | `added` ou `noop` (já estava no carrinho) | `200` com o carrinho |
-  | `already_owned` | `409 ALREADY_OWNED` |
   | `product_unavailable` (inexistente ou não vendável) | `409 PRODUCT_UNAVAILABLE` |
 
 - `DELETE /cart/items/{code}` → `cart_remove` (`removed` ou `noop`): sempre `200` com o carrinho.
-- As três rotas respondem o carrinho atualizado (`get_cart`, sem o `stripe_price_id`):
+- As três rotas respondem o carrinho atualizado (`get_cart`, sem os ids de Price da Stripe):
 
 ```json
 {
@@ -207,31 +210,55 @@ Um carrinho por usuário, guardado no banco (vale entre aparelhos). Não há car
       "code": "P001",
       "kind": "bundle",
       "name": "<nome>",
-      "games": [{ "code": "J001", "name": "<jogo>" }],
-      "price": { "unit_amount": 0, "currency": "brl" },
+      "games": [{ "code": "J001", "name": "<jogo>" }, { "code": "J002", "name": "<jogo>" }],
+      "price": { "unit_amount": 2990, "currency": "brl" },
+      "charge": { "unit_amount": 1692, "currency": "brl" },
       "status": "ok",
       "available": true,
       "owned_games": ["J001"],
-      "shared_with": []
+      "included_in": [],
+      "shared_with": ["J002"]
+    },
+    {
+      "code": "J002",
+      "kind": "single",
+      "price": { "unit_amount": 1290, "currency": "brl" },
+      "charge": null,
+      "status": "included",
+      "available": false,
+      "included_in": ["P001"]
     }
   ],
-  "subtotal": { "amount": 0, "currency": "brl" },
-  "warnings": [{ "code": "PARTIAL_OVERLAP", "product_code": "P001" }]
+  "subtotal": { "amount": 1692, "currency": "brl" },
+  "warnings": [{ "code": "COMPLETE_THE_SET", "product_code": "P001" }, { "code": "INCLUDED_IN_BUNDLE", "product_code": "J002" }],
+  "owned_products": ["J001"]
 }
 ```
 
 | Campo ou aviso | Significado |
 | --- | --- |
 | `version` | Sobe a cada mudança e na compra. O checkout envia a versão que o usuário viu. Sem carrinho: `0` e `items: []` |
-| `status` | `ok`, `unavailable` (deixou de ser vendável) ou `already_owned` (o usuário passou a ter todos os jogos). `available` é `status = ok`. O checkout recusa enquanto houver item fora de `ok` |
-| `owned_games` | Jogos do produto que o usuário já tem (sobreposição parcial; padrão provisório **[D2]**: aceita, com aviso, sem desconto) |
+| `status` | `ok` (vai para o pedido), `unavailable` (deixou de ser vendável), `already_owned` (o usuário já tem todos os jogos) ou `included` (avulso cujos jogos estão num pacote `ok` do mesmo carrinho). `available` é `status = ok` |
+| `price` | Preço de tabela, lido do Price da Stripe |
+| `charge` | O que será cobrado; só nos itens `ok`. Menor que `price` no pacote de "completar a coleção" |
+| `owned_games` | Jogos do produto que o usuário já tem. Num pacote `ok`, ativam o "completar a coleção" |
+| `included_in` | Pacotes do carrinho que já trazem os jogos deste avulso |
 | `shared_with` | Outros produtos do carrinho com jogos em comum |
-| `subtotal` | Soma dos itens disponíveis; `null` se faltar preço de algum |
-| Aviso `PARTIAL_OVERLAP` | Item com `owned_games` ou `shared_with` não vazio |
-| Aviso `PRODUCT_UNAVAILABLE` / `ALREADY_OWNED` | Item com esse `status` |
-| Aviso `PRICE_UNAVAILABLE` | Preço não lido da Stripe |
+| `subtotal` | Soma dos `charge`; `null` sem item a pagar ou se faltar preço de algum item `ok` |
+| `owned_products` | Produtos vendáveis que o usuário já tem por inteiro (a página do produto troca o botão por "Já está no seu Portal") |
+| Aviso `COMPLETE_THE_SET` | Pacote `ok` com jogos já possuídos |
+| Aviso `INCLUDED_IN_BUNDLE` / `ALREADY_OWNED` / `PRODUCT_UNAVAILABLE` | Item com esse `status` (os dois primeiros só informam; o último impede o checkout) |
+| Aviso `PARTIAL_OVERLAP` | Item `ok` que divide jogos com outro item `ok` (dois pacotes) |
+| Aviso `PRICE_UNAVAILABLE` | Preço de item `ok` não lido da Stripe |
+
+**Completar a coleção (2026-10-22, decisão do responsável; referência: Steam).** O pacote com jogos que o usuário já tem cobra só os que faltam, com o mesmo desconto do pacote sobre os avulsos: `charge = round(preço do pacote × soma dos avulsos que faltam ÷ soma dos avulsos de todos os jogos)`. Sem o preço avulso de algum jogo, o desconto é proporcional ao número de jogos. Exemplo: pacote de R$ 29,90 com avulsos de R$ 9,90, R$ 9,90 e R$ 12,90; quem já tem um de R$ 9,90 paga R$ 20,85.
 
 `POST /cart/items` também responde `400 INVALID_REQUEST` para código fora do formato.
+
+### 6.2.1 Sacola sem login: `POST /cart/quote` e `POST /cart/merge`
+
+- `POST /cart/quote` (pública), corpo `{ "product_codes": ["P001", "J002"] }`, até 20 códigos no formato de `products.code` (senão `400 INVALID_REQUEST`; repetidos contam uma vez). Responde o mesmo formato de `GET /cart`, com `version: 0`, sem `owned_products` e com `unknown`: os códigos que não existem, que o site tira da sacola guardada. Ninguém possui nada, então `already_owned` não aparece.
+- `POST /cart/merge` (sessão), mesmo corpo: chama `cart_add` para cada código, na ordem, e responde a sacola da conta. Produto que deixou de ser vendável fica de fora sem erro. O site chama ao detectar a sessão com sacola guardada e apaga a guardada quando dá certo.
 
 ### 6.3 `GET /account` e `PUT /account/marketing`
 
@@ -311,7 +338,7 @@ O aceite dos termos (sem reembolso) é colhido **na nossa página**, numa caixa 
    - `terms_accepted` diferente de `true` → `400 TERMS_NOT_ACCEPTED`;
    - `terms_version` diferente de `TERMS_VERSION` → `409 TERMS_CHANGED`;
    - `cart_version` inteiro ≥ 0, senão `400 INVALID_REQUEST`.
-1. `create_order_from_cart(uid, livemode, cart_version, terms_version, terms_accepted)` confere a versão e os itens. Cria o pedido `open` com `order_items` e grava `terms_version` e `terms_accepted_at` (data-contract v0.3.1; `KT007` se o aceite não for `true`). Reaproveita o pedido `open` da mesma versão do carrinho e dos termos (`reused`). Devolve `outcome`, `order_id`, itens (`product_code`, `stripe_price_id`), e-mail da conta, `stripe_customer_id` e `detail`.
+1. `create_order_from_cart(uid, livemode, cart_version, terms_version, terms_accepted)` confere a versão e os itens. Cria o pedido `open` com `order_items` só dos itens `ok` (o riscado fica de fora) e grava `terms_version` e `terms_accepted_at` (data-contract v0.3.1; `KT007` se o aceite não for `true`). Reaproveita o pedido `open` da mesma versão do carrinho e dos termos, se nenhum jogo foi ganho ou perdido desde então (`reused`). Devolve `outcome`, `order_id`, itens (`product_code`, `stripe_price_id`, `kind`, `games` com o `single_price_id` de cada jogo e `owned_games`), e-mail da conta, `stripe_customer_id` e `detail`.
 
    | `outcome` | HTTP |
    | --- | --- |
@@ -319,7 +346,7 @@ O aceite dos termos (sem reembolso) é colhido **na nossa página**, numa caixa 
    | `cart_empty` | `409 CART_EMPTY` |
    | `cart_changed` | `409 CART_CHANGED`, com `details.cart_version` |
    | `product_unavailable` | `409 PRODUCT_UNAVAILABLE`, com `details.product_codes` |
-   | `already_owned` | `409 ALREADY_OWNED`, com `details.product_codes` (comprado em outra aba) |
+   | `already_owned` | `409 ALREADY_OWNED`, com `details.product_codes`: nada a pagar (tudo já é do usuário, comprado em outra aba por exemplo, ou já está num pacote da sacola) |
 
 2. **Customer.** Sem `stripe_customer_id`, cria o Customer com o e-mail da conta, `metadata.user_id` e idempotency key `customer:<user_id>`, e grava com `set_stripe_customer(uid, customer_id)`. A RPC devolve o id vigente; se outra requisição gravou antes, vale o dela. Se o e-mail da conta mudou, atualiza o Customer antes.
 3. **Checkout Session** (`checkout.sessions.create`, idempotency key `checkout:<order_id>`):
@@ -333,10 +360,10 @@ O aceite dos termos (sem reembolso) é colhido **na nossa página**, numa caixa 
    | `submit_type` | `'auto'` | Studio, fixo |
    | `integration_identifier` | `'custom_embedded_web_0001'` | Studio, fixo |
    | `mode` | `'payment'` (compra única) | Studio (exemplo) |
-   | `line_items` | Uma por item do pedido: `{ price: stripe_price_id, quantity: 1 }`, na ordem de `position` | Pedido |
+   | `line_items` | Uma por item do pedido, na ordem de `position`: `{ price: stripe_price_id, quantity: 1 }`; o pacote de "completar a coleção" vai com `{ price_data: { currency, unit_amount: charge, product }, quantity: 1 }`, no mesmo produto da Stripe do Price de tabela | Pedido |
    | `client_reference_id` | `order_id` | Nossa arquitetura |
    | `customer` | `stripe_customer_id` | Nossa arquitetura |
-   | `metadata` | `{ order_id, terms_version }` | Nossa arquitetura |
+   | `metadata` | `{ order_id, terms_version }` e, por pacote cobrado com `price_data`, `base_price_<produto da Stripe>` = o Price de tabela (a liberação manda esse Price ao banco, que confere os itens pelo `stripe_price_id`) | Nossa arquitetura |
    | `allow_promotion_codes` | `true`: o cliente digita o cupom no formulário | Nossa decisão (cupons) |
    | `payment_intent_data.metadata` | `{ order_id }`, para achar o pedido nas contestações; se faltar, a rota busca a sessão pelo `payment_intent` | Nossa arquitetura |
    | `locale` | `'pt-BR'` | Nossa arquitetura |
@@ -361,7 +388,9 @@ Erros: `400 INVALID_REQUEST`, `400 TERMS_NOT_ACCEPTED`, `409 TERMS_CHANGED`, os 
 
 - O cliente aplica o código no formulário embutido (`checkout.applyPromotionCode` e `checkout.removePromotionCode`), e o total se atualiza antes de confirmar. Os cupons são criados pelo responsável na Stripe (Coupon e Promotion Code).
 - O valor que vale é sempre o cobrado pela Stripe. Na liberação, o pedido grava `amount_subtotal` (preço cheio), `amount_discount` (`total_details.amount_discount`), `amount_total` e o texto do código promocional. Os itens guardam o preço unitário cheio.
-- `/account` mostra esses campos por pedido. O site não exibe preço riscado fictício.
+- `/account` mostra esses campos por pedido. O site não exibe preço riscado fictício: o riscado da sacola é real (preço de tabela do item que não é cobrado, ou do pacote que cobra só o que falta).
+- No pacote de "completar a coleção", o item do pedido guarda o valor cobrado (`charge`), não o de tabela.
+- Price de tabela do pacote ou dos avulsos não lido na Stripe: `502 PAYMENT_PROVIDER_ERROR`, antes de criar a sessão.
 - `payment_status = no_payment_required` (cupom de 100%) só é aceito pelo banco com total 0 e desconto maior que zero.
 
 ### 6.5.1 Stripe: versão da API, SDK e risco do preview
@@ -683,6 +712,13 @@ Contestação e reembolso valem para o pedido inteiro.
 ### 11.4 O que mudou na v0.3.4 (Painel)
 
 - `GET /admin/metrics` (6.12), com o erro `403 NOT_ADMIN`.
+
+### 11.5 O que mudou na v0.3.5 (Sacola sem login)
+
+- `POST /cart/quote` (pública) e `POST /cart/merge` (6.2.1); o carrinho ganha `charge`, `included_in`, `owned_products` e o `status` `included`.
+- `POST /cart/items` não recusa mais o produto já possuído (deixa de responder `409 ALREADY_OWNED`); no checkout, `ALREADY_OWNED` passa a ser "nada a pagar".
+- Avisos novos `COMPLETE_THE_SET` e `INCLUDED_IN_BUNDLE`; `PARTIAL_OVERLAP` fica só para itens `ok` que dividem jogos.
+- O checkout cobra o pacote de "completar a coleção" com `price_data` e a metadata `base_price_<produto>`.
 
 ## 12. Pendências
 

@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 import { authStorageKey } from './session'
 
-export const product = { code: 'P001', kind: 'bundle', name: 'Pacote de TESTE', games: [{ code: 'J001', name: 'Jogo de TESTE' }], price: { unit_amount: 1990, currency: 'brl' }, status: 'ok', available: true, owned_games: [], shared_with: [] }
+export const product = { code: 'P001', kind: 'bundle', name: 'Pacote de TESTE', games: [{ code: 'J001', name: 'Jogo de TESTE' }], price: { unit_amount: 1990, currency: 'brl' }, status: 'ok', available: true, owned_games: [], included_in: [], shared_with: [], charge: { unit_amount: 1990, currency: 'brl' } }
 export const cart = { version: 3, items: [product], subtotal: { amount: 1990, currency: 'brl' }, warnings: [] }
 const fakeSession = { access_token: 'synthetic-e2e-token', refresh_token: 'synthetic-e2e-refresh', expires_at: 4102444800, expires_in: 3600, token_type: 'bearer', user: { id: 'qa-synthetic', email: 'synthetic@example.test', email_confirmed_at: '2026-01-01T00:00:00Z', is_anonymous: false, aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: {} } }
 const stripeStub = `window.Stripe = (key, options) => ({ initCheckoutFormSdk({appearance}) {

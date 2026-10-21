@@ -1,8 +1,8 @@
-# Contrato de dados — KeyToTwo Print (v0.3.7)
+# Contrato de dados — KeyToTwo Print (v0.3.8)
 
 | | |
 | --- | --- |
-| Versão | 0.3.7, 2026-10-21: **painel do administrador**, com `get_admin_metrics` e `private.is_admin` (D-29, seção 6.12). 0.3.6, 2026-10-19: **direitos do titular (LGPD)**, com `export_account_data`, `delete_account_data` e a limpeza diária da fila de e-mail (D-28, seção 6.11; substitui a D-23). 0.3.5, 2026-10-08. Substitui a v0.2.2 (seção 13 lista o que mudou). A v0.3.1 incorporou a revisão cruzada do Ferrolho (checkout embutido, D-21). A v0.3.2 registrou o I2b implementado, decidiu o P-15 e acrescentou o marcador do convite de marketing (D-22). A v0.3.3 acrescenta os **cupons** (D-24 e D-25: `orders` ganha subtotal, desconto e código promocional; `order_items` guarda o preço cheio) e especifica as RPCs do I3 como implementadas (linha "Implementado (I3)"). A v0.3.4 especifica como implementadas as RPCs de download, entrega, jogo gratuito e fila de e-mail do I4 (linha "Implementado (I4)") e traz no seed os metadados reais dos 5 PDFs de TESTE (D-26). A v0.3.5 especifica como implementados `record_email_event`, `private.enqueue_followups` e a agenda do `pg_cron` com o Vault (D-27, linha "Implementado (I5)"): **as 22 RPCs do contrato existem no banco**. |
+| Versão | 0.3.8, 2026-10-22: **sacola sem login e jogo repetido** (D-30, que substitui a D-16; seções 6.2 e 6.3): `quote_cart`, `private.cart_lines`, `cart_add` aceita o já possuído, o pedido leva só o que é cobrado e a sacola perde o que fica possuído. 0.3.7, 2026-10-21: **painel do administrador**, com `get_admin_metrics` e `private.is_admin` (D-29, seção 6.12). 0.3.6, 2026-10-19: **direitos do titular (LGPD)**, com `export_account_data`, `delete_account_data` e a limpeza diária da fila de e-mail (D-28, seção 6.11; substitui a D-23). 0.3.5, 2026-10-08. Substitui a v0.2.2 (seção 13 lista o que mudou). A v0.3.1 incorporou a revisão cruzada do Ferrolho (checkout embutido, D-21). A v0.3.2 registrou o I2b implementado, decidiu o P-15 e acrescentou o marcador do convite de marketing (D-22). A v0.3.3 acrescenta os **cupons** (D-24 e D-25: `orders` ganha subtotal, desconto e código promocional; `order_items` guarda o preço cheio) e especifica as RPCs do I3 como implementadas (linha "Implementado (I3)"). A v0.3.4 especifica como implementadas as RPCs de download, entrega, jogo gratuito e fila de e-mail do I4 (linha "Implementado (I4)") e traz no seed os metadados reais dos 5 PDFs de TESTE (D-26). A v0.3.5 especifica como implementados `record_email_event`, `private.enqueue_followups` e a agenda do `pg_cron` com o Vault (D-27, linha "Implementado (I5)"): **as 22 RPCs do contrato existem no banco**. |
 | Dono | Lastro (Dados e Supabase). Consumidor: Ferrolho (Edge Functions). |
 | Escopo | Referência para as migrações do I2b em diante. **Nenhuma migração, nenhuma escrita remota.** As migrações rascunho da v0.2.2 (sem commit, nunca aplicadas) serão reescritas no I2b. |
 | Ambiente | Postgres 17 (projeto de teste `keytotwo-print-db`, sa-east-1, plano Free). Desenvolvimento local com Supabase CLI. |
@@ -14,6 +14,7 @@
 | Implementado (I5) | Migração `20261008190749_i5_followups_suppressions_agenda.sql` (nenhuma tabela muda): extensões `pg_cron`, `pg_net` e `supabase_vault`; `record_email_event` (público, só `service_role`); `private.enqueue_followups` e `private.dispatch_tick` (sem EXECUTE para papel de API); o job `email-dispatch-tick` a cada 5 minutos. Passo local `supabase/local/aplicar-dispatch-vault.mjs` (grava no Vault a URL e a chave do despacho, sem imprimir). pgTAP `12_followups` (T65, T88 e T89). **22 RPCs** no banco, todas as do contrato. Verificado na stack local: `supabase db reset` do zero com as 7 migrações e o seed; `supabase test db` com 13 arquivos e **879** testes (PASS, também depois de o despacho já ter enviado as entregas do seed); `supabase db advisors --local` sem WARN nem ERROR; o primeiro disparo real do `pg_cron` rodou (`succeeded`), o `pg_net` chamou o `email-dispatch` pelo Kong com a chave do Vault e recebeu **HTTP 200**, e o despacho enviou (modo log) as 2 entregas do seed. |
 | Implementado (LGPD) | Migração `20261019120000_lgpd_direitos_titular.sql`: `orders.user_id` e `orders.email` passam a aceitar NULL só com `anonymized_at` (CHECK `orders_anonymized_check`); `entitlements.user_id` NULL só revogado, motivo novo `account_deleted` (a I-5 o trata como o `manual`); `guard_order_changes` aceita a anonimização só dentro da exclusão de conta, sem volta; `forbid_modification` deixa a exclusão de conta apagar o histórico de consentimento; `export_account_data` e `delete_account_data` (públicas, só `service_role`); `private.purge_email_outbox` e o job diário `email-outbox-purge`. pgTAP `13_account_rights` (T140 a T147), `01` e `02` atualizados. **24 RPCs** no banco. Verificado sem Docker num PGlite (PG 17) com `auth.users`, `cron` e Vault simulados: as 8 migrações aplicam e passam `01` a `10` e `13`; a stack local completa fica para o job de integração do CI. |
 | Implementado (Gratuitos) | Migração `20261020150000_gratuitos.sql`: cai `games_one_published_free` (vários gratuitos publicados); `get_free_game` vira `list_free_games()`; `resolve_free_download(p_user_id, p_file_id)` exige conta confirmada e algum aceite de e-mails (`private.free_games_unlocked`), com o novo outcome `locked`; `marketing_consents` e `set_marketing_consent` aceitam a origem `free_games` (só concede); `get_account` devolve `free_games_unlocked`. pgTAP `02`, `08`, `10` e `11` atualizados. |
+| Implementado (Sacola) | Migração `20261022120000_sacola_regras.sql` (nenhuma tabela muda): `private.cart_lines`, `private.cart_lines_json`, `quote_cart(p_product_codes)` (EXECUTE só `service_role`), `get_cart`, `cart_add` e `create_order_from_cart` reescritas e o gatilho `entitlement_games_prune_cart`. pgTAP `04_cart`, `05_checkout_fulfill` e `02` (26 RPCs). |
 | Implementado (Painel) | Migração `20261021120000_painel_admin.sql` (nenhuma tabela muda): `private.is_admin(p_user_id)` e `get_admin_metrics(p_user_id, p_days, p_livemode)`, EXECUTE só `service_role`. pgTAP `14_admin_metrics`. |
 | Não verificado | Fora do I5: o despacho real pela Brevo, o `brevo-webhook` e o link `GET /d/{token}` (Ferrolho, só se provam na integração); a chave `dispatch` e os segredos do Vault na nuvem (I6, à mão no painel); a assinatura da URL no B2; o login com Google (exige credenciais do Google; verificação manual). O Checkout real da Stripe (sessão embutida, cupom, retorno) é do Ferrolho e só se prova na integração. Regras de plataforma (Data API) não foram lidas do projeto remoto. |
 
@@ -37,7 +38,7 @@ Os blocos `sql` marcados com `-- @ddl` são o DDL de referência (exequível). O
 | D-13 | **Venda só para usuário cadastrado e com e-mail confirmado.** `orders.user_id` é `NOT NULL`: o dono do pedido é sempre o usuário. Some a compra anônima (`claim_orders`, vínculo por e-mail, `relation anonymous/claimable`). | Decisão do responsável. Grande simplificação. |
 | D-14 | **Carrinho multi-item, 1 por usuário,** quantidade sempre 1. `carts.version` sobe a cada mudança e protege contra cobrar carrinho diferente do mostrado. | Decisão do responsável. |
 | D-15 | **Sem reembolso e acesso sem expiração (P-1 e P-3 decididos).** Contestação aberta revoga o acesso do pedido inteiro; vencida devolve; perdida mantém revogado; reembolso manual excepcional revoga o pedido inteiro. `entitlements.expires_at` deixa de existir. | Decisão do responsável; o texto legal depende de advogado (CDC art. 49). |
-| D-16 | **Posse sobreposta (D2, padrão provisório):** recusa produto cujos jogos o usuário já tem todos (`already_owned`); sobreposição parcial é aceita com aviso, sem desconto. | Ajuste 2 do orquestrador; vale até o responsável decidir. |
+| D-16 | **(Substituída pela D-30 em 2026-10-22.) Posse sobreposta (D2, padrão provisório):** recusa produto cujos jogos o usuário já tem todos (`already_owned`); sobreposição parcial é aceita com aviso, sem desconto. | Ajuste 2 do orquestrador; vale até o responsável decidir. |
 | D-17 | **Entrega dos jogos por e-mail, por link (D4):** o banco enfileira o e-mail `delivery` com `entitlement_id` e `game_id` por jogo, sem token; o link `GET /d/{token}` confere o direito no clique (`resolve_delivery`). Anexo fica como opção do despachante (`resolve_delivery` devolve `size_bytes`). | Ajuste 3 do orquestrador. |
 | D-18 | **Trigger em `auth.users`:** zera a senha na primeira confirmação do e-mail, cria o perfil e registra `account_confirmed`. | Fecha o ataque de cadastro prévio com senha do atacante (decisão aprovada). |
 | D-19 | **LGPD:** consentimento de marketing só por **inserção** (`marketing_consents`), sem IP; `profiles.marketing_opt_in` é sincronizado por trigger. Funil sem dado pessoal além do `user_id`. E-mail transacional não depende de consentimento. | Plano P2, seção 5. |
@@ -51,6 +52,7 @@ Os blocos `sql` marcados com `-- @ddl` são o DDL de referência (exequível). O
 | D-26 | **Arquivos do B2: o banco guarda só metadados e a chave sai só das RPCs de download.** `resolve_download`, `resolve_delivery` e `resolve_free_download` devolvem `bucket` e `object_key` a quem tem `EXECUTE` (só o `service_role`, ou seja, a API), que assina a URL no servidor; nenhuma outra RPC nem tabela expõe a chave e nenhuma coluna guarda URL. Publicar um arquivo novo segue **SQL do operador**, no ciclo da seção 7 (sem RPC de publicação na API: P-4). O seed traz os 5 PDFs de TESTE do bucket de teste com tamanho e sha256 reais (conteúdo fictício). | Decisão do Lastro (P-4) com os dados do Ferrolho; D-12. |
 | D-27 | **Agenda dos follow-ups e do despacho: `pg_cron` a cada 5 minutos chama `private.dispatch_tick()`**, que enfileira os follow-ups (`private.enqueue_followups`) e, se o **Vault** tem `email_dispatch_url` e `email_dispatch_key`, chama a função de borda `email-dispatch` por `pg_net` (`POST`, cabeçalhos `Content-Type` e `apikey`, corpo `{"limit": 20}`). **Nenhum valor secreto vai para migração ou para o git:** local = passo `supabase/local/aplicar-dispatch-vault.mjs` (lê `supabase status -o env` e grava a URL do Kong e a secret key `default`); nuvem = chave nomeada `dispatch` criada no painel e gravada no Vault à mão (I6). Sem os segredos o job só enfileira e avisa no log. | Proposta do Ferrolho, aceita pelo Lastro; D-12 e D3. |
 | D-29 | **Admin é `app_metadata.admin = true` no Auth, conferido no banco a cada chamada** (responsável, 2026-10-21). Só o servidor grava `raw_app_meta_data`; o site lê o JWT só para mostrar o link do painel. `get_admin_metrics` consulta `private.is_admin` (usuário não removido com o campo `true`), então tirar o admin vale na hora, sem esperar o token vencer. As métricas são agregadas, sem e-mail nem id de pessoa. | Pedido do responsável (painel focado em métricas). |
+| D-30 | **Ninguém paga duas vezes pelo mesmo jogo, e a sacola funciona sem login** (responsável, 2026-10-22; referência: Steam). O produto já possuído e o avulso cujos jogos estão num pacote `ok` da mesma sacola (`included`) ficam na sacola, riscados, e fora do pedido. O pacote com jogos já possuídos cobra só os que faltam, com o mesmo desconto do pacote (o valor é calculado na API com os Prices da Stripe). Quem não entrou guarda a sacola no navegador (`quote_cart`), e ela se junta à da conta ao entrar. O login fica para o pagamento. | Pedido do responsável (menos abandono de carrinho). |
 
 ## 1. Convenções e fronteiras
 
@@ -1026,7 +1028,7 @@ O bloco de RLS e GRANT está em 2.10 (`-- @ddl`).
 
 | Função | anon | authenticated | service_role |
 | --- | --- | --- | --- |
-| as 25 RPCs da seção 6 | nada | nada | `EXECUTE` |
+| as 26 RPCs da seção 6 | nada | nada | `EXECUTE` |
 | `private.*` | nada | nada | nada (só o dono) |
 
 ```sql
@@ -1091,7 +1093,14 @@ Violação de unicidade (`23505`) de sessão/intent de outro pedido também cheg
 
 ### 6.2 Catálogo e carrinho
 
-Regra de **posse**: o usuário possui um jogo se tem direito `active` cuja fotografia o contém (`private.owned_game_ids`). **Posse sobreposta (D-16):** produto cujos jogos o usuário já tem **todos** é recusado (`already_owned`); sobreposição **parcial** é aceita e sinalizada (`owned_games`), sem desconto. Sobreposição entre itens do próprio carrinho também é sinalizada (`shared_with`).
+Regra de **posse**: o usuário possui um jogo se tem direito `active` cuja fotografia o contém (`private.owned_game_ids`). **Jogo repetido (D-30):** o produto que o usuário já tem por inteiro entra no carrinho como `already_owned`; o avulso cujos jogos estão todos num pacote vendável do mesmo carrinho, que o usuário ainda não tem por inteiro, é `included`; os dois ficam fora do pedido. Sobreposição **parcial** com o que o usuário já tem é sinalizada (`owned_games`) e, num pacote, a API cobra só o que falta. Sobreposição entre itens do próprio carrinho também é sinalizada (`shared_with`).
+
+```sql
+create function private.cart_lines(p_user_id uuid, p_product_ids bigint[])
+  returns table (product_id bigint, code text, kind text, name text, stripe_price_id text, line integer,
+                 status text, games jsonb, owned_games jsonb, included_in jsonb, shared_with jsonb);
+```
+- As regras num lugar só, para `get_cart`, `quote_cart` e `create_order_from_cart`. `p_product_ids` na ordem em que os itens entraram (`line`); `p_user_id` NULL não possui nada. `status`: `unavailable` > `already_owned` > `included` > `ok`. `games`: `[ { "code", "name", "single_price_id" } ]`, com o Price do avulso vendável de cada jogo (base do "completar a coleção"). `private.cart_lines_json` devolve o mesmo no formato da API (sem `product_id` e `line`).
 
 ```sql
 create function public.get_catalog() returns jsonb;
@@ -1101,14 +1110,19 @@ create function public.get_catalog() returns jsonb;
 ```sql
 create function public.get_cart(p_user_id uuid) returns jsonb;
 ```
-- `{ "version": 3, "items": [ { "code", "kind", "name", "stripe_price_id", "games": [ { "code", "name" } ], "available": true, "status": "ok", "owned_games": [ "…" ], "shared_with": [ "…" ] } ] }`.
-- `status`: `ok` | `unavailable` (deixou de ser vendável) | `already_owned` (o usuário passou a possuir todos os jogos). `available = (status = 'ok')`. Itens na ordem de `added_at`. Sem carrinho: `{"version": 0, "items": []}`.
+- `{ "version": 3, "items": [ { "code", "kind", "name", "stripe_price_id", "games": [ { "code", "name", "single_price_id" } ], "available": true, "status": "ok", "owned_games": [ "…" ], "included_in": [ "…" ], "shared_with": [ "…" ] } ], "owned_products": [ "…" ] }`.
+- `status`: `ok` | `unavailable` (deixou de ser vendável) | `already_owned` (o usuário possui todos os jogos) | `included` (já está num pacote do carrinho). `available = (status = 'ok')`: entra no pedido. Itens na ordem de `added_at`. `owned_products`: produtos `active` e vendáveis que o usuário já tem por inteiro. Sem carrinho: `{"version": 0, "items": [], "owned_products": []}`.
+
+```sql
+create function public.quote_cart(p_product_codes text[]) returns jsonb;
+```
+- A sacola de quem ainda não entrou: `{ "items": [ … mesmo formato … ], "unknown": [ "…" ] }`, com as regras de `cart_lines` sem dono, na ordem dada (repetidos contam uma vez). `unknown`: códigos que não existem. Nulo ou mais de 20 códigos: `KT001`. EXECUTE só `service_role`.
 
 ```sql
 create function public.cart_add(p_user_id uuid, p_product_code text)
   returns table (outcome text, cart_version integer, owned_games jsonb);
 ```
-- `outcome`: `added` | `noop` (já no carrinho) | `already_owned` | `product_unavailable`. `owned_games` = códigos dos jogos do produto que o usuário já possui (aviso de sobreposição parcial).
+- `outcome`: `added` | `noop` (já no carrinho) | `product_unavailable`. O produto já possuído entra (D-30). `owned_games` = códigos dos jogos do produto que o usuário já possui.
 - Cria o carrinho se não existe; trava o carrinho `FOR UPDATE`; `added` sobe a `version` e grava o funil `cart_item_added`.
 
 ```sql
@@ -1127,20 +1141,20 @@ create function public.create_order_from_cart(
   p_terms_version text,      -- versão dos termos mostrada na página do site
   p_terms_accepted boolean   -- o usuário aceitou os termos (sem reembolso) antes do formulário; precisa ser true
 ) returns table (
-  outcome            text,    -- 'ok' | 'cart_empty' | 'cart_changed' | 'product_unavailable' | 'already_owned'
+  outcome            text,    -- 'ok' | 'cart_empty' | 'cart_changed' | 'product_unavailable' | 'already_owned' (nada a pagar)
   order_id           uuid,
   email              text,    -- e-mail da conta (pré-preenche o formulário embutido)
   stripe_customer_id text,    -- NULL antes do 1º checkout (a rota cria o cliente e chama set_stripe_customer)
-  items              jsonb,   -- [ { "product_code", "stripe_price_id" } ] por position
+  items              jsonb,   -- [ { "product_code", "stripe_price_id", "kind", "games", "owned_games" } ] por position
   reused             boolean,
   detail             jsonb    -- códigos dos produtos que causaram o recuso; versão atual em cart_changed
 );
 ```
 1. `require_confirmed_email` → e-mail da conta. `p_terms_accepted` diferente de `true`: `KT007`, sem gravar nada.
 2. Trava o carrinho `FOR UPDATE`. Sem carrinho ou vazio: `cart_empty`. `version` diferente de `p_cart_version`: `cart_changed` (com a versão atual em `detail`).
-3. Algum item não vendável: `product_unavailable`. Algum item com todos os jogos já possuídos: `already_owned`. Ambos com os códigos em `detail`.
-4. **Reaproveita** o pedido `open` do usuário com a mesma `cart_version`, o mesmo `livemode`, o **mesmo `terms_version`**, os mesmos itens com os **mesmos `stripe_price_id` de hoje** e `checkout_expires_at` nulo ou futuro (`reused=true`; o Checkout recria a mesma sessão pela chave de idempotência `order_id`). Outra versão dos termos, outro ambiente, um Price que mudou ou uma sessão vencida criam pedido novo, com novo aceite; o pedido antigo segue `open` até o `expired` da Stripe. O reaproveitamento lê o pedido sem travá-lo (a ordem de travas é pedido, depois carrinho).
-5. Senão grava o pedido `open` (`email` da conta, `cart_version`, `terms_version`, **`terms_accepted_at = now()`**, `livemode`), os `order_items` com `position` pela ordem de `added_at` (empate: id do produto) e o `stripe_price_id` atual de cada produto, a trilha `order_events` (`null → open`, origem `checkout`) e o funil `checkout_started`.
+3. Algum item não vendável: `product_unavailable`, com os códigos em `detail`. Nenhum item `ok` (tudo já possuído ou `included`): `already_owned`, com os códigos de todos os itens em `detail`. Os itens `already_owned` e `included` não entram no pedido.
+4. **Reaproveita** o pedido `open` do usuário com a mesma `cart_version`, o mesmo `livemode`, o **mesmo `terms_version`**, os mesmos itens `ok` com os **mesmos `stripe_price_id` de hoje**, `checkout_expires_at` nulo ou futuro e nenhum direito do usuário concedido ou revogado depois da criação (o valor do pacote de "completar a coleção" depende do que o usuário já tem) (`reused=true`; o Checkout recria a mesma sessão pela chave de idempotência `order_id`). Outra versão dos termos, outro ambiente, um Price que mudou ou uma sessão vencida criam pedido novo, com novo aceite; o pedido antigo segue `open` até o `expired` da Stripe. O reaproveitamento lê o pedido sem travá-lo (a ordem de travas é pedido, depois carrinho).
+5. Senão grava o pedido `open` (`email` da conta, `cart_version`, `terms_version`, **`terms_accepted_at = now()`**, `livemode`), os `order_items` dos itens `ok` com `position` pela ordem de `added_at` (empate: id do produto) e o `stripe_price_id` atual de cada produto, a trilha `order_events` (`null → open`, origem `checkout`) e o funil `checkout_started`.
 
 `detail`: `{"cart_version": N}` em `cart_changed`; `{"product_codes": ["…"]}` em `product_unavailable` e `already_owned` (`product_unavailable` tem precedência); nulo nos demais casos. Fora do `ok`, só `outcome` e `detail` vêm preenchidos.
 
@@ -1157,6 +1171,8 @@ create function public.attach_checkout_session(p_order_id uuid, p_checkout_sessi
 create function public.set_stripe_customer(p_user_id uuid, p_stripe_customer_id text) returns text;
 ```
 - Devolve o `cus_…` **vigente**. Se o perfil ainda não tem, grava; se já tem, **não sobrescreve** e devolve o gravado. Cliente já usado por outro perfil: `23505`. Atualização condicional (`where stripe_customer_id is null`), sem corrida.
+
+**Poda da sacola (D-30):** o gatilho `entitlement_games_prune_cart` (`after insert on entitlement_games`) tira do carrinho do dono os produtos que ele passou a ter por inteiro, como o avulso que veio no pacote pago. Não sobe a `version`: `fulfill_order` já sobe no passo do carrinho.
 
 ### 6.4 `fulfill_order`: pagamento confirmado → pedido `paid` + um direito por item
 
@@ -1615,7 +1631,7 @@ Os pontos que dependem do responsável usam a numeração D da nota Plano do sit
 | P-22 | **Cupom de 100%** (D-25): o banco libera o acesso como pago (total 0). Se o responsável não quiser cupom de 100%, basta não criá-lo na Stripe; para o banco recusar, `fulfill_order` passa a tratar `no_payment_required` como `KT002`. Imposto: o total é subtotal − desconto porque `automatic_tax` está desligado; se um dia ligar, o pedido precisa de `amount_tax` (v0.4). | Responsável (cupons) / Lastro | Uma condição em `fulfill_order`; coluna nova |
 | P-13 | Nome comercial, preço, moeda, composição de avulsos e textos legais: **PENDENTES**. O banco não os decide. | Responsável (D1, D11) | — |
 | P-15 | Falta verificar, só com credenciais reais: o login com Google e a troca de e-mail (`double_confirm_changes`) com a trigger. Os demais fluxos estão verificados no GoTrue real. | Lastro / Ferrolho (I6, jornada integrada) | Ajuste fino da trigger |
-| P-16 | **D2:** posse sobreposta. Padrão provisório: recusar produto possuído por inteiro, aceitar sobreposição parcial com aviso, sem desconto (D-16). | Responsável | `owned_game_ids` e as RPCs de carrinho |
+| P-16 | **(Decidido: D-30, 2026-10-22.) D2:** posse sobreposta. Padrão provisório: recusar produto possuído por inteiro, aceitar sobreposição parcial com aviso, sem desconto (D-16). | Responsável | `owned_game_ids` e as RPCs de carrinho |
 | P-17 | **D4:** entrega por link (D-17) ou por anexo; validade do link (proposta de 30 dias, no token, fora do banco). PDFs medidos decidem o anexo. | Responsável | Só o despachante |
 | P-18 | **D3:** fluxos, prazos e limites dos follow-ups (proposta: lembrete 3 h após a última mudança; pós-compra em D+3; no máximo 1 marketing por dia). Constantes de `enqueue_followups` e `claim_email_batch`. | Responsável | Constantes |
 | P-19 | **Decidido (2026-10-19).** Texto e versão do consentimento em `src/content/account.ts` (`mkt-2026-10-19`); sem IP; funil, downloads e histórico de consentimento enquanto a conta existir (D-28); fila de e-mail por 90 dias depois do envio. | — | — |
@@ -1663,6 +1679,7 @@ Criar cada migração com `supabase migration new <nome>` (nunca inventar o nome
 | Convite de marketing (v0.3.2) | — | `profiles.marketing_prompted_at` e `mark_marketing_prompt(uuid)`; `set_marketing_consent` com `signup_prompt` preenche o marcador; `get_account` devolve `marketing.prompted_at`. Ver ou dispensar o convite não é consentimento |
 | Direitos do titular (v0.3.6) | Exclusão só por anonimização futura (D-23) | `export_account_data` e `delete_account_data` (24 RPCs); `orders.anonymized_at`, `user_id` e `email` nulos só anonimizados; `entitlements` com `account_deleted`; limpeza diária da fila (90 dias); pgTAP `13_account_rights` (D-28) |
 | Painel do administrador (v0.3.7) | — | `get_admin_metrics` e `private.is_admin` (25 RPCs); admin em `app_metadata.admin` (D-29); pgTAP `14_admin_metrics` |
+| Sacola sem login (v0.3.8) | — | `quote_cart` (26 RPCs) e `private.cart_lines`; `cart_add` aceita o já possuído; o pedido só leva itens `ok`; gatilho `entitlement_games_prune_cart` (D-30) |
 | Testes | T01–T104 (12 tabelas, 11 RPCs) | Reorganizados em 11 arquivos + concorrência, T01–T125 (19 tabelas, 22 RPCs); novos: carrinho, checkout multi-item, contestações, consentimento, fila de e-mail, follow-ups, trigger de senha |
 
 Histórico anterior (v0.1 a v0.2.2, mesmo dia): revisão do Ferrolho nas seções 5 e 6; `get_account` e `get_order_status`; `deferred`; aresta `open → failed`; `create_order` com `p_livemode` obrigatório; `service_role` sem `SELECT` (D-12); `product_name` na fila.

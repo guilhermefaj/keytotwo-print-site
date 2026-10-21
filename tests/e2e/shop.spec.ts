@@ -10,6 +10,13 @@ const bundle = { ...single, code: 'P001', kind: 'bundle', name: 'Coleção KeyTo
 
 async function catalog(page: Page, products = [single]) {
   await page.route('**/functions/v1/api/catalog', route => route.fulfill({ json: { products } }))
+  // Sacola de quem não entrou: a cotação devolve os produtos pedidos, com o preço do catálogo.
+  await page.route('**/functions/v1/api/cart/quote', route => {
+    const items = (route.request().postDataJSON().product_codes as string[]).map(code => products.find(product => product.code === code)).filter(Boolean)
+      .map(product => ({ ...product!, status: 'ok', available: true, owned_games: [], included_in: [], shared_with: [], charge: product!.price }))
+    const amount = items.reduce((sum, item) => sum + item.price.unit_amount, 0)
+    return route.fulfill({ json: { version: 0, items, subtotal: items.length ? { amount, currency: 'brl' } : null, warnings: [], unknown: [] } })
+  })
 }
 
 test('loja: pacote fora do catálogo fica em breve; jogos do pacote sem avulso ficam "No pacote"; só o avulso tem compra', async ({ page }) => {
@@ -64,11 +71,15 @@ test('produto: preço vem do catálogo, compra preserva escolha e ausência não
     await expect(page.locator('.shop-purchase')).toContainText('Em breve')
     await expect(page.locator('.shop-purchase button')).toHaveCount(0)
   } else {
+    // Sem login, a escolha vai para a sacola guardada no navegador; o login fica para o pagamento.
     const buy = page.getByRole('button', { name: 'Adicionar à sacola', exact: true })
     await expect(buy).toBeEnabled()
     await buy.focus()
     await page.keyboard.press('Enter')
-    await expect(page).toHaveURL(/\/entrar\?next=%2Fcarrinho&add=J001$/)
+    await expect(page.getByRole('dialog', { name: 'Sua sacola' })).toContainText('Rabisque e Adivinhe')
+    await expect(page).toHaveURL(/\/loja\/j001$/)
+    expect(await page.evaluate(() => localStorage.getItem('keytotwo:sacola'))).toBe('["J001"]')
+    await page.keyboard.press('Escape')
   }
   await page.goto('/loja/p001')
   await expect(page.locator('.shop-purchase')).toContainText('Em breve')

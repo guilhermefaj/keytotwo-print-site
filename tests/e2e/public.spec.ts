@@ -152,11 +152,14 @@ test.describe('conteúdo', () => {
     expect(await visibleText(page)).not.toMatch(refundNotice)
   })
 
-  test('carrinho exige login e preserva o destino', async ({ page }) => {
+  test('carrinho abre sem login (a sacola fica no navegador) e o pagamento exige login', async ({ page }) => {
     await page.goto('/carrinho')
-    await expect(page).toHaveURL(/\/entrar\?next=%2Fcarrinho$/)
-    await expect(page.getByRole('heading', { name: 'Entrar', exact: true })).toBeVisible()
+    await expect(page).toHaveURL(/\/carrinho$/)
+    await expect(page.getByRole('heading', { name: 'Sacola', exact: true })).toBeVisible()
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
+    await page.goto('/pagamento')
+    await expect(page).toHaveURL(/\/entrar\?next=%2Fpagamento$/)
+    await expect(page.getByRole('heading', { name: 'Entrar', exact: true })).toBeVisible()
     // Authenticated checkout content is checked by the D3 suite.
   })
 })

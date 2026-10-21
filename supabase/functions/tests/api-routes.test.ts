@@ -21,7 +21,7 @@ const LIBRARY = {
 }
 
 function cartItem(code: string, extra: Record<string, unknown> = {}) {
-  return { code, kind: 'bundle', name: `Produto ${code}`, stripe_price_id: `price_${code}`, games: [GAME], status: 'ok', available: true, owned_games: [], shared_with: [], ...extra }
+  return { code, kind: 'bundle', name: `Produto ${code}`, stripe_price_id: `price_${code}`, games: [GAME], status: 'ok', available: true, owned_games: [], included_in: [], shared_with: [], ...extra }
 }
 
 onPrice((id) => (id === 'price_fora' ? { status: 404, body: {} } : { status: 200, body: { id, active: true, unit_amount: 1990, currency: 'brl' } }))
@@ -42,7 +42,7 @@ contractTest('rotas privadas recusam sem sessão, sessão vencida e papel errado
   onRpc(() => ({ status: 200, body: null }))
   const expired = await sessionToken({ exp: Math.floor(Date.now() / 1000) - 60 })
   const anon = await sessionToken({ role: 'anon' })
-  for (const [path, method] of [['/cart', 'GET'], ['/cart/items', 'POST'], ['/cart/items/P001', 'DELETE'], ['/account', 'GET'], ['/account/marketing', 'PUT'], ['/account/marketing/prompt', 'POST'], ['/library', 'GET'], ['/free-download', 'POST'], ['/admin/metrics', 'GET']]) {
+  for (const [path, method] of [['/cart', 'GET'], ['/cart/items', 'POST'], ['/cart/items/P001', 'DELETE'], ['/cart/merge', 'POST'], ['/account', 'GET'], ['/account/marketing', 'PUT'], ['/account/marketing/prompt', 'POST'], ['/library', 'GET'], ['/free-download', 'POST'], ['/admin/metrics', 'GET']]) {
     for (const token of [undefined, expired, anon, 'lixo.lixo.lixo']) {
       const res = await handleRequest(request(path, { method, token, body: method === 'GET' || method === 'DELETE' ? undefined : {} }))
       assertEquals(res.status, 401, `${method} ${path}`)
@@ -52,42 +52,71 @@ contractTest('rotas privadas recusam sem sessão, sessão vencida e papel errado
   assertEquals(rpcCalls.length, 0)
 })
 
-contractTest('GET /cart soma o subtotal dos disponíveis e gera avisos', async () => {
+// Preços do "completar a coleção": ids próprios, porque o cache de Price da Stripe dura entre os testes.
+const SET_PRICES: Record<string, number> = { price_set_P001: 2990, price_set_J001: 990, price_set_J002: 1290, price_set_A002: 990 }
+function setPrices() {
+  onPrice((id) => (id in SET_PRICES
+    ? { status: 200, body: { id, active: true, unit_amount: SET_PRICES[id], currency: 'brl', product: `prod_${id.slice(10)}` } }
+    : id === 'price_fora' ? { status: 404, body: {} } : { status: 200, body: { id, active: true, unit_amount: 1990, currency: 'brl' } }))
+}
+const SET_GAMES = [{ code: 'J001', name: 'Jogo 1 [TESTE]', single_price_id: 'price_set_J001' }, { code: 'J002', name: 'Jogo 2 [TESTE]', single_price_id: 'price_set_J002' }]
+
+contractTest('GET /cart: completar a coleção, avulso incluído no pacote, já possuído e produtos da pessoa', async () => {
+  setPrices()
   const token = await sessionToken()
   onRpc(() => ({
     status: 200,
     body: {
       version: 4,
       items: [
-        cartItem('P001', { owned_games: ['J001'] }),
-        cartItem('A002', { status: 'unavailable', available: false }),
-        cartItem('A003', { stripe_price_id: 'price_fora' }),
+        cartItem('P001', { stripe_price_id: 'price_set_P001', games: SET_GAMES, owned_games: ['J001'] }),
+        cartItem('A002', { kind: 'single', stripe_price_id: 'price_set_A002', status: 'included', available: false, included_in: ['P001'] }),
+        cartItem('A003', { status: 'already_owned', available: false }),
+        cartItem('A004', { status: 'unavailable', available: false }),
       ],
+      owned_products: ['A003'],
     },
   }))
   const res = await handleRequest(request('/cart', { token }))
   assertEquals(res.status, 200)
   const body = await res.json()
   assertEquals(body.version, 4)
-  assertEquals(body.items.some((i: Record<string, unknown>) => 'stripe_price_id' in i), false)
-  assertEquals(body.subtotal, null)
-  assertEquals(body.warnings, [
-    { code: 'PARTIAL_OVERLAP', product_code: 'P001' },
-    { code: 'PRODUCT_UNAVAILABLE', product_code: 'A002' },
-    { code: 'PRICE_UNAVAILABLE', product_code: 'A003' },
+  assertEquals(JSON.stringify(body).includes('price_set'), false)
+  // 2990 × 1290 / (990 + 1290): o pacote cobra o jogo que falta com o mesmo desconto do pacote
+  assertEquals(body.items.map((i: { code: string; price: unknown; charge: unknown }) => [i.code, i.price, i.charge]), [
+    ['P001', { unit_amount: 2990, currency: 'brl' }, { unit_amount: 1692, currency: 'brl' }],
+    ['A002', { unit_amount: 990, currency: 'brl' }, null],
+    ['A003', { unit_amount: 1990, currency: 'brl' }, null],
+    ['A004', { unit_amount: 1990, currency: 'brl' }, null],
   ])
+  assertEquals(body.items[0].games, [{ code: 'J001', name: 'Jogo 1 [TESTE]' }, { code: 'J002', name: 'Jogo 2 [TESTE]' }])
+  assertEquals(body.subtotal, { amount: 1692, currency: 'brl' })
+  assertEquals(body.warnings, [
+    { code: 'COMPLETE_THE_SET', product_code: 'P001' },
+    { code: 'INCLUDED_IN_BUNDLE', product_code: 'A002' },
+    { code: 'ALREADY_OWNED', product_code: 'A003' },
+    { code: 'PRODUCT_UNAVAILABLE', product_code: 'A004' },
+  ])
+  assertEquals(body.owned_products, ['A003'])
   assertEquals(rpcCalls, [{ fn: 'get_cart', args: { p_user_id: userId(token) }, secretKeyOk: true, hasAuthorization: false }])
-
-  onRpc(() => ({ status: 200, body: { version: 2, items: [cartItem('P001'), cartItem('P002')] } }))
-  const ok = await (await handleRequest(request('/cart', { token }))).json()
-  assertEquals(ok.subtotal, { amount: 3980, currency: 'brl' })
-  assertEquals(ok.warnings, [])
-
-  onRpc(() => ({ status: 200, body: null }))
-  assertEquals(await (await handleRequest(request('/cart', { token }))).json(), { version: 0, items: [], subtotal: null, warnings: [] })
 })
 
-contractTest('POST /cart/items adiciona e mapeia os outcomes de cart_add', async () => {
+contractTest('GET /cart soma o subtotal dos itens a pagar e avisa preço faltando e pacotes que dividem jogos', async () => {
+  const token = await sessionToken()
+  onRpc(() => ({ status: 200, body: { version: 2, items: [cartItem('P001', { shared_with: ['P002'] }), cartItem('P002', { shared_with: ['P001'] })] } }))
+  const ok = await (await handleRequest(request('/cart', { token }))).json()
+  assertEquals(ok.subtotal, { amount: 3980, currency: 'brl' })
+  assertEquals(ok.warnings, [{ code: 'PARTIAL_OVERLAP', product_code: 'P001' }, { code: 'PARTIAL_OVERLAP', product_code: 'P002' }])
+
+  onRpc(() => ({ status: 200, body: { version: 2, items: [cartItem('P001'), cartItem('A003', { stripe_price_id: 'price_fora' })] } }))
+  const missing = await (await handleRequest(request('/cart', { token }))).json()
+  assertEquals([missing.subtotal, missing.warnings], [null, [{ code: 'PRICE_UNAVAILABLE', product_code: 'A003' }]])
+
+  onRpc(() => ({ status: 200, body: null }))
+  assertEquals(await (await handleRequest(request('/cart', { token }))).json(), { version: 0, items: [], subtotal: null, warnings: [], owned_products: [] })
+})
+
+contractTest('POST /cart/items adiciona (até o já possuído) e mapeia product_unavailable', async () => {
   const token = await sessionToken()
   const reply = (outcome: string) => (fn: string) =>
     fn === 'cart_add' ? { status: 200, body: [{ outcome, cart_version: 1, owned_games: [] }] } : { status: 200, body: { version: 1, items: [cartItem('P001')] } }
@@ -100,14 +129,54 @@ contractTest('POST /cart/items adiciona e mapeia os outcomes de cart_add', async
     assertEquals(rpcCalls.map((c) => c.fn), ['cart_add', 'get_cart'])
     assertEquals(rpcCalls[0].args, { p_user_id: userId(token), p_product_code: 'P001' })
   }
-  for (const [outcome, code] of [['already_owned', 'ALREADY_OWNED'], ['product_unavailable', 'PRODUCT_UNAVAILABLE']]) {
-    onRpc(reply(outcome))
-    const res = await handleRequest(request('/cart/items', { method: 'POST', token, body: { product_code: 'P001' } }))
-    assertEquals(res.status, 409)
-    const { error } = await res.json()
-    assertEquals([error.code, error.details], [code, { product_codes: ['P001'] }])
-    assertEquals(rpcCalls.map((c) => c.fn), ['cart_add'])
+  onRpc(reply('product_unavailable'))
+  const res = await handleRequest(request('/cart/items', { method: 'POST', token, body: { product_code: 'P001' } }))
+  assertEquals(res.status, 409)
+  const { error } = await res.json()
+  assertEquals([error.code, error.details], ['PRODUCT_UNAVAILABLE', { product_codes: ['P001'] }])
+  assertEquals(rpcCalls.map((c) => c.fn), ['cart_add'])
+})
+
+contractTest('POST /cart/quote é pública: mesmas regras e preços, códigos desconhecidos à parte', async () => {
+  setPrices()
+  onRpc(() => ({
+    status: 200,
+    body: {
+      items: [
+        cartItem('P001', { stripe_price_id: 'price_set_P001', games: SET_GAMES }),
+        cartItem('A002', { kind: 'single', stripe_price_id: 'price_set_A002', status: 'included', available: false, included_in: ['P001'] }),
+      ],
+      unknown: ['X999'],
+    },
+  }))
+  const res = await handleRequest(request('/cart/quote', { method: 'POST', body: { product_codes: ['P001', 'A002', 'X999', 'P001'] } }))
+  assertEquals(res.status, 200)
+  const body = await res.json()
+  assertEquals([body.version, body.subtotal, body.unknown], [0, { amount: 2990, currency: 'brl' }, ['X999']])
+  assertEquals(body.items.map((i: { code: string; status: string; charge: unknown }) => [i.code, i.status, i.charge]),
+    [['P001', 'ok', { unit_amount: 2990, currency: 'brl' }], ['A002', 'included', null]])
+  assertEquals('owned_products' in body, false)
+  assertEquals(rpcCalls, [{ fn: 'quote_cart', args: { p_product_codes: ['P001', 'A002', 'X999'] }, secretKeyOk: true, hasAuthorization: false }])
+
+  onRpc(() => ({ status: 200, body: { items: [], unknown: [] } }))
+  for (const body of [{}, { product_codes: 'P001' }, { product_codes: ['p001'] }, { product_codes: Array.from({ length: 21 }, (_, i) => `P${100 + i}`) }]) {
+    const bad = await handleRequest(request('/cart/quote', { method: 'POST', body }))
+    assertEquals(bad.status, 400, JSON.stringify(body))
+    assertEquals((await bad.json()).error.code, 'INVALID_REQUEST')
   }
+  assertEquals(rpcCalls.length, 0)
+})
+
+contractTest('POST /cart/merge junta a sacola do navegador à da conta, na ordem, e devolve a da conta', async () => {
+  const token = await sessionToken()
+  onRpc((fn, args) => fn === 'cart_add'
+    ? { status: 200, body: [{ outcome: args.p_product_code === 'A002' ? 'product_unavailable' : 'added', cart_version: 1, owned_games: [] }] }
+    : { status: 200, body: { version: 2, items: [cartItem('P001')], owned_products: [] } })
+  const res = await handleRequest(request('/cart/merge', { method: 'POST', token, body: { product_codes: ['P001', 'A002', 'P001'] } }))
+  assertEquals(res.status, 200)
+  assertEquals((await res.json()).version, 2)
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args.p_product_code ?? null]), [['cart_add', 'P001'], ['cart_add', 'A002'], ['get_cart', null]])
+  assertEquals(rpcCalls.every((c) => c.args.p_user_id === userId(token)), true)
 })
 
 contractTest('POST /cart/items valida corpo e código antes do banco', async () => {
