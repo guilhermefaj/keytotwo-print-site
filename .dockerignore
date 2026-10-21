@@ -16,6 +16,7 @@ docs
 # Only scripts needed by the image build; QA scripts depend on excluded docs.
 scripts/*
 !scripts/seo-files.mjs
+!scripts/html-priorities.mjs
 !scripts/check-release.mjs
 supabase
 **/.env
