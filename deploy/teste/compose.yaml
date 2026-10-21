@@ -1,0 +1,26 @@
+# Ambiente de teste da KeyToTwo (teste.keytotwo.com.br) na VPS, atrás do Traefik que já roda lá
+# (rede host, provider docker, rotas só por etiquetas). Uso, em /opt/keytotwo-site/teste: docker compose up -d.
+# O .env ao lado define IMAGE_TAG e SITE_BASIC_AUTH_USERS. Não publica porta: o Traefik alcança o nginx na 8080.
+name: keytotwo-teste
+
+services:
+  site:
+    image: keytotwo-site:${IMAGE_TAG:?defina IMAGE_TAG no .env}
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.keytotwo-teste.rule: Host(`teste.keytotwo.com.br`)
+      traefik.http.routers.keytotwo-teste.entrypoints: websecure
+      traefik.http.routers.keytotwo-teste.tls.certresolver: letsencrypt
+      traefik.http.routers.keytotwo-teste.middlewares: keytotwo-teste-auth
+      # Senha do ambiente de teste. O hash vem do .env entre aspas simples, para o compose não expandir o $.
+      traefik.http.middlewares.keytotwo-teste-auth.basicauth.users: ${SITE_BASIC_AUTH_USERS:?defina SITE_BASIC_AUTH_USERS no .env}
+      traefik.http.middlewares.keytotwo-teste-auth.basicauth.realm: KeyToTwo (teste)
+      traefik.http.services.keytotwo-teste.loadbalancer.server.port: "8080"
