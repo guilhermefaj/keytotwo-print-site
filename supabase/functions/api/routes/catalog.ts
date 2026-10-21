@@ -1,6 +1,6 @@
 import { rpc } from '../../_shared/admin.ts'
 import { json } from '../../_shared/http.ts'
-import { stripePrice } from '../../_shared/prices.ts'
+import { primePrices, stripePrice } from '../../_shared/prices.ts'
 
 interface CatalogProduct {
   code: string
@@ -13,6 +13,7 @@ interface CatalogProduct {
 // GET /catalog (pública): produtos vendáveis com o preço lido da Stripe. O stripe_price_id não sai da API.
 export async function catalog(): Promise<Response> {
   const products = (await rpc<CatalogProduct[] | null>('get_catalog')) ?? []
+  await primePrices(products.map((product) => product.stripe_price_id))
   const withPrices = await Promise.all(products.map(async ({ stripe_price_id, ...product }) => ({
     ...product,
     price: stripe_price_id ? await stripePrice(stripe_price_id) : null,

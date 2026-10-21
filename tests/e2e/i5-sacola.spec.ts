@@ -38,22 +38,25 @@ function subtotal(items: Item[]) {
 const cartBody = (items: Item[], extra: Record<string, unknown> = {}) => ({ version: 1, items, subtotal: subtotal(items), warnings: [], ...extra })
 
 // Com sessão: a sacola da conta (GET /cart). Sem sessão: a cotação da sacola guardada no navegador (POST /cart/quote).
-async function fixture(page: Page, initial: Item[], { signedIn = true, owned = [] as string[], quote = (codes: string[]) => codes.map(code => [p001, j001].find(item => item.code === code)!) } = {}) {
+async function fixture(page: Page, initial: Item[], { signedIn = true, owned = [] as string[], quote = (codes: string[]) => codes.map(code => [p001, j001].find(item => item.code === code)!), delay = 0 } = {}) {
   let items = [...initial]
   const calls: { path: string; body: unknown }[] = []
   if (signedIn) {
     await page.addInitScript(([key, session]) => localStorage.setItem(key, JSON.stringify(session)), [authStorageKey, fakeSession] as const)
     await page.route('**/auth/v1/**', route => route.fulfill({ json: fakeSession.user }))
   }
-  await page.route('**/functions/v1/api/**', route => {
+  await page.route('**/functions/v1/api/**', async route => {
     const request = route.request()
     const path = new URL(request.url()).pathname.split('/api')[1]
     const body = request.postData() ? request.postDataJSON() : null
     calls.push({ path, body })
+    // API lenta nas mudanças da sacola: a tela não pode esperar por ela.
+    if (delay && (path === '/cart/quote' || path.startsWith('/cart/items'))) await new Promise(resolve => setTimeout(resolve, delay))
     if (path === '/cart/quote') return route.fulfill({ json: { ...cartBody(quote(body.product_codes)), version: 0, unknown: [] } })
     if (path === '/cart/merge') { items = quote(body.product_codes); return route.fulfill({ json: cartBody(items, { owned_products: owned }) }) }
     if (path.startsWith('/cart/items')) {
       if (request.method() === 'DELETE') items = items.filter(item => item.code !== path.split('/').pop())
+      else if (!items.some(item => item.code === body.product_code)) items = [...items, ...quote([body.product_code])]
       return route.fulfill({ json: cartBody(items, { owned_products: owned }) })
     }
     const reply = path === '/cart' ? cartBody(items, { owned_products: owned }) : path === '/catalog' ? { products: [p001, j001] } : path === '/account' ? { email: fakeSession.user.email, marketing: { opted_in: false, prompted_at: '2026-01-01', text_version: null }, orders: [] } : { available: false }
@@ -159,6 +162,31 @@ test('ao entrar, a sacola do navegador se junta à da conta e sai do navegador',
   await expect(page.locator('[data-cart-product="J001"]')).toContainText('não é cobrado')
   expect(calls.find(call => call.path === '/cart/merge')?.body).toEqual({ product_codes: ['P001', 'J001'] })
   await expect.poll(() => page.evaluate(key => localStorage.getItem(key), guestKey)).toBeNull()
+})
+
+test('adicionar mostra o item na hora, sem esperar a API, e não busca a sacola de novo', async ({ page }) => {
+  test.skip(!stageTest, 'Stage test fixture')
+  const calls = await fixture(page, [], { delay: 2500 })
+  await page.goto('/loja/p001')
+  await expect.poll(() => calls.filter(call => call.path === '/cart').length).toBe(1)
+  await page.getByRole('button', { name: 'Adicionar à sacola' }).first().click()
+  const drawer = page.getByRole('dialog', { name: 'Sua sacola' })
+  // Antes da resposta (2,5 s): o item já está na gaveta, com o total esperando a confirmação.
+  await expect(drawer).toContainText('Coleção KeyToTwo: Fundadores', { timeout: 1000 })
+  await expect(drawer.locator('.drawer-total')).toContainText('Atualizando…')
+  await expect(drawer.locator('.drawer-total')).toContainText('R$ 29,90', { timeout: 6000 })
+  expect(calls.filter(call => call.path === '/cart').length).toBe(1)
+})
+
+test('sem login: o item também aparece na hora, enquanto a cotação responde', async ({ page }) => {
+  test.skip(!stageTest, 'Stage test fixture')
+  await fixture(page, [], { signedIn: false, delay: 2500 })
+  await page.goto('/loja/p001')
+  await page.getByRole('button', { name: 'Adicionar à sacola' }).first().click()
+  const drawer = page.getByRole('dialog', { name: 'Sua sacola' })
+  await expect(drawer).toContainText('Coleção KeyToTwo: Fundadores', { timeout: 1000 })
+  await expect(drawer.locator('.drawer-total')).toContainText('Atualizando…')
+  await expect(drawer.locator('.drawer-total')).toContainText('R$ 29,90', { timeout: 6000 })
 })
 
 test('confirmação mostra o nome do avulso, não "Jogo para imprimir"', async ({ page }) => {

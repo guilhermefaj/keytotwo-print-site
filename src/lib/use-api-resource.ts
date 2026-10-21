@@ -11,6 +11,8 @@ export function useApiResource<T>(path: string, isPublic = false, paused = false
   const key = `${owner}:${revision}`
   const [result, setResult] = useState<{ key: string; owner: string; data?: T; error?: string }>({ key: '', owner: '' })
   const reload = useCallback(() => setRevision(value => value + 1), [])
+  // A resposta de uma mutação já traz o recurso atualizado: usa direto, sem buscar de novo.
+  const replace = useCallback((data: T) => setResult({ key, owner, data }), [key, owner])
   useEffect(() => {
     if (!enabled) return
     const controller = new AbortController()
@@ -23,5 +25,5 @@ export function useApiResource<T>(path: string, isPublic = false, paused = false
   const current = enabled && result.key === key
   // Keep current-user content mounted during refreshes (focus and form feedback).
   // Never retain it when the authenticated owner changes.
-  return { data: enabled && result.owner === owner ? result.data : undefined, error: current ? result.error : undefined, loading: enabled && !current, reload }
+  return { data: enabled && result.owner === owner ? result.data : undefined, error: current ? result.error : undefined, loading: enabled && !current, reload, replace }
 }

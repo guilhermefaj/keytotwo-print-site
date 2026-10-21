@@ -1,4 +1,4 @@
-import { type Price, stripePrice } from './prices.ts'
+import { type Price, primePrices, stripePrice } from './prices.ts'
 
 // Item da sacola como as RPCs devolvem (private.cart_lines, docs/data-contract.md 6.2).
 export interface CartLine {
@@ -62,6 +62,8 @@ export async function orderItemCharge(item: ChargeableItem): Promise<Price | nul
 }
 
 export async function priceLines(lines: CartLine[]): Promise<PricedLine[]> {
+  // Uma leitura só para todos os Prices da sacola, inclusive os avulsos do "completar a coleção".
+  await primePrices(lines.flatMap((line) => [line.stripe_price_id, ...line.games.map((game) => game.single_price_id)]))
   return await Promise.all(lines.map(async ({ stripe_price_id, games, ...line }) => ({
     ...line,
     games: games.map(({ code, name }) => ({ code, name })),
