@@ -303,12 +303,15 @@ end $$;
 -- ===== 6. Depois de liberar um pedido, a sacola perde o que ficou da pessoa ==========================
 -- fulfill_order já tira da sacola os produtos pagos e sobe a version; este gatilho tira também o que ficou possuído
 -- por inteiro com os jogos novos (o avulso que veio no pacote). Roda a cada jogo liberado, antes daquele passo.
+-- Trava o carrinho antes de mexer nos itens, como cart_add e cart_remove: a ordem pedido → carrinho → itens evita
+-- deadlock com quem mexe na sacola ao mesmo tempo (T127).
 create function private.prune_owned_cart_items() returns trigger
 language plpgsql security definer set search_path = '' as $$
 declare
   v_user uuid;
 begin
   select e.user_id into v_user from public.entitlements e where e.id = new.entitlement_id;
+  perform 1 from public.carts c where c.user_id = v_user for update;
   delete from public.cart_items ci
    where ci.user_id = v_user
      and exists (select 1 from public.product_games pg where pg.product_id = ci.product_id)

@@ -185,10 +185,11 @@ select pg_temp.assert('A (dona do P001) tem os 5 jogos e nenhum pendente', (sele
 select pg_temp.assert('B (avulso 1) tem 1 jogo, via J001', (select jsonb_array_length(public.get_library(u.id)->'games') = 1 and public.get_library(u.id)->'games'->0->'products'->0->>'code' = 'J001' from auth.users u where u.email = 'teste-b@keytotwo.test'));
 select pg_temp.assert('D só tem pedido em processamento, E nada ativo', (select jsonb_array_length(public.get_library(u.id)->'games') = 0 and jsonb_array_length(public.get_library(u.id)->'pending') = 1 from auth.users u where u.email = 'teste-d@keytotwo.test')
   and (select public.get_library(u.id) = '{"games": [], "pending": []}'::jsonb from auth.users u where u.email = 'teste-e@keytotwo.test'));
-select pg_temp.assert('cart_add(A, J001): already_owned (A já tem o jogo 1 inteiro)', (select outcome = 'already_owned' from auth.users u, lateral public.cart_add(u.id, 'J001') where u.email = 'teste-a@keytotwo.test'));
+select pg_temp.assert('cart_add(A, J001): aceita o já possuído (A já tem o jogo 1 inteiro), com o jogo em owned_games', (select outcome = 'added' and owned_games = '["TESTE-J01"]'::jsonb from auth.users u, lateral public.cart_add(u.id, 'J001') where u.email = 'teste-a@keytotwo.test'));
 select pg_temp.assert('carrinho de B: P001 com sobreposição parcial (já tem o jogo 1)', (select (public.get_cart(u.id)->>'version')::int = 1 and public.get_cart(u.id)->'items'->0->>'code' = 'P001'
   and public.get_cart(u.id)->'items'->0->'owned_games' = '["TESTE-J01"]'::jsonb and public.get_cart(u.id)->'items'->0->>'status' = 'ok' from auth.users u where u.email = 'teste-b@keytotwo.test'));
-select pg_temp.assert('o carrinho de A é vazio e isolado do de B', (select public.get_cart(u.id) = '{"version": 0, "items": []}'::jsonb from auth.users u where u.email = 'teste-a@keytotwo.test'));
+select pg_temp.assert('o carrinho de A só tem o J001, riscado (already_owned), e é isolado do de B', (select jsonb_path_query_array(public.get_cart(u.id)->'items', '$[*].code') = '["J001"]'::jsonb and public.get_cart(u.id)->'items'->0->>'status' = 'already_owned' from auth.users u where u.email = 'teste-a@keytotwo.test'));
+do $c$ begin perform public.cart_remove((select id from auth.users where email = 'teste-a@keytotwo.test'), 'J001'); end $c$;
 select pg_temp.expect('C (não confirmado) não consegue usar o carrinho', $q$select * from public.cart_add((select id from auth.users where email = 'teste-c@keytotwo.test'), 'P001')$q$, 'KT009');
 select pg_temp.assert('get_account(D): pendente, reembolsado e contestado; sem checkout abandonado', (select jsonb_array_length(public.get_account(u.id)->'orders') = 3 from auth.users u where u.email = 'teste-d@keytotwo.test'));
 select pg_temp.assert('get_account(E): só a contestação perdida (expired e open ficam de fora)', (select jsonb_array_length(public.get_account(u.id)->'orders') = 1 and public.get_account(u.id)->'orders'->0->>'status' = 'dispute_lost' from auth.users u where u.email = 'teste-e@keytotwo.test'));
@@ -221,7 +222,8 @@ begin
     jsonb_build_array(jsonb_build_object('stripe_price_id', v_price, 'quantity', 1, 'unit_amount', 100, 'currency', 'brl')), 'webhook', 'evt_SMOKE_B1', 'checkout.session.completed') r;
 end $c$;
 select pg_temp.assert('seed I3: o carrinho de B vira um pedido open com o P001 e o Price do catálogo',
-  (select j->>'outcome' = 'ok' and not (j->>'reused')::boolean and j->'items' = jsonb_build_array(jsonb_build_object('product_code', 'P001', 'stripe_price_id', (select stripe_price_id from public.products where code = 'P001')))
+  (select j->>'outcome' = 'ok' and not (j->>'reused')::boolean and jsonb_array_length(j->'items') = 1 and j->'items'->0->>'product_code' = 'P001'
+          and j->'items'->0->>'stripe_price_id' = (select stripe_price_id from public.products where code = 'P001')
           and j->>'email' = 'teste-b@keytotwo.test' from smoke where k = 'co1'));
 select pg_temp.assert('seed I3: chamar de novo reaproveita o pedido', (select (j->>'reused')::boolean and j->>'order_id' = (select j->>'order_id' from smoke where k = 'co1') from smoke where k = 'co2'));
 select pg_temp.assert('seed I3: fulfill_order libera o P001 com o cupom e a entrega', (select j->>'outcome' = 'applied' and (j->>'entitlement_count')::int = 1 and (j->>'send_delivery')::boolean from smoke where k = 'ful'));

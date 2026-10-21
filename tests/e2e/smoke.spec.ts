@@ -16,6 +16,8 @@ const routes = [
   '/reembolsos',
   '/privacidade',
   '/404',
+  // Recarregar o Entrar no meio da compra: o aviso da compra vem da URL, que o HTML pré-renderizado não conhece.
+  '/entrar?next=%2Fpagamento',
 ]
 
 const viewports = [
