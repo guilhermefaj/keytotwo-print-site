@@ -299,7 +299,6 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .experience-pages { position: relative; }
 .experience-pages::before { content: ''; position: absolute; inset: calc(100% * 20 / 910) calc(100% * 75 / 780) calc(100% * 80 / 910); border-radius: 50% 50% var(--radius-lg) var(--radius-lg) / calc(100% * 315 / 810) calc(100% * 315 / 810) var(--radius-lg) var(--radius-lg); background: var(--color-highlight); }
 .experience-pages img { position: relative; display: block; width: 100%; height: auto; }
-.experience-art figcaption { margin-top: var(--space-sm); text-align: center; font-size: var(--text-small); color: var(--color-ink-soft); }
 .how-section { background: var(--color-paper); }
 /* Como funciona: folha de recortar (DESIGN.md › Como funciona), sem caixa nem sombra. O wrapper isola o empilhamento para as linhas de
    corte ficarem atrás das cartas; cada carta tem a faixa de um jogo e uma leve inclinação, como peça recortada. */
