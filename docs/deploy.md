@@ -34,29 +34,39 @@ Antes de abrir PR, `npm run verificar` roda na máquina o que o job Site roda e 
 
 Um job independente detecta `supabase/functions` e, quando existir, instala **Deno 2.9.x** e executa `deno check .` nesse diretório, usando a configuração Deno versionada pelo outro floor. Não conecta ao Supabase remoto nem aplica migrações. A execução real no GitHub fica para o próximo commit/PR; nenhum workflow de deploy existe nesta entrega.
 
-## Deploy na VPS — dados PENDENTES
+## Deploy na VPS
 
-| Dado do responsável | Estado |
+A VPS é a da Chalk Labs na Hostinger. O acesso é pelo usuário `deploy`, que está no grupo `docker`; host, porta e caminho da chave estão no arquivo de segredos (`VPS_*`). Os outros serviços dela são projetos do Docker Manager da Hostinger em `/docker/*`. O site fica fora disso, em `/opt/keytotwo-site`, e não mexe neles nem na configuração do Traefik.
+
+**Traefik que já roda lá** (`traefik-au8p`):
+
+- rede `host` e provider docker com `exposedbydefault=false`: cada site entra só pelas etiquetas do próprio contêiner;
+- entrada `websecure` (443); a `web` (80) redireciona para HTTPS;
+- certificados do Let's Encrypt pelo resolver `letsencrypt`, com desafio HTTP-01. Por isso o DNS do domínio, que fica no Cloudflare, precisa estar em "Somente DNS" (nuvem cinza);
+- o Traefik alcança o nginx na 8080 pela rede do Docker; o contêiner não publica porta.
+
+**Na VPS:**
+
+| Caminho | O que é |
 | --- | --- |
-| Proxy reverso existente e rede Docker usada por ele | PENDENTE |
-| Emissão/renovação de TLS e onde configurar HSTS | PENDENTE |
-| Orquestração existente: Compose, Swarm, Portainer ou outra | PENDENTE |
-| Domínio de produção e DNS | PENDENTE |
-| Subdomínio de teste e DNS | PENDENTE |
-| Host/IP, porta e usuário SSH da VPS | PENDENTE |
-| Chave SSH exclusiva do CI e fingerprint SSH verificado | PENDENTE |
-| Registro de imagens, nome e credenciais de pull, se privado | PENDENTE |
+| `/opt/keytotwo-site/repo` | Clone raso do repositório; o script de atualização troca o commit |
+| `/opt/keytotwo-site/build.env` | Variáveis públicas do build (`VITE_*`): stage `test`, `VITE_SITE_URL` do teste e as chaves publicáveis |
+| `/opt/keytotwo-site/teste/compose.yaml` | Cópia de `deploy/teste/compose.yaml` |
+| `/opt/keytotwo-site/teste/.env` | `IMAGE_TAG` (o commit em uso) e `SITE_BASIC_AUTH_USERS` (hash apr1 do usuário `keytotwo`, entre aspas simples). A senha em texto fica no arquivo de segredos, em `TEST_BASIC_AUTH_PASSWORD` |
 
-Quando esses dados estiverem definidos, o pipeline futuro construirá e publicará a imagem (GHCR é uma proposta), com tag pelo SHA do commit; a VPS atualizará por SSH conforme o stack existente. A referência efetiva deve ser imutável (tag por commit ou digest), mantendo a anterior para rollback. As tags Node 24 e Nginx stable do Dockerfile recebem atualizações; o digest da imagem publicada identifica a versão efetivamente implantada.
+**Atualizar o teste** (`teste.keytotwo.com.br`, com senha):
 
-Roteiro a adaptar ao stack, sem escolher uma orquestração nova:
+```sh
+ssh deploy@<VPS_HOST> sh /opt/keytotwo-site/repo/deploy/teste/atualizar.sh   # ou com um ref: ... atualizar.sh minha-branch
+```
 
-1. Registrar a imagem aprovada e autenticar o pull da VPS quando necessário.
-2. Conectar o serviço HTTP interno `8080` à rede do proxy existente, com limite de exposição ao proxy. Não publicar uma porta HTTP aberta na internet como substituto do TLS.
-3. Atualizar o serviço pelo mecanismo existente; conferir saúde, `/`, `/meus-jogos`, `/pedido/confirmacao` e 404 via subdomínio de teste, com TLS no proxy.
-4. Conservar imagem/configuração anteriores para rollback e validar o retorno se a atualização falhar.
+O script traz o commit, constrói a imagem na própria VPS (cerca de 70 s), marca a imagem com o commit, grava o commit no `IMAGE_TAG` e recria o contêiner. Para voltar a uma versão anterior, troque o `IMAGE_TAG` do `.env` por um commit cuja imagem ainda exista (`docker images keytotwo-site`) e rode `docker compose up -d` na pasta `teste`.
 
-Não executar comandos de deploy nem criar chave, domínio ou workflow antes de resolver os dados PENDENTES. A falta desses dados não impede o build e a verificação local do I0.
+**Primeira instalação** (feita em 2026-10-21): `git clone --depth 1` do repositório em `/opt/keytotwo-site/repo`, o `build.env` com as variáveis públicas e o `teste/.env` com `chmod 600`. Se o repositório voltar a ser privado, a VPS precisa de uma chave de deploy só de leitura para o `git fetch`.
+
+**Backend do teste:** o Supabase hospedado. Desde 2026-10-21, `https://teste.keytotwo.com.br` está em `ALLOWED_ORIGINS` e na lista de retorno do Auth, e o `SITE_URL` das funções e o `site_url` do Auth apontam para ele. Por isso o retorno do pagamento e os links dos e-mails vão para o teste, inclusive nas compras feitas pelo 5178.
+
+**Produção** (`keytotwo.com.br`): ainda não existe. Segue o mesmo padrão, com outro compose sem senha e stage `live`, que exige a trava `check-release` sem pendências, além da virada da Stripe e do Supabase para o domínio.
 
 ## Referências técnicas
 
