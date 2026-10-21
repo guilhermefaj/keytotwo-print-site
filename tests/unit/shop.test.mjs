@@ -10,13 +10,14 @@ import { publicPages } from '../../src/content/site.ts'
 
 test('cada jogo pago tem oferta avulsa própria, com o preço aprovado (2026-10-16); vagas sem ficha não viram produtos', () => {
   const single = products.find(product => product.code === 'J001')
-  assert.equal(single.slug, 'j001')
+  assert.equal(single.slug, 'rabisque-e-adivinhe')
   assert.equal(single.offer.price, 'R$ 9,90')
   assert.equal(single.offer.priceApproved, true)
   assert.deepEqual(single.games.map(game => game.code), ['J001'])
   assert.notEqual(single.offer, products.find(product => product.code === 'P001').offer)
   // Todo jogo pago também se vende sozinho (responsável, 2026-10-16), na ordem do pacote.
-  assert.deepEqual(productPages.map(product => product.slug), ['p001', 'j001', 'j003', 'j002'])
+  // URLs com o nome (SEO, 2026-10-22); os códigos antigos redirecionam no nginx.
+  assert.deepEqual(productPages.map(product => product.slug), ['colecao-fundadores', 'rabisque-e-adivinhe', 'tabuleiro-da-sorte', 'o-sumico-de-rapadura'])
   for (const code of ['J003', 'J002']) {
     const other = products.find(product => product.code === code)
     assert.equal(other.kind, 'single')
@@ -24,7 +25,7 @@ test('cada jogo pago tem oferta avulsa própria, com o preço aprovado (2026-10-
     assert.equal(other.offer.priceApproved, true)
   }
   assert.deepEqual(products.map(product => [product.code, product.offer.price]), [['P001', 'R$ 29,90'], ['J001', 'R$ 9,90'], ['J003', 'R$ 9,90'], ['J002', 'R$ 12,90']])
-  for (const slug of ['hora-dos-artistas', 'tabuleiro-da-sorte', 'jogo-4', 'jogo-5']) assert.equal(Object.hasOwn(publicPages, `/loja/${slug}`), false)
+  for (const slug of ['hora-dos-artistas', 'p001', 'j001', 'jogo-4', 'jogo-5']) assert.equal(Object.hasOwn(publicPages, `/loja/${slug}`), false)
 })
 
 test('sitemap live inclui Loja e produtos; preview e test continuam sem URLs indexáveis', async () => {
@@ -37,8 +38,8 @@ test('sitemap live inclui Loja e produtos; preview e test continuam sem URLs ind
       assert.equal(result.status, 0, result.stderr)
       const sitemap = await readFile(path.join(root, 'build/client/sitemap.xml'), 'utf8')
       if (stage === 'live') {
-        for (const route of ['/loja', '/loja/p001', '/loja/j001']) assert.ok(sitemap.includes(`<loc>https://example.test${route}</loc>`))
-        assert.doesNotMatch(sitemap, /hora-dos-artistas|tabuleiro-da-sorte|jogo-4|jogo-5/)
+        for (const route of ['/loja', '/loja/colecao-fundadores', '/loja/rabisque-e-adivinhe']) assert.ok(sitemap.includes(`<loc>https://example.test${route}</loc>`))
+        assert.doesNotMatch(sitemap, /hora-dos-artistas|\/loja\/p001|\/loja\/j00|jogo-4|jogo-5/)
       } else assert.doesNotMatch(sitemap, /<loc>/)
     }
   } finally {

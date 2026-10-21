@@ -61,7 +61,7 @@ test('guest add → Mailpit code → persistent cart; marketing and private view
   const email = `qa-cart-${randomUUID()}@example.test`
   const runtimeErrors: string[] = []
   page.on('pageerror', error => runtimeErrors.push(error.message))
-  await page.goto('/loja/p001')
+  await page.goto('/loja/colecao-fundadores')
   await page.getByRole('button', { name: 'Adicionar à sacola', exact: true }).click()
   // Sem login, a escolha fica na sacola do navegador; ao entrar, ela se junta à sacola da conta.
   await expect(page.getByRole('dialog', { name: 'Sua sacola' }).locator('.drawer-items li')).toHaveCount(1)
@@ -180,7 +180,7 @@ test('seed account has library by game and orders; full ownership prevents addin
   await expect(page.locator('.order-list > li')).toHaveCount(account.orders.length)
   await noOverflow(page)
   // Quem já tem o pacote vê o atalho para o Portal no lugar do botão.
-  await page.goto('/loja/p001')
+  await page.goto('/loja/colecao-fundadores')
   await expect(page.locator('.shop-purchase').getByRole('link', { name: 'Já está no seu Portal' })).toHaveAttribute('href', '/meus-jogos')
   await expect(page.locator('.shop-purchase').getByRole('button', { name: 'Adicionar à sacola' })).toHaveCount(0)
 })

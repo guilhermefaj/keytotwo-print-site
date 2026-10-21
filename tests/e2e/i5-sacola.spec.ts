@@ -130,7 +130,7 @@ test('produto já possuído fica riscado com o atalho para o Portal; sem nada a 
 test('quem já tem o produto vê "Já está no seu Portal" no lugar do botão', async ({ page }) => {
   test.skip(!stageTest, 'Stage test fixture')
   await fixture(page, [], { owned: ['J001'] })
-  await page.goto('/loja/j001')
+  await page.goto('/loja/rabisque-e-adivinhe')
   await expect(page.getByRole('link', { name: 'Já está no seu Portal' }).first()).toHaveAttribute('href', '/meus-jogos')
   await expect(page.getByRole('button', { name: 'Adicionar à sacola' })).toHaveCount(0)
 })
@@ -138,7 +138,7 @@ test('quem já tem o produto vê "Já está no seu Portal" no lugar do botão', 
 test('sem login: a sacola fica no navegador, com preços da API, e o login só aparece ao finalizar', async ({ page }) => {
   test.skip(!stageTest, 'Stage test fixture')
   const calls = await fixture(page, [], { signedIn: false })
-  await page.goto('/loja/p001')
+  await page.goto('/loja/colecao-fundadores')
   await page.getByRole('button', { name: 'Adicionar à sacola' }).first().click()
   await expect(page.getByRole('dialog', { name: 'Sua sacola' })).toContainText('Coleção KeyToTwo: Fundadores')
   expect(await page.evaluate(key => localStorage.getItem(key), guestKey)).toBe('["P001"]')
@@ -167,7 +167,7 @@ test('ao entrar, a sacola do navegador se junta à da conta e sai do navegador',
 test('adicionar mostra o item na hora, sem esperar a API, e não busca a sacola de novo', async ({ page }) => {
   test.skip(!stageTest, 'Stage test fixture')
   const calls = await fixture(page, [], { delay: 2500 })
-  await page.goto('/loja/p001')
+  await page.goto('/loja/colecao-fundadores')
   await expect.poll(() => calls.filter(call => call.path === '/cart').length).toBe(1)
   await page.getByRole('button', { name: 'Adicionar à sacola' }).first().click()
   const drawer = page.getByRole('dialog', { name: 'Sua sacola' })
@@ -181,7 +181,7 @@ test('adicionar mostra o item na hora, sem esperar a API, e não busca a sacola 
 test('sem login: o item também aparece na hora, enquanto a cotação responde', async ({ page }) => {
   test.skip(!stageTest, 'Stage test fixture')
   await fixture(page, [], { signedIn: false, delay: 2500 })
-  await page.goto('/loja/p001')
+  await page.goto('/loja/colecao-fundadores')
   await page.getByRole('button', { name: 'Adicionar à sacola' }).first().click()
   const drawer = page.getByRole('dialog', { name: 'Sua sacola' })
   await expect(drawer).toContainText('Coleção KeyToTwo: Fundadores', { timeout: 1000 })

@@ -4,7 +4,7 @@ import { expect, test, type Page } from './fixtures/test'
 
 // Checks for the public sales pages, run against the prerendered build (build/client).
 // Stage-specific assertions follow the stage the build was made for (robots.txt tells which).
-const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/gratuitos', '/email/preferencias', '/ajuda', '/termos', '/reembolsos', '/privacidade', '/loja', '/loja/p001', '/loja/j001', '/404']
+const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/gratuitos', '/email/preferencias', '/ajuda', '/termos', '/reembolsos', '/privacidade', '/loja', '/loja/colecao-fundadores', '/loja/rabisque-e-adivinhe', '/404']
 const redirectRoutes: string[] = []
 const blogRoutes = readdirSync('build/client/blog', { withFileTypes: true }).filter(file => file.isDirectory()).map(file => `/blog/${file.name}`)
 routes.push('/blog', ...blogRoutes)
@@ -95,7 +95,9 @@ test.describe('conteúdo', () => {
       expect(text, `promoção/parcelamento em ${route}`).not.toMatch(/por apenas|desconto|promo[çc][ãa]o|parcel|\d+\s?x\s?de/i)
       expect(text, `depoimento/avaliação em ${route}`).not.toMatch(/depoimento|avalia[çc][õo]es|estrelas|★|⭐/i)
       expect(text, `número de clientes em ${route}`).not.toMatch(/\d[\d.]*\+?\s*(clientes|casais|compradores|vendas|downloads)/i)
-      expect(html, `JSON-LD de produto em ${route}`).not.toMatch(/"@type"\s*:\s*"(Product|Offer|Review|AggregateRating)"/)
+      // Produto com preço só na página do produto (preço aprovado, SEO 2026-10-22); avaliação nunca, sem relatos reais.
+      if (!route.startsWith('/loja/')) expect(html, `JSON-LD de produto em ${route}`).not.toMatch(/"@type"\s*:\s*"(Product|Offer)"/)
+      expect(html, `JSON-LD de avaliação em ${route}`).not.toMatch(/"@type"\s*:\s*"(Review|AggregateRating)"/)
     }
   })
 
@@ -131,7 +133,7 @@ test.describe('conteúdo', () => {
 
   test('condição de reembolso: avisada antes da compra e detalhada na política', async ({ page }) => {
     // Responsável, 2026-10-19: aviso claro no produto, na sacola e no pagamento; a home continua sem a linha.
-    for (const route of ['/loja/p001', '/loja/j001']) {
+    for (const route of ['/loja/colecao-fundadores', '/loja/rabisque-e-adivinhe']) {
       await page.goto(route)
       await page.waitForLoadState('networkidle')
       expect(await visibleText(page), `aviso de reembolso em ${route}`).toMatch(refundNotice)
