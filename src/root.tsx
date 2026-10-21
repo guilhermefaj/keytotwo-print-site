@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { isRouteErrorResponse, Link, Links, Outlet, Scripts, ScrollRestoration, useLocation, useMatches, useRouteError } from 'react-router'
 import { SiteHeader } from './components/layout/SiteHeader'
 import { SiteFooter } from './components/layout/SiteFooter'
-import { blogPostingJsonLd, pageSeo, serializeJsonLd, siteConfig } from './lib/seo'
+import { blogPostingJsonLd, homeJsonLd, pageSeo, productForPath, productJsonLd, serializeJsonLd, shareImage, shareImageSize, siteConfig } from './lib/seo'
 import type { BlogPostSummary } from './lib/blog'
 import { readBlogPosts } from './lib/blog.server'
 import { buildSiteConfig } from './lib/site-build.server'
@@ -27,6 +27,8 @@ export function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
   const post = (useMatches().find(match => match.id === 'routes/blog.post')?.loaderData as { post?: BlogPostSummary } | undefined)?.post
   const seo = pageSeo(pathname, post)
+  const image = shareImage(pathname)
+  const product = productForPath(pathname)
   return (
     <html lang="pt-BR">
       <head>
@@ -41,7 +43,14 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta property="og:description" content={seo.description} />
         <meta property="og:url" content={seo.canonical} />
         <meta property="og:type" content={post ? 'article' : 'website'} />
-        {post?.cover && <><meta property="og:image" content={new URL(post.cover, siteConfig.origin).href} /><meta property="og:image:alt" content={post.coverAlt} /></>}
+        {post?.cover ? <><meta property="og:image" content={new URL(post.cover, siteConfig.origin).href} /><meta property="og:image:alt" content={post.coverAlt} /></>
+          : <><meta property="og:image" content={image.url} /><meta property="og:image:width" content={String(shareImageSize.width)} /><meta property="og:image:height" content={String(shareImageSize.height)} /><meta property="og:image:alt" content={image.alt} /></>}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seo.title} />
+        <meta name="twitter:description" content={seo.description} />
+        <meta name="twitter:image" content={post?.cover ? new URL(post.cover, siteConfig.origin).href : image.url} />
+        {pathname === '/' && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(homeJsonLd()) }} />}
+        {product && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(productJsonLd(product)) }} />}
         {post && <><meta property="article:published_time" content={post.date} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(blogPostingJsonLd(post)) }} /></>}
         {pathname.startsWith('/blog') && <link rel="alternate" type="application/rss+xml" title="Blog KeyToTwo" href="/blog/rss.xml" />}
         <meta property="og:locale" content="pt_BR" />

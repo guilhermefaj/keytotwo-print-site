@@ -68,7 +68,8 @@ for (const [code, message] of [['CART_CHANGED', 'Sua sacola mudou'], ['TERMS_CHA
   test(`checkout error ${code} never mounts form or fabricates success`, async ({ page }) => {
     await page.route('**/api/checkout', route => route.fulfill({ status: 409, json: { error: { code } } }))
     await stripeMode(page)
-    await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
+    // click, não check: o erro desmarca a caixa logo em seguida, e o check exigiria que ela continuasse marcada.
+    await page.getByRole('checkbox', { name: /Li e aceito os/ }).click()
     await expect(page.getByRole('alert')).toContainText(message)
     await expect(page.getByRole('checkbox', { name: /Li e aceito os/ })).not.toBeChecked()
     await expect(page.locator('#checkout-form')).toHaveCount(0)

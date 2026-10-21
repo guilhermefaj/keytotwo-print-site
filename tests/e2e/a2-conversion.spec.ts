@@ -17,7 +17,7 @@ test('real previews and catalog price on the home showcase', async ({ page }) =>
   const showcase = page.locator('.shop-showcase')
   // Fileira de capas: cada jogo leva à própria página, com o preço do avulso quando o catálogo o lista.
   const tile = showcase.locator('[data-shop-game="rabisque-e-adivinhe"]')
-  await expect(tile.getByRole('link')).toHaveAttribute('href', '/loja/j001')
+  await expect(tile.getByRole('link')).toHaveAttribute('href', '/loja/rabisque-e-adivinhe')
   await expect(tile.locator('.cover-tile-meta')).toHaveText('R$ 19,90')
   await expect(showcase.locator('[data-shop-game="tabuleiro-da-sorte"] .cover-tile-meta')).toHaveText('No pacote')
   // O pacote não está no catálogo (incompleto): aparece "Em breve", sem botão de compra.

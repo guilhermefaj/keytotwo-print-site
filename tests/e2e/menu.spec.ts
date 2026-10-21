@@ -41,7 +41,7 @@ test('menu: Blog corresponde aos posts do build, inclusive no fallback e na nave
 })
 
 test('menu: Loja ativa nos detalhes, sem botão Ver os jogos; rodapé preserva Como funciona', async ({ page }) => {
-  for (const path of ['/', '/ajuda', '/loja', '/loja/j001', '/loja/p001/']) {
+  for (const path of ['/', '/ajuda', '/loja', '/loja/rabisque-e-adivinhe', '/loja/colecao-fundadores/']) {
     await page.goto(path)
     if (path.startsWith('/loja')) await expect(page.locator('.desktop-nav [aria-current="page"]')).toHaveText('Loja')
     await expect(page.locator('header').getByRole('link', { name: 'Ver os jogos' })).toHaveCount(0)

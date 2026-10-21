@@ -154,12 +154,12 @@ test('account menu and the simplified private header', async ({ page }) => {
 
 test('adding opens drawer without navigation; API remove, total, keyboard and checkout', async ({ page }) => {
   await fixture(page)
-  await page.goto('/loja/p001')
+  await page.goto('/loja/colecao-fundadores')
   const add = page.getByRole('button', { name: 'Adicionar à sacola', exact: true })
   await add.click()
   const drawer = page.getByRole('dialog')
   await expect(drawer).toContainText('Coleção KeyToTwo: Fundadores')
-  await expect(page).toHaveURL(/\/loja\/p001$/)
+  await expect(page).toHaveURL(/\/loja\/colecao-fundadores$/)
   await expect(drawer.locator('.drawer-total')).toContainText('R$ 19,90')
   await trap(page, 'Fechar sacola')
   await axe(page)
@@ -266,7 +266,7 @@ for (const width of [390, 1440]) test(`captures and axe: cart states, 404 and pa
   await expect(page.locator('.cart-count')).toHaveCount(0)
   await capture(page, `404-${width}`)
   await axe(page)
-  await page.goto('/loja/p001')
+  await page.goto('/loja/colecao-fundadores')
   await page.getByRole('button', { name: 'Adicionar à sacola', exact: true }).click()
   await page.getByRole('dialog').getByRole('link', { name: 'Finalizar compra' }).click()
   await expect(page.getByRole('heading', { name: 'Pagamento', exact: true })).toBeVisible()

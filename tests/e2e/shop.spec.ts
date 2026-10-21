@@ -35,7 +35,7 @@ test('loja: pacote fora do catálogo fica em breve; jogos do pacote sem avulso f
   for (const id of ['tabuleiro-da-sorte', 'o-sumico-de-rapadura']) {
     const card = page.locator(`[data-shop-game="${id}"]`)
     await expect(card.locator('.tag-solid')).toHaveText('No pacote')
-    await expect(card.getByRole('link', { name: 'Ver o pacote: Coleção KeyToTwo: Fundadores', exact: true })).toHaveAttribute('href', '/loja/p001')
+    await expect(card.getByRole('link', { name: 'Ver o pacote: Coleção KeyToTwo: Fundadores', exact: true })).toHaveAttribute('href', '/loja/colecao-fundadores')
     await expect(card).not.toContainText('Em breve')
     // Cor do jogo: faixa sob a capa, vinda de games.ts.
     await expect(card.locator('.game-cover[data-accent]')).toHaveCount(1)
@@ -52,18 +52,18 @@ test('loja: pacote fora do catálogo fica em breve; jogos do pacote sem avulso f
     await expect(details).toHaveCount(0)
     await expect(page.locator('main')).not.toContainText('R$')
   } else {
-    await expect(details).toHaveAttribute('href', '/loja/j001')
+    await expect(details).toHaveAttribute('href', '/loja/rabisque-e-adivinhe')
     await expect(page.locator('[data-shop-game="rabisque-e-adivinhe"] .shop-price')).toContainText('9,90')
     await expect(page.getByRole('button', { name: 'Adicionar à sacola: Rabisque e Adivinhe', exact: true })).toBeEnabled()
     await details.focus()
     await page.keyboard.press('Enter')
-    await expect(page).toHaveURL(/\/loja\/j001$/)
+    await expect(page).toHaveURL(/\/loja\/rabisque-e-adivinhe$/)
   }
 })
 
 test('produto: preço vem do catálogo, compra preserva escolha e ausência não oferece compra', async ({ page }) => {
   await catalog(page)
-  await page.goto('/loja/j001')
+  await page.goto('/loja/rabisque-e-adivinhe')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Rabisque e Adivinhe')
   await expect(page.locator('main')).toContainText('Também está no pacote')
   await expect(page.locator('.shop-includes')).toContainText('O jogo completo em PDF para imprimir')
@@ -77,11 +77,11 @@ test('produto: preço vem do catálogo, compra preserva escolha e ausência não
     await buy.focus()
     await page.keyboard.press('Enter')
     await expect(page.getByRole('dialog', { name: 'Sua sacola' })).toContainText('Rabisque e Adivinhe')
-    await expect(page).toHaveURL(/\/loja\/j001$/)
+    await expect(page).toHaveURL(/\/loja\/rabisque-e-adivinhe$/)
     expect(await page.evaluate(() => localStorage.getItem('keytotwo:sacola'))).toBe('["J001"]')
     await page.keyboard.press('Escape')
   }
-  await page.goto('/loja/p001')
+  await page.goto('/loja/colecao-fundadores')
   await expect(page.locator('.shop-purchase')).toContainText('Em breve')
   await expect(page.locator('.shop-purchase button')).toHaveCount(0)
   // Jogos do pacote: apresentação e ficha, sem compra avulsa nem "Em breve" dentro da oferta.
@@ -97,7 +97,7 @@ test('página de produto: ficha no topo, capa, como é jogar, o que vocês preci
   const j003 = { ...single, code: 'J003', name: 'Tabuleiro da Sorte', games: [{ code: 'J003', name: 'Tabuleiro da Sorte' }], price: { unit_amount: 990, currency: 'brl' } }
   const j002 = { ...single, code: 'J002', name: 'O Sumiço de Rapadura', games: [{ code: 'J002', name: 'O Sumiço de Rapadura' }], price: { unit_amount: 1290, currency: 'brl' } }
   await catalog(page, [single, j003, j002])
-  await page.goto('/loja/j001')
+  await page.goto('/loja/rabisque-e-adivinhe')
   await expect(page.locator('.product-facts dt')).toHaveText(['Pessoas', 'Jeito de jogar', 'Rodadas', 'Formato'])
   // Nenhuma página do PDF no site (responsável, 2026-10-16): o avulso mostra só a capa, e a URL antiga não serve imagem.
   await expect(page.locator('.product-gallery-main img')).toHaveAttribute('src', '/media/games/j001-capa-640.webp')
@@ -106,17 +106,17 @@ test('página de produto: ficha no topo, capa, como é jogar, o que vocês preci
   for (const n of [1, 2, 3]) expect((await page.request.get(`/media/experience/j001-page-${n}-720.webp`)).headers()['content-type'] ?? '').not.toContain('image')
   await expect(page.locator('.moments-list li')).toHaveCount(3)
   await expect(page.locator('.needs-list li')).toHaveCount(5)
-  await expect(page.locator('.product-package').getByRole('link', { name: 'Ver o pacote: Coleção KeyToTwo: Fundadores', exact: true })).toHaveAttribute('href', '/loja/p001')
+  await expect(page.locator('.product-package').getByRole('link', { name: 'Ver o pacote: Coleção KeyToTwo: Fundadores', exact: true })).toHaveAttribute('href', '/loja/colecao-fundadores')
   await expect(page.locator('.product-package')).not.toContainText('R$')
   // Tabuleiro e Rapadura também se vendem sozinhos (responsável, 2026-10-16); só a capa, como em todo avulso.
-  for (const [slug, price] of [['j003', '9,90'], ['j002', '12,90']]) {
+  for (const [slug, code, price] of [['tabuleiro-da-sorte', 'j003', '9,90'], ['o-sumico-de-rapadura', 'j002', '12,90']]) {
     await page.goto(`/loja/${slug}`)
     if (stage !== 'preview') await expect(page.locator('.shop-purchase .shop-price')).toContainText(price)
     await expect(page.locator('.product-gallery-thumbs')).toHaveCount(0)
-    await expect(page.locator('.product-gallery-main img')).toHaveAttribute('src', `/media/games/${slug}-capa-640.webp`)
+    await expect(page.locator('.product-gallery-main img')).toHaveAttribute('src', `/media/games/${code}-capa-640.webp`)
     await expect(page.locator('.moments-list li')).toHaveCount(3)
   }
-  await page.goto('/loja/p001')
+  await page.goto('/loja/colecao-fundadores')
   await expect(page.getByRole('list', { name: 'Imagens do produto' }).getByRole('button')).toHaveCount(4)
   await expect(page.locator('.product-facts')).toHaveCount(0)
   await expect(page.locator('.needs-list li')).toHaveCount(11)
@@ -128,7 +128,7 @@ test('produto listado sem preço não oferece compra; falha permite retry', asyn
   await page.route('**/functions/v1/api/catalog', route => fail
     ? route.fulfill({ status: 503, json: { error: { code: 'INTERNAL_ERROR' } } })
     : route.fulfill({ json: { products: [{ ...single, price: null }] } }))
-  await page.goto('/loja/j001')
+  await page.goto('/loja/rabisque-e-adivinhe')
   await expect(page.locator('.shop-purchase [role="alert"]')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Adicionar à sacola' })).toHaveCount(0)
   fail = false
@@ -142,7 +142,7 @@ test('carregamento não antecipa preço nem compra', async ({ page }) => {
   let release!: () => void
   const gate = new Promise<void>(resolve => { release = resolve })
   await page.route('**/functions/v1/api/catalog', async route => { await gate; await route.fulfill({ json: { products: [] } }) })
-  await page.goto('/loja/j001')
+  await page.goto('/loja/rabisque-e-adivinhe')
   try {
     await expect(page.locator('.shop-purchase [role="status"]')).toContainText('Consultando o preço…')
     await expect(page.locator('.shop-purchase button')).toHaveCount(0)
@@ -152,7 +152,8 @@ test('carregamento não antecipa preço nem compra', async ({ page }) => {
 })
 
 test('slugs sem produto e desconhecidos usam a 404 existente', async ({ page }) => {
-  for (const slug of ['inexistente', 'hora-dos-artistas', 'tabuleiro-da-sorte', 'jogo-4', 'jogo-5']) {
+  // Os códigos (p001, j003) eram as URLs antigas: em produção o nginx redireciona; sem ele, não são páginas.
+  for (const slug of ['inexistente', 'hora-dos-artistas', 'p001', 'j003', 'jogo-4', 'jogo-5']) {
     await page.goto(`/loja/${slug}`)
     await expect(page.getByRole('heading', { name: 'Página não encontrada', exact: true })).toBeVisible()
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow')
@@ -160,19 +161,39 @@ test('slugs sem produto e desconhecidos usam a 404 existente', async ({ page }) 
 })
 
 test('prerender e SEO: loja e produtos confirmados, sem páginas das vagas', async () => {
-  for (const [route, heading, title] of [['loja', 'Loja', 'Loja de jogos para casais imprimirem'], ['loja/p001', 'Coleção KeyToTwo: Fundadores', 'Coleção KeyToTwo: Fundadores, pacote de jogos para casais'], ['loja/j001', 'Rabisque e Adivinhe', 'Rabisque e Adivinhe, jogo de desenho para casais']]) {
+  for (const [route, heading, title] of [['loja', 'Loja', 'Loja de jogos para casais imprimirem'], ['loja/colecao-fundadores', 'Coleção KeyToTwo: Fundadores', 'Coleção KeyToTwo: Fundadores, pacote de jogos para casais'], ['loja/rabisque-e-adivinhe', 'Rabisque e Adivinhe', 'Rabisque e Adivinhe, jogo de desenho para casais']]) {
     const html = await readFile(`build/client/${route}/index.html`, 'utf8')
     expect(html).toContain(`<title>${title} — KeyToTwo</title>`)
     expect(html).toContain(`<h1>${heading}</h1>`)
     expect(html).not.toContain('Adicionar à sacola')
   }
   await expect(readFile('build/client/loja/hora-dos-artistas/index.html')).rejects.toThrow()
+  await expect(readFile('build/client/loja/p001/index.html')).rejects.toThrow()
+})
+
+test('compartilhamento e dados estruturados: imagem 1200×630, cartão grande e produto com preço', async () => {
+  const jsonLd = (html: string) => [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map(match => JSON.parse(match[1]))
+  const home = await readFile('build/client/index.html', 'utf8')
+  expect(home).toMatch(/<meta property="og:image" content="https?:\/\/[^"]+\/media\/og\/p001\.jpg"/)
+  expect(home).toContain('<meta property="og:image:width" content="1200"/>')
+  expect(home).toContain('<meta name="twitter:card" content="summary_large_image"/>')
+  expect(jsonLd(home)[0]['@graph'].map((node: { '@type': string }) => node['@type'])).toEqual(['Organization', 'WebSite'])
+  const pack = await readFile('build/client/loja/colecao-fundadores/index.html', 'utf8')
+  expect(pack).toMatch(/<meta property="og:image" content="[^"]+\/media\/og\/p001\.jpg"/)
+  const [product, breadcrumb] = jsonLd(pack)[0]['@graph']
+  expect([product['@type'], product.name, product.sku, product.offers.price, product.offers.priceCurrency]).toEqual(['Product', 'Coleção KeyToTwo: Fundadores', 'P001', '29.90', 'BRL'])
+  expect(breadcrumb.itemListElement.map((item: { name: string }) => item.name)).toEqual(['Início', 'Loja', 'Coleção KeyToTwo: Fundadores'])
+  const single = await readFile('build/client/loja/o-sumico-de-rapadura/index.html', 'utf8')
+  expect(single).toMatch(/\/media\/og\/j002\.jpg/)
+  expect(jsonLd(single)[0]['@graph'][0].offers.price).toBe('12.90')
+  expect(await readFile('build/client/gratuitos/index.html', 'utf8')).toMatch(/\/media\/og\/f001\.jpg/)
+  for (const code of ['p001', 'j001', 'j002', 'j003', 'f001']) expect((await readFile(`build/client/media/og/${code}.jpg`)).length).toBeGreaterThan(20_000)
 })
 
 for (const width of [375, 1280]) test(`loja e detalhes: axe e capturas em ${width}`, async ({ page }) => {
   await catalog(page, [single, bundle])
   await page.setViewportSize({ width, height: 900 })
-  for (const slug of ['', '/p001', '/j001']) {
+  for (const slug of ['', '/colecao-fundadores', '/rabisque-e-adivinhe']) {
     await page.goto(`/loja${slug}`)
     await page.evaluate(async () => { await document.fonts.ready })
     const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
@@ -188,7 +209,7 @@ test('loja e detalhes sem rolagem horizontal em 320–1440 e texto 200%', async 
   await catalog(page, [single, bundle])
   for (const width of [320, 375, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 })
-    for (const route of ['/loja', '/loja/p001', '/loja/j001']) {
+    for (const route of ['/loja', '/loja/colecao-fundadores', '/loja/rabisque-e-adivinhe']) {
       await page.goto(route)
       await page.addStyleTag({ content: 'html { font-size: 200%; }' })
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${route} em ${width}`).toBe(true)
