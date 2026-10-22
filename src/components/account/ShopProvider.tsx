@@ -3,6 +3,7 @@ import { useLocation } from 'react-router'
 import { api, ApiError, apiErrorMessage, type Account, type Cart, type CatalogProduct } from '../../lib/api'
 import { useAuth } from '../../lib/auth-context'
 import { guestCartLimit, useGuestCartCodes, writeGuestCart } from '../../lib/guest-cart'
+import { toReais, track } from '../../lib/analytics'
 import { ShopContext } from '../../lib/shop-context'
 import { authConfigured } from '../../lib/supabase'
 import { useApiResource } from '../../lib/use-api-resource'
@@ -91,7 +92,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const mutation = useRef(false)
   async function mutate(code: string, remove: boolean) {
     if (mutation.current) throw new Error('CART_BUSY')
-    if (!remove) rememberOpener()
+    if (!remove) {
+      rememberOpener()
+      const product = catalog.data?.products.find(entry => entry.code === code)
+      if (product?.price) track('add_to_cart', { currency: product.price.currency.toUpperCase(), value: toReais(product.price.unit_amount), items: [{ item_id: code, item_name: product.name, price: toReais(product.price.unit_amount), quantity: 1 }] })
+    }
     if (!session) {
       const next = remove ? guest.codes.filter(item => item !== code) : guest.codes.includes(code) ? guest.codes : [...guest.codes, code]
       if (next.length > guestCartLimit) throw new ApiError('CART_FULL')

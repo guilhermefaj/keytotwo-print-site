@@ -10,12 +10,20 @@ import { api, ApiError, money, type Cart } from '../lib/api'
 import { checkoutMock, canCheckout, checkoutError, termsVersion } from '../lib/checkout'
 import { useShop } from '../lib/shop-context'
 import { useAuth } from '../lib/auth-context'
+import { toReais, trackBeginCheckout } from '../lib/analytics'
 
 // Aceite expresso (Política de reembolso): termos, reembolso e entrega imediata numa caixa só. O pedido grava a
 // versão (terms_version) e o momento do aceite (terms_accepted_at); a versão vem de legal.ts.
 function Payment({ cart, refresh }: { cart: Cart; refresh: () => void }) {
   // Só o que entra no pedido: o riscado da sacola (já possuído ou já no pacote) fica de fora.
   const paid = cart.items.filter(item => item.status === 'ok')
+  useEffect(() => {
+    if (!cart.subtotal) return
+    trackBeginCheckout({ currency: cart.subtotal.currency.toUpperCase(), value: toReais(cart.subtotal.amount),
+      items: paid.map(item => ({ item_id: item.code, item_name: item.name, price: item.charge ? toReais(item.charge.unit_amount) : undefined, quantity: 1 })) })
+    // Uma vez por versão da sacola: o componente é montado de novo quando ela muda.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [accepted, setAccepted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [secret, setSecret] = useState('')
