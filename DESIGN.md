@@ -168,6 +168,7 @@ A hero vende a marca e uma forma de pensar (sair do automático, fazer algo junt
 Anti-referências confirmadas na auditoria e no Portão 1: landing de template (rótulos em caixa alta sobre títulos, três colunas centralizadas, pílulas com seta, listas de ✓), sombra dura de arcade, cápsula em todo controle, Kito como ícone repetido, capa fictícia para jogo sem prévia.
 
 **Key Characteristics:**
+
 - Papel dominante abaixo da hero; o Céu existe só na primeira dobra.
 - Uma assinatura: linha de recorte tracejada com tesoura separando as seções.
 - Linhas turquesa J001 decorativas (recorte, cartas, pontilhado); o texto é sempre Tinta ou Turquesa profundo.
@@ -181,14 +182,17 @@ Anti-referências confirmadas na auditoria e no Portão 1: landing de template (
 Uma folha branca com tinta verde-azulada escura, linhas de corte turquesa e um único marca-texto.
 
 ### Primary
+
 - **Turquesa profundo** (`{colors.deep-teal}`): toda ação. Fundo do botão primário, cor de links e botões de texto, traço da tesoura. Hover `{colors.deep-teal-hover}`, pressionado `{colors.deep-teal-active}`. Sobre Papel dá 6,45:1; Papel sobre ele, 6,45:1.
 - **Tinta** (`{colors.ink}`): texto corrido, títulos, borda do botão secundário, contorno de foco. 12,37:1 sobre Papel, 11,53:1 sobre Céu.
 
 ### Secondary
+
 - **Turquesa J001** (`{colors.line}`): **só linhas decorativas**: linha de recorte, calhas tracejadas da folha de cartas, borda das cartas, pontilhado da ficha. Dá 2,41:1 sobre Papel, por isso nunca é texto, nem borda única de um controle (input, botão), nem ícone que precise ser lido.
 - **Marca-texto** (`{colors.highlight}`): um traço atrás de uma palavra em Tinta (7,24:1), como caneta marca-texto. Aparece uma vez por página, na hero ("encontro."). Nunca é fundo de bloco, de seção ou de botão, com uma exceção: o arco atrás das páginas dos gratuitos em "A próxima rodada sai da impressora", com topo em meia-volta e pé reto (responsável, 2026-10-21: o arco usa o amarelo da marca, não uma cor própria). As folhas passam dos lados e do pé dele.
 
 ### Neutral
+
 - **Papel** (`{colors.paper}`): fundo de toda a página abaixo da hero, de cards, inputs e do botão secundário.
 - **Céu** (`{colors.sky}`): fundo da hero e do cabeçalho enquanto ele está sobre a hero. Em nenhuma outra seção.
 - **Tinta suave** (`{colors.ink-soft}`): texto secundário (legendas, ajuda de campo, meta de pedidos). 7,50:1 sobre Papel.
@@ -199,6 +203,7 @@ Uma folha branca com tinta verde-azulada escura, linhas de corte turquesa e um �
 A paisagem da hero tem a própria paleta de cena (terra `#684839`, grama `#77A85B` / `#ACD475` / `#3F7957`, mato distante `#CFE6D7`, sulco `#A16C4E`), confinada aos blocos `.hero-scene` e `.footer-ground` (o chão que fecha o rodapé público). Esses valores não saem da cena.
 
 ### Cor do jogo
+
 Cada jogo tem uma cor tirada da própria capa oficial (`accent` em `src/content/games.ts`): Rabisque e Adivinhe rosa `#E06D86`, Tabuleiro da Sorte ouro `#F2B33C`, O Sumiço de Rapadura laranja-terra `#D9772E`, Hora dos Artistas vermelho-tinta `#C94050`. Ela chega ao CSS como `--game-accent`, posta pelo `GameCover` e pelo card. O pacote não tem cor própria: usa a Turquesa J001, a linha da marca.
 
 Onde aparece: a faixa de 6 px sob a capa nos cards da Loja, da vitrine e da biblioteca (8 px na página do produto); o marcador quadrado de 10 px de cada jogo na lista do pacote; o fundo da capa tipográfica, misturado a 14 % no Papel. Jogo novo com `accent` entra pintado sem CSS novo.
@@ -206,6 +211,7 @@ Onde aparece: a faixa de 6 px sob a capa nos cards da Loja, da vitrine e da bibl
 **The Accent-Is-Paper Rule.** A cor do jogo é superfície e linha, como a tinta da capa impressa. Nunca é texto, ícone, borda única de controle nem fundo de botão.
 
 ### Named Rules
+
 **The Line-Not-Text Rule.** A Turquesa J001 nunca carrega significado sozinha: é linha de corte, calha ou borda de carta. Tudo o que precisa ser lido ou acionado é Tinta ou Turquesa profundo.
 
 **The One Highlight Rule.** Há um marca-texto por página, atrás de uma palavra ou duas. Um segundo traço vira decoração.
@@ -220,6 +226,7 @@ Onde aparece: a faixa de 6 px sob a capa nos cards da Loja, da vitrine e da bibl
 **Character:** títulos largos, pesados e apertados como o nome de um jogo impresso na carta; corpo neutro e legível como as instruções da folha. Só os dois pesos de DM Sans e o 700 de Bricolage são carregados (subset latin, `@fontsource`, importados em `src/root.tsx`). A fonte pixel do PDF do J001 não entra enquanto não houver licença web confirmada.
 
 ### Hierarchy
+
 - **Display** (700, `{typography.display}`, entrelinha 1, tracking −0,04em): só o H1 da hero. No celular usa `{typography.display-mobile}` (42 px) e, em 320 px, `{typography.display-xs}` (36 px). Nunca em outra seção.
 - **Headline** (700, `{typography.headline}`, 1,05, −0,03em): H2 de cada folha e H1 das páginas internas, alinhado à esquerda, largura máxima de 18ch, `text-wrap: balance`. Regra de nível: H2 de **seção** (uma folha do Início, como Grátis ou Dúvidas) é Headline; H2 de **bloco** dentro de uma página que já tem H1 (Loja, produto) é Headline small.
 - **Headline small** (700, `{typography.headline-sm}`, 1,12): preço real na oferta, título do menu móvel e dos vazios, título da newsletter, H2 da lista do blog, links do menu móvel.
@@ -237,6 +244,7 @@ Toda `font-size` do CSS referencia um destes tokens (`--text-*`); não há valor
 Números (preço, contagem, data) usam `font-variant-numeric: tabular-nums`. O preço é Headline em Bricolage apenas quando é um preço real; qualquer texto no lugar do preço ("Preço em breve", erro) é Body em Tinta suave.
 
 ### Named Rules
+
 **The Heading Carries Itself Rule.** Não há rótulo, kicker ou eyebrow acima de um título. A hero também não tem etiqueta: "KeyToTwo · jogos para casais" saiu em 2026-10-22, a pedido do responsável (poluía o topo).
 
 **The Print Tracking Rule.** O tracking negativo para em −0,04em no Display e em −0,02em nos títulos pequenos; o corpo não leva tracking.
@@ -256,6 +264,7 @@ No celular tudo empilha: título, apoio, ação; na oferta, **o preço e o botã
 Pontos de quebra: 360, 480, 600, 767, 1050 e 1120 (70rem) px, já usados pelo código. Sem rolagem horizontal de 320 a 1440 px com texto a 200 %.
 
 ### Named Rules
+
 **The Three Cuts Rule.** A tesoura corta a página em três lugares: depois da hero (folha dos jogos), antes da oferta (folha de compra) e antes do rodapé público. Seções do mesmo assunto separam-se só por espaço; nunca há tesoura dentro de uma seção nem em páginas privadas.
 
 ## Elevation & Depth
@@ -265,11 +274,13 @@ Sem sombras na folha. A profundidade vem de linhas: tracejado para "aqui se cort
 Só o que **sai da folha** flutua: a gaveta do carrinho, o menu móvel e o menu da conta são painéis sobre a página e carregam uma sombra suave com deslocamento. O cabeçalho fixo ganha a sombra de cabeçalho apenas quando já rolou e está sobre conteúdo.
 
 ### Shadow Vocabulary
+
 - **Painel** (`box-shadow: -12px 0 48px rgb(18 58 61 / 0.12)`): gaveta do carrinho e menu móvel (Sheet).
 - **Menu** (`box-shadow: 0 12px 40px rgb(18 58 61 / 0.16)`): popover da conta no cabeçalho.
 - **Cabeçalho** (`box-shadow: 0 8px 24px rgb(18 58 61 / 0.08)`): cabeçalho fixo em estado rolado.
 
 ### Named Rules
+
 **The Flat Sheet Rule.** O que está impresso na folha não tem sombra. Só painéis que cobrem a folha têm.
 
 **The One Edge Rule.** Um elemento declara sua borda uma vez: tracejada, sólida ou nenhuma. Borda mais sombra é proibido; barra lateral colorida também.
@@ -295,6 +306,7 @@ Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exa
 ## Components
 
 ### Buttons
+
 - **Shape:** retângulo de cantos discretos (`{rounded.sm}`), altura mínima 48 px (44 px no cabeçalho), padding `12px 22px`, Label 600, sem ícone de seta, sem sombra.
 - **Primary:** Papel sobre Turquesa profundo; hover `{colors.deep-teal-hover}`; pressionado `{colors.deep-teal-active}` com `transform: scale(.98)` em 160 ms; desabilitado em aguada de Tinta com texto Tinta suave e `cursor: not-allowed`.
 - **Secondary:** Papel com borda de 1,5 px Tinta e texto Tinta; hover em aguada de Tinta; mesma altura e raio. É o botão de "Tentar novamente", "Atualizar status", "Sair da conta", cupom e voltar.
@@ -303,13 +315,15 @@ Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exa
 - **Rótulos:** um nome por ação em todo o site: "Quero o pacote" leva à oferta (`/#comprar`); "Adicionar à sacola" compra; "Ver detalhes" abre a página do produto; "Finalizar compra" paga.
 
 ### Tags (etiqueta e selo)
+
 - **Etiqueta** (`.tag`): Papel, borda 2 px **tracejada** Turquesa J001, `{rounded.sm}`, padding `6px 12px`, Label 600 em Tinta. Para identificar uma seção de loja (Gratuitos) e para marcar algo "por recortar" (ex.: freebie em preparação); nunca acima do título da hero.
 - **Selo** (`.tag-solid`): borda 1,5 px sólida Turquesa J001, texto Turquesa profundo em Caption 600, padding `2px 8px`. Só dentro da carta ("No pacote", no rodapé do card de jogo).
 
 ### Cards / Containers
+
 - **Capa de jogo** (`.game-cover`): face 16:9 de Papel, borda 2 px Turquesa J001, `{rounded.lg}`. Duas faces: **arte oficial** (a capa aprovada do jogo, `cover` em `src/content/games.ts`, gerada por `scripts/prepare-game-covers.mjs`, em `object-fit: cover`) e **tipográfica** (nome do jogo em Title 22 px, sem imagem), padrão de qualquer jogo sem capa. Nenhuma página do PDF vai para o site, em lugar nenhum (decisão do responsável, 2026-10-16): quem abrisse a imagem em outra aba baixaria o jogo sem comprar. Capa, cor e texto apresentam o jogo; o conteúdo fica para depois da compra.
 - **Card de produto** (`.shop-game`, Loja e página do pacote): o quadro é o card (borda 2 px Turquesa, `{rounded.lg}`), com a capa no topo sem borda própria, separada do corpo por uma régua de Tinta; abaixo, H3 Title, resumo em Tinta suave e, no rodapé alinhado entre os cards da linha, preço + botão primário "Adicionar à sacola" + "Ver detalhes", ou um dos estados abaixo. Logo sob a capa corre a faixa da cor do jogo. A grade cria as colunas pela quantidade de jogos (mínimo 240 px). Vaga de jogo indefinido do pacote não vira card.
-  - **Estados do rodapé:** *à venda* (preço, "Adicionar à sacola", "Ver detalhes"); *no pacote* (selo "No pacote" e o link "Ver o pacote", quando o jogo não tem avulso mas está num pacote à venda); *grátis* (seção Grátis); *em breve* (etiqueta tracejada, só para o que não se compra de jeito nenhum). Um jogo do pacote nunca aparece como "Em breve".
+  - **Estados do rodapé:** _à venda_ (preço, "Adicionar à sacola", "Ver detalhes"); _no pacote_ (selo "No pacote" e o link "Ver o pacote", quando o jogo não tem avulso mas está num pacote à venda); _grátis_ (seção Grátis); _em breve_ (etiqueta tracejada, só para o que não se compra de jeito nenhum). Um jogo do pacote nunca aparece como "Em breve".
   - **Variante incluído** (`GameGrid variant="included"`, página do pacote): capa, nome, resumo e a ficha do jogo (`facts`), com "Ver detalhes" só se houver página do avulso. Sem preço e sem compra avulsa dentro da oferta do pacote.
 - **Grátis** (`.shop-freebies`, Loja e Início): atalho para a página Gratuitos. Os jogos `freebie` de `src/content/games.ts` (Hora dos Artistas e Pote de Planos), fora do pacote. Etiqueta "Grátis", título, texto de `experience.freebie` e o botão "Ver os gratuitos" à esquerda, os cards à direita (empilha abaixo de 960 px). O card mostra "Grátis" no lugar do preço; baixar é só na página Gratuitos. Aparece em todos os stages. Na biblioteca (Portal) a mesma capa vai dentro do card do jogo, também 16:9.
 - **Página Gratuitos** (`/gratuitos`, responsável 2026-10-20): título e a troca lado a lado (empilham abaixo de 960 px), os cards e o convite da comunidade.
@@ -325,19 +339,25 @@ Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exa
 - **Aviso** (`.notice`): Papel, borda 1,5 px Tinta suave, `{rounded.md}`, padding 16–20 px, sem barra lateral. Variante de demonstração usa a mesma caixa com texto "Demonstração".
 
 ### Linha de recorte (`.cut-line`)
+
 Elemento decorativo (`aria-hidden`) de 40 px de altura entre duas folhas: linha tracejada 2 px Turquesa J001 de borda a borda da janela e a tesoura (ícone Tabler `IconScissors`, 24 px, traço 1,75 Turquesa profundo) sobre um retângulo de Papel na margem esquerda do contêiner. Usa-se em três cortes: hero → folha dos jogos, antes da oferta e antes do rodapé (só no rodapé público). Não dentro de uma folha, não entre seções do mesmo assunto, não em páginas privadas.
 
 ### Ficha (`.ficha`)
+
 Lista de definição em Body 15–16 px: `dt` à esquerda, `dd` em 600 à direita, pontilhado de 2 px Turquesa J001 preenchendo o meio (`flex: 1; border-bottom: 2px dotted`). Usada para os fatos de cada jogo nos cards da página do pacote, o resumo da oferta (conteúdo, formato, acesso) e os detalhes do pedido.
 
 ### Banner do pacote (`.shop-bundle`, Loja e Início)
+
 Card de borda 2 px Turquesa. À esquerda, a capa grande do pacote e, sob ela, os jogos: miniatura da capa (88 px, faixa de 4 px na cor do jogo) e o nome, separados por régua pontilhada. À direita, "Pacote de jogos", o nome do pacote, o que vem, o preço e a compra. No celular, a capa abre; depois nome, preço e compra; por fim os jogos.
 
 ### Vitrine do Início (`.cover-carousel`)
+
 Depois do banner do pacote, uma fileira de capas clicáveis (`.cover-tile`), uma por jogo do pacote: capa com a faixa da cor do jogo, nome em Title, resumo em Tinta suave e o preço do avulso em Label 600 Turquesa profundo (ou "No pacote" quando o /catalog não lista o avulso; vazio enquanto carrega). O card inteiro é um link para a página do jogo; no hover a capa sobe 2 px (só com ponteiro fino e sem movimento reduzido) e o nome sublinha. Sem botão de compra: a compra mora no banner, na Loja e no produto. Três colunas no desktop; carrossel com snap abaixo de 768 px.
 
 ### Página de produto (`/loja/:slug`)
+
 Ordem fixa, com dados de `src/content/games.ts` e `products.ts`:
+
 1. **Voltar** ("Loja"), H1 com o nome e a chamada.
 2. **Ficha no topo** (`.product-facts`, só no avulso): os fatos genéricos do jogo (pessoas, jeito de jogar, o que está em jogo, formato), sem contar páginas, cartas ou peças, lado a lado, cada um com o rótulo em Caption Tinta suave e o valor em 600, separados por calhas tracejadas e com linha tracejada em cima e embaixo; duas colunas no celular.
 3. **Galeria e compra**: à esquerda a galeria (`ProductGallery`), à direita o card "O que está incluído" com preço e compra. A galeria abre na capa (16:9, com a faixa de 8 px da cor do jogo) e troca pelas miniaturas (botões de 88 px, `aria-pressed`, a escolhida com borda de 2 px Turquesa profundo). Só capas oficiais: no avulso, a capa do jogo sozinha (sem miniaturas); no pacote, a capa dele e as de cada jogo.
@@ -347,25 +367,32 @@ Ordem fixa, com dados de `src/content/games.ts` e `products.ts`:
 7. **Também está no pacote** (só no avulso que faz parte de um pacote à venda): card tracejado com o argumento real, "todos num só pedido", as miniaturas dos jogos e "Ver o pacote". Nunca compara preços nem anuncia economia.
 
 ### Ajuda (`/ajuda`)
+
 Central de ajuda em página de leitura. Logo abaixo do H1, quatro cards de tema (`.help-topics`, borda 2 px Turquesa, ícone Tabler de 24 px em Turquesa profundo, título em Title small e uma linha em Tinta suave) que levam às seções: Antes de comprar, Conta e acesso aos jogos, Impressão e preparação e Atendimento. O texto vem de `src/content/help.ts` e só traz fatos conferidos.
+
 - **Guia de impressão** (`.print-guide`): dicas gerais (papel A4, tamanho real, uma face, recorte, guardar) em lista com ícone, num card com calhas tracejadas. Depois, "O que cada jogo pede": miniatura da capa com a faixa da cor do jogo e os itens de `needs`. Nenhuma página do PDF ilustra o guia, e nenhuma dica promete um resultado de impressão que não foi testado.
 - **Atendimento** (`.support-card`): o e-mail `contato@keytotwo.com.br` em Title Turquesa profundo, selecionável, com link `mailto:` e o botão secundário "Copiar e-mail" (o `mailto:` pode não abrir em todo aparelho). A confirmação da cópia sai em `role="status"`.
 
 ### E-mails (Auth e transacionais)
+
 O mesmo visual em `supabase/templates/*.html` (código de acesso, confirmação e senha) e em `supabase/functions/_shared/email.ts` (entrega, lembrete de sacola, pós-compra): Papel, um card de 520 px com borda 2 px Turquesa J001, faixa de Céu no topo com "KeyToTwo" e "jogos para casais", a linha de recorte tracejada logo abaixo, título em 24 px, botão em Turquesa profundo e um rodapé com a assinatura e o e-mail de atendimento. A assinatura é a frase do Kito ("Um pinguim numa tela pedindo para vocês saírem dela.", a mesma do rodapé do site) no lembrete de sacola e no pós-compra; nos e-mails de serviço é "KeyToTwo: jogos para casais imprimirem em casa.". O código de acesso aparece num recorte tracejado. Tudo em estilo inline e tabela, com Arial: fonte web e imagem de logo não são confiáveis em e-mail.
 
 ### Como funciona (`.print-sheet`)
+
 Folha de recortar, sem caixa nem sombra (responsável, 2026-10-18): os três passos são cartas separadas direto no Papel da seção (borda 2 px Turquesa, raio grande), cada uma com uma faixa de 8 px no topo na cor de um jogo do pacote e uma inclinação de até 1°, como peça recortada. Entre as cartas, a calha tracejada com a tesoura no começo (vertical no desktop; horizontal, com as cartas empilhadas, no celular); as linhas ficam atrás das cartas. Cada carta tem o número da etapa como face de dado (decorativo; a ordem vem do `<ol>`) e o ícone Tabler de 32 px em Turquesa profundo na mesma linha (sacola, impressora, carta de baralho), o título em Title e o texto em Small Tinta suave. No pé, só o link "Guia de impressão" para a Ajuda. Sem marcas de corte nos cantos. Movimento: quando a folha aparece, as três cartas estão empilhadas no lugar da do meio, cada uma num ângulo, como um baralho ("Escolham." por cima); depois de um instante são distribuídas, a primeira para a esquerda e a terceira para a direita (720 ms, com um leve passo além do lugar), e as linhas de corte surgem quando elas assentam. Com movimento reduzido, já distribuídas (responsável, 2026-10-18).
 
 ### Relatos (`.social-marquee`)
+
 A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9 s por relato, `linear`), com as pontas esmaecidas por máscara. A lista vai duas vezes para fechar o laço em -50%; a cópia é `aria-hidden` e `inert`. Cursor, foco (a faixa recebe foco) e toque param o movimento. Com `prefers-reduced-motion`, vira uma fileira parada que rola à mão, com encaixe e sem a cópia. Com menos de 4, o carrossel com encaixe de sempre (`.social-carousel`). Cada card tem as cinco estrelas da nota do casal (marca-texto com contorno de Tinta, nota em texto para leitores de tela), o relato e, no rodapé, a foto do casal em círculo de 48 px. Sem foto autorizada entra a silhueta de dupla sobre um de quatro fundos claros da paleta. Nunca rosto de banco de imagem.
 
 (Pedido do responsável em 2026-10-18; substitui a regra antiga de relatos sem estrelas.)
 
 ### Marca-texto (`mark`)
+
 `background: linear-gradient(transparent 58%, {colors.highlight} 58% 92%, transparent 92%)`, `color: inherit`, `padding: 0 .04em`. Uma vez por página.
 
 ### Inputs / Fields
+
 - **Style:** Papel, borda 1,5 px Tinta suave (`{colors.ink-soft}`, 7,5:1), `{rounded.sm}`, altura 48 px, padding `12px 14px`, Body; rótulo acima em Label 600 com `{spacing.sm}` de distância; ajuda em Caption.
 - **Focus:** mesmo contorno de 3 px Tinta com offset 2 px; a borda não muda de cor.
 - **Error:** borda `{colors.error}` e mensagem em Caption 600 na mesma cor, com `role="alert"`; a mensagem nomeia o problema e a saída.
@@ -373,6 +400,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - **Checkbox:** 22 px, `accent-color: {colors.deep-teal}`, rótulo clicável com alvo ≥ 44 px.
 
 ### Navigation
+
 - **Cabeçalho:** Céu sobre a hero, Papel nas demais páginas e quando rolado (Papel a 94 % com desfoque de 12 px e a sombra de cabeçalho). Logo à esquerda (146 px; 125 px no celular), links ao centro, ações à direita. Links em Body 15 px Tinta, padding `10px 12px`, alvo de 44 px. **Toques de pixel (2026-10-16), só CSS:** no hover o texto vai a Turquesa profundo e, sob ele, uma barra de blocos de pixel (4 px de altura, blocos de 2 pixels com 1 de vão, só blocos inteiros) se desenha em 4 passos, em Turquesa J001 (linha decorativa); o link ativo fica com a barra cheia em Turquesa profundo e Label 600. O logo dá um pulinho de 3 px em passos e acende uma estrela de 4 pontas em grade 7×7, como as das capas. A sacola pula do mesmo jeito; a contagem é um selo com cantos em degrau. O CTA ganha cantos em degrau no hover (o fundo fica num `::before`, para o contorno de foco não ser recortado). Com movimento reduzido nada anima; só cor e barra mudam. Nada disso vale para o menu da conta nem para o menu móvel. "Portal" tem o mesmo peso dos outros links. O CTA compacto é o botão primário de 44 px.
 - **Portal** (`/meus-jogos`, `/pedidos`, `/conta`; antes "Minha área", renomeado em 2026-10-21): no desktop o cabeçalho fica com logo, Portal e a conta, porque as abas já levam a Meus jogos, Pedidos e Minha conta; o menu móvel mantém os três links. Sem CTA comercial nem carrinho. A saudação traz o Kito acenando ao lado do nome.
 - **Navegação pública (I6):** Início, Loja, Gratuitos e Blog (somente quando há posts no stage do build). Loja fica ativa em `/loja` e seus detalhes, sem scroll-spy. À direita ficam Portal e a conta para quem entrou, ou só Entrar para quem não entrou, e a sacola, com rótulo acessível "Sacola, N itens". A Ajuda saiu do cabeçalho do desktop (responsável, 2026-10-21) e fica no rodapé e no menu móvel. Não há botão "Ver os jogos" no cabeçalho nem no menu móvel (decisão do responsável, 2026-10-20): a Loja já está na navegação. O menu móvel mantém a mesma ordem. No rodapé, Explorar oferece Início, Loja, Como funciona (`/#como-funciona`) e Gratuitos, além de Blog quando houver posts; não há link para a antiga oferta. Sob a frase da marca fica o link do Instagram (@keytotwo, abre em nova aba).
@@ -387,6 +415,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - **Etapas da compra** (`.checkout-steps`): quatro passos (Sacola, Entrar, Pagamento, Pronto) para quem ainda não entrou; três, renumerados, para quem já entrou, sem uma etapa "Entrar" concluída fora de ordem. Somem na sacola vazia e nos erros da confirmação. Em Caption, número em círculo de 28 px com borda de régua; a etapa atual em Tinta 600 com o círculo em Turquesa profundo; concluída com o ícone de conferir (`IconCheck`, 16 px) em aguada de Tinta. Os números aqui são uma sequência real.
 
 ### Kito (uso do personagem)
+
 - **Hero (2026-10-18):** o único lugar onde o Kito se move, e ele interage com quem chega. Pixel art real em 256 px (`art-source/kito-pixel/`), servida num atlas WebP sem perda gerado por `scripts/prepare-kito-pixel.mjs` (posições em `src/kito-sprites.ts`, gerado; não editar à mão). Só os quadros virados para a direita entram; a esquerda é espelho no CSS. Tamanho: 192 px no desktop (×0,75) e 128 px no celular (×0,5, 1:1 em tela 2×); vizinho mais próximo quando a tela tem pixels de sobra, redução filtrada abaixo disso.
   - **Mouse:** o Kito persegue o cursor pelo chão. Caminha perto, corre a meia distância e dispara de longe; a cadência dos pés acompanha a velocidade. Vira de frente para trocar de lado, às vezes tropeça ao virar em sprint. Ao alcançar, pula ou acena; com o cursor em cima, acena enquanto o cursor estiver ali; clicado, saltita segurando o coração; com o cursor parado, cochila em pé, respirando, e acorda num susto quando o cursor se mexe. Cursor além da borda: empurra a borda.
   - **Botão "Ver os jogos":** com o cursor ou o foco do teclado no botão, o Kito corre até embaixo dele e aponta, com brilhos, enquanto o cursor estiver lá. No piloto automático ele também vai até o botão e aponta por um instante.
@@ -408,14 +437,16 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - **Linha legal (todo rodapé, inclusive o do pagamento):** © KeyToTwo, uma marca da Chalk Labs · CNPJ, numa linha só e alinhada aos links legais; no celular o CNPJ desce para a linha de baixo. O e-mail de atendimento fica na Ajuda e nos textos jurídicos.
 
 ### Estados
+
 - **Carregando:** esqueleto em aguada de Tinta com `role="status"` e texto visível ("Carregando seu carrinho…"); preço em "Consultando preço…" em Body Tinta suave, nunca em Display.
 - **Vazio:** Kito na caixa + título Title + uma frase + o botão primário com o nome real da ação ("Quero o pacote").
-- **Erro:** uma única mensagem em Body com `role="alert"`, em Tinta (não em cor de erro quando não há culpa da pessoa), seguida de **um** botão secundário "Tentar novamente". Sem título em Display, sem segunda mensagem genérica. Falha de pagamento e 404 usam o Kito neutro.
+- **Erro:** uma única mensagem em Body com `role="alert"`, em Tinta (não em cor de erro quando não há culpa da pessoa), seguida de **um** botão secundário "Tentar novamente". Sem título em Display, sem segunda mensagem genérica. Falha de pagamento e 404 usam o Kito tonto.
 - **Desabilitado:** aguada de Tinta + Tinta suave; sempre com a razão em Caption ao lado quando não for óbvia.
 - **Foco:** contorno de 3 px Tinta com offset em tudo que recebe foco, inclusive cartas com `tabindex`, abas e a trilha do carrossel.
 - **Movimento reduzido:** nenhuma entrada, nenhum deslocamento, carrossel instantâneo, Kito da hero parado de frente e nuvens paradas.
 
 ### Movimento (tokens do plano 005)
+
 - `--ease-out: cubic-bezier(.16, 1, .3, 1)` para toda entrada e hover; nada usa `ease-in` em UI.
 - `--duration-press: 160ms` (pressão de botão, `scale(.98)`), `--duration-ui: 240ms` (entradas de UI: cards da biblioteca, bloco de pagamento, links do menu), `--duration-panel: 280ms` (abrir gaveta e menu; fechar em 180 ms), `--duration-reveal: 320ms` (reveal do conteúdo das folhas, 8 px), `--stagger: 40ms`.
 - O reveal aplica-se ao **conteúdo** da folha (`.page-section > .content-width`), nunca ao fundo da seção.
@@ -423,6 +454,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - Momentos raros (celebração) podem passar de 300 ms; tudo o mais fica abaixo.
 
 ### Named Rules
+
 **The Catalog Rule.** Nenhum componente desenha "5" ou "P001". Título, chamada, conteúdo e entrega da oferta vêm de `src/content/products.ts`; código, nome, resumo, capa, cor, fatos e momentos de cada carta vêm de `src/content/games.ts`. A grade de cards aceita de 1 a N jogos (colunas pela quantidade, quebrando em linhas novas), a capa tipográfica é o padrão de qualquer jogo sem capa oficial, e a oferta renderiza um card por produto do catálogo. Um freebie ou um segundo pacote entra sem CSS novo.
 
 **The Kito Acts Rule.** Se o Kito não está caminhando, acolhendo, celebrando, convidando ou se despedindo, ele não está na tela.
@@ -430,6 +462,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 ## Do's and Don'ts
 
 ### Do:
+
 - **Do** separar folhas com a linha de recorte e a tesoura, e só aí.
 - **Do** alinhar títulos e apoio à esquerda; usar o lado direito para ficha, preço ou objeto.
 - **Do** usar a capa tipográfica (nome do jogo sobre a carta) para qualquer jogo sem capa oficial.
@@ -440,6 +473,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - **Do** medir contraste AA em cada estado novo antes de fechar uma fatia.
 
 ### Don't:
+
 - **Don't** usar rótulo, kicker ou caixa alta com tracking acima de um título.
 - **Don't** usar Turquesa J001 em texto, ícone informativo ou borda única de controle.
 - **Don't** usar Céu ou Marca-texto fora da hero (exceção: o arco dos gratuitos, em Marca-texto), nem a paleta da paisagem fora da hero e do chão do rodapé (o marca-texto só atrás de uma palavra).
@@ -448,5 +482,4 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - **Don't** colocar o Kito como ícone ou em erro com expressão triste. A exceção é a arte oficial das capas.
 - **Don't** publicar página do PDF como imagem, em lugar nenhum: nem capa, nem miniatura, nem galeria, nem seção da home. O arquivo também não fica em `public/`.
 - **Don't** animar fundo de seção, mover card não clicável no hover ou passar de 300 ms em UI (exceto a celebração).
-- **Don't** publicar relato, nota ou número de clientes que não exista; relatos `placeholder: true` só renderizam no stage `test` (o teste fechado, para os amigos revisarem), sem selo; no live, a seção só aparece com o primeiro relato real.
 - **Don't** apresentar um jogo ainda indefinido com arte, capa ou descrição que ele não tem.
