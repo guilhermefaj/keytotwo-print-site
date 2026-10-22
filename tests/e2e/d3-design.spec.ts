@@ -127,7 +127,8 @@ test('vitrine curta com três jogos na home; carrossel e relatos só por ação 
     // A faixa repete a lista uma vez para o laço; a cópia fica fora da leitura e do foco.
     const own = page.locator('.social-track > li:not([aria-hidden])')
     await expect(own.locator('.social-card blockquote')).toHaveCount(8)
-    await expect(own.locator('.social-card[data-placeholder="true"] .tag-solid')).toHaveCount(8)
+    await expect(own.locator('.social-card[data-placeholder="true"]')).toHaveCount(8)
+    await expect(own.locator('.social-card .tag-solid')).toHaveCount(0)
     await expect(own.locator('.social-stars[aria-label="Nota 5 de 5"]')).toHaveCount(8)
     await expect(own.locator('.social-photo')).toHaveCount(8)
     await expect(page.locator('.social-track > li[aria-hidden="true"][inert]')).toHaveCount(8)

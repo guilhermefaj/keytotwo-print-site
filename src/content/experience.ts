@@ -15,14 +15,14 @@ export const experience = {
     { title: 'Imprimam.', text: 'O PDF fica em Meus jogos e chega por e-mail. Papel A4 comum resolve.', icon: 'impressora' },
     { title: 'Joguem.', text: 'Recortem o que o jogo pedir e decidam quem começa. Boa sorte nessa negociação.', icon: 'cartas' },
   ],
-  // Portão 1: relatos de exemplo na voz da marca, marcados placeholder: true. Aparecem só no stage
-  // test; em live só entram relatos reais (placeholder: false) e, sem nenhum, a seção não renderiza.
+  // Portão 1: relatos de exemplo na voz da marca, marcados placeholder: true. Aparecem só no stage test, sem selo,
+  // para os amigos verem a seção pronta no teste fechado (responsável, 2026-10-22); em live só entram relatos reais
+  // (placeholder: false) e, sem nenhum, a seção não renderiza. Os de exemplo não travam o lançamento.
   // Estrelas e foto do casal a pedido do responsável (2026-10-18). Num relato real, a nota é a que o casal deu,
   // nunca preenchida por nós, e a foto só entra com autorização; sem ela, a silhueta de exemplo. Sem número de
   // avaliações nem média. O responsável substitui pelos relatos autorizados.
   social: {
     heading: 'Cada dupla, uma história.',
-    placeholderLabel: 'Relato de exemplo',
     testimonials: [
       { id: 'exemplo-1', placeholder: true, rating: 5, quote: 'A gente demorou mais para escolher quem desenhava do que para jogar. Valeu a pena: rimos até das cartas erradas.', author: 'Marina e Léo' },
       { id: 'exemplo-2', placeholder: true, rating: 5, quote: 'Imprimi no trabalho, recortei no ônibus e, à noite, a mesa da cozinha virou arena. Fazia tempo que não ríamos tanto.', author: 'Bia e Caio' },

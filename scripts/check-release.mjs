@@ -30,6 +30,8 @@ function inspect(value, location, errors, seen = new WeakSet()) {
   for (const [key, child] of Object.entries(value)) inspect(child, `${location}.${key}`, errors, seen)
 }
 
+const escapeHtml = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;')
+
 async function check(root, built) {
   const config = JSON.parse(readFileSync(path.join(root, 'site.config.json'), 'utf8'))
   const env = loadEnv(process.env.SEO_MODE || 'production', root, 'VITE_SITE_')
@@ -61,15 +63,14 @@ async function check(root, built) {
       if (offer?.purchaseAction != null) errors.push(`Produto em breve com ação de compra em products[${index}]`)
     } else errors.push(`Disponibilidade inválida em products[${index}]`)
   }
+  // Relatos de exemplo (placeholder: true) não travam: o live os filtra, e sem relato real a seção some. O build confere
+  // que nenhum chegou ao HTML. Relato real tem texto, autor e a nota que o casal deu, de 1 a 5; sem média nem contagem.
   const social = modules['experience.ts']?.experience?.social
-  if (social) {
-    if (!Number.isFinite(social.rating) || social.rating <= 0 || social.rating > 5) errors.push('Placeholder: nota da prova social')
-    if (!Number.isInteger(social.reviewCount) || social.reviewCount < 1) errors.push('Placeholder: contagem da prova social')
-    if (!Array.isArray(social.testimonials) || !social.testimonials.length) errors.push('Placeholder: relatos ausentes')
-    for (const [index, item] of (social.testimonials || []).entries()) {
-      if (item.placeholder === true) errors.push(`Placeholder: relato de exemplo ${index + 1}`)
-      if (!item.quote?.trim() || !item.author?.trim()) errors.push(`Placeholder: relato ${index + 1}`)
-    }
+  const examples = (social?.testimonials || []).filter(item => item.placeholder === true && item.quote?.trim())
+  for (const [index, item] of (social?.testimonials || []).entries()) {
+    if (item.placeholder === true) continue
+    if (!item.quote?.trim() || !item.author?.trim()) errors.push(`Relato incompleto: ${index + 1}`)
+    if (!Number.isInteger(item.rating) || item.rating < 1 || item.rating > 5) errors.push(`Relato sem nota de 1 a 5: ${index + 1}`)
   }
 
   if (built) {
@@ -78,7 +79,11 @@ async function check(root, built) {
     for (const route of [...Object.keys(pages || {}), ...posts.map(post => `/blog/${post.slug}`)]) {
       const html = path.resolve(root, 'build/client', `.${route}`, 'index.html')
       if (!existsSync(html)) errors.push(`HTML público ausente: ${route}`)
-      else if (marker.test(readFileSync(html, 'utf8'))) errors.push(`PENDENTE no HTML público: ${route}`)
+      else {
+        const content = readFileSync(html, 'utf8')
+        if (marker.test(content)) errors.push(`PENDENTE no HTML público: ${route}`)
+        if (examples.some(item => content.includes(item.quote) || content.includes(escapeHtml(item.quote)))) errors.push(`Relato de exemplo no HTML público: ${route}`)
+      }
     }
     for (const post of (await readBlogPosts({ root, stage: 'preview' })).filter(post => post.draft)) {
       for (const artifact of [`blog/${post.slug}/index.html`, `blog/${post.slug}.data`]) {
@@ -113,8 +118,10 @@ function selfTest() {
       ['marcador no HTML', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>PENDENTE: fixture</h1>', 1],
       ['preview com pendências', 'preview', 'pending("fixture")', false, '', '<h1>PENDENTE</h1>', 0],
       ['test com pendências', 'test', 'pending("fixture")', false, '', '<h1>PENDENTE</h1>', 0],
-      ['prova social incompleta', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1],
-      ['relato de exemplo', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1],
+      ['relato incompleto', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1, 'sale', 'cart', /Relato incompleto/],
+      ['relato sem nota', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1, 'sale', 'cart', /Relato sem nota/],
+      ['relato de exemplo fora do HTML', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 0],
+      ['relato de exemplo no HTML', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<p>FIXTURE do exemplo</p>', 1, 'sale', 'cart', /Relato de exemplo no HTML/],
       ['soon sem preço nem compra', 'live', '"Fixture"', false, null, '<h1>Fixture</h1>', 0, 'soon', null],
       ['soon com compra', 'live', '"Fixture"', false, null, '<h1>Fixture</h1>', 1, 'soon', 'cart', /Produto em breve com ação de compra/],
       ['soon ainda com pendência', 'live', 'pending("fixture")', false, null, '<h1>Fixture</h1>', 1, 'soon', null, /PENDENTE em/],
@@ -122,8 +129,14 @@ function selfTest() {
       ['disponibilidade desconhecida', 'live', '"Fixture"', true, 'FIXTURE', '<h1>Fixture</h1>', 1, 'invalid', null, /Disponibilidade inválida/],
     ]
     for (const [name, stage, copy, approved, price, html, status, availability = 'sale', purchaseAction = 'cart', diagnostic = /Release live bloqueada/] of cases) {
-      writeFileSync(path.join(root, 'src/content/experience.ts'), `export const experience = { social: ${name === 'prova social incompleta' ? '{rating:null,reviewCount:null,testimonials:[{quote:null,author:null}]}' : '{rating:4,reviewCount:1,testimonials:[{quote:"FIXTURE de teste",author:"FIXTURE"}]}' } }`)
-      if (name === 'relato de exemplo') writeFileSync(path.join(root, 'src/content/experience.ts'), 'export const experience = {social: {rating:4,reviewCount:1,testimonials:[{quote:"FIXTURE",author:"FIXTURE",placeholder:true}]}}')
+      const example = '{testimonials:[{quote:"FIXTURE do exemplo",author:"FIXTURE",rating:5,placeholder:true}]}'
+      const social = {
+        'relato incompleto': '{testimonials:[{quote:null,author:null,rating:5}]}',
+        'relato sem nota': '{testimonials:[{quote:"FIXTURE",author:"FIXTURE"}]}',
+        'relato de exemplo fora do HTML': example,
+        'relato de exemplo no HTML': example,
+      }[name]
+      writeFileSync(path.join(root, 'src/content/experience.ts'), `export const experience = { social: ${social ?? '{testimonials:[{quote:"FIXTURE de teste",author:"FIXTURE",rating:5}]}'} }`)
       // Um primeiro produto aprovado garante que a trava avalia também as ofertas seguintes.
       writeFileSync(path.join(root, 'src/content/products.ts'), `import { pending } from '../lib/pending'\nexport const products = [{availability:'sale',offer:{priceApproved:true,price:'FIXTURE',purchaseAction:'cart'}}, { title: ${copy}, availability: ${JSON.stringify(availability)}, offer: ${name === 'sale sem oferta' ? 'null' : `{priceApproved: ${approved}, price: ${JSON.stringify(price)}, purchaseAction: ${JSON.stringify(purchaseAction)}}`} }]`)
       writeFileSync(path.join(root, 'build/client/index.html'), html)
