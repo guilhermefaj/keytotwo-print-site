@@ -28,7 +28,6 @@ export default function Home() {
   return <main id="conteudo" tabIndex={-1} ref={main}>
     <div className="hero">
       <section className="hero-copy" aria-labelledby="hero-title">
-        <p className="tag">{experience.tag}</p>
         <h1 id="hero-title">{experience.headline[0]}{' '}<span>{headlineRest}<mark>{experience.highlight}</mark></span></h1>
         <p className="hero-description">{experience.description}</p>
         <div className="hero-actions"><Link className="button button-primary hero-cta" to={experience.cta.href}>{experience.cta.label}</Link><a className="inline-link hero-secondary" href={experience.secondary.href}>{experience.secondary.label}</a></div>

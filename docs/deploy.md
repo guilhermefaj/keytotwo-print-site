@@ -88,7 +88,7 @@ Para voltar, ponha um `live-<commit>` anterior no `IMAGE_TAG` de `producao/.env`
 
 ### Antes do lançamento
 
-1. **Trava sem pendências:** `VITE_SITE_STAGE=live node scripts/check-release.mjs` passa. Faltam a validação jurídica (`legalReview` em `src/content/legal.ts`) e os relatos reais com a nota e a contagem (`src/content/experience.ts`). Se a validação mudar os Termos, a versão nova vai também para o segredo `TERMS_VERSION` das funções.
+1. **Trava sem pendências:** `VITE_SITE_STAGE=live node scripts/check-release.mjs` passa. Falta a validação jurídica (`legalReview` em `src/content/legal.ts`). Os relatos de exemplo não travam: no live, a seção de relatos só aparece com o primeiro relato real (`placeholder: false` em `src/content/experience.ts`, com texto, autor e a nota que o casal deu). Se a validação mudar os Termos, a versão nova vai também para o segredo `TERMS_VERSION` das funções.
 2. **VPS:** criar `/opt/keytotwo-site/producao/` com o `build.env` (as linhas abaixo) e um `.env` com `IMAGE_TAG=`. Os dois ficam com `chmod 600`.
 
    ```sh

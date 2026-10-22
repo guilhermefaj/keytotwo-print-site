@@ -9,5 +9,5 @@ test('release: ofertas por produto, disponibilidade, relatos e pendências', () 
     encoding: 'utf8',
   })
   assert.equal(result.status, 0, result.stderr || result.stdout)
-  assert.equal(result.stdout.match(/Fixture OK:/g)?.length, 21)
+  assert.equal(result.stdout.match(/Fixture OK:/g)?.length, 23)
 })

@@ -28,15 +28,16 @@ function CouplePhoto({ item, tone }: { item: Testimonial; tone: number }) {
   return <span className="social-photo" data-tone={tone} aria-hidden="true"><svg viewBox="0 0 48 48" width="48" height="48"><g opacity=".55"><circle cx="17" cy="19" r="7" /><path d="M4 48c0-10 6-16 13-16s13 6 13 16z" /></g><circle cx="31" cy="22" r="7.5" /><path d="M17 50c0-10 6.5-16 14-16s14 6 14 16z" /></svg></span>
 }
 
-function TestimonialCard({ item, index, label }: { item: Testimonial; index: number; label: string }) {
+function TestimonialCard({ item, index }: { item: Testimonial; index: number }) {
   return <figure className="social-card" data-placeholder={item.placeholder ? 'true' : undefined}>
-    <div className="social-card-top"><Stars rating={item.rating} />{item.placeholder && <span className="tag-solid">{label}</span>}</div>
+    <div className="social-card-top"><Stars rating={item.rating} /></div>
     <blockquote>{item.quote}</blockquote>
     <figcaption><CouplePhoto item={item} tone={index % 4} /><span>{item.author}</span></figcaption>
   </figure>
 }
 
-// Relatos: placeholders só no stage test; em live só relatos reais, e sem nenhum a seção não existe (P0-1).
+// Relatos: os de exemplo só no stage test, sem selo, para os amigos verem a seção pronta no teste fechado
+// (responsável, 2026-10-22); em live só relatos reais, e sem nenhum a seção não existe (P0-1).
 // A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem fim: a lista vai duas vezes (a cópia fica
 // escondida dos leitores de tela e fora do foco) e o laço fecha em -50%. Cursor, foco e toque param a faixa; com
 // movimento reduzido ela vira uma fileira que rola à mão. Com menos de 4, o carrossel de sempre.
@@ -44,11 +45,11 @@ export function Testimonials() {
   const social = experience.social
   const visible = siteConfig.stage === 'test' ? social.testimonials : social.testimonials.filter(item => !item.placeholder)
   if (!visible.length) return null
-  const cards = (copy = false) => visible.map((item, index) => <li key={`${copy ? 'copia' : 'relato'}-${item.id}`} aria-hidden={copy || undefined} inert={copy || undefined}><TestimonialCard item={item} index={index} label={social.placeholderLabel} /></li>)
+  const cards = (copy = false) => visible.map((item, index) => <li key={`${copy ? 'copia' : 'relato'}-${item.id}`} aria-hidden={copy || undefined} inert={copy || undefined}><TestimonialCard item={item} index={index} /></li>)
   return <section className="page-section social-section" aria-labelledby="social-title">
     <div className="content-width"><div className="section-heading"><h2 id="social-title">{social.heading}</h2></div></div>
     {visible.length >= 4
       ? <div className="social-marquee" role="region" aria-label="Relatos dos casais" tabIndex={0}><ul className="social-track" style={{ '--social-duration': `${visible.length * 9}s` } as CSSProperties}>{cards()}{cards(true)}</ul></div>
-      : <div className="content-width"><SnapCarousel label="Relatos dos casais" className="social-carousel">{visible.map((item, index) => <TestimonialCard key={item.id} item={item} index={index} label={social.placeholderLabel} />)}</SnapCarousel></div>}
+      : <div className="content-width"><SnapCarousel label="Relatos dos casais" className="social-carousel">{visible.map((item, index) => <TestimonialCard key={item.id} item={item} index={index} />)}</SnapCarousel></div>}
   </section>
 }

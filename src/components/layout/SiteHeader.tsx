@@ -6,11 +6,13 @@ import { navigation } from '../../content/site'
 import { siteConfig } from '../../lib/seo'
 import { isAdmin, useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
+import { reloadOnStaleChunk } from '../../lib/stale-chunk'
 import { authErrorMessage, supabase } from '../../lib/supabase'
 import { Icon } from '../ui/Icon'
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '../ui/sheet'
 
-const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: module.CartDrawer })))
+// Uma aba aberta antes de uma publicação recarrega na versão nova em vez de cair na página de erro.
+const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: module.CartDrawer }), reloadOnStaleChunk))
 
 // Portal (a área da conta, antes "Minha área"): cabeçalho simplificado, sem estímulo comercial. No desktop
 // as abas do Portal já levam a Meus jogos, Pedidos e Minha conta, então o cabeçalho fica com logo, Portal e a

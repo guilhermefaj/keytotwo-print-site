@@ -103,7 +103,7 @@ export default function Root() {
 export function PendingPage({ title, children, error = false, retry = false }: { title: string; children: ReactNode; error?: boolean; retry?: boolean }) {
   return (
     <main id="conteudo" tabIndex={-1} className="pending-page">
-      {error && <span className="kito-still" aria-hidden="true" />}
+      {error && <span className="kito-dizzy" aria-hidden="true" />}
       <h1>{title}</h1>
       <p role={error ? 'alert' : undefined}>{children}</p>
       <div className="form-actions"><Link to="/" className="button button-primary">Voltar ao início</Link>{retry && <button type="button" className="button button-secondary" onClick={() => window.location.reload()}>Tentar novamente</button>}</div>

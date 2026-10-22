@@ -92,7 +92,7 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Vamos tentar de novo?' })).toBeVisible()
   // Falha de pagamento: Kito em pose neutra (quadro 01 do atlas), nunca a caixa com lágrima.
-  await expect(page.locator('.kito-still')).toBeVisible()
+  await expect(page.locator('.kito-dizzy')).toBeVisible()
   await expect(page.locator('.kito-empty')).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Abrir Meus jogos', exact: true })).toHaveCount(0)
   await capture(page, `falha-${width}`); await axe(page)
@@ -127,7 +127,8 @@ test('vitrine curta com três jogos na home; carrossel e relatos só por ação 
     // A faixa repete a lista uma vez para o laço; a cópia fica fora da leitura e do foco.
     const own = page.locator('.social-track > li:not([aria-hidden])')
     await expect(own.locator('.social-card blockquote')).toHaveCount(8)
-    await expect(own.locator('.social-card[data-placeholder="true"] .tag-solid')).toHaveCount(8)
+    await expect(own.locator('.social-card[data-placeholder="true"]')).toHaveCount(8)
+    await expect(own.locator('.social-card .tag-solid')).toHaveCount(0)
     await expect(own.locator('.social-stars[aria-label="Nota 5 de 5"]')).toHaveCount(8)
     await expect(own.locator('.social-photo')).toHaveCount(8)
     await expect(page.locator('.social-track > li[aria-hidden="true"][inert]')).toHaveCount(8)
