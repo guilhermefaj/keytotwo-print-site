@@ -1,0 +1,36 @@
+# Produção da KeyToTwo (keytotwo.com.br) na VPS, atrás do mesmo Traefik do teste (rede host, provider docker, rotas
+# só por etiquetas). Uso, em /opt/keytotwo-site/producao: docker compose up -d. O .env ao lado define só o IMAGE_TAG
+# (live-<commit>). Sem senha. O www leva ao domínio sem www; o HSTS fica aqui, no proxy (o nginx do contêiner é HTTP).
+name: keytotwo-producao
+
+services:
+  site:
+    image: keytotwo-site:${IMAGE_TAG:?defina IMAGE_TAG no .env}
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.keytotwo.rule: Host(`keytotwo.com.br`)
+      traefik.http.routers.keytotwo.entrypoints: websecure
+      traefik.http.routers.keytotwo.tls.certresolver: letsencrypt
+      traefik.http.routers.keytotwo.middlewares: keytotwo-hsts
+      traefik.http.routers.keytotwo.service: keytotwo
+      # Roteador próprio para o www: cada nome tem o seu certificado, e um não trava o outro se o DNS demorar.
+      traefik.http.routers.keytotwo-www.rule: Host(`www.keytotwo.com.br`)
+      traefik.http.routers.keytotwo-www.entrypoints: websecure
+      traefik.http.routers.keytotwo-www.tls.certresolver: letsencrypt
+      traefik.http.routers.keytotwo-www.middlewares: keytotwo-www,keytotwo-hsts
+      traefik.http.routers.keytotwo-www.service: keytotwo
+      # $$ é o $ literal para o compose; o Traefik recebe ${1}.
+      traefik.http.middlewares.keytotwo-www.redirectregex.regex: ^https://www\.keytotwo\.com\.br/(.*)
+      traefik.http.middlewares.keytotwo-www.redirectregex.replacement: https://keytotwo.com.br/$${1}
+      traefik.http.middlewares.keytotwo-www.redirectregex.permanent: "true"
+      # Um ano, só para este nome: sem includeSubDomains (o teste e outros subdomínios seguem por conta própria).
+      traefik.http.middlewares.keytotwo-hsts.headers.stsSeconds: "31536000"
+      traefik.http.services.keytotwo.loadbalancer.server.port: "8080"
