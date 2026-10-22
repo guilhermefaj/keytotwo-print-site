@@ -1,5 +1,3 @@
-import { pending } from '../lib/pending.ts'
-
 // P001 composition; only J001 has documented mechanics. Do not infer rules from names.
 // Regra de catálogo (DESIGN.md): tudo o que a carta mostra vem daqui (código, nome, resumo,
 // capa, fatos, experiência). Sem capa oficial a capa é tipográfica; sem confirmação, "em breve".
@@ -29,7 +27,8 @@ export type Game = {
   name: string
   confirmed: boolean
   description: string
-  pending: string
+  /** Pendência que trava o build live (`pending()` de src/lib/pending.ts), até o jogo ser testado. */
+  pending?: string
   summary: string
   cover?: GameCoverArt
   /** Grátis ao criar a conta: fica fora do pacote e da venda (decisão do responsável, 2026-10-16). */
@@ -52,7 +51,6 @@ export const games: readonly Game[] = [
   {
     id: 'rabisque-e-adivinhe', code: 'J001', name: 'Rabisque e Adivinhe', confirmed: true,
     description: 'Uma caneta, uma folha em branco e a certeza de que algum desenho vai sair parecendo uma batata.',
-    pending: pending('testes de impressão e playtest.'),
     summary: 'Um desenha, o outro adivinha. Os acertos são da dupla.',
     cover: cover('j001'),
     facts: j001Facts,
@@ -70,7 +68,6 @@ export const games: readonly Game[] = [
   {
     id: 'tabuleiro-da-sorte', code: 'J003', name: 'Tabuleiro da Sorte', confirmed: true,
     description: 'Um dado, um tabuleiro e uma disputa de moedas. Cada casa pode render uma pergunta, um desafio ou um prejuízo.',
-    pending: pending('testes de impressão e playtest.'),
     summary: 'Perguntas, desafios e moedas no tabuleiro. Quem juntar mais faz o par cumprir um pedido secreto.',
     cover: cover('j003'),
     facts: [{ label: 'Pessoas', value: '2, um contra o outro' }, { label: 'Jeito de jogar', value: 'Tabuleiro, perguntas e desafios' }, { label: 'Em jogo', value: 'Moedas e um pedido secreto' }, { label: 'Formato', value: 'PDF para imprimir e montar' }],
@@ -86,7 +83,6 @@ export const games: readonly Game[] = [
   {
     id: 'o-sumico-de-rapadura', code: 'J002', name: 'O Sumiço de Rapadura', confirmed: true,
     description: 'Rapadura, o vira-lata caramelo do Kito, sumiu antes do forró da vila. Vocês investigam juntos, desafio por desafio, com tesoura, dobra, luz e muita conversa.',
-    pending: pending('testes de impressão e playtest.'),
     summary: 'Escape room em dupla, de papel e recorte, para descobrir onde foi parar Rapadura.',
     cover: cover('j002'),
     facts: [{ label: 'Pessoas', value: '2, em cooperação' }, { label: 'Jeito de jogar', value: 'Escape room de papel' }, { label: 'Dicas', value: 'Para quando a dupla travar' }, { label: 'Formato', value: 'PDF para imprimir em casa' }],
@@ -102,14 +98,12 @@ export const games: readonly Game[] = [
   {
     id: 'hora-dos-artistas', code: 'F001', name: 'Hora dos Artistas', confirmed: true, freebie: true,
     description: 'Os dois desenham o mesmo personagem de memória, contra o relógio, e decidem juntos quem chegou mais perto. No fim, cada um faz o retrato do outro.',
-    pending: pending('playtest e duração medida.'),
     summary: 'Desenho de memória contra o relógio. Quem chegou mais perto, a dupla decide junto.',
     cover: cover('f001'), accent: '#c94050', needs: ['impressora', 'tesoura', 'caneta', 'cronometro'],
   },
   {
     id: 'pote-de-planos', code: 'F002', name: 'Pote de Planos', confirmed: true, freebie: true,
     description: 'Vocês recortam os planos, dobram, jogam num pote e sorteiam um quando bate o "o que a gente faz hoje?". Tem date fora, date em casa, gentileza secreta, papo sem celular e desafio valendo prenda.',
-    pending: pending('playtest e teste de impressão.'),
     summary: 'Um pote de planos para sortear quando bate o "o que a gente faz hoje?". O que sair, vale.',
     cover: cover('f002'), accent: '#e39a2d', needs: ['impressora', 'tesoura', 'caneta'],
   },

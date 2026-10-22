@@ -53,6 +53,8 @@ A VPS é a da Chalk Labs na Hostinger. O acesso é pelo usuário `deploy`, que e
 | `/opt/keytotwo-site/build.env` | Variáveis públicas do build (`VITE_*`): stage `test`, `VITE_SITE_URL` do teste e as chaves publicáveis |
 | `/opt/keytotwo-site/teste/compose.yaml` | Cópia de `deploy/teste/compose.yaml` |
 | `/opt/keytotwo-site/teste/.env` | `IMAGE_TAG` (o commit em uso) e `SITE_BASIC_AUTH_USERS` (hash apr1 do usuário `keytotwo`, entre aspas simples). A senha em texto fica no arquivo de segredos, em `TEST_BASIC_AUTH_PASSWORD` |
+| `/opt/keytotwo-site/producao/build.env` | Variáveis públicas do build live: stage `live`, `VITE_SITE_URL=https://keytotwo.com.br`, as mesmas chaves do Supabase e a `pk_live_` da Stripe |
+| `/opt/keytotwo-site/producao/compose.yaml` e `.env` | Cópia de `deploy/producao/compose.yaml`; o `.env` tem só o `IMAGE_TAG` (`live-<commit>`) |
 
 **Atualizar o teste** (`teste.keytotwo.com.br`, com senha):
 
@@ -66,7 +68,64 @@ O script traz o commit, constrói a imagem na própria VPS (cerca de 70 s), marc
 
 **Backend do teste:** o Supabase hospedado. Desde 2026-10-21, `https://teste.keytotwo.com.br` está em `ALLOWED_ORIGINS` e na lista de retorno do Auth, e o `SITE_URL` das funções e o `site_url` do Auth apontam para ele. Por isso o retorno do pagamento e os links dos e-mails vão para o teste, inclusive nas compras feitas pelo 5178.
 
-**Produção** (`keytotwo.com.br`): ainda não existe. Segue o mesmo padrão, com outro compose sem senha e stage `live`, que exige a trava `check-release` sem pendências, além da virada da Stripe e do Supabase para o domínio.
+## Produção (keytotwo.com.br)
+
+Mesmo padrão do teste, na mesma VPS e no mesmo Traefik, com `deploy/producao/compose.yaml` e `deploy/producao/atualizar.sh`. As diferenças:
+
+- não tem senha;
+- o build é `live`, então passa pela trava `check-release`. Com qualquer pendência, a imagem não é criada e o que está no ar não muda;
+- a imagem leva o prefixo `live-` (`keytotwo-site:live-<commit>`), porque o teste faz outra imagem do mesmo commit;
+- `www.keytotwo.com.br` responde 301 para `keytotwo.com.br`. Cada nome tem o seu certificado, então um não espera o DNS do outro;
+- HSTS de um ano só para `keytotwo.com.br` e `www`, sem `includeSubDomains`.
+
+**Publicar uma versão nova** (depois do lançamento):
+
+```sh
+ssh deploy@<VPS_HOST> sh /opt/keytotwo-site/repo/deploy/producao/atualizar.sh   # ou com um ref
+```
+
+Para voltar, ponha um `live-<commit>` anterior no `IMAGE_TAG` de `producao/.env` e rode `docker compose up -d` na pasta `producao`.
+
+### Antes do lançamento
+
+1. **Trava sem pendências:** `VITE_SITE_STAGE=live node scripts/check-release.mjs` passa. Faltam a validação jurídica (`legalReview` em `src/content/legal.ts`) e os relatos reais com a nota e a contagem (`src/content/experience.ts`). Se a validação mudar os Termos, a versão nova vai também para o segredo `TERMS_VERSION` das funções.
+2. **VPS:** criar `/opt/keytotwo-site/producao/` com o `build.env` (as linhas abaixo) e um `.env` com `IMAGE_TAG=`. Os dois ficam com `chmod 600`.
+
+   ```sh
+   VITE_SITE_STAGE=live
+   VITE_SITE_URL=https://keytotwo.com.br
+   VITE_SUPABASE_URL=https://<ref>.supabase.co
+   VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_…
+   VITE_STRIPE_PUBLISHABLE_KEY=pk_live_…
+   VITE_CHECKOUT_MODE=stripe
+   ```
+
+3. **Stripe live:** cadastrar `keytotwo.com.br` em *Payment method domains*, para Apple Pay e Google Pay no formulário.
+4. **Google Cloud** (login com Google): a tela de consentimento OAuth publicada ("Em produção"), com `keytotwo.com.br` nos domínios autorizados e os links da página inicial, de `/privacidade` e de `/termos`. O retorno continua sendo o do Supabase, então não muda.
+
+### No dia, nessa ordem
+
+1. **Supabase hospedado** (pelo Lastro, com o OK do responsável):
+   - segredos das funções: `STRIPE_SECRET_KEY` (a `rk_live_`), `STRIPE_WEBHOOK_SECRET` (o do webhook live), `SITE_URL=https://keytotwo.com.br` e `https://keytotwo.com.br` em `ALLOWED_ORIGINS` (o teste continua). Valem nas chamadas seguintes, sem redeploy;
+   - Auth: `site_url` em `https://keytotwo.com.br` e `https://keytotwo.com.br/**` na lista de retorno;
+   - banco:
+     - `products.stripe_price_id` com os preços live (os `STRIPE_PRICE_ID_*` do arquivo de segredos);
+     - `private.stripe_prices` vazia;
+     - `profiles.stripe_customer_id` nulo, porque os clientes de teste não existem na conta live;
+     - pedidos e eventos das compras de teste apagados. O Lastro lista antes; a conta do admin fica.
+2. **DNS no Cloudflare, em "Somente DNS":** `keytotwo.com.br` A para o IP da VPS e `www` CNAME para `keytotwo.com.br`. Os MX do e-mail não mudam. Espere `nslookup keytotwo.com.br 1.1.1.1` responder o IP da VPS: o certificado sai pelo desafio HTTP-01, que precisa do DNS já apontado.
+3. **VPS:** na primeira vez, o script ainda não está no clone da VPS. Rode a partir do repositório local: `ssh deploy@<VPS_HOST> sh -s main < deploy/producao/atualizar.sh`.
+4. **Conferir:**
+   - `https://keytotwo.com.br` com certificado; `http://` e `www` levam a ele;
+   - `robots.txt` e `sitemap.xml` com o domínio;
+   - o aviso de cookies;
+   - depois de "Aceitar", a visita aparece em *Tempo real* no GA4.
+5. **Compra real pequena** (um jogo avulso, cartão ou Pix):
+   - pedido pago, jogo em Meus jogos e e-mail de confirmação;
+   - em seguida, o reembolso total pelo Dashboard. O webhook `charge.refunded` marca o pedido como reembolsado.
+6. **Search Console:** enviar `https://keytotwo.com.br/sitemap.xml`.
+
+**Depois da virada:** o teste e o dev local continuam no mesmo Supabase, agora com a Stripe live. Dá para navegar, entrar e baixar por eles, mas o pagamento não funciona, porque o site em stage test recusa sessões live. Para voltar a testar compras fora da produção, o teste precisa de um projeto Supabase próprio, com a Stripe de teste.
 
 ## Referências técnicas
 
