@@ -20,7 +20,7 @@ export const help: readonly HelpSection[] = [
       'Os jogos são digitais: vocês compram, baixam o PDF e imprimem em casa. Nada é enviado pelo correio.',
       'O pagamento é feito por Pix ou cartão, no ambiente seguro da Stripe. A KeyToTwo não recebe o número do cartão.',
       'Cada jogo pode ser comprado sozinho ou dentro de um pacote. Se vocês já têm um jogo que vem no pacote, a sacola avisa antes do pagamento.',
-      'Como os jogos são liberados assim que o pagamento é confirmado, não há reembolso depois da liberação. Arquivo com defeito, jogo que não chegou ou cobrança em duplicidade têm solução: é só escrever para o atendimento, que corrige, reenvia ou devolve o valor.',
+      'Os jogos são liberados assim que o pagamento é confirmado. Fora dos casos da Política de reembolso e da lei, não há reembolso depois da liberação. Arquivo com defeito, jogo que não chegou ou cobrança em duplicidade têm solução: é só escrever para o atendimento, que corrige, reenvia ou devolve o valor.',
     ],
   },
   {

@@ -40,7 +40,7 @@ test('explicit mock: acceptance, coupon and simulated confirmation without a che
 
 test('acceptance gates API and form; coupon invalid/apply/remove; confirmation', async ({ page }) => {
   let calls = 0
-  page.on('request', request => { if (request.url().endsWith('/api/checkout')) { calls++; expect(request.postDataJSON()).toEqual({ cart_version: 3, terms_accepted: true, terms_version: 'termos-2026-10-19' }) } })
+  page.on('request', request => { if (request.url().endsWith('/api/checkout')) { calls++; expect(request.postDataJSON()).toEqual({ cart_version: 3, terms_accepted: true, terms_version: 'termos-2026-10-22' }) } })
   await stripeMode(page)
   await expect(page.locator('#checkout-form')).toHaveCount(0)
   expect(calls).toBe(0)

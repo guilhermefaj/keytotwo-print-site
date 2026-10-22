@@ -61,13 +61,13 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await expect(page.locator('[data-cart-product]')).toBeVisible()
   await expect(page.locator('main')).not.toContainText(/Stripe|indisponível|nova aba/i)
   // Aviso de reembolso antes do pagamento (responsável, 2026-10-19), com o link para a política.
-  await expect(page.locator('.cart-summary')).toContainText('Depois da liberação, não há reembolso')
+  await expect(page.locator('.cart-summary')).toContainText('Fora dos casos da Política de reembolso e da lei, não há reembolso depois da liberação')
   await expect(page.locator('.cart-summary').getByRole('link', { name: 'Política de reembolso' })).toHaveAttribute('href', '/reembolsos')
   await capture(page, `carrinho-item-${width}`); await axe(page)
   await page.getByRole('button', { name: 'Finalizar compra', exact: true }).focus(); await page.keyboard.press('Enter')
   await expect(page.locator('main').getByRole('checkbox')).toHaveCount(1)
   // Aceite expresso (Política de reembolso): termos, reembolso e entrega imediata no nome da caixa.
-  const terms = page.getByRole('checkbox', { name: /^Li e aceito os termos de uso e a política de reembolso ?\. Estou ciente de que os jogos são conteúdo digital, liberado para download assim que o pagamento é confirmado, e de que, por isso, não há reembolso depois da liberação\.$/ })
+  const terms = page.getByRole('checkbox', { name: /^Li e aceito os termos de uso e a política de reembolso ?\. Estou ciente de que os jogos são conteúdo digital, liberado para download assim que o pagamento é confirmado, e peço essa entrega imediata\.$/ })
   await expect(terms).not.toBeChecked()
   await expect(page.getByRole('link', { name: 'Voltar à sacola', exact: true })).toHaveCount(1)
   await expect(page.locator('#checkout-form')).toHaveCount(0)
