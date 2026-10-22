@@ -196,6 +196,26 @@ test('cart failure offers retry without presenting an empty cart', async ({ page
   await expect(page.getByRole('dialog')).not.toContainText('Sua sacola está vazia')
 })
 
+test('tab opened before a deploy: the stale drawer chunk reloads the page instead of the error page', async ({ page }) => {
+  await fixture(page)
+  await page.goto('/')
+  await page.locator('html[data-interactive="true"]').waitFor({ state: 'attached' })
+  // The new deploy no longer has the drawer chunk this tab knows: the server answers 404 once.
+  let stale = true
+  await page.route('**/assets/CartDrawer-*.js', route => {
+    if (!stale) return route.continue()
+    stale = false
+    return route.fulfill({ status: 404, contentType: 'text/html', body: '<h1>404</h1>' })
+  })
+  const reloaded = page.waitForEvent('load')
+  await page.locator('.desktop-action .cart-trigger').click()
+  await reloaded
+  await page.locator('html[data-interactive="true"]').waitFor({ state: 'attached' })
+  await expect(page.getByRole('heading', { name: 'Não foi possível abrir esta página' })).toHaveCount(0)
+  await page.locator('.desktop-action .cart-trigger').click()
+  await expect(page.getByRole('dialog')).toContainText('Sua sacola está vazia')
+})
+
 test('320–1440 and 200% text: header, sheet, drawers, 404 and focus checkout fit', async ({ page }) => {
   test.setTimeout(120_000)
   await fixture(page, { filled: true })

@@ -237,7 +237,7 @@ Toda `font-size` do CSS referencia um destes tokens (`--text-*`); não há valor
 Números (preço, contagem, data) usam `font-variant-numeric: tabular-nums`. O preço é Headline em Bricolage apenas quando é um preço real; qualquer texto no lugar do preço ("Preço em breve", erro) é Body em Tinta suave.
 
 ### Named Rules
-**The Heading Carries Itself Rule.** Não há rótulo, kicker ou eyebrow acima de um título. A única etiqueta do site é a da hero ("KeyToTwo · jogos para casais"), em caixa normal, e ela é um componente de etiqueta, não um pré-título.
+**The Heading Carries Itself Rule.** Não há rótulo, kicker ou eyebrow acima de um título. A hero também não tem etiqueta: "KeyToTwo · jogos para casais" saiu em 2026-10-22, a pedido do responsável (poluía o topo).
 
 **The Print Tracking Rule.** O tracking negativo para em −0,04em no Display e em −0,02em nos títulos pequenos; o corpo não leva tracking.
 
@@ -303,7 +303,7 @@ Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exa
 - **Rótulos:** um nome por ação em todo o site: "Quero o pacote" leva à oferta (`/#comprar`); "Adicionar à sacola" compra; "Ver detalhes" abre a página do produto; "Finalizar compra" paga.
 
 ### Tags (etiqueta e selo)
-- **Etiqueta** (`.tag`): Papel, borda 2 px **tracejada** Turquesa J001, `{rounded.sm}`, padding `6px 12px`, Label 600 em Tinta. Só para a identificação da hero e para marcar algo "por recortar" (ex.: freebie em preparação).
+- **Etiqueta** (`.tag`): Papel, borda 2 px **tracejada** Turquesa J001, `{rounded.sm}`, padding `6px 12px`, Label 600 em Tinta. Para identificar uma seção de loja (Gratuitos) e para marcar algo "por recortar" (ex.: freebie em preparação); nunca acima do título da hero.
 - **Selo** (`.tag-solid`): borda 1,5 px sólida Turquesa J001, texto Turquesa profundo em Caption 600, padding `2px 8px`. Só dentro da carta ("No pacote", no rodapé do card de jogo).
 
 ### Cards / Containers
@@ -401,7 +401,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - **Na home, fora da hero:** no máximo uma participação, parada, como anfitrião de um convite. Desde 2026-10-20 não há nenhuma: ao lado de "A próxima rodada sai da impressora" ficam três páginas dos jogos gratuitos (Hora dos Artistas e Pote de Planos) sobre o arco Marca-texto, uma sob a cúpula e duas na frente, passando só um pouco dele (o leque de 2026-10-21 escondia demais as páginas), sem legenda (responsável, 2026-10-21), numa imagem só gerada por `scripts/prepare-free-pages.mjs`, com 330 px por página na maior versão, pequena demais para imprimir. Dos jogos pagos, nenhuma página aparece no site. O aceno do rodapé é da moldura do site, não da home. Nunca como ícone de pilar. Na arte oficial das capas dos jogos ele é o protagonista (as capas são peças aprovadas, não enfeite).
 - **Vazios** (carrinho, biblioteca, gaveta): Kito na caixa (`kito-caixa`, 240 px; 180 px no celular), com a entrada curta de 650 ms.
 - **Celebração** (pagamento confirmado): Kito acenando (`kito-hi`) com o confete de 1,1 s. Único lugar de delícia longa.
-- **Erro, falha de pagamento e 404:** pose neutra = **quadro 01 do atlas** (`.kito-still`, fundo `kito-walk-v31-right-atlas.webp` em `0 0 / 600% 200%`, 128–160 px), sem lágrima, sem aceno. Nenhuma imagem nova é gerada para isso.
+- **Erro, falha de pagamento e 404:** o Kito tonto, com estrelinhas na cabeça (`.kito-dizzy`, responsável, 2026-10-22; substitui a pose neutra do atlas da hero). É uma tira de 9 quadros de `Kito.zip` (animação *wobbles*, de frente) gerada por `scripts/prepare-kito-tonto.mjs`, passada com `steps(9, jump-none)` em 1,1 s, 160 px de largura (128 px no celular), pixelada; com movimento reduzido, fica no primeiro quadro. Decorativo (`aria-hidden`).
 - **Favicon:** o Kito em pixel art (`kito_favicon.png` do Drive), de frente e sorrindo, é o ícone do site: `favicon.ico` (16/32/48), `kito-192.png` e o ícone da tela inicial do iPhone sobre Céu. Gerados por `scripts/prepare-favicon.mjs`; não se edita à mão.
 - **Área privada:** Kito acenando pequeno (56–64 px), ao lado do nome na saudação.
 - **Rodapé público:** o chão da hero volta como faixa de borda a borda (`.footer-ground`: grama, terra, um arbusto da cena) e o Kito sentado de frente na grama (`kito-pixel-sit`, 120 px de altura; 96 px no celular), que de vez em quando balança os pés uma ou duas vezes; com movimento reduzido, fica parado. Decorativo (`aria-hidden`). Não entra no rodapé privado, no da compra nem no do modo foco.

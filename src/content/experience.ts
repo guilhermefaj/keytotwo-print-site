@@ -1,10 +1,10 @@
 // Redesign: proposed brand copy. Commercial facts remain in offer.ts.
 // Replace social proof ONLY with authorized material. null = placeholder.
 export const experience = {
-  // Portão 1 (2026-10-10): etiqueta em caixa normal, marca-texto em "encontro.", sem lista de ✓.
+  // Portão 1 (2026-10-10): marca-texto em "encontro.", sem lista de ✓. Sem a etiqueta "KeyToTwo · jogos para casais"
+  // acima do título (responsável, 2026-10-22).
   // CTA "Ver os jogos" (Loja, decisão 2 do responsável) e link "Como funciona". A hero vende a marca, não o produto.
   // Sem "Ver a prévia": nenhuma página do PDF vai para o site (responsável, 2026-10-16).
-  tag: 'KeyToTwo · jogos para casais',
   headline: ['A rotina pode esperar.', 'Vocês têm um encontro.'],
   highlight: 'encontro.',
   description: 'Jogos para imprimir, puxar uma cadeira e descobrir o quanto vocês se divertem juntos.',

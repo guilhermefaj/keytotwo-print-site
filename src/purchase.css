@@ -47,7 +47,7 @@
 .purchase-page.confirmation-page { display: block; }
 .purchase-page .confirmation-card { width: 100%; border: 0; padding: 24px 0 56px; }
 .confirmation-result { display: grid; grid-template-columns: minmax(180px, .6fr) minmax(0, 1fr); align-items: center; gap: 56px; max-width: 920px; margin: 0 auto; }
-.confirmation-result > .kito-empty, .confirmation-result > .kito-still { justify-self: center; }
+.confirmation-result > .kito-empty, .confirmation-result > .kito-dizzy { justify-self: center; }
 .confirmation-result h1 { font-size: var(--text-headline); line-height: 1.05; }
 .confirmation-result p { line-height: 1.65; }
 .confirmation-result .form-actions { align-items: center; }
