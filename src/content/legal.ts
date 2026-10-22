@@ -1,4 +1,3 @@
-import { pending } from '../lib/pending'
 import { supportEmail } from './help'
 
 // Termos, Política de reembolso e Política de privacidade (responsável, 2026-10-19). Fatos conferidos no código:
@@ -17,8 +16,8 @@ export const company = {
   email: supportEmail,
 }
 
-// Única pendência jurídica, fora da tela: o responsável libera depois de revisar os três textos.
-export const legalReview = pending('validação jurídica dos Termos, da Privacidade e da política de não reembolso.')
+// Validação jurídica dos Termos, da Política de reembolso e da Privacidade: aprovada em 2026-10-22, na versão
+// termos-2026-10-22 (responsável). Mudou o texto, muda a versão e o jurídico revê de novo.
 
 // Revisão jurídica de 2026-10-22: atualizações, versões, licença x acesso, suspensão, responsabilidade, arrependimento,
 // gratuitos e fotos. Fatos conferidos no código: Pix (Stripe, reembolso em até 90 dias para a conta de origem),
