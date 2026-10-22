@@ -12,7 +12,7 @@ const shopRoutes = readdirSync('build/client/loja', { withFileTypes: true }).fil
 routes.push(...shopRoutes.filter(route => !routes.includes(route)))
 const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/email/preferencias', '/404']
 const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao']
-const refundNotice = /Depois da libera[çc][ãa]o, n[ãa]o h[áa] reembolso, salvo arquivo com defeito ou cobran[çc]a indevida/i
+const refundNotice = /Fora dos casos da Pol[íi]tica de reembolso e da lei, n[ãa]o h[áa] reembolso depois da libera[çc][ãa]o/i
 
 async function builtFile(name: string) {
   return readFile(new URL(`../../build/client/${name}`, import.meta.url), 'utf8')

@@ -2,7 +2,7 @@ import { needLabels, packageGames } from './games.ts'
 
 // P001 + decisões seguintes do responsável no Plano do site P1 (2026-10-08); preços aprovados em 2026-10-16.
 // O preço exibido vem sempre do /catalog (Stripe); `price` aqui é o valor aprovado, para a trava de release.
-// Validação jurídica dos textos: um único item em legal.ts (legalReview).
+// Validação jurídica dos textos: aprovada em 2026-10-22 (legal.ts).
 export type ProductOffer = {
   code: string
   name: string
