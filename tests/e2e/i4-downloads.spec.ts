@@ -128,6 +128,8 @@ test('gratuitos sem sessão: passo a passo à vista, entrada que volta para a p�
   await expect(page.locator('.free-games [data-shop-game]')).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(0)
   await expect(page.getByRole('link', { name: /Seguir @keytotwo no Instagram/ })).toHaveAttribute('href', 'https://www.instagram.com/keytotwo/')
+  await expect(page.getByRole('link', { name: /Seguir @keytotwo no TikTok/ })).toHaveAttribute('href', 'https://www.tiktok.com/@keytotwo')
+  await expect(page.getByRole('link', { name: /@keytotwo no TikTok/ }).last()).toHaveAttribute('href', 'https://www.tiktok.com/@keytotwo')
   await page.close()
 })
 

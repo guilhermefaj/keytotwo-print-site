@@ -1,4 +1,4 @@
-import { IconBrandInstagram } from '@tabler/icons-react'
+import { IconBrandInstagram, IconBrandTiktok } from '@tabler/icons-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { DataStatus } from '../components/account/AccountUi'
@@ -6,7 +6,7 @@ import { DownloadButton } from '../components/account/DownloadButton'
 import { GameCard } from '../components/shop/GameGrid'
 import { marketingConsent } from '../content/account'
 import { freebies } from '../content/games'
-import { gratuitos, instagram } from '../content/gratuitos'
+import { gratuitos, instagram, tiktok } from '../content/gratuitos'
 import { api, apiErrorMessage } from '../lib/api'
 import { useAuth } from '../lib/auth-context'
 import { deliveryMock, fileSize, type FreeGames } from '../lib/downloads'
@@ -15,7 +15,7 @@ import { useShop } from '../lib/shop-context'
 import { useApiResource } from '../lib/use-api-resource'
 
 // Os gratuitos (DESIGN.md › Gratuitos): conta + aceite de e-mails libera os PDFs para sempre; a página também
-// convida para a comunidade (Instagram e e-mails).
+// convida para a comunidade (Instagram, TikTok e e-mails).
 export default function Gratuitos() {
   const { session } = useAuth()
   const { account } = useShop()
@@ -43,7 +43,10 @@ export default function Gratuitos() {
         <h2 id="comunidade-titulo">{community.title}</h2>
         {community.paragraphs.map(text => <p key={text}>{text}</p>)}
         <p className="free-community-invite">{community.invite}</p>
-        <a className="button button-primary instagram-button" href={instagram.href} target="_blank" rel="noopener" aria-label={`${community.follow} (abre em nova aba)`}><IconBrandInstagram aria-hidden="true" size={22} stroke={1.75} />{community.follow}</a>
+        <div className="free-community-follow">
+          <a className="button button-primary social-button" href={instagram.href} target="_blank" rel="noopener" aria-label={`${community.follow} (abre em nova aba)`}><IconBrandInstagram aria-hidden="true" size={22} stroke={1.75} />{community.follow}</a>
+          <a className="button button-secondary social-button" href={tiktok.href} target="_blank" rel="noopener" aria-label={`${community.followTiktok} (abre em nova aba)`}><IconBrandTiktok aria-hidden="true" size={22} stroke={1.75} />{community.followTiktok}</a>
+        </div>
         <p className="field-help">{community.followHelp}</p>
       </div>
       <img className="free-community-kito" src="/media/hero/kito-pixel-pose.webp" width="256" height="256" alt="" loading="lazy" decoding="async" />
