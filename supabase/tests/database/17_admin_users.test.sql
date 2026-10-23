@@ -259,7 +259,8 @@ select pg_temp.assert('equipe: o admin vale no banco na hora, sem perder o resto
   and (select u.raw_app_meta_data -> 'providers' = '["email"]'::jsonb from auth.users u where u.id = pg_temp.uid('cris'))
   and exists (select 1 from private.admin_events a where a.action = 'user_admin_grant' and a.target_id = pg_temp.uid('cris') and a.details->>'reason' = 'Entrou para a equipe'));
 select pg_temp.assert('equipe: lista da equipe com o filtro admins',
-  (select (select array_agg(u->>'email' order by u->>'email') from jsonb_array_elements(result->'users') u)
+  -- collate "C": a ordem não depende do idioma do banco (no CI, a pontuação é ignorada e adm@ vem antes de adm2@).
+  (select (select array_agg(u->>'email' order by u->>'email' collate "C") from jsonb_array_elements(result->'users') u)
           = array['adm2@pgtap.test', 'adm@pgtap.test', 'admnc@pgtap.test', 'cris@pgtap.test']
    from public.admin_list_users(pg_temp.uid('adm'), '@pgtap.test', 'admins', 0)));
 select pg_temp.assert('equipe: promover de novo é unchanged; sem confirmação, not_confirmed; bloqueada, blocked',
@@ -290,7 +291,7 @@ update public.email_outbox set status = 'canceled', skip_reason = 'entitlement_r
 update auth.users set created_at = now() - interval '2 hours' where id = pg_temp.uid('bia');
 create temp table follow as select * from public.admin_follow_up(pg_temp.uid('adm'));
 create function pg_temp.follow_emails(p_list text) returns text[] language sql as $$
-  select coalesce(array_agg(i->>'email' order by i->>'email'), '{}') from pg_temp.follow f, jsonb_array_elements(f.result->p_list->'items') i
+  select coalesce(array_agg(i->>'email' order by i->>'email' collate "C"), '{}') from pg_temp.follow f, jsonb_array_elements(f.result->p_list->'items') i
    where i->>'email' like '%@pgtap.test'
 $$;
 select pg_temp.assert('acompanhamento: ok', (select outcome = 'ok' from pg_temp.follow));
