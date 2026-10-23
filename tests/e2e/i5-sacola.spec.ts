@@ -38,7 +38,7 @@ function subtotal(items: Item[]) {
 const cartBody = (items: Item[], extra: Record<string, unknown> = {}) => ({ version: 1, items, subtotal: subtotal(items), warnings: [], ...extra })
 
 // Com sessão: a sacola da conta (GET /cart). Sem sessão: a cotação da sacola guardada no navegador (POST /cart/quote).
-async function fixture(page: Page, initial: Item[], { signedIn = true, owned = [] as string[], quote = (codes: string[]) => codes.map(code => [p001, j001].find(item => item.code === code)!), delay = 0 } = {}) {
+async function fixture(page: Page, initial: Item[], { signedIn = true, owned = [] as string[], quote = (codes: string[]) => codes.map(code => [p001, j001].find(item => item.code === code)!), delay = 0, staleCartDelay = 0 } = {}) {
   let items = [...initial]
   const calls: { path: string; body: unknown }[] = []
   if (signedIn) {
@@ -60,6 +60,8 @@ async function fixture(page: Page, initial: Item[], { signedIn = true, owned = [
       return route.fulfill({ json: cartBody(items, { owned_products: owned }) })
     }
     const reply = path === '/cart' ? cartBody(items, { owned_products: owned }) : path === '/catalog' ? { products: [p001, j001] } : path === '/account' ? { email: fakeSession.user.email, marketing: { opted_in: false, prompted_at: '2026-01-01', text_version: null }, orders: [] } : { available: false }
+    // A sacola lida antes de uma mudança e entregue depois dela (resposta fora de ordem).
+    if (staleCartDelay && path === '/cart') await new Promise(resolve => setTimeout(resolve, staleCartDelay))
     return route.fulfill({ json: reply })
   })
   return calls
@@ -157,9 +159,12 @@ test('sem login: a sacola fica no navegador, com preços da API, e o login só a
 test('ao entrar, a sacola do navegador se junta à da conta e sai do navegador', async ({ page }) => {
   test.skip(!stageTest, 'Stage test fixture')
   await page.addInitScript(key => { if (!sessionStorage.getItem('i5-merge')) { sessionStorage.setItem('i5-merge', '1'); localStorage.setItem(key, '["P001","J001"]') } }, guestKey)
-  const calls = await fixture(page, [], { quote: codes => codes.map(code => (code === 'J001' ? included : p001)) })
+  // A leitura da sacola vazia chega depois da junção: a junção vale.
+  const calls = await fixture(page, [], { quote: codes => codes.map(code => (code === 'J001' ? included : p001)), staleCartDelay: 800 })
   await page.goto('/carrinho')
   await expect(page.locator('[data-cart-product="J001"]')).toContainText('não é cobrado')
+  await page.waitForTimeout(1000)
+  await expect(page.locator('[data-cart-product="J001"]')).toBeVisible()
   expect(calls.find(call => call.path === '/cart/merge')?.body).toEqual({ product_codes: ['P001', 'J001'] })
   await expect.poll(() => page.evaluate(key => localStorage.getItem(key), guestKey)).toBeNull()
 })

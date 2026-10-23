@@ -1,4 +1,4 @@
-import { IconBrandInstagram } from '@tabler/icons-react'
+import { IconBrandInstagram, IconBrandTiktok } from '@tabler/icons-react'
 import { CookieSettingsButton } from './CookieNotice'
 import { useEffect, useRef } from 'react'
 import { Link, useLocation, useRouteLoaderData } from 'react-router'
@@ -8,7 +8,7 @@ import { newsletterVisible } from '../../lib/features'
 import { Newsletter } from '../newsletter/Newsletter'
 import { CutLine } from '../ui/CutLine'
 import { company } from '../../content/legal'
-import { instagram } from '../../content/gratuitos'
+import { instagram, tiktok } from '../../content/gratuitos'
 
 // Identificação do fornecedor (Termos de uso › Quem fornece), em todo rodapé, inclusive no pagamento.
 function LegalLine() {
@@ -41,7 +41,7 @@ export function SiteFooter() {
   // Pagamento em modo foco: só a linha legal, sem convites para sair da compra.
   if (path === '/pagamento') return <footer className="site-footer" data-focus="true"><div className="site-footer-rule" aria-hidden="true" /><div className="content-width footer-bottom"><LegalLine /><nav aria-label="Informações legais"><Link to="/termos">Termos de uso</Link><Link to="/reembolsos">Reembolsos</Link><Link to="/privacidade">Privacidade</Link><CookieSettingsButton /><Link to="/ajuda">Ajuda</Link></nav></div></footer>
   return <footer className="site-footer" data-public={publicFooter}>{publicFooter ? <CutLine /> : <div className="site-footer-rule" aria-hidden="true" />}{publicFooter && newsletterVisible && <div className="content-width footer-newsletter"><Newsletter /></div>}<div className="content-width footer-grid">
-    <div className="footer-brand"><Link className="brand" to="/" aria-label="KeyToTwo — início"><img src="/media/hero/keytotwo-logo.webp" width="420" height="97" alt="KeyToTwo" loading="lazy" /></Link><p>Um pinguim numa tela pedindo para vocês saírem dela.</p><a className="footer-instagram" href={instagram.href} target="_blank" rel="noopener" aria-label={`${instagram.handle} no Instagram (abre em nova aba)`}><IconBrandInstagram aria-hidden="true" size={22} stroke={1.75} />{instagram.handle}</a></div>
+    <div className="footer-brand"><Link className="brand" to="/" aria-label="KeyToTwo — início"><img src="/media/hero/keytotwo-logo.webp" width="420" height="97" alt="KeyToTwo" loading="lazy" /></Link><p>Um pinguim numa tela pedindo para vocês saírem dela.</p><div className="footer-social"><a href={instagram.href} target="_blank" rel="noopener" aria-label={`${instagram.handle} no Instagram (abre em nova aba)`}><IconBrandInstagram aria-hidden="true" size={22} stroke={1.75} />Instagram</a><a href={tiktok.href} target="_blank" rel="noopener" aria-label={`${tiktok.handle} no TikTok (abre em nova aba)`}><IconBrandTiktok aria-hidden="true" size={22} stroke={1.75} />TikTok</a></div></div>
     <nav aria-label="Explorar"><h2>Vamos jogar</h2><Link to="/">Início</Link><Link to="/loja">Loja</Link><a href="/#como-funciona">Como funciona</a><Link to="/gratuitos">Gratuitos</Link>{hasBlogPosts && <Link to="/blog">Blog</Link>}</nav>
     <nav aria-label="Ajuda e acesso"><h2>Conta e ajuda</h2><Link to="/meus-jogos">Meus jogos</Link><Link to="/conta">Minha conta</Link>{siteConfig.showCartAccess && <Link to="/carrinho">Sacola</Link>}<Link to="/ajuda">Ajuda</Link></nav>
   </div><div className="content-width footer-bottom"><LegalLine /><nav aria-label="Informações legais"><Link to="/termos">Termos de uso</Link><Link to="/reembolsos">Reembolsos</Link><Link to="/privacidade">Privacidade</Link><CookieSettingsButton /></nav></div>

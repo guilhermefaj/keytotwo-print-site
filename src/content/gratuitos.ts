@@ -1,6 +1,7 @@
 // Página Gratuitos (responsável, 2026-10-20): os jogos grátis, a troca (conta + e-mails) e o convite para a comunidade.
-// A comunidade hoje é o Instagram e os e-mails. Só entra o que é verdade: ouvimos ideias e os temas vão para votação.
+// A comunidade hoje é o Instagram, o TikTok e os e-mails. Só entra o que é verdade: ouvimos ideias e os temas vão para votação.
 export const instagram = { handle: '@keytotwo', href: 'https://www.instagram.com/keytotwo/' }
+export const tiktok = { handle: '@keytotwo', href: 'https://www.tiktok.com/@keytotwo' }
 
 export const gratuitos = {
   tag: 'Gratuitos',
@@ -20,10 +21,11 @@ export const gratuitos = {
     title: 'A KeyToTwo cresce com quem joga.',
     paragraphs: [
       'Cada jogo daqui existe para tirar duas pessoas do piloto automático. Quem diz se deu certo é quem joga.',
-      'Ideias e relatos que chegam pelo Instagram ou em resposta aos nossos e-mails vão para a mesa quando planejamos os próximos jogos. E os temas dos próximos lançamentos vão para votação na comunidade.',
+      'Ideias e relatos que chegam pelo Instagram, pelo TikTok ou em resposta aos nossos e-mails vão para a mesa quando planejamos os próximos jogos. E os temas dos próximos lançamentos vão para votação na comunidade.',
     ],
-    invite: 'Sigam o Kito no Instagram para votar nos próximos temas e mandar ideias.',
+    invite: 'Sigam o Kito no Instagram e no TikTok para votar nos próximos temas e mandar ideias.',
     follow: 'Seguir @keytotwo no Instagram',
-    followHelp: 'Abre o perfil no app do Instagram. Lá, é só tocar em Seguir.',
+    followTiktok: 'Seguir @keytotwo no TikTok',
+    followHelp: 'Abre o perfil no app. Lá, é só tocar em Seguir.',
   },
 }

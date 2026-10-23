@@ -164,7 +164,8 @@
 .free-community h2 { font-size: var(--text-headline-sm); margin: var(--space-md) 0; }
 .free-community-copy > p:not(.tag) { max-width: 60ch; margin: 0 0 var(--space-sm); }
 .free-community-invite { font-weight: 600; }
-.instagram-button { gap: 10px; margin-top: var(--space-sm); }
+.free-community-follow { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-sm); }
+.social-button { gap: 10px; }
 .free-community-kito { width: 192px; height: auto; }
 @media (max-width: 960px) {
   .free-top { grid-template-columns: minmax(0, 1fr); gap: var(--space-xl); }
@@ -173,5 +174,5 @@
   .free-access, .free-community { padding: var(--space-lg); }
   .free-community { grid-template-columns: minmax(0, 1fr); gap: var(--space-md); }
   .free-community-kito { grid-row: 1; justify-self: center; width: 128px; }
-  .instagram-button { width: 100%; }
+  .social-button { width: 100%; }
 }

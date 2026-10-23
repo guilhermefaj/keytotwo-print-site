@@ -1,7 +1,7 @@
 import { otherPages, publicPages } from '../content/site.ts'
 import { productPages, type Product } from '../content/products.ts'
 import { supportEmail } from '../content/help.ts'
-import { instagram } from '../content/gratuitos.ts'
+import { instagram, tiktok } from '../content/gratuitos.ts'
 import defaults from '../../site.config.json' with { type: 'json' }
 import type { BlogPostSummary } from './blog.ts'
 
@@ -56,7 +56,7 @@ export function shareImage(pathname: string) {
 
 const organization = () => ({
   '@type': 'Organization', '@id': `${siteConfig.origin}/#organizacao`, name: 'KeyToTwo', url: siteConfig.origin,
-  logo: new URL('/media/hero/keytotwo-logo.webp', siteConfig.origin).href, email: supportEmail, sameAs: [instagram.href],
+  logo: new URL('/media/hero/keytotwo-logo.webp', siteConfig.origin).href, email: supportEmail, sameAs: [instagram.href, tiktok.href],
 })
 
 // Página inicial: quem é a KeyToTwo e o site.
