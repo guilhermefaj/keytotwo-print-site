@@ -14,7 +14,7 @@ export function Screen({ title, children }: { title: string; children?: ReactNod
   </main>
 }
 
-export function SignOut() {
+export function SignOut({ className = 'button button-secondary', icon }: { className?: string; icon?: ReactNode }) {
   const [busy, setBusy] = useState(false)
-  return <button className="button button-secondary" type="button" disabled={busy} onClick={() => { setBusy(true); void supabase?.auth.signOut().finally(() => setBusy(false)) }}>{busy ? 'Saindo…' : 'Sair'}</button>
+  return <button className={className} type="button" disabled={busy} onClick={() => { setBusy(true); void supabase?.auth.signOut().finally(() => setBusy(false)) }}>{icon}<span>{busy ? 'Saindo…' : 'Sair'}</span></button>
 }
