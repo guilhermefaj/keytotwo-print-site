@@ -75,6 +75,11 @@ jobs:
       - name: Build pré-renderizado (o script de build já roda o typecheck)
         run: npm run build
       - name: Build do admin (o Playwright também serve admin/dist)
+        # Sem URL, o admin abre a tela de "não configurado". A local só dá o nome da sessão (sb-127-auth-token, o mesmo
+        # dos testes); Auth e API são simulados nos specs.
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
         run: npm run build:admin
       - name: Validar conteúdo e preço para release
         run: node scripts/check-release.mjs --built
