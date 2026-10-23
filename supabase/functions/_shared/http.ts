@@ -9,6 +9,7 @@ export type ErrorCode =
   | 'NOT_ENTITLED'
   | 'FREE_GAMES_LOCKED'
   | 'NOT_ADMIN'
+  | 'MFA_REQUIRED'
   | 'ORIGIN_NOT_ALLOWED'
   | 'NOT_FOUND'
   | 'FILE_NOT_FOUND'

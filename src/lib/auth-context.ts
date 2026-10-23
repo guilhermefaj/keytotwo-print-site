@@ -5,3 +5,5 @@ export const AuthContext = createContext<{ session: Session | null; ready: boole
 export const useAuth = () => useContext(AuthContext)
 // Só decide o que mostrar: a API confere o admin no banco a cada chamada (app_metadata só o servidor grava).
 export const isAdmin = (session: Session | null) => session?.user.app_metadata?.admin === true
+// O painel da equipe é um app à parte (admin/), no próprio subdomínio; /painel leva para lá (nginx.conf).
+export const adminUrl = (import.meta.env.VITE_ADMIN_URL as string | undefined) || 'https://admin.keytotwo.com.br'

@@ -83,6 +83,7 @@ Headers enviados pelo site:
 | 403 | `EMAIL_NOT_CONFIRMED` | Sessão de conta sem e-mail confirmado |
 | 403 | `NOT_ENTITLED` | Sem direito ao arquivo |
 | 403 | `FREE_GAMES_LOCKED` | Gratuito pedido por conta que nunca aceitou os e-mails (6.9) |
+| 403 | `MFA_REQUIRED` | Rota de admin com sessão sem o segundo fator (aal1) (6.12) |
 | 403 | `NOT_ADMIN` | Painel pedido por conta sem o admin (6.12) |
 | 403 | `ORIGIN_NOT_ALLOWED` | `Origin` fora da lista |
 | 404 | `NOT_FOUND` | Rota inexistente |
@@ -160,7 +161,7 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `GET /d/{token}` | Token HMAC | I4 | Planejada |
 | `GET /free-games` | Pública | Gratuitos | Implementada |
 | `POST /free-download` | Sessão + aceite de e-mails registrado alguma vez | Gratuitos | Implementada |
-| `GET /admin/metrics` | Sessão de admin (`app_metadata.admin`) | Painel | Implementada |
+| `GET /admin/metrics` | Sessão de admin (`app_metadata.admin`) com segundo fator (`aal2`) | Admin | Implementada |
 | `GET` e `POST /email/unsubscribe` | Token HMAC | I5 | Planejada |
 
 Rota ainda não implementada responde `404 NOT_FOUND`.
@@ -529,7 +530,7 @@ LGPD, art. 18 (Política de privacidade › Seus direitos). Sessão obrigatória
 
 ### 6.12 Painel do administrador: `GET /admin/metrics`
 
-Responsável, 2026-10-21: métricas da loja para quem é admin, na página `/painel` do site (`/admin` é o CMS do blog). Admin é quem tem `app_metadata.admin = true` no Auth; só o servidor grava esse campo (Auth admin ou SQL no painel do Supabase). O site lê o JWT só para mostrar o link "Painel"; quem decide é o banco, a cada chamada, então tirar o admin vale na hora.
+Responsável, 2026-10-21: métricas da loja para quem é admin. Desde 2026-10-23 ficam no admin (admin.keytotwo.com.br, `admin/`); o `/painel` do site redireciona para lá. Toda rota `/admin/*` exige o segundo fator (TOTP) na sessão: sem `aal2` no JWT, `403 MFA_REQUIRED` antes do banco. Admin é quem tem `app_metadata.admin = true` no Auth; só o servidor grava esse campo (Auth admin ou SQL no painel do Supabase). O site lê o JWT só para mostrar o link "Painel"; quem decide é o banco, a cada chamada, então tirar o admin vale na hora.
 
 `GET /admin/metrics?days=7|30` (sessão; sem `days`, 7) → `get_admin_metrics(uid, days, livemode)`, com `livemode` da chave da Stripe do ambiente:
 

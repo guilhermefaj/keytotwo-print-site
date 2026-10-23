@@ -162,13 +162,13 @@ site_url = "http://127.0.0.1:5178"
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 # KeyToTwo: dev do site nas portas 5173 a 5176, prévia do redesign na 5178 e build de QA na 4174
-# (local apenas; o remoto é configurado no painel).
+# (local apenas; o remoto é configurado no painel). O admin (admin/) roda na 5179.
 additional_redirect_urls = [
   "http://127.0.0.1:5173/**", "http://localhost:5173/**",
   "http://127.0.0.1:5174/**", "http://localhost:5174/**",
   "http://127.0.0.1:5175/**", "http://localhost:5175/**",
   "http://127.0.0.1:5176/**", "http://127.0.0.1:4174/**",
-  "http://127.0.0.1:5178/**",
+  "http://127.0.0.1:5178/**", "http://127.0.0.1:5179/**",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
@@ -323,9 +323,10 @@ auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 max_enrolled_factors = 10
 
 # Control MFA via App Authenticator (TOTP)
+# KeyToTwo: o admin exige o segundo fator (aal2); no hospedado o TOTP também fica ligado.
 [auth.mfa.totp]
-enroll_enabled = false
-verify_enabled = false
+enroll_enabled = true
+verify_enabled = true
 
 # Configure MFA via Phone Messaging
 [auth.mfa.phone]

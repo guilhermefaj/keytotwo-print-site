@@ -33,7 +33,6 @@ export const otherPages = {
   '/meus-jogos': { title: 'Meus jogos — KeyToTwo', description: 'Área reservada aos jogos adquiridos na KeyToTwo.' },
   '/conta': { title: 'Minha conta — KeyToTwo', description: 'Área reservada às informações da sua conta KeyToTwo.' },
   '/pedidos': { title: 'Meus pedidos — KeyToTwo', description: 'Consulte os pedidos e acompanhe suas compras na KeyToTwo.' },
-  '/painel': { title: 'Painel — KeyToTwo', description: 'Área reservada à equipe da KeyToTwo.' },
   '/pagamento': { title: 'Pagamento — KeyToTwo', description: 'Confira seu pedido e finalize o pagamento com segurança.' },
   '/email/preferencias': { title: 'Preferências de e-mail — KeyToTwo', description: 'Escolha se deseja receber novidades da KeyToTwo por e-mail.' },
   '/pedido/confirmacao': { title: 'Status da compra — KeyToTwo', description: 'Acompanhe a confirmação do seu pedido KeyToTwo.' },

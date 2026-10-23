@@ -8,7 +8,9 @@
   },
   "scripts": {
     "dev": "react-router dev",
+    "dev:admin": "vite --config admin/vite.config.ts",
     "build": "npm run typecheck && react-router build && node scripts/seo-files.mjs && node scripts/html-priorities.mjs",
+    "build:admin": "vite build --config admin/vite.config.ts",
     "preview": "sirv build/client --host 127.0.0.1 --port 4174 --single __spa-fallback.html",
     "typecheck": "react-router typegen && tsc --noEmit",
     "lint": "eslint . --ignore-pattern build/** --ignore-pattern .react-router/**",

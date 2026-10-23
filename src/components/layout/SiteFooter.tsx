@@ -37,7 +37,7 @@ function FooterKito() {
 export function SiteFooter() {
   const { hasBlogPosts } = useRouteLoaderData<typeof rootLoader>('root')!
   const path = useLocation().pathname.replace(/\/+$/, '')
-  const publicFooter = !['/entrar', '/carrinho', '/pagamento', '/pedido/confirmacao', '/meus-jogos', '/pedidos', '/conta', '/painel', '/email/preferencias'].includes(path) && !path.startsWith('/blog/')
+  const publicFooter = !['/entrar', '/carrinho', '/pagamento', '/pedido/confirmacao', '/meus-jogos', '/pedidos', '/conta', '/email/preferencias'].includes(path) && !path.startsWith('/blog/')
   // Pagamento em modo foco: só a linha legal, sem convites para sair da compra.
   if (path === '/pagamento') return <footer className="site-footer" data-focus="true"><div className="site-footer-rule" aria-hidden="true" /><div className="content-width footer-bottom"><LegalLine /><nav aria-label="Informações legais"><Link to="/termos">Termos de uso</Link><Link to="/reembolsos">Reembolsos</Link><Link to="/privacidade">Privacidade</Link><CookieSettingsButton /><Link to="/ajuda">Ajuda</Link></nav></div></footer>
   return <footer className="site-footer" data-public={publicFooter}>{publicFooter ? <CutLine /> : <div className="site-footer-rule" aria-hidden="true" />}{publicFooter && newsletterVisible && <div className="content-width footer-newsletter"><Newsletter /></div>}<div className="content-width footer-grid">

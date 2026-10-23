@@ -22,7 +22,6 @@ export default [
       route('conta', 'routes/conta.tsx'),
     ]),
     route('pedido/confirmacao', 'routes/pedido.confirmacao.tsx'),
-    route('painel', 'routes/painel.tsx'),
   ]),
   route('ajuda', 'routes/ajuda.tsx'),
   route('blog', 'routes/blog.tsx'),

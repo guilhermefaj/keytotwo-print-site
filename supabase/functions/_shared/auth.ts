@@ -6,6 +6,8 @@ export interface SessionUser {
   id: string
   email: string | null
   accessToken: string
+  // Nível da sessão: aal2 quando o segundo fator (app autenticador) foi confirmado nela.
+  aal: string | null
 }
 
 let client: GoTrueClient | undefined
@@ -48,11 +50,18 @@ export async function getSessionUser(req: Request): Promise<SessionUser | null> 
   const { claims } = data
   if (claims.role !== 'authenticated' || !claims.sub || claims.is_anonymous === true) return null
   const email = typeof claims.email === 'string' ? claims.email.trim().toLowerCase() : null
-  return { id: claims.sub, email, accessToken: token }
+  return { id: claims.sub, email, accessToken: token, aal: typeof claims.aal === 'string' ? claims.aal : null }
 }
 
 export async function requireSessionUser(req: Request): Promise<SessionUser> {
   const user = await getSessionUser(req)
   if (!user) throw new HttpError(401, 'UNAUTHENTICATED', 'Entre de novo para continuar.')
+  return user
+}
+
+// Rotas de admin: a sessão precisa do segundo fator (aal2). Quem é admin, o banco confere a cada chamada.
+export async function requireAdminSession(req: Request): Promise<SessionUser> {
+  const user = await requireSessionUser(req)
+  if (user.aal !== 'aal2') throw new HttpError(403, 'MFA_REQUIRED', 'Confirme o código do app autenticador para continuar.')
   return user
 }

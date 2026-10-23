@@ -1,0 +1,25 @@
+# Admin da KeyToTwo (admin.keytotwo.com.br) na VPS, atrás do mesmo Traefik do site (rede host, provider docker,
+# rotas só por etiquetas). Uso, em /opt/keytotwo-site/admin: docker compose up -d. O .env ao lado define só o
+# IMAGE_TAG (o commit). Sem senha na porta: o login, o segundo fator e a API cuidam do acesso.
+name: keytotwo-admin
+
+services:
+  admin:
+    image: keytotwo-admin:${IMAGE_TAG:?defina IMAGE_TAG no .env}
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.keytotwo-admin.rule: Host(`admin.keytotwo.com.br`)
+      traefik.http.routers.keytotwo-admin.entrypoints: websecure
+      traefik.http.routers.keytotwo-admin.tls.certresolver: letsencrypt
+      traefik.http.routers.keytotwo-admin.middlewares: keytotwo-admin-hsts
+      traefik.http.routers.keytotwo-admin.service: keytotwo-admin
+      traefik.http.middlewares.keytotwo-admin-hsts.headers.stsSeconds: "31536000"
+      traefik.http.services.keytotwo-admin.loadbalancer.server.port: "8080"

@@ -127,6 +127,17 @@ Para voltar, ponha um `live-<commit>` anterior no `IMAGE_TAG` de `producao/.env`
 
 **Depois da virada:** o teste e o dev local continuam no mesmo Supabase, agora com a Stripe live. Dá para navegar, entrar e baixar por eles, mas o pagamento não funciona, porque o site em stage test recusa sessões live. Para voltar a testar compras fora da produção, o teste precisa de um projeto Supabase próprio, com a Stripe de teste.
 
+## Admin (admin.keytotwo.com.br)
+
+App à parte (`admin/`), com imagem e contêiner próprios: mudar o admin não republica a loja. Fala com o mesmo Supabase hospedado, então mexe sempre em dados reais.
+
+- **Na VPS:** `/opt/keytotwo-site/admin/build.env` com `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` e `VITE_SITE_URL=https://keytotwo.com.br` (só chaves publicáveis). O `.env` ao lado guarda o `IMAGE_TAG`.
+- **Publicar:** `ssh deploy@<vps> sh /opt/keytotwo-site/repo/deploy/admin/atualizar.sh [ref]`; de uma branch, `sh -s <branch> < deploy/admin/atualizar.sh`.
+- **DNS:** `admin` A para o IP da VPS, só DNS (nuvem cinza), como o teste. O Traefik tira o certificado sozinho.
+- **Supabase:** `https://admin.keytotwo.com.br` em `ALLOWED_ORIGINS` das funções e `https://admin.keytotwo.com.br/**` na lista de retorno do Auth (login com Google). TOTP ligado em *Authentication > Multi-Factor*.
+- **Segundo fator:** na primeira entrada o admin cadastra o app autenticador. Perdeu o app: apague o fator em *Authentication > Users > a conta > MFA factors*; na próxima entrada o admin pede um cadastro novo.
+- **Local:** `npm run dev:admin` (porta 5179, com o `.env.local` da raiz). A 5179 precisa estar no `ALLOWED_ORIGINS` das funções locais.
+
 ## Referências técnicas
 
 - [Nginx: try_files e error_page](https://nginx.org/en/docs/http/ngx_http_core_module.html).
