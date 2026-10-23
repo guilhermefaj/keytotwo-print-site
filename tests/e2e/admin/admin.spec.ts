@@ -1,23 +1,12 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { existsSync } from 'node:fs'
-import { authStorageKey } from '../fixtures/session'
+import { authStorageKey, session, user, verified } from './session'
 
 // Admin (admin/, 2026-10-23): entrar com Google ou código, ser admin e confirmar o segundo fator (TOTP) antes das
 // métricas. O Auth e a API são simulados; o build/admin lê o mesmo .env.local do site.
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 test.skip(() => !existsSync('admin/dist/index.html'), 'Requires `npm run build:admin`')
-
-const base64url = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url')
-const jwt = (claims: object) => `${base64url({ alg: 'ES256', typ: 'JWT' })}.${base64url({ sub: 'qa-admin', role: 'authenticated', aud: 'authenticated', exp: 4102444800, ...claims })}.assinatura`
-const verified = { id: 'fator-1', factor_type: 'totp', status: 'verified', friendly_name: 'Admin KeyToTwo', created_at: '2026-10-23T12:00:00Z', updated_at: '2026-10-23T12:00:00Z' }
-
-function user({ admin = true, factors = [verified] as object[] } = {}) {
-  return { id: 'qa-admin', email: 'admin@example.test', email_confirmed_at: '2026-01-01', aud: 'authenticated', role: 'authenticated', app_metadata: admin ? { provider: 'google', admin: true } : { provider: 'google' }, user_metadata: {}, factors }
-}
-function session(aal: 'aal1' | 'aal2', who = user()) {
-  return { access_token: jwt({ aal, email: who.email }), refresh_token: `refresh-${aal}`, expires_at: 4102444800, expires_in: 3600, token_type: 'bearer', user: who }
-}
 
 function metrics(days: number) {
   const daily = Array.from({ length: days }, (_, i) => ({ date: new Date(Date.UTC(2026, 9, 23 - (days - 1) + i)).toISOString().slice(0, 10), orders: i === days - 1 ? 2 : 0, revenue: i === days - 1 ? 1980 : 0, accounts: i % 2 }))
@@ -49,9 +38,12 @@ async function fixture(page: Page, { stored, who = user() }: { stored?: ReturnTy
     if (path === '/logout') return route.fulfill({ status: 204, body: '' })
     return route.fulfill({ status: 404, json: {} })
   })
+  // A lista do blog confere a versão no site; aqui o site não responde.
+  await page.route('**/blog/versao.json', route => route.fulfill({ status: 404, body: '' }))
   await page.route('**/functions/v1/api/**', route => {
     const url = new URL(route.request().url())
     calls.push({ method: route.request().method(), path: `api${url.pathname.split('/api')[1]}${url.search}`, body: null, auth: route.request().headers().authorization })
+    if (url.pathname.includes('/admin/blog/')) return route.fulfill({ json: { version: '0'.repeat(32), posts: [], media_base: null } })
     return route.fulfill({ json: metrics(Number(url.searchParams.get('days'))) })
   })
   return calls
@@ -111,8 +103,9 @@ test('primeiro acesso de admin: cadastra o app autenticador pelo QR code e entra
   await page.getByRole('button', { name: 'Confirmar e entrar' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Métricas' })).toBeVisible()
   expect(calls.filter(call => call.method === 'POST' && call.path === '/factors')).toHaveLength(1)
+  // A tela aparece antes da resposta: espera a chamada das métricas.
+  await expect.poll(() => calls.find(call => call.path.startsWith('api'))?.path).toBe('api/admin/metrics?days=7')
   const api = calls.find(call => call.path.startsWith('api'))!
-  expect(api.path).toBe('api/admin/metrics?days=7')
   expect(JSON.parse(Buffer.from(api.auth!.split('.')[1], 'base64url').toString()).aal).toBe('aal2')
 })
 
@@ -135,7 +128,7 @@ test('métricas: barra lateral com as seções, 7 e 30 dias, celular sem rolagem
   await page.goto('/')
   const nav = page.getByRole('navigation', { name: 'Seções do admin' })
   await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Blog', 'Pedidos e reembolsos', 'Usuários'])
-  await expect(nav.getByRole('list', { name: 'Em breve' }).getByRole('link')).toHaveText(['Blog', 'Pedidos e reembolsos', 'Usuários'])
+  await expect(nav.getByRole('list', { name: 'Em breve' }).getByRole('link')).toHaveText(['Pedidos e reembolsos', 'Usuários'])
   await expect(nav.getByRole('link', { name: 'Métricas' })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('region', { name: 'Vendas' }).locator('.cards dd')).toHaveText(['R$ 19,80', '2', 'R$ 9,90'])
   await expect(page.locator('.bars span')).toHaveCount(7)

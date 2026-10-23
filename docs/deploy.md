@@ -138,6 +138,18 @@ App à parte (`admin/`), com imagem e contêiner próprios: mudar o admin não r
 - **Segundo fator:** na primeira entrada o admin cadastra o app autenticador. Perdeu o app: apague o fator em *Authentication > Users > a conta > MFA factors*; na próxima entrada o admin pede um cadastro novo.
 - **Local:** `npm run dev:admin` (porta 5179, com o `.env.local` da raiz). A 5179 precisa estar no `ALLOWED_ORIGINS` das funções locais.
 
+## Blog (posts no banco, site reconstruído sozinho)
+
+Desde 2026-10-23 os posts são escritos no admin e ficam no banco. O site continua pré-renderizado, então publicar um post pede um build novo:
+
+- **Build:** os `atualizar.sh` do teste e da produção passam `BLOG_SOURCE=api` e `BLOG_VERSION` ao Docker. O `scripts/blog-export.mjs` traz os publicados de `GET /blog/posts` para `content/blog` (os arquivos do repositório saem), baixa as imagens do bucket público para `public/images/blog` e grava a versão em `/blog/versao.json`. Falhou (API fora, post inválido, imagem ausente): o build para e o site no ar não muda. Fora da VPS (local e CI), o build usa os arquivos do repositório.
+- **Vigia:** `deploy/blog/vigiar.sh`, no cron do usuário `deploy`, a cada 2 minutos: compara `GET /blog/version` com o `/blog/versao.json` de cada contêiner e, se diferem, roda o `atualizar.sh` daquele site no commit que já está no ar (`/opt/keytotwo-site/<site>/commit`, gravado pelo `atualizar.sh`). Só o blog muda. Uma versão que falhou num site fica em `/opt/keytotwo-site/blog/<site>.falhou` e não é tentada de novo até o banco mudar. O log fica em `/opt/keytotwo-site/blog/vigia.log`.
+- **Instalar o vigia (uma vez):** depois do primeiro deploy da produção com o blog (ele copia o script para `/opt/keytotwo-site/blog/vigiar.sh`), `crontab -e` do `deploy` com `*/2 * * * * sh /opt/keytotwo-site/blog/vigiar.sh >> /opt/keytotwo-site/blog/vigia.log 2>&1`.
+- **Um deploy por vez:** os dois `atualizar.sh` esperam a vez num `flock` (`/opt/keytotwo-site/.deploy.lock`), porque o teste, a produção e o vigia usam o mesmo checkout em `repo/`.
+- **Imagens:** bucket público `keytotwo-print-blog` na Backblaze, com uma chave de escrita só dele nos segredos da função `api` (`B2_BLOG_*`, `docs/api-contract.md` seção 10). O admin mostra as imagens direto do bucket; o site serve a cópia do próprio domínio.
+- **No admin:** a lista do blog compara a versão do banco com o `/blog/versao.json` da produção (o nginx do site libera esse arquivo para `https://admin.keytotwo.com.br`) e avisa enquanto o site está atualizando.
+- **O `/admin` antigo** (Sveltia CMS) saiu; o nginx do site manda `/admin` para `https://admin.keytotwo.com.br/blog`.
+
 ## Referências técnicas
 
 - [Nginx: try_files e error_page](https://nginx.org/en/docs/http/ngx_http_core_module.html).

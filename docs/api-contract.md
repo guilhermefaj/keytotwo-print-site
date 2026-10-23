@@ -90,6 +90,9 @@ Headers enviados pelo site:
 | 404 | `FILE_NOT_FOUND` | Arquivo inexistente, não publicado, trocado por versão nova ou fora do escopo |
 | 405 | `METHOD_NOT_ALLOWED` | Método não aceito (header `Allow`) |
 | 409 | `PRODUCT_UNAVAILABLE` | Produto inexistente, inativo ou sem preço no ambiente |
+| 409 | `EDIT_CONFLICT` | Post do blog salvo em outro lugar depois que o editor abriu; `details.post` traz o atual (6.13) |
+| 409 | `SLUG_TAKEN` | Outro post já usa o endereço (6.13) |
+| 409 | `SLUG_LOCKED` | Mudança de endereço num post que já foi publicado (6.13) |
 | 409 | `ALREADY_OWNED` | No checkout: nada a pagar (tudo na sacola já é do usuário ou já está num pacote dela) |
 | 409 | `CART_EMPTY` | Checkout com carrinho vazio |
 | 409 | `CART_CHANGED` | `cart_version` diferente da atual: o site recarrega o carrinho |
@@ -135,6 +138,11 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `GET /free-games` | `list_free_games()` | Gratuitos (2026-10-20) |
 | `POST /free-download` | `resolve_free_download(user_id, file_id)` → assina no B2 | Gratuitos (2026-10-20) |
 | `GET /admin/metrics` | `get_admin_metrics(uid, days, livemode)` | Painel (2026-10-21) |
+| `GET /admin/blog/posts` | `admin_list_blog_posts(uid)` | Blog (2026-10-23) |
+| `POST /admin/blog/posts` · `PUT /admin/blog/posts/{id}` | `admin_save_blog_post(uid, id, post, expected_updated_at)` | Blog (2026-10-23) |
+| `GET /admin/blog/posts/{id}` · `DELETE /admin/blog/posts/{id}` | `admin_get_blog_post(uid, id)` · `admin_delete_blog_post(uid, id)` | Blog (2026-10-23) |
+| `POST /admin/blog/images` | `admin_register_blog_image(uid, path)` → grava no bucket público do blog | Blog (2026-10-23) |
+| `GET /blog/posts` · `GET /blog/version` | `list_published_blog_posts()` · `get_blog_version()` | Blog (2026-10-23) |
 | `POST /email/unsubscribe` | `unsubscribe(user_id, 'unsubscribe_link')` | I5 |
 | `stripe-webhook` | `fulfill_order` ou `set_order_status` (seção 9) | I3 |
 | `brevo-webhook` | `record_email_event(...)` | I5 |
@@ -162,6 +170,8 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `GET /free-games` | Pública | Gratuitos | Implementada |
 | `POST /free-download` | Sessão + aceite de e-mails registrado alguma vez | Gratuitos | Implementada |
 | `GET /admin/metrics` | Sessão de admin (`app_metadata.admin`) com segundo fator (`aal2`) | Admin | Implementada |
+| `GET` e `POST /admin/blog/posts` · `GET`, `PUT` e `DELETE /admin/blog/posts/{id}` · `POST /admin/blog/images` | Sessão de admin com segundo fator (`aal2`) | Blog | Implementada |
+| `GET /blog/posts` · `GET /blog/version` | Pública (só o que está publicado) | Blog | Implementada |
 | `GET` e `POST /email/unsubscribe` | Token HMAC | I5 | Planejada |
 
 Rota ainda não implementada responde `404 NOT_FOUND`.
@@ -551,6 +561,28 @@ Responsável, 2026-10-21: métricas da loja para quem é admin. Desde 2026-10-23
 - `ok` → `200` com o JSON acima, sem e-mail nem id de pessoa. `forbidden` → `403 NOT_ADMIN`. `days` fora de 7 e 30 → `400 INVALID_REQUEST`, sem tocar no banco. Sem sessão → `401`; `KT009` → `403 EMAIL_NOT_CONFIRMED`.
 - O que cada número conta está no `docs/data-contract.md`, seção 6.12.
 
+### 6.13 Blog: `/admin/blog/*`, `GET /blog/posts` e `GET /blog/version`
+
+Responsável, 2026-10-23: listar, criar e editar os posts do blog pelo admin. Os posts saem de `content/blog` e ficam no banco (`private.blog_posts`, migração `20261023120000_blog_admin.sql`); cada mudança fica em `private.admin_events` (quem, o quê, quando). O build do site na VPS lê os publicados por `GET /blog/posts` (`scripts/blog-export.mjs`) e o vigia da VPS confere `GET /blog/version` a cada 2 minutos para reconstruir o site (`docs/deploy.md`).
+
+Post (`post` nos corpos e nas respostas; `snake_case`):
+
+```json
+{
+  "id": "uuid", "slug": "jogos-para-casais", "title": "Jogos para casais", "description": "Resumo", "author": "Equipe KeyToTwo",
+  "date": "2026-10-23", "cover": "/images/blog/2026/10/ab12cd34-capa.webp", "cover_alt": "Mesa com o jogo", "tags": ["Jogos"],
+  "body": "Markdown", "status": "draft | published", "published_at": null, "created_at": "…", "updated_at": "2026-10-23T12:00:00.123456+00:00"
+}
+```
+
+- **Regras** (`supabase/functions/_shared/blog-rules.ts`, as mesmas do build e do editor): título até 120; endereço `a-z0-9` com hífens, até 80; data `AAAA-MM-DD` válida; capa só em `/images/blog/...` e com descrição; até 10 temas sem repetir; texto até 100 mil caracteres. Rascunho guarda o que estiver pronto. Publicar exige resumo, autor e texto, imagens do texto em `/images/blog/...` com descrição e nenhuma marcação `PENDENTE` (a trava do build live). Falhou: `400 INVALID_REQUEST` com `details.problems` (`[{ field, message }]`, na ordem do editor) e a primeira mensagem em `message`, sem tocar no banco.
+- `GET /admin/blog/posts` → `{ version, posts, media_base }`: todos os posts sem o `body`, do editado mais recente ao mais antigo. `media_base` é a base pública do bucket das imagens (`null` sem o bucket configurado).
+- `POST /admin/blog/posts { post }` → `201 { post }`. `PUT /admin/blog/posts/{id} { post, expected_updated_at }` → `200 { post }`, só se `expected_updated_at` ainda for o do banco; senão `409 EDIT_CONFLICT` com o post atual em `details.post`. O endereço não muda depois da primeira publicação (`409 SLUG_LOCKED`), nem repete o de outro post (`409 SLUG_TAKEN`).
+- `GET /admin/blog/posts/{id}` → `{ post, media_base }`; `DELETE` → `{ "deleted": true }`. Id que não é uuid ou não existe → `404 NOT_FOUND`.
+- `POST /admin/blog/images?name=<arquivo>`: a imagem crua no corpo (até 5 MB; WebP, PNG, JPG, GIF ou AVIF, conferidos pelo começo do arquivo). O admin já reduz para 1600 px e converte para WebP. Grava em `<ano>/<mês>/<sorteio>-<nome>.<ext>` no bucket público e responde `201 { path: "/images/blog/<chave>", url: "<media_base>/<chave>" }`. O `path` é o que vai no texto e na capa; no build, a imagem é copiada para `public/images/blog`.
+- `GET /blog/posts` (pública) → `{ version, posts, media_base }` só com os publicados, com o `body`. `GET /blog/version` (pública) → `{ version }`: md5 de id e `updated_at` dos publicados; rascunho não muda a versão.
+- Admin: o mesmo de 6.12 (`aal2`, `forbidden` → `403 NOT_ADMIN`, `KT009` → `403 EMAIL_NOT_CONFIRMED`).
+
 ## 7. Tokens HMAC (entrega e descadastro)
 
 Formato: `<payload>.<assinatura>`, ambos em base64url sem preenchimento.
@@ -664,6 +696,7 @@ Contestação e reembolso valem para o pedido inteiro.
 | **`EMAIL_ALLOWED_RECIPIENTS`** | as mesmas | **Nova**, só teste: destinatários permitidos no modo `brevo` (vírgula); vazia na produção |
 | **`API_PUBLIC_URL`** | as mesmas | **Nova**, não secreta: base pública da `api` nos links dos e-mails. Padrão `SUPABASE_URL/functions/v1/api`; no local é obrigatória (lá `SUPABASE_URL` é o endereço interno do gateway) |
 | `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET`, `B2_READ_KEY_ID`, `B2_READ_APPLICATION_KEY` | `api` | Já no modelo. Só a chave de leitura vai para as funções; a de escrita fica fora delas |
+| **`B2_BLOG_BUCKET`**, **`B2_BLOG_KEY_ID`**, **`B2_BLOG_APPLICATION_KEY`** | `api` | **Novas** (blog, 2026-10-23). O bucket PÚBLICO das imagens do blog (`keytotwo-print-blog`, mesma região do `B2_ENDPOINT`) e uma chave de escrita restrita a ele. Nada dos jogos passa por ela |
 | **`EMAIL_LINK_SECRET`** (+ `EMAIL_LINK_SECRET_PREVIOUS` opcional) | `api`, `email-dispatch` | **Nova, secreta** |
 | **`BREVO_WEBHOOK_SECRET`** | `brevo-webhook` | **Nova, secreta**, já no modelo. É o token Bearer cadastrado no webhook da Brevo |
 | **`BREVO_TEMPLATE_DELIVERY`**, **`BREVO_TEMPLATE_CART_REMINDER`**, **`BREVO_TEMPLATE_POST_PURCHASE`** | `email-dispatch` | **Novas**, ids (não secretos) |
@@ -713,6 +746,10 @@ Contestação e reembolso valem para o pedido inteiro.
 ### 11.4 O que mudou na v0.3.4 (Painel)
 
 - `GET /admin/metrics` (6.12), com o erro `403 NOT_ADMIN`.
+
+### 11.4.1 O que mudou na v0.3.7 (Blog no admin)
+
+- Rotas do blog (6.13) e os erros `409 EDIT_CONFLICT`, `SLUG_TAKEN` e `SLUG_LOCKED`.
 
 ### 11.5 O que mudou na v0.3.5 (Sacola sem login)
 

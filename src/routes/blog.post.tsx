@@ -37,6 +37,7 @@ export default function BlogPost() {
           {post.draft && <span className="blog-draft">Rascunho</span>}
           <time dateTime={post.date}>{formatBlogDate(post.date)}</time>
           <span>{post.readingMinutes} min de leitura</span>
+          {post.author && <span className="blog-author">Por {post.author}</span>}
         </div>
         <h1>{post.title}</h1>
         <p className="blog-description">{post.description}</p>

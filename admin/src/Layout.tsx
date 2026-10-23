@@ -7,7 +7,7 @@ import { siteUrl } from './supabase'
 // As seções do admin. As que ainda não existem ficam no grupo "Em breve" e levam a uma página que diz o que vem.
 const sections = [
   { to: '/', label: 'Métricas', icon: IconChartBar, ready: true },
-  { to: '/blog', label: 'Blog', icon: IconArticle, ready: false },
+  { to: '/blog', label: 'Blog', icon: IconArticle, ready: true },
   { to: '/pedidos', label: 'Pedidos e reembolsos', icon: IconReceipt2, ready: false },
   { to: '/usuarios', label: 'Usuários', icon: IconUsers, ready: false },
 ] as const

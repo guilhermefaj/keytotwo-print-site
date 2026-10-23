@@ -49,6 +49,17 @@ test('rejeita frontmatter ausente, campos duplicados, tipos e datas inválidos',
   ]) assert.throws(() => parseBlogPost(input, 'artigo.md'), /Blog artigo.md/)
 })
 
+test('autor: opcional, aparado, e vira o author do JSON-LD (sem autor, a KeyToTwo)', () => {
+  const post = parseBlogPost(source({ author: '  Equipe KeyToTwo ' }), 'com-autor.md')
+  assert.equal(post.author, 'Equipe KeyToTwo')
+  assert.equal(summarizeBlogPost(post).author, 'Equipe KeyToTwo')
+  assert.deepEqual(blogPostingJsonLd(post).author, { '@type': 'Person', name: 'Equipe KeyToTwo' })
+  const anonymous = parseBlogPost(source(), 'sem-autor.md')
+  assert.equal(anonymous.author, '')
+  assert.equal(blogPostingJsonLd(anonymous).author['@type'], 'Organization')
+  assert.throws(() => parseBlogPost(source({ author: 42 }), 'artigo.md'), /author deve ser texto/)
+})
+
 test('desliga HTML cru e links executáveis; mantém texto escapado', () => {
   const { html } = parseBlogPost(source({}, '<script>alert(1)</script>\n\n[clique](javascript:alert(1))\n\n<img src=x onerror=alert(1)>'), 'seguro.md')
   assert.doesNotMatch(html, /<script>|<img |href="javascript:/)

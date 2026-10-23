@@ -9,13 +9,15 @@ const path = (relative: string) => fileURLToPath(new URL(relative, import.meta.u
 export default defineConfig({
   root: path('.'),
   envDir: path('..'),
-  // Só os ícones do Kito (favicon); o resto das imagens entra pelo import, com hash.
-  publicDir: path('../public/media/icons'),
+  // Só o favicon do admin (um K escuro, diferente do Kito da loja); o resto das imagens entra pelo import, com hash.
+  publicDir: path('public'),
   plugins: [tailwindcss()],
   build: {
     // Fora de build/: o build do site (react-router build) limpa a pasta inteira.
     outDir: path('dist'),
     emptyOutDir: true,
+    // Um app de uso interno: o pacote principal (React, Supabase, roteador) passa de 500 kB, e tudo bem.
+    chunkSizeWarningLimit: 800,
     // O "use client" do react-router não significa nada num SPA; o aviso só polui o build.
     rolldownOptions: { onwarn(warning, warn) { if (warning.code !== 'MODULE_LEVEL_DIRECTIVE') warn(warning) } },
   },

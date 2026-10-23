@@ -10,6 +10,9 @@ export type ErrorCode =
   | 'FREE_GAMES_LOCKED'
   | 'NOT_ADMIN'
   | 'MFA_REQUIRED'
+  | 'EDIT_CONFLICT'
+  | 'SLUG_TAKEN'
+  | 'SLUG_LOCKED'
   | 'ORIGIN_NOT_ALLOWED'
   | 'NOT_FOUND'
   | 'FILE_NOT_FOUND'
@@ -71,23 +74,28 @@ export function toErrorResponse(error: unknown): Response {
 
 const MAX_BODY_BYTES = 16 * 1024
 
-// Corpo como texto, com limite de tamanho (16 KB por padrão).
-export async function readText(req: Request, maxBytes = MAX_BODY_BYTES): Promise<string> {
+// Corpo em bytes, com limite de tamanho (16 KB por padrão).
+export async function readBytes(req: Request, maxBytes = MAX_BODY_BYTES): Promise<Uint8Array> {
   const declared = Number(req.headers.get('Content-Length'))
   if (declared > maxBytes) throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'Corpo da requisição grande demais.')
   const bytes = new Uint8Array(await req.arrayBuffer())
   if (bytes.byteLength > maxBytes) throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'Corpo da requisição grande demais.')
-  return new TextDecoder().decode(bytes)
+  return bytes
+}
+
+// Corpo como texto, com o mesmo limite.
+export async function readText(req: Request, maxBytes = MAX_BODY_BYTES): Promise<string> {
+  return new TextDecoder().decode(await readBytes(req, maxBytes))
 }
 
 export const isContentType = (req: Request, type: string) =>
   new RegExp(`^${type.replace('/', '\\/')}\\s*(;|$)`, 'i').test(req.headers.get('Content-Type') ?? '')
 
-export async function readJson(req: Request): Promise<unknown> {
+export async function readJson(req: Request, maxBytes = MAX_BODY_BYTES): Promise<unknown> {
   if (!isContentType(req, 'application/json')) {
     throw new HttpError(415, 'UNSUPPORTED_MEDIA_TYPE', 'Envie o corpo como application/json.')
   }
-  const text = await readText(req)
+  const text = await readText(req, maxBytes)
   try {
     return JSON.parse(text)
   } catch {
@@ -96,8 +104,8 @@ export async function readJson(req: Request): Promise<unknown> {
 }
 
 // Corpo JSON que precisa ser um objeto (as rotas leem campos nomeados).
-export async function readJsonObject(req: Request): Promise<Record<string, unknown>> {
-  const body = await readJson(req)
+export async function readJsonObject(req: Request, maxBytes = MAX_BODY_BYTES): Promise<Record<string, unknown>> {
+  const body = await readJson(req, maxBytes)
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     throw new HttpError(400, 'INVALID_REQUEST', 'O corpo precisa ser um objeto JSON.')
   }

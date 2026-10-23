@@ -13,21 +13,38 @@ export interface B2Config {
 
 export const DOWNLOAD_TTL_SECONDS = 300
 
-// Chave SÓ LEITURA do bucket (as funções nunca recebem a de escrita).
+const get = (name: string) => {
+  const value = Deno.env.get(name)?.trim()
+  if (!value) throw new ConfigError(`Variável de ambiente ausente: ${name}`)
+  return value
+}
+const endpoint = () => get('B2_ENDPOINT').replace(/^https?:\/\//, '').replace(/\/+$/, '')
+
+// Chave SÓ LEITURA do bucket dos jogos (as funções nunca recebem a de escrita dele).
 export function readOnlyConfig(): B2Config {
-  const get = (name: string) => {
-    const value = Deno.env.get(name)?.trim()
-    if (!value) throw new ConfigError(`Variável de ambiente ausente: ${name}`)
-    return value
-  }
   return {
-    endpoint: get('B2_ENDPOINT').replace(/^https?:\/\//, '').replace(/\/+$/, ''),
+    endpoint: endpoint(),
     region: get('B2_REGION'),
     bucket: get('B2_BUCKET'),
     keyId: get('B2_READ_KEY_ID'),
     secret: get('B2_READ_APPLICATION_KEY'),
   }
 }
+
+// Imagens do blog: outro bucket, PÚBLICO (keytotwo-print-blog), na mesma conta e região, com uma chave de escrita
+// restrita a ele. Nada dos jogos passa por aqui.
+export function blogConfig(): B2Config {
+  return {
+    endpoint: endpoint(),
+    region: get('B2_REGION'),
+    bucket: get('B2_BLOG_BUCKET'),
+    keyId: get('B2_BLOG_KEY_ID'),
+    secret: get('B2_BLOG_APPLICATION_KEY'),
+  }
+}
+
+// Endereço público das imagens do blog (o bucket é público): <base>/<chave>.
+export const blogMediaBase = () => `https://${get('B2_BLOG_BUCKET')}.${endpoint()}`
 
 const encoder = new TextEncoder()
 
@@ -90,4 +107,12 @@ export async function presignUrl(config: B2Config, options: PresignOptions): Pro
     url: `https://${host}${path}?${query}&X-Amz-Signature=${signature}`,
     expiresAt: new Date(now.getTime() + expiresIn * 1000).toISOString(),
   }
+}
+
+// Grava um objeto pelo endereço pré-assinado (PUT de 60 s). O Content-Type vai junto, fora da assinatura.
+export async function putObject(config: B2Config, key: string, body: Uint8Array, contentType: string): Promise<void> {
+  const { url } = await presignUrl(config, { method: 'PUT', key, expiresIn: 60 })
+  const response = await fetch(url, { method: 'PUT', body: toBuffer(body), headers: { 'Content-Type': contentType }, signal: AbortSignal.timeout(20_000) })
+  await response.body?.cancel()
+  if (!response.ok) throw new Error(`B2 PUT falhou (HTTP ${response.status})`)
 }

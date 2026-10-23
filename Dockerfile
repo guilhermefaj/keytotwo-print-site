@@ -6,8 +6,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY react-router.config.ts vite.config.ts tsconfig.json site.config.json ./
-# Scripts that `npm run build` calls plus the release gate; tests/unit/docker-build.test.mjs checks this list.
-COPY scripts/seo-files.mjs scripts/html-priorities.mjs scripts/check-release.mjs ./scripts/
+# Scripts that `npm run build` calls, the release gate and the blog export; tests/unit/docker-build.test.mjs checks this list.
+COPY scripts/seo-files.mjs scripts/html-priorities.mjs scripts/check-release.mjs scripts/blog-export.mjs ./scripts/
 COPY src/ ./src/
 COPY content/ ./content/
 COPY public/ ./public/
@@ -20,7 +20,12 @@ ARG VITE_SUPABASE_PUBLISHABLE_KEY
 ARG VITE_STRIPE_PUBLISHABLE_KEY
 ARG VITE_CHECKOUT_MODE
 ARG VITE_TERMS_VERSION
-RUN node scripts/check-release.mjs \
+# Blog (2026-10-23): on the VPS (BLOG_SOURCE=api) the published posts come from the database through the API and replace
+# content/blog. BLOG_VERSION changes with every publish, so only the steps below run again (deploy/blog/vigiar.sh).
+ARG BLOG_SOURCE
+ARG BLOG_VERSION
+RUN if [ "$BLOG_SOURCE" = api ]; then node scripts/blog-export.mjs; fi \
+    && node scripts/check-release.mjs \
     && npm run build \
     && node scripts/check-release.mjs --built
 

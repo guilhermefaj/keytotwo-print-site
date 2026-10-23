@@ -97,6 +97,7 @@ export function blogPostingJsonLd(post: BlogPostSummary) {
     headline: post.title, description: post.description,
     datePublished: post.date, inLanguage: 'pt-BR',
     url: canonical, mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+    author: post.author ? { '@type': 'Person', name: post.author } : { '@type': 'Organization', name: 'KeyToTwo', url: siteConfig.origin },
     publisher: { '@type': 'Organization', name: 'KeyToTwo', url: siteConfig.origin },
     ...(post.cover ? { image: new URL(post.cover, siteConfig.origin).href } : {}),
     ...(post.tags.length ? { keywords: post.tags.join(', ') } : {}),

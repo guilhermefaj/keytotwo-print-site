@@ -9,9 +9,10 @@ RUN npm ci
 
 COPY tsconfig.json ./
 COPY admin/ ./admin/
-# O que o admin usa da loja: os tokens da marca, o logo, o G do Google e os ícones do Kito.
-COPY src/tokens.css ./src/
-COPY public/media/icons/ ./public/media/icons/
+# O que o admin usa da loja: os tokens da marca, o estilo do blog (prévia), o logo e o G do Google; da API, as regras
+# do post do blog.
+COPY src/tokens.css src/blog.css ./src/
+COPY supabase/functions/_shared/blog-rules.ts ./supabase/functions/_shared/
 COPY public/media/hero/keytotwo-logo.webp ./public/media/hero/
 COPY public/media/auth/google-g.png ./public/media/auth/
 # Só chaves publicáveis: vão para o JavaScript do navegador.

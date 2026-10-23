@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { apiBase, publishableKey, supabase } from './supabase'
 
+// code: o código do contrato; message: o texto da API, quando ela explica o que fazer; details: problemas do post etc.
 export class ApiError extends Error {
-  constructor(public code: string) { super(code) }
+  constructor(public code: string, public apiMessage?: string, public details?: Record<string, unknown>) { super(code) }
 }
 
 // Rotas /admin/* da API (Edge Function): sessão com o segundo fator; o banco confere o admin.
@@ -13,7 +14,7 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
   const response = await fetch(`${apiBase}${path}`, { method: options.method ?? 'GET', headers, body: options.body === undefined ? undefined : JSON.stringify(options.body), signal: options.signal })
   const result = await response.json().catch(() => ({}))
-  if (!response.ok) throw new ApiError(result.error?.code || 'INTERNAL_ERROR')
+  if (!response.ok) throw new ApiError(result.error?.code || 'INTERNAL_ERROR', result.error?.message, result.error?.details)
   return result as T
 }
 
@@ -22,6 +23,8 @@ export function apiMessage(error: unknown) {
   if (code === 'UNAUTHENTICATED') return 'Sua sessão terminou. Entre de novo para continuar.'
   if (code === 'MFA_REQUIRED') return 'Confirme o código do app autenticador para continuar.'
   if (code === 'NOT_ADMIN') return 'Esta área é só para a equipe da KeyToTwo.'
+  // Erros de regra (post inválido, endereço repetido, conflito, imagem): a API diz o que fazer.
+  if (error instanceof ApiError && error.apiMessage && code !== 'INTERNAL_ERROR') return error.apiMessage
   return 'Não deu certo agora. Tente de novo em instantes.'
 }
 
