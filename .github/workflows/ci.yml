@@ -74,6 +74,13 @@ jobs:
         run: npm run test:unit
       - name: Build pré-renderizado (o script de build já roda o typecheck)
         run: npm run build
+      - name: Build do admin (o Playwright também serve admin/dist)
+        # Sem URL, o admin abre a tela de "não configurado". A local só dá o nome da sessão (sb-127-auth-token, o mesmo
+        # dos testes); Auth e API são simulados nos specs.
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+        run: npm run build:admin
       - name: Validar conteúdo e preço para release
         run: node scripts/check-release.mjs --built
       - name: Instalar o Chromium do Playwright
@@ -186,6 +193,8 @@ jobs:
           VITE_CHECKOUT_MODE: stripe
           VITE_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
         run: VITE_SUPABASE_URL="$API_URL" VITE_SUPABASE_PUBLISHABLE_KEY="$PUBLISHABLE_KEY" npm run build
+      - name: Build do admin (o Playwright também serve admin/dist)
+        run: VITE_SUPABASE_URL="$API_URL" VITE_SUPABASE_PUBLISHABLE_KEY="$PUBLISHABLE_KEY" npm run build:admin
       - name: Instalar o Chromium do Playwright
         run: npx playwright install --with-deps chromium
       - name: E2E com Auth, Mailpit e API locais (inclui I2b)

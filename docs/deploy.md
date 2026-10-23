@@ -127,6 +127,29 @@ Para voltar, ponha um `live-<commit>` anterior no `IMAGE_TAG` de `producao/.env`
 
 **Depois da virada:** o teste e o dev local continuam no mesmo Supabase, agora com a Stripe live. Dá para navegar, entrar e baixar por eles, mas o pagamento não funciona, porque o site em stage test recusa sessões live. Para voltar a testar compras fora da produção, o teste precisa de um projeto Supabase próprio, com a Stripe de teste.
 
+## Admin (admin.keytotwo.com.br)
+
+App à parte (`admin/`), com imagem e contêiner próprios: mudar o admin não republica a loja. Fala com o mesmo Supabase hospedado, então mexe sempre em dados reais.
+
+- **Na VPS:** `/opt/keytotwo-site/admin/build.env` com `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` e `VITE_SITE_URL=https://keytotwo.com.br` (só chaves publicáveis). O `.env` ao lado guarda o `IMAGE_TAG`.
+- **Publicar:** `ssh deploy@<vps> sh /opt/keytotwo-site/repo/deploy/admin/atualizar.sh [ref]`; de uma branch, `sh -s <branch> < deploy/admin/atualizar.sh`.
+- **DNS:** `admin` A para o IP da VPS, só DNS (nuvem cinza), como o teste. O Traefik tira o certificado sozinho.
+- **Supabase:** `https://admin.keytotwo.com.br` em `ALLOWED_ORIGINS` das funções e `https://admin.keytotwo.com.br/**` na lista de retorno do Auth (login com Google). TOTP ligado em *Authentication > Multi-Factor*.
+- **Segundo fator:** na primeira entrada o admin cadastra o app autenticador. Perdeu o app: apague o fator em *Authentication > Users > a conta > MFA factors*; na próxima entrada o admin pede um cadastro novo.
+- **Local:** `npm run dev:admin` (porta 5179, com o `.env.local` da raiz). A 5179 precisa estar no `ALLOWED_ORIGINS` das funções locais.
+
+## Blog (posts no banco, site reconstruído sozinho)
+
+Desde 2026-10-23 os posts são escritos no admin e ficam no banco. O site continua pré-renderizado, então publicar um post pede um build novo:
+
+- **Build:** os `atualizar.sh` do teste e da produção passam `BLOG_SOURCE=api` e `BLOG_VERSION` ao Docker. O `scripts/blog-export.mjs` traz os publicados de `GET /blog/posts` para `content/blog` (os arquivos do repositório saem), baixa as imagens do bucket público para `public/images/blog` e grava a versão em `/blog/versao.json`. Falhou (API fora, post inválido, imagem ausente): o build para e o site no ar não muda. Fora da VPS (local e CI), o build usa os arquivos do repositório.
+- **Vigia:** `deploy/blog/vigiar.sh`, no cron do usuário `deploy`, a cada 2 minutos: compara `GET /blog/version` com o `/blog/versao.json` de cada contêiner e, se diferem, roda o `atualizar.sh` daquele site no commit que já está no ar (`/opt/keytotwo-site/<site>/commit`, gravado pelo `atualizar.sh`). Só o blog muda. Uma versão que falhou num site fica em `/opt/keytotwo-site/blog/<site>.falhou` e não é tentada de novo até o banco mudar. O log fica em `/opt/keytotwo-site/blog/vigia.log`.
+- **Instalar o vigia (uma vez):** depois do primeiro deploy da produção com o blog (ele copia o script para `/opt/keytotwo-site/blog/vigiar.sh`), `crontab -e` do `deploy` com `*/2 * * * * sh /opt/keytotwo-site/blog/vigiar.sh >> /opt/keytotwo-site/blog/vigia.log 2>&1`.
+- **Um deploy por vez:** os dois `atualizar.sh` esperam a vez num `flock` (`/opt/keytotwo-site/.deploy.lock`), porque o teste, a produção e o vigia usam o mesmo checkout em `repo/`.
+- **Imagens:** bucket público `keytotwo-print-blog` na Backblaze, com uma chave de escrita só dele nos segredos da função `api` (`B2_BLOG_*`, `docs/api-contract.md` seção 10). O admin mostra as imagens direto do bucket; o site serve a cópia do próprio domínio.
+- **No admin:** a lista do blog compara a versão do banco com o `/blog/versao.json` da produção (o nginx do site libera esse arquivo para `https://admin.keytotwo.com.br`) e avisa enquanto o site está atualizando.
+- **O `/admin` antigo** (Sveltia CMS) saiu; o nginx do site manda `/admin` para `https://admin.keytotwo.com.br/blog`.
+
 ## Referências técnicas
 
 - [Nginx: try_files e error_page](https://nginx.org/en/docs/http/ngx_http_core_module.html).

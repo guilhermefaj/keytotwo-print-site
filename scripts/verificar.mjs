@@ -24,6 +24,8 @@ const steps = [
   ['Lint', 'npm', ['run', 'lint'], local],
   ['Fixtures do bloqueio de release', 'node', ['scripts/check-release.mjs', '--self-test'], local],
   ['Testes unitários do blog', 'npm', ['run', 'test:unit'], local],
+  // O Playwright também serve o admin (admin/dist), mesmo quando só os specs do site rodam.
+  ['Build do admin', 'npm', ['run', 'build:admin'], local],
   ...(only.length ? [] : [
     ['Build como o do CI (sem API; inclui o typecheck)', 'npm', ['run', 'build'], ci],
     ['Conteúdo e preço para release', 'node', ['scripts/check-release.mjs', '--built'], ci],

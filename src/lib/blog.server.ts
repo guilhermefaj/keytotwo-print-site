@@ -37,6 +37,8 @@ export function parseBlogPost(source: string, filename: string): BlogPost {
     || new Date(timestamp).toISOString().slice(0, 10) !== date) fail('date deve ser uma data válida no formato AAAA-MM-DD.')
   if (typeof fields.draft !== 'boolean') fail('draft deve ser booleano (true ou false).')
   if (fields.coverAlt !== undefined && typeof fields.coverAlt !== 'string') fail('coverAlt deve ser texto.')
+  if (fields.author !== undefined && typeof fields.author !== 'string') fail('author deve ser texto.')
+  const author = ((fields.author ?? '') as string).trim()
   const coverAlt = ((fields.coverAlt ?? '') as string).trim()
   let cover: string | undefined
   if (fields.cover !== undefined && fields.cover !== '') {
@@ -69,7 +71,7 @@ export function parseBlogPost(source: string, filename: string): BlogPost {
     .join(' ')
   const wordCount = text.match(/[\p{L}\p{N}]+/gu)?.length ?? 0
   return {
-    slug, title, description, date, ...(cover ? { cover } : {}), coverAlt,
+    slug, title, description, date, author, ...(cover ? { cover } : {}), coverAlt,
     tags: (tags as string[]).map(tag => tag.trim()), draft: fields.draft as boolean,
     wordCount, readingMinutes: Math.max(1, Math.ceil(wordCount / 200)),
     html: markdown.renderer.render(tokens, markdown.options, {}),
@@ -98,6 +100,6 @@ export async function readBlogPosts({ stage, root = process.cwd() }: { stage: Bl
 }
 
 export function summarizeBlogPost(post: BlogPost): BlogPostSummary {
-  const { slug, title, description, date, cover, coverAlt, tags, draft, readingMinutes } = post
-  return { slug, title, description, date, cover, coverAlt, tags, draft, readingMinutes }
+  const { slug, title, description, date, author, cover, coverAlt, tags, draft, readingMinutes } = post
+  return { slug, title, description, date, author, cover, coverAlt, tags, draft, readingMinutes }
 }

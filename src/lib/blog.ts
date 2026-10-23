@@ -4,6 +4,8 @@ export type BlogPostSummary = {
   title: string
   description: string
   date: string
+  // Quem escreveu; vazio nos arquivos antigos (a página não mostra a linha e o JSON-LD usa a KeyToTwo).
+  author: string
   cover?: string
   coverAlt: string
   tags: string[]

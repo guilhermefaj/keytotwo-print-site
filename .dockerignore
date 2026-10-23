@@ -18,7 +18,10 @@ scripts/*
 !scripts/seo-files.mjs
 !scripts/html-priorities.mjs
 !scripts/check-release.mjs
+!scripts/blog-export.mjs
 supabase
+# As regras do post do blog: a API e o editor do admin (admin/Dockerfile) usam o mesmo arquivo.
+!supabase/functions/_shared/blog-rules.ts
 **/.env
 **/.env.*
 **/*.pem

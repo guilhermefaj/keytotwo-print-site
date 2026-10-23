@@ -288,8 +288,8 @@ contractTest('KT009 vira 403 EMAIL_NOT_CONFIRMED; outra falha de RPC vira 500 se
   assertEquals(logs[0].includes('PGRST202'), true)
 })
 
-contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, 403 para quem não é admin', async () => {
-  const token = await sessionToken()
+contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, 403 sem segundo fator ou sem admin', async () => {
+  const token = await sessionToken({ aal: 'aal2' })
   const METRICS = { days: 30, sales: { orders: 2, revenue: 1980, currency: 'brl' }, daily: [] }
   onRpc(() => ({ status: 200, body: [{ outcome: 'ok', metrics: METRICS }] }))
   const res = await handleRequest(request('/admin/metrics?days=30', { token }))
@@ -304,6 +304,14 @@ contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, 403
     const invalid = await handleRequest(request(`/admin/metrics?days=${days}`, { token }))
     assertEquals(invalid.status, 400, days)
     assertEquals((await invalid.json()).error.code, 'INVALID_REQUEST')
+  }
+  assertEquals(rpcCalls.length, 2)
+
+  // Sessão só com o primeiro fator (aal1), mesmo de admin: nem chega ao banco.
+  for (const claims of [{}, { aal: 'aal1' }]) {
+    const single = await handleRequest(request('/admin/metrics?days=7', { token: await sessionToken(claims) }))
+    assertEquals(single.status, 403)
+    assertEquals((await single.json()).error.code, 'MFA_REQUIRED')
   }
   assertEquals(rpcCalls.length, 2)
 

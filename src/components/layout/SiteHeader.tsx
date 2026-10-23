@@ -4,7 +4,7 @@ import type { loader as rootLoader } from '../../root'
 import { IconChevronDown, IconLock, IconMenu2, IconShoppingBag } from '@tabler/icons-react'
 import { navigation } from '../../content/site'
 import { siteConfig } from '../../lib/seo'
-import { isAdmin, useAuth } from '../../lib/auth-context'
+import { adminUrl, isAdmin, useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
 import { reloadOnStaleChunk } from '../../lib/stale-chunk'
 import { authErrorMessage, supabase } from '../../lib/supabase'
@@ -97,7 +97,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
   const cartButton = <button className="icon-button cart-trigger" disabled={!ready} aria-label={cartLabel} aria-haspopup="dialog" onClick={() => setCartOpen(true)}><Icon component={IconShoppingBag} size={24} />{(counting || cart.error || count > 0) && <span className="cart-count" aria-hidden="true">{counting || cart.error ? '…' : count}</span>}</button>
   const accountControl = session ? <div className="account-menu" ref={accountMenu} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setAccountOpen(false) }}>
     <button className="account-trigger" ref={accountTrigger} aria-label="Abrir opções da conta" aria-expanded={accountOpen} aria-controls="account-options" onClick={() => setAccountOpen(value => !value)}><span className="account-initial" aria-hidden="true">{initial}</span><Icon component={IconChevronDown} size={16} /></button>
-    {accountOpen && <div className="account-options" id="account-options"><nav aria-label="Sua conta"><Link className="nav-link" to="/meus-jogos" onClick={() => setAccountOpen(false)}>Meus jogos</Link><Link className="nav-link" to="/conta" onClick={() => setAccountOpen(false)}>Minha conta</Link>{admin && <Link className="nav-link" to="/painel" onClick={() => setAccountOpen(false)}>Painel</Link>}<button className="text-button" disabled={signingOut} onClick={signOut}>{signingOut ? 'Saindo…' : 'Sair'}</button></nav><p className="form-error" role="alert">{error}</p></div>}
+    {accountOpen && <div className="account-options" id="account-options"><nav aria-label="Sua conta"><Link className="nav-link" to="/meus-jogos" onClick={() => setAccountOpen(false)}>Meus jogos</Link><Link className="nav-link" to="/conta" onClick={() => setAccountOpen(false)}>Minha conta</Link>{admin && <a className="nav-link" href={adminUrl}>Painel</a>}<button className="text-button" disabled={signingOut} onClick={signOut}>{signingOut ? 'Saindo…' : 'Sair'}</button></nav><p className="form-error" role="alert">{error}</p></div>}
   </div> : <Link className="nav-link" aria-current={pathname === '/entrar' ? 'page' : undefined} to="/entrar">Entrar</Link>
 
   return <>
@@ -121,7 +121,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
                 </div>
                 <nav className="sheet-nav" aria-label="Navegação mobile">{visibleNavigation.map((item, index) => <SheetClose asChild key={item.href}><Link className="nav-link" style={{ '--link-order': index } as CSSProperties} aria-current={current(item.href)} to={item.href}>{item.label}</Link></SheetClose>)}
                   {session && !privateArea && <SheetClose asChild><Link className="nav-link" to="/meus-jogos" aria-current={pathname === '/meus-jogos' ? 'page' : undefined}>Meus jogos</Link></SheetClose>}
-                  {admin && <SheetClose asChild><Link className="nav-link" to="/painel" aria-current={pathname === '/painel' ? 'page' : undefined}>Painel</Link></SheetClose>}
+                  {admin && <a className="nav-link" href={adminUrl}>Painel</a>}
                 </nav>
                 {!privateArea && <SheetClose asChild><Link className="sheet-help" to="/ajuda" aria-current={pathname === '/ajuda' ? 'page' : undefined}><span>Ajuda</span></Link></SheetClose>}
                 <div className="sheet-bottom"><div className="sheet-legal"><SheetClose asChild><Link to="/termos">Termos de uso</Link></SheetClose><SheetClose asChild><Link to="/privacidade">Privacidade</Link></SheetClose></div></div>

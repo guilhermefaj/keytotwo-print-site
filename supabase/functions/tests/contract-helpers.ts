@@ -27,6 +27,10 @@ const contractEnv: Record<string, string> = {
   B2_BUCKET: 'bucket-de-teste',
   B2_READ_KEY_ID: 'chave-leitura-teste',
   B2_READ_APPLICATION_KEY: 'segredo-leitura-teste',
+  // Blog: bucket público das imagens, com a chave de escrita só dele.
+  B2_BLOG_BUCKET: 'blog-de-teste',
+  B2_BLOG_KEY_ID: 'chave-blog-teste',
+  B2_BLOG_APPLICATION_KEY: 'segredo-blog-teste',
   EMAIL_LINK_SECRET: LINK_SECRET,
   API_PUBLIC_URL: 'http://127.0.0.1:54321/functions/v1/api',
   EMAIL_FROM: 'acesso@example.com',
@@ -143,6 +147,23 @@ export function onExternal(reply: (call: ExternalCall) => Reply) {
   externalReply = reply
 }
 
+// Gravações no B2 (imagens do blog): método, host, chave, tipo e tamanho.
+export interface B2Call {
+  method: string
+  host: string
+  key: string
+  contentType: string | null
+  size: number
+}
+
+export const b2Calls: B2Call[] = []
+let b2Reply: (call: B2Call) => Reply = () => ({ status: 200, body: {} })
+
+export function onB2(reply: (call: B2Call) => Reply) {
+  b2Calls.length = 0
+  b2Reply = reply
+}
+
 const respond = ({ status, body }: Reply) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
@@ -179,6 +200,13 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
     const call = { url: url.href, body: JSON.parse(String(init?.body ?? '{}')), headers: new Headers(init?.headers) }
     externalCalls.push(call)
     return Promise.resolve(respond(externalReply(call)))
+  }
+  if (url.hostname.endsWith('.backblazeb2.com')) {
+    const body = init?.body
+    const size = body instanceof ArrayBuffer ? body.byteLength : body instanceof Uint8Array ? body.byteLength : 0
+    const call = { method: (init?.method ?? 'GET').toUpperCase(), host: url.hostname, key: decodeURIComponent(url.pathname.slice(1)), contentType: new Headers(init?.headers).get('Content-Type'), size }
+    b2Calls.push(call)
+    return Promise.resolve(respond(b2Reply(call)))
   }
   return Promise.reject(new Error(`fetch não simulado: ${url.origin}${url.pathname}`))
 }
