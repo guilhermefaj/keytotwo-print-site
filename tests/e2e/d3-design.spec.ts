@@ -115,8 +115,9 @@ test('vitrine curta com três jogos na home; carrossel e relatos só por ação 
   expect(await page.locator('.shop-showcase .cover-tile a').evaluateAll(links => links.map(link => link.getAttribute('href')))).toEqual(['/loja/rabisque-e-adivinhe', '/loja/tabuleiro-da-sorte', '/loja/o-sumico-de-rapadura'])
   // O pacote tem a capa própria (Coleção KeyToTwo: Fundadores).
   await expect(page.locator('.shop-showcase .shop-bundle-side > .game-cover-art img')).toHaveAttribute('src', '/media/games/p001-capa-640.webp')
-  // Sob a capa do pacote, as miniaturas dos jogos dele, cada uma com a faixa da sua cor.
-  await expect(page.locator('.shop-showcase .shop-bundle-games .game-cover[data-accent]')).toHaveCount(3)
+  // Sob a capa do pacote, as miniaturas dos 5 jogos dele, sem faixa de cor (2026-10-23: as capas já têm a identidade).
+  await expect(page.locator('.shop-showcase .shop-bundle-games .game-cover-art')).toHaveCount(5)
+  await expect(page.locator('.shop-showcase .game-cover[data-accent]')).toHaveCount(0)
   await expect(page.locator('.shop-showcase .game-cover-type')).toHaveCount(0)
   await expect(page.locator('.shop-showcase img[src*="/media/experience/j001-page"]')).toHaveCount(0)
   await expect(page.locator('.game-number')).toHaveCount(0)

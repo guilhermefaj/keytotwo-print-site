@@ -14,6 +14,14 @@ export const site = {
   closing: 'Da tela para a mesa.',
 }
 
+// Barrinha acima do cabeçalho (responsável, 2026-10-23): cupom de primeira compra. O código é um código promocional
+// da Stripe (10%, só para quem nunca pagou), digitado em "Tenho um cupom" no pagamento. Sem cupom no ar: `null`.
+export const promo: { code: string; before: string; after: string } | null = {
+  code: 'PRIMEIRA10',
+  before: 'Primeira compra? Usem o cupom',
+  after: 'no pagamento e ganhem 10% de desconto.',
+}
+
 // Only these routes may enter the sitemap in live. Private/preview shells never do.
 export const publicPages = {
   ...Object.fromEntries(productPages.map(product => [`/loja/${product.slug}`, { title: `${product.seo.title} — KeyToTwo`, description: product.seo.description }])),

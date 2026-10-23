@@ -16,6 +16,8 @@ export type ProductOffer = {
   updates: string
   license: string
   materials: string
+  /** Preço de tabela riscado ao lado do cobrado (em centavos), com o rótulo da promoção. Só aparece se for maior. */
+  listPrice?: { amount: number; label: string }
 }
 
 /** Condições comuns a toda oferta (Termos de uso: pagamento, entrega, atualizações e licença). */
@@ -36,6 +38,9 @@ export const packageOffer: ProductOffer = {
   price: 'R$ 29,90',
   priceApproved: true,
   purchaseAction: 'cart',
+  // Promoção de lançamento (responsável, 2026-10-23): o pacote passa a 5 jogos e o preço de tabela a R$ 39,90; fica
+  // por R$ 29,90 enquanto durar o lançamento. Acabou a promoção: o preço vai a R$ 39,90 na Stripe e isto sai.
+  listPrice: { amount: 3990, label: 'Preço de lançamento' },
   ...offerTerms,
   materials: `${packageNeeds.map((label, index) => index ? label.charAt(0).toLowerCase() + label.slice(1) : label).join(', ')}. Cada jogo mostra a sua lista na página dele.`,
 }

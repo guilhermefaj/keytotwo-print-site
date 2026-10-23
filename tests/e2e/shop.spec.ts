@@ -25,22 +25,26 @@ test('loja: pacote fora do catálogo fica em breve; jogos do pacote sem avulso f
   await expect(page.getByRole('heading', { name: 'Loja', exact: true })).toBeVisible()
   const pack = page.locator('[data-shop-product="P001"]')
   await expect(pack).toContainText('Pacote de jogos')
-  await expect(pack.locator('.shop-bundle-games li')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura'])
+  await expect(pack.locator('.shop-bundle-games li')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura', 'A Rota da Fornalha', 'Retrospectiva a Dois'])
   await expect(pack).toContainText('Em breve')
   await expect(pack.getByRole('link')).toHaveCount(0)
   // Jogos do pacote: só os disponíveis; capas oficiais no lugar da prévia do PDF.
   const paid = page.locator('.shop-games [data-shop-game]')
-  await expect(paid).toHaveCount(3)
+  await expect(paid).toHaveCount(5)
   // Jogo do pacote sem avulso nunca aparece "Em breve": selo "No pacote" e o caminho até o pacote.
-  for (const id of ['tabuleiro-da-sorte', 'o-sumico-de-rapadura']) {
+  for (const id of ['tabuleiro-da-sorte', 'o-sumico-de-rapadura', 'a-rota-da-fornalha', 'retrospectiva-a-dois']) {
     const card = page.locator(`[data-shop-game="${id}"]`)
     await expect(card.locator('.tag-solid')).toHaveText('No pacote')
     await expect(card.getByRole('link', { name: 'Ver o pacote: Coleção KeyToTwo: Fundadores', exact: true })).toHaveAttribute('href', '/loja/colecao-fundadores')
     await expect(card).not.toContainText('Em breve')
-    // Cor do jogo: faixa sob a capa, vinda de games.ts.
-    await expect(card.locator('.game-cover[data-accent]')).toHaveCount(1)
+    // Capa oficial sem faixa de cor (2026-10-23) e o jeito de jogar, da ficha, sobre o nome.
+    await expect(card.locator('.game-cover[data-accent]')).toHaveCount(0)
+    await expect(card.locator('.shop-game-kind')).not.toBeEmpty()
   }
-  await expect(page.locator('.shop-games .game-cover-art img')).toHaveCount(3)
+  await expect(page.locator('[data-shop-game="a-rota-da-fornalha"] .shop-game-kind')).toHaveText('Escape room de papel')
+  await expect(page.locator('.shop-games .game-cover-art img')).toHaveCount(5)
+  // Capas até 800 px: as folhas dos jogos pagos aparecem, mas não dão para usar.
+  expect(await page.locator('.shop-games .game-cover-art img').first().getAttribute('srcset')).toMatch(/-capa-800\.webp 800w$/)
   await expect(page.locator('[data-shop-game] img[src*="/media/experience/j001-page"]')).toHaveCount(0)
   // Gratuitos: os dois jogos com o selo e o atalho para a página Gratuitos, em todos os stages.
   const freebies = page.locator('[data-shop-freebies]')
@@ -86,7 +90,7 @@ test('produto: preço vem do catálogo, compra preserva escolha e ausência não
   await expect(page.locator('.shop-purchase button')).toHaveCount(0)
   // Jogos do pacote: apresentação e ficha, sem compra avulsa nem "Em breve" dentro da oferta.
   const included = page.locator('.shop-games [data-shop-game]')
-  await expect(included).toHaveCount(3)
+  await expect(included).toHaveCount(5)
   await expect(page.locator('.shop-games').getByRole('button')).toHaveCount(0)
   await expect(page.locator('.shop-games')).not.toContainText('Em breve')
   await expect(page.locator('[data-shop-game="tabuleiro-da-sorte"] .ficha')).toContainText('Tabuleiro, perguntas e desafios')
@@ -117,9 +121,35 @@ test('página de produto: ficha no topo, capa, como é jogar, o que vocês preci
     await expect(page.locator('.moments-list li')).toHaveCount(3)
   }
   await page.goto('/loja/colecao-fundadores')
-  await expect(page.getByRole('list', { name: 'Imagens do produto' }).getByRole('button')).toHaveCount(4)
+  await expect(page.getByRole('list', { name: 'Imagens do produto' }).getByRole('button')).toHaveCount(6)
   await expect(page.locator('.product-facts')).toHaveCount(0)
-  await expect(page.locator('.needs-list li')).toHaveCount(11)
+  await expect(page.locator('.needs-list li')).toHaveCount(13)
+})
+
+test('pacote: preço de lançamento riscado só quando o cobrado é menor; leitor de tela ouve "De … por …"', async ({ page }) => {
+  test.skip(stage === 'preview', 'preview não mostra preço')
+  await catalog(page, [{ ...bundle, price: { unit_amount: 2990, currency: 'brl' } }])
+  await page.goto('/loja')
+  const pack = page.locator('[data-shop-product="P001"]')
+  await expect(pack.locator('.shop-price-tag')).toHaveText('Preço de lançamento')
+  await expect(pack.locator('.shop-price-list')).toHaveText(/R\$\s39,90/)
+  await expect(pack.locator('.shop-price')).toHaveText(/^De R\$\s39,90 por R\$\s29,90$/)
+  await page.unrouteAll({ behavior: 'ignoreErrors' })
+  await catalog(page, [{ ...bundle, price: { unit_amount: 3990, currency: 'brl' } }])
+  await page.goto('/loja')
+  await expect(pack.locator('.shop-price')).toHaveText(/^R\$\s39,90$/)
+  await expect(pack.locator('.shop-price-tag, .shop-price-list')).toHaveCount(0)
+})
+
+// Fora do Portal: d2-portal.spec.ts, com a sessão de teste.
+test('barrinha do cupom: acima do cabeçalho nas páginas públicas', async ({ page }) => {
+  await catalog(page)
+  await page.goto('/loja')
+  const bar = page.getByRole('complementary', { name: 'Cupom de primeira compra' })
+  await expect(bar).toHaveText('Primeira compra? Usem o cupom PRIMEIRA10 no pagamento e ganhem 10% de desconto.')
+  // Vem antes do cabeçalho na página e rola com ela (o cabeçalho é que gruda no topo).
+  const [barBox, headerBox] = [await bar.boundingBox(), await page.locator('.site-header-shell').boundingBox()]
+  expect(barBox!.y + barBox!.height).toBeLessThanOrEqual(headerBox!.y + 1)
 })
 
 test('produto listado sem preço não oferece compra; falha permite retry', async ({ page }) => {

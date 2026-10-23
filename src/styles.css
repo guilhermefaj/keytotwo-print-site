@@ -38,6 +38,10 @@ main:focus, [tabindex='-1']:focus { outline: none; }
 .pending-page p { max-width: 60ch; }
 .pending-page .form-actions { margin-top: var(--space-sm); }
 .stage-banner { margin: 0; padding: 6px 20px; border-bottom: var(--line-rule); background: var(--color-paper); color: var(--color-ink-soft); text-align: center; font-size: var(--text-label); line-height: 1.5; }
+/* Barrinha de cupom (DESIGN.md): Tinta com o código em Marca-texto (7,6:1), acima do cabeçalho. */
+.promo-bar { background: var(--color-ink); color: var(--color-paper); }
+.promo-bar p { margin: 0 auto; padding: 8px 16px; max-width: var(--container-wide); text-align: center; font-size: var(--text-label); line-height: 1.5; }
+.promo-code { color: var(--color-highlight); font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
 
 /* --------------------------------------------------------------------------
    Tipografia
@@ -391,7 +395,6 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .help-game-needs { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-md); }
 .help-game-needs li { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: var(--space-md); align-items: center; padding-bottom: var(--space-md); border-bottom: var(--line-dot); }
 .help-game-needs .game-cover { padding: 0; border-width: 1.5px; border-radius: var(--radius-sm); }
-.help-game-needs .game-cover[data-accent] { border-bottom: 4px solid var(--game-accent); }
 .help-game-needs h4 { font-family: var(--font-display); font-size: var(--text-title-sm); margin: 0 0 4px; }
 .reading-page .help-game-needs p { margin: 0; font-size: var(--text-small); color: var(--color-ink-soft); }
 .support-card { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: var(--space-md); padding: var(--space-lg); border: var(--line-card); border-radius: var(--radius-lg); margin-top: var(--space-lg); }

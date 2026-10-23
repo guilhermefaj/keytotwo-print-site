@@ -55,6 +55,11 @@ export const products: readonly Product[] = [
     { title: 'Tabuleiro da Sorte, jogo de tabuleiro para casais', description: 'Perguntas, desafios e moedas num tabuleiro para dois, com um pedido secreto valendo. PDF para imprimir e montar em casa.' }),
   single(byCode('J002'), 'R$ 12,90', ['O jogo completo em PDF para imprimir', 'Desafios, envelopes e cartões de dica'], 'Impressão, tesoura, estilete com base de corte, fita adesiva, uma caneta por pessoa, um copo para as dicas e luz do dia ou um abajur.',
     { title: 'O Sumiço de Rapadura, escape room para casais', description: 'Escape room de papel para dois: ajudem o Kito a encontrar Rapadura. PDF para imprimir, recortar e resolver juntos em casa.' }),
+  // Preços do responsável em 2026-10-23.
+  single(byCode('J004'), 'R$ 12,90', ['O jogo completo em PDF para imprimir', 'Desafios, envelopes e cartões de dica'], 'Impressão, tesoura, estilete com base de corte, fita adesiva, uma caneta por pessoa, um copo para as dicas e um lápis apontado.',
+    { title: 'A Rota da Fornalha, escape room espacial para casais', description: 'Escape room de papel para dois: ajudem o Kito a pôr a nave de volta na rota. PDF para imprimir, recortar e resolver juntos em casa.' }),
+  single(byCode('J005'), 'R$ 9,90', ['O jogo completo em PDF para imprimir', 'Cartões, cédulas, pôster e cápsula para preencher'], 'Impressão, tesoura, uma caneta por pessoa, fita adesiva e uma mesa com espaço para enfileirar os meses.',
+    { title: 'Retrospectiva a Dois, jogo de memória para casais', description: 'Uma premiação da temporada do casal, com linha do tempo, prêmios e uma cápsula para a próxima. PDF para imprimir e jogar em casa.' }),
 ]
 
 // Licença, atualizações e pagamento de cada oferta: offerTerms (Termos de uso). Um produto soon deve declarar offer.purchaseAction: null; não cadastrar exemplos públicos.

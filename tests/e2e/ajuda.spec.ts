@@ -9,7 +9,7 @@ test('ajuda: temas levam às seções, guia por jogo e atendimento com cópia do
   await expect(topics).toHaveCount(4)
   await expect(topics.nth(2)).toHaveAttribute('href', '#impressao')
   await expect(page.locator('.print-guide li')).toHaveCount(5)
-  await expect(page.locator('.help-game-needs h4')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura'])
+  await expect(page.locator('.help-game-needs h4')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura', 'A Rota da Fornalha', 'Retrospectiva a Dois'])
   await expect(page.locator('img[src*="j001-page"]')).toHaveCount(0)
   await expect(page.getByRole('main')).not.toContainText(/em breve|preparando nosso canal/i)
   const email = page.locator('.support-email')

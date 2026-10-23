@@ -6,7 +6,6 @@ import { money } from '../../lib/api'
 import { siteConfig } from '../../lib/seo'
 import { useShop } from '../../lib/shop-context'
 import { BundleFeature } from '../shop/BundleFeature'
-import { accentStyle } from '../shop/GameGrid'
 import { GameCover } from '../account/GameCover'
 import { SnapCarousel } from '../ui/SnapCarousel'
 
@@ -26,7 +25,7 @@ function CoverTile({ game, order }: { game: Game; order: number }) {
   const single = products.find(product => product.kind === 'single' && product.code === game.code)
   const bundle = products.find(product => product.kind === 'bundle' && product.games.some(item => item.id === game.id))
   const page = single ?? bundle
-  return <article className="cover-tile" data-shop-game={game.id} style={{ ...accentStyle(game.accent), '--tile-order': order } as CSSProperties}>
+  return <article className="cover-tile" data-shop-game={game.id} style={{ '--tile-order': order } as CSSProperties}>
     <Link className="cover-tile-link" to={page ? `/loja/${page.slug}` : '/loja'}>
       <GameCover code={game.code} name={game.name} sizes="(max-width: 767px) 78vw, 360px" />
       <span className="cover-tile-name">{game.name}</span>

@@ -26,8 +26,12 @@ export function ProductAvailability({ product, detail = false, fallback }: { pro
   const listed = catalog.data?.products.find(item => item.code === product.code)
   if (!listed) return soon
   if (!listed.price) return <p className="shop-status">Não conseguimos carregar o preço.</p>
+  // Preço de tabela riscado (promoção de lançamento): só em real e só se for maior que o cobrado pela Stripe.
+  const list = product.offer.listPrice
+  const struck = list && listed.price.currency === 'brl' && list.amount > listed.price.unit_amount ? list : undefined
   return <div className="shop-availability">
-    <p className="shop-price">{money(listed.price.unit_amount, listed.price.currency)}</p>
+    {struck && <p className="shop-price-tag">{struck.label}</p>}
+    <p className="shop-price">{struck && <><s className="shop-price-list"><span className="sr-only">De </span>{money(struck.amount, listed.price.currency)}</s><span className="sr-only"> por</span> </>}{money(listed.price.unit_amount, listed.price.currency)}</p>
     {siteConfig.stage === 'test' && <p className="shop-price-note">Valor de teste</p>}
     {detail
       ? <ProductPurchaseAction code={product.code} />

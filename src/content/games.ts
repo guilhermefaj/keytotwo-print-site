@@ -4,7 +4,7 @@
 // Nenhuma página do PDF vai para o site (responsável, 2026-10-16): quem abrisse a imagem baixaria o jogo.
 // Os detalhes falam da experiência do casal, não das regras nem do conteúdo de cada página.
 /** O que a dupla providencia além do PDF (DESIGN.md › O que vocês precisam). Rótulos em `needLabels`. */
-export type Need = 'impressora' | 'tesoura' | 'caneta' | 'folha' | 'cronometro' | 'estilete' | 'fita' | 'cola' | 'copo' | 'luz' | 'celular'
+export type Need = 'impressora' | 'tesoura' | 'caneta' | 'folha' | 'cronometro' | 'estilete' | 'fita' | 'cola' | 'copo' | 'luz' | 'celular' | 'lapis' | 'mesa'
 export const needLabels: Record<Need, string> = {
   impressora: 'Impressora e papel A4',
   tesoura: 'Tesoura',
@@ -17,8 +17,10 @@ export const needLabels: Record<Need, string> = {
   copo: 'Um copo para as dicas',
   luz: 'Luz do dia ou um abajur',
   celular: 'Celular, para os desafios de foto',
+  lapis: 'Um lápis apontado',
+  mesa: 'Uma mesa com espaço para enfileirar os meses',
 }
-/** Arte oficial 16:9 gerada por scripts/prepare-game-covers.mjs (640, 960 e 1280 px de largura). */
+/** Arte oficial 16:9 gerada por scripts/prepare-game-covers.mjs (640 e 800 px de largura; as folhas não dão para usar). */
 export type GameCoverArt = { src: string; srcSet: string }
 export type Game = {
   id: string
@@ -43,7 +45,7 @@ export type Game = {
 }
 
 // Verified J001 facts, never extrapolated to the other games.
-export const cover = (code: string): GameCoverArt => ({ src: `/media/games/${code}-capa-640.webp`, srcSet: `/media/games/${code}-capa-640.webp 640w, /media/games/${code}-capa-960.webp 960w, /media/games/${code}-capa-1280.webp 1280w` })
+export const cover = (code: string): GameCoverArt => ({ src: `/media/games/${code}-capa-640.webp`, srcSet: `/media/games/${code}-capa-640.webp 640w, /media/games/${code}-capa-800.webp 800w` })
 
 const j001Facts = [{ label: 'Pessoas', value: '2, em equipe' }, { label: 'Jeito de jogar', value: 'Desenho e adivinhação' }, { label: 'Rodadas', value: 'Um minuto cada' }, { label: 'Formato', value: 'PDF para imprimir em casa' }] as const
 
@@ -92,6 +94,36 @@ export const games: readonly Game[] = [
       { title: 'Um mistério para dois.', text: 'Ninguém aqui é detetive. O Kito também não, por isso chamou vocês.' },
       { title: 'Conversa é a melhor pista.', text: 'Cada um vê coisas que o outro não vê. Só descrevendo e perguntando a dupla avança.' },
       { title: 'Mãos no papel.', text: 'Recortar, dobrar e olhar contra a luz fazem parte da investigação.' },
+    ],
+  },
+  // J004 e J005 entram no P001 e também se vendem sozinhos (responsável, 2026-10-23). Fatos das fichas do segundo
+  // cérebro (Jogos/J004 e J005, 2026-10-23), sem spoilers; duração não medida não entra.
+  {
+    id: 'a-rota-da-fornalha', code: 'J004', name: 'A Rota da Fornalha', confirmed: true,
+    description: 'O piloto automático da nave do Kito mudou a rota de madrugada, e quem sabe a senha da porta é um comandante que não acorda. Vocês resolvem os desafios juntos para chegar à cabine e pôr a nave de volta no caminho.',
+    summary: 'Escape room espacial em dupla, para pôr a nave do Kito de volta na rota certa.',
+    cover: cover('j004'),
+    facts: [{ label: 'Pessoas', value: '2, em cooperação' }, { label: 'Jeito de jogar', value: 'Escape room de papel' }, { label: 'Dicas', value: 'Para quando a dupla travar' }, { label: 'Formato', value: 'PDF para imprimir em casa' }],
+    accent: '#d4600f',
+    needs: ['impressora', 'tesoura', 'estilete', 'fita', 'caneta', 'copo', 'lapis'],
+    moments: [
+      { title: 'Cada um vê uma parte.', text: 'Muitas pistas só uma pessoa enxerga. A outra escuta, pergunta e confia na descrição.' },
+      { title: 'Humor de bordo.', text: 'Atualização automática de madrugada, alguém que ronca, manual que ninguém leu. O Kito conta tudo com a cara mais séria.' },
+      { title: 'A nave pede os dois.', text: 'Ninguém pousa sozinho. As últimas decisões só saem com as duas mãos juntas.' },
+    ],
+  },
+  {
+    id: 'retrospectiva-a-dois', code: 'J005', name: 'Retrospectiva a Dois', confirmed: true,
+    description: 'Uma noite de premiação para a temporada de vocês: o último ano, ou o tempo desde o último aniversário de namoro. Vocês remontam a linha do tempo com momentos que só vocês viveram, apontam quem fez o quê, votam os prêmios e fecham uma cápsula para a próxima temporada.',
+    summary: 'Uma premiação da temporada de vocês, com linha do tempo, prêmios e uma cápsula para a próxima.',
+    cover: cover('j005'),
+    facts: [{ label: 'Pessoas', value: '2, em cooperação' }, { label: 'Jeito de jogar', value: 'Memória e votação' }, { label: 'Temporada', value: 'Até 12 meses de vocês' }, { label: 'Formato', value: 'PDF para imprimir em casa' }],
+    accent: '#b5562b',
+    needs: ['impressora', 'tesoura', 'caneta', 'fita', 'mesa'],
+    moments: [
+      { title: 'Cada um lembra de um jeito.', text: 'Um escreve um momento da temporada, o outro tenta acertar o mês. As versões nem sempre batem.' },
+      { title: 'Três, dois, um, aponta.', text: 'Uma frase, uma contagem e os dois apontam ao mesmo tempo para quem fez aquilo. Às vezes cada um aponta para o outro.' },
+      { title: 'Fica para guardar.', text: 'No fim sai um pôster com os premiados e uma cápsula fechada, para abrir na próxima temporada.' },
     ],
   },
   // Gratuitos (código F, fichas do segundo cérebro de 2026-10-20): liberados para quem tem conta e aceita os e-mails.

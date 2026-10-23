@@ -51,7 +51,7 @@ export default function ShopProduct() {
     <header className="shop-heading"><h1>{product.title}</h1><p>{product.shopHeadline || product.tagline}</p></header>
     {game && <ProductFacts game={game} />}
     <div className="shop-product-layout">
-      <ProductGallery images={galleryOf(product, game)} accent={game?.accent} />
+      <ProductGallery images={galleryOf(product, game)} />
       <section className="shop-purchase" aria-labelledby="shop-includes-title" data-shop-product={product.code}>
         <h2 id="shop-includes-title">O que está incluído</h2>
         <ul className="shop-includes">{product.contents.map(line => <li key={line}>{line}</li>)}</ul>

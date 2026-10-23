@@ -42,6 +42,15 @@ async function capture(page: Page, name: string) {
   await page.screenshot({ path: `.maestri/design-review/d2/${name}.png`, fullPage: true, animations: 'disabled' })
 }
 
+test('portal sem a barrinha do cupom (o cabeçalho do Portal não tem estímulo comercial)', async ({ page }) => {
+  await fixture(page)
+  for (const route of ['/meus-jogos', '/pedidos', '/conta']) {
+    await page.goto(route)
+    await expect(page.locator('.site-header-shell')).toHaveAttribute('data-private', 'true')
+    await expect(page.locator('.promo-bar')).toHaveCount(0)
+  }
+})
+
 test('D1 touchups: zero badge hidden, portal link and the private mobile menu', async ({ page }) => {
   await fixture(page)
   await page.goto('/')
