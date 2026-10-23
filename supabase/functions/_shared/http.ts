@@ -13,6 +13,7 @@ export type ErrorCode =
   | 'EDIT_CONFLICT'
   | 'SLUG_TAKEN'
   | 'SLUG_LOCKED'
+  | 'IMAGE_IN_USE'
   | 'ORIGIN_NOT_ALLOWED'
   | 'NOT_FOUND'
   | 'FILE_NOT_FOUND'

@@ -87,7 +87,7 @@ export interface RpcCall {
   hasAuthorization: boolean
 }
 
-type Reply = { status: number; body: unknown }
+type Reply = { status: number; body: unknown; headers?: Record<string, string> }
 export const rpcCalls: RpcCall[] = []
 let rpcReply: (fn: string, args: Record<string, unknown>) => Reply = () => ({ status: 200, body: null })
 let priceReply: (id: string) => Reply = () => ({ status: 404, body: {} })
@@ -147,7 +147,8 @@ export function onExternal(reply: (call: ExternalCall) => Reply) {
   externalReply = reply
 }
 
-// Chamadas ao B2 (imagens do blog): método, host, chave, query, tipo e tamanho. Corpo em texto responde como XML.
+// Chamadas ao B2 (imagens do blog): método, host, chave, query, tipo e tamanho. Corpo em texto responde como XML;
+// HEAD, 204 e corpo null respondem sem corpo, com os headers da resposta simulada (x-amz-version-id, por exemplo).
 export interface B2Call {
   method: string
   host: string
@@ -208,7 +209,12 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
     const call = { method: (init?.method ?? 'GET').toUpperCase(), host: url.hostname, key: decodeURIComponent(url.pathname.slice(1)), query: url.searchParams, contentType: new Headers(init?.headers).get('Content-Type'), size }
     b2Calls.push(call)
     const reply = b2Reply(call)
-    return Promise.resolve(typeof reply.body === 'string' ? new Response(reply.body, { status: reply.status, headers: { 'Content-Type': 'application/xml' } }) : respond(reply))
+    const empty = call.method === 'HEAD' || reply.status === 204 || reply.body === null
+    const text = typeof reply.body === 'string'
+    return Promise.resolve(new Response(empty ? null : text ? String(reply.body) : JSON.stringify(reply.body), {
+      status: reply.status,
+      headers: { 'Content-Type': text ? 'application/xml' : 'application/json', ...reply.headers },
+    }))
   }
   return Promise.reject(new Error(`fetch não simulado: ${url.origin}${url.pathname}`))
 }

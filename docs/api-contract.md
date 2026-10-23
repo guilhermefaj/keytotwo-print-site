@@ -93,6 +93,7 @@ Headers enviados pelo site:
 | 409 | `EDIT_CONFLICT` | Post do blog salvo em outro lugar depois que o editor abriu; `details.post` traz o atual (6.13) |
 | 409 | `SLUG_TAKEN` | Outro post já usa o endereço (6.13) |
 | 409 | `SLUG_LOCKED` | Mudança de endereço num post que já foi publicado (6.13) |
+| 409 | `IMAGE_IN_USE` | Apagar do bucket uma imagem que algum post usa; `details.used_by` traz os posts (6.13) |
 | 409 | `ALREADY_OWNED` | No checkout: nada a pagar (tudo na sacola já é do usuário ou já está num pacote dela) |
 | 409 | `CART_EMPTY` | Checkout com carrinho vazio |
 | 409 | `CART_CHANGED` | `cart_version` diferente da atual: o site recarrega o carrinho |
@@ -142,7 +143,8 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `POST /admin/blog/posts` · `PUT /admin/blog/posts/{id}` | `admin_save_blog_post(uid, id, post, expected_updated_at)` | Blog (2026-10-23) |
 | `GET /admin/blog/posts/{id}` · `DELETE /admin/blog/posts/{id}` | `admin_get_blog_post(uid, id)` · `admin_delete_blog_post(uid, id)` | Blog (2026-10-23) |
 | `POST /admin/blog/images` | `admin_register_blog_image(uid, path)` → grava no bucket público do blog | Blog (2026-10-23) |
-| `GET /admin/blog/images` | `admin_blog_access(uid)` → lista o bucket público do blog | Blog, galeria (2026-10-23) |
+| `GET /admin/blog/images` | `admin_blog_image_usage(uid)` → lista o bucket público do blog | Blog, galeria (2026-10-23) |
+| `DELETE /admin/blog/images` | `admin_delete_blog_image(uid, path)` → apaga do bucket público do blog | Blog, galeria (2026-10-23) |
 | `GET /blog/posts` · `GET /blog/version` | `list_published_blog_posts()` · `get_blog_version()` | Blog (2026-10-23) |
 | `POST /email/unsubscribe` | `unsubscribe(user_id, 'unsubscribe_link')` | I5 |
 | `stripe-webhook` | `fulfill_order` ou `set_order_status` (seção 9) | I3 |
@@ -171,7 +173,7 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `GET /free-games` | Pública | Gratuitos | Implementada |
 | `POST /free-download` | Sessão + aceite de e-mails registrado alguma vez | Gratuitos | Implementada |
 | `GET /admin/metrics` | Sessão de admin (`app_metadata.admin`) com segundo fator (`aal2`) | Admin | Implementada |
-| `GET` e `POST /admin/blog/posts` · `GET`, `PUT` e `DELETE /admin/blog/posts/{id}` · `GET` e `POST /admin/blog/images` | Sessão de admin com segundo fator (`aal2`) | Blog | Implementada |
+| `GET` e `POST /admin/blog/posts` · `GET`, `PUT` e `DELETE /admin/blog/posts/{id}` · `GET`, `POST` e `DELETE /admin/blog/images` | Sessão de admin com segundo fator (`aal2`) | Blog | Implementada |
 | `GET /blog/posts` · `GET /blog/version` | Pública (só o que está publicado) | Blog | Implementada |
 | `GET` e `POST /email/unsubscribe` | Token HMAC | I5 | Planejada |
 
@@ -582,7 +584,8 @@ Post (`post` nos corpos e nas respostas; `snake_case`):
 - `GET /admin/blog/posts/{id}` → `{ post, media_base }`; `DELETE` → `{ "deleted": true, version }`. Id que não é uuid ou não existe → `404 NOT_FOUND`.
 - `version` nas respostas de salvar e excluir: a versão do blog publicado depois da mudança (a de `GET /blog/version`). O admin compara com o `/blog/versao.json` do site e avisa até o site ficar com ela.
 - `POST /admin/blog/images?name=<arquivo>`: a imagem crua no corpo (até 5 MB; WebP, PNG, JPG, GIF ou AVIF, conferidos pelo começo do arquivo). O admin já reduz para 1600 px e converte para WebP. Grava em `<ano>/<mês>/<sorteio>-<nome>.<ext>` no bucket público e responde `201 { path: "/images/blog/<chave>", url: "<media_base>/<chave>" }`. O `path` é o que vai no texto e na capa; no build, a imagem é copiada para `public/images/blog`.
-- `GET /admin/blog/images` (galeria, 2026-10-23) → `{ images: [{ path, url, size, uploaded_at }], truncated, media_base }`: o que está no bucket público do blog (ListObjectsV2 assinado com a chave do blog), da imagem mais nova à mais antiga. Só entra o que pode ir num post (`/images/blog/...` com nome no padrão e extensão de imagem). Até 5 páginas de 1000 arquivos; passou disso, `truncated: true`. O admin é conferido no banco antes (`admin_blog_access`, migração `20261023160000_blog_galeria.sql`).
+- `GET /admin/blog/images` (galeria, 2026-10-23) → `{ images: [{ path, url, size, uploaded_at, used_by }], truncated, media_base }`: o que está no bucket público do blog (ListObjectsV2 assinado com a chave do blog), da imagem mais nova à mais antiga. Só entra o que pode ir num post (`/images/blog/...` com nome no padrão e extensão de imagem). Até 5 páginas de 1000 arquivos; passou disso, `truncated: true`. `used_by`: os posts que usam a imagem na capa ou no texto (`[{ id, title, status }]`, rascunhos incluídos), vindos do banco junto da conferência do admin (`admin_blog_image_usage`, migração `20261023180000_blog_apagar_imagem.sql`).
+- `DELETE /admin/blog/images?path=/images/blog/<chave>` (2026-10-23) → `{ "deleted": true }`: apaga do bucket uma imagem que nenhum post usa, versão por versão (o B2 guarda versões; sem isso o arquivo só ficaria escondido). Caminho fora do padrão → `400 INVALID_REQUEST`, sem banco. Em uso → `409 IMAGE_IN_USE` com `details.used_by`, sem tocar no bucket: o build do site baixa as imagens de todos os publicados e pararia sem ela. Cada imagem apagada fica em `private.admin_events` (`blog_image_delete`).
 - `GET /blog/posts` (pública) → `{ version, posts, media_base }` só com os publicados, com o `body`. `GET /blog/version` (pública) → `{ version }`: md5 de id e `updated_at` dos publicados; rascunho não muda a versão.
 - A mesma versão sai pela API de dados do Supabase, `POST /rest/v1/rpc/get_blog_version` com a chave publicável: é a única RPC com EXECUTE para `anon` (migração `20261023160000_blog_galeria.sql`). O vigia da VPS confere a cada minuto por ela, sem gastar invocações das funções.
 - Admin: o mesmo de 6.12 (`aal2`, `forbidden` → `403 NOT_ADMIN`, `KT009` → `403 EMAIL_NOT_CONFIRMED`).

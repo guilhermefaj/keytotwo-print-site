@@ -22,7 +22,7 @@ const send = async (path: string, options: { method?: string; token?: string; bo
 contractTest('rotas do blog no admin: sem sessão 401; sem o segundo fator 403 MFA_REQUIRED, antes do banco', async () => {
   onRpc(() => ({ status: 200, body: null }))
   const aal1 = await sessionToken({ aal: 'aal1' })
-  for (const [path, method] of [['/admin/blog/posts', 'GET'], ['/admin/blog/posts', 'POST'], [`/admin/blog/posts/${ID}`, 'GET'], [`/admin/blog/posts/${ID}`, 'PUT'], [`/admin/blog/posts/${ID}`, 'DELETE'], ['/admin/blog/images', 'GET'], ['/admin/blog/images', 'POST']]) {
+  for (const [path, method] of [['/admin/blog/posts', 'GET'], ['/admin/blog/posts', 'POST'], [`/admin/blog/posts/${ID}`, 'GET'], [`/admin/blog/posts/${ID}`, 'PUT'], [`/admin/blog/posts/${ID}`, 'DELETE'], ['/admin/blog/images', 'GET'], ['/admin/blog/images', 'POST'], ['/admin/blog/images?path=%2Fimages%2Fblog%2Fx.webp', 'DELETE']]) {
     const body = method === 'GET' || method === 'DELETE' ? undefined : {}
     assertEquals((await send(path, { method, body })).body.error.code, 'UNAUTHENTICATED', `${method} ${path}`)
     const res = await send(path, { method, token: aal1, body })
@@ -153,9 +153,10 @@ ${keys.map(([key, at, size]) => `<Contents><Key>${key}</Key><LastModified>${at}<
 <IsTruncated>${next ? 'true' : 'false'}</IsTruncated>${next ? `<NextContinuationToken>${next}</NextContinuationToken>` : ''}
 </ListBucketResult>`
 
-contractTest('GET /admin/blog/images: confere o admin no banco e lista o bucket do blog, da imagem mais nova à mais antiga', async () => {
+contractTest('GET /admin/blog/images: confere o admin no banco e lista o bucket do blog, da imagem mais nova à mais antiga, com onde cada uma é usada', async () => {
   const token = await admin()
-  onRpc(() => ({ status: 200, body: [{ outcome: 'ok' }] }))
+  const capa = [{ id: ID, title: 'Jogos para casais', status: 'published' }]
+  onRpc(() => ({ status: 200, body: [{ outcome: 'ok', usage: { '/images/blog/2026/10/aa11bb22-capa.webp': capa } }] }))
   onB2((call) => ({
     status: 200,
     body: call.query.get('continuation-token') === 'pagina-2'
@@ -167,13 +168,13 @@ contractTest('GET /admin/blog/images: confere o admin no banco e lista o bucket 
   // Só o que pode ir num post: imagem com nome no padrão do site (o .txt e o nome com espaço e & ficam fora).
   assertEquals(res.body, {
     images: [
-      { path: '/images/blog/2026/10/cc33dd44-mesa.webp', url: `${MEDIA}/2026/10/cc33dd44-mesa.webp`, size: 300, uploaded_at: '2026-10-23T16:00:00.000Z' },
-      { path: '/images/blog/2026/10/aa11bb22-capa.webp', url: `${MEDIA}/2026/10/aa11bb22-capa.webp`, size: 100, uploaded_at: '2026-10-22T10:00:00.000Z' },
+      { path: '/images/blog/2026/10/cc33dd44-mesa.webp', url: `${MEDIA}/2026/10/cc33dd44-mesa.webp`, size: 300, uploaded_at: '2026-10-23T16:00:00.000Z', used_by: [] },
+      { path: '/images/blog/2026/10/aa11bb22-capa.webp', url: `${MEDIA}/2026/10/aa11bb22-capa.webp`, size: 100, uploaded_at: '2026-10-22T10:00:00.000Z', used_by: capa },
     ],
     truncated: false,
     media_base: MEDIA,
   })
-  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['admin_blog_access', { p_user_id: userId(token) }]])
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['admin_blog_image_usage', { p_user_id: userId(token) }]])
   // Lista assinada (ListObjectsV2) no bucket do blog; a segunda página vem pelo token da primeira.
   assertEquals(b2Calls.map((c) => [c.method, c.host, c.key, c.query.get('list-type'), c.query.get('continuation-token'), c.query.get('X-Amz-Credential')?.split('/')[0]]), [
     ['GET', 'blog-de-teste.s3.teste-001.backblazeb2.com', '', '2', null, BLOG_KEY_ID],
@@ -181,9 +182,49 @@ contractTest('GET /admin/blog/images: confere o admin no banco e lista o bucket 
   ])
 
   onB2(() => ({ status: 200, body: listing([]) }))
-  onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden' }] }))
+  onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden', usage: null }] }))
   const denied = await send('/admin/blog/images', { token })
   assertEquals([denied.status, denied.body.error.code], [403, 'NOT_ADMIN'])
+  assertEquals(b2Calls.length, 0)
+})
+
+contractTest('DELETE /admin/blog/images: só o que nenhum post usa; apaga do bucket versão por versão, de vez', async () => {
+  const token = await admin()
+  const path = '/images/blog/2026/10/aa11bb22-capa.webp'
+  const remove = (value: string) => send(`/admin/blog/images?path=${encodeURIComponent(value)}`, { method: 'DELETE', token })
+  onRpc(() => ({ status: 200, body: [{ outcome: 'ok', used_by: null }] }))
+  onB2(() => ({ status: 404, body: null }))
+  for (const bad of ['', '/images/blog/../segredo.webp', '/outra/pasta/foto.webp', '/images/blog/2026/10/leia-me.txt']) {
+    const res = await remove(bad)
+    assertEquals([res.status, res.body.error.code], [400, 'INVALID_REQUEST'], bad)
+  }
+  assertEquals([rpcCalls.length, b2Calls.length], [0, 0])
+
+  // Em uso (num post publicado ou rascunho): 409 com os posts, sem tocar no bucket.
+  onRpc(() => ({ status: 200, body: [{ outcome: 'in_use', used_by: [{ id: ID, title: 'Jogos para casais', status: 'published' }] }] }))
+  const used = await remove(path)
+  assertEquals([used.status, used.body.error.code, used.body.error.message], [409, 'IMAGE_IN_USE', 'Esta imagem está em uso em “Jogos para casais”. Tire-a do post antes de apagar.'])
+  assertEquals(used.body.error.details.used_by[0].id, ID)
+  assertEquals(b2Calls.length, 0)
+
+  // Livre: o HEAD dá a versão atual, o DELETE apaga essa versão e o HEAD seguinte confirma que não sobrou nada.
+  let heads = 0
+  onRpc(() => ({ status: 200, body: [{ outcome: 'ok', used_by: null }] }))
+  onB2((call) => call.method === 'HEAD'
+    ? (heads++ === 0 ? { status: 200, body: null, headers: { 'x-amz-version-id': 'versao-1' } } : { status: 404, body: null })
+    : { status: 204, body: null })
+  const ok = await remove(path)
+  assertEquals([ok.status, ok.body], [200, { deleted: true }])
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['admin_delete_blog_image', { p_user_id: userId(token), p_path: path }]])
+  assertEquals(b2Calls.map((c) => [c.method, c.host, c.key, c.query.get('versionId')]), [
+    ['HEAD', 'blog-de-teste.s3.teste-001.backblazeb2.com', '2026/10/aa11bb22-capa.webp', null],
+    ['DELETE', 'blog-de-teste.s3.teste-001.backblazeb2.com', '2026/10/aa11bb22-capa.webp', 'versao-1'],
+    ['HEAD', 'blog-de-teste.s3.teste-001.backblazeb2.com', '2026/10/aa11bb22-capa.webp', null],
+  ])
+
+  onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden', used_by: null }] }))
+  onB2(() => ({ status: 404, body: null }))
+  assertEquals((await remove(path)).body.error.code, 'NOT_ADMIN')
   assertEquals(b2Calls.length, 0)
 })
 

@@ -16,9 +16,13 @@ export interface BlogPost extends BlogPostInput {
 export type BlogPostSummary = Omit<BlogPost, 'body'>
 export interface BlogList { version: string; posts: BlogPostSummary[]; media_base: string | null }
 
-// Uma imagem do bucket do blog, como a galeria lista (GET /admin/blog/images).
-export interface BlogImage { path: string; url: string; size: number; uploaded_at: string }
+// Uma imagem do bucket do blog, como a galeria lista (GET /admin/blog/images), com os posts que a usam.
+export interface BlogImage { path: string; url: string; size: number; uploaded_at: string; used_by: { id: string; title: string; status: 'draft' | 'published' }[] }
 export interface BlogImages { images: BlogImage[]; truncated: boolean; media_base: string }
+
+// As imagens que um post usa (capa e texto), contadas como o banco conta: a galeria não deixa apagar nenhuma delas.
+export const imagePathsIn = (body: string, cover: string | null) =>
+  [...(cover ? [cover] : []), ...Array.from(body.matchAll(/\/images\/blog\/[A-Za-z0-9_./-]+/g), match => match[0])]
 
 // "/images/blog/2026/10/ab12cd34-mesa-de-jogo.webp" vira "mesa-de-jogo.webp" (sem a pasta e sem o sorteio do envio).
 export const imageName = (path: string) => path.split('/').pop()!.replace(/^[0-9a-f]{8}-/, '')
