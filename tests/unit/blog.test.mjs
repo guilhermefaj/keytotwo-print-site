@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { readFile } from 'node:fs/promises'
 import { parseBlogPost, readBlogPosts, summarizeBlogPost } from '../../src/lib/blog.server.ts'
-import { formatBlogDate } from '../../src/lib/blog.ts'
+import { formatBlogDate, relatedPosts } from '../../src/lib/blog.ts'
 import { blogPostingJsonLd, pageSeo, serializeJsonLd } from '../../src/lib/seo.ts'
 
 function source(overrides = {}, body = '## Texto\n\nUm parágrafo para ler.\n\n> Uma citação.\n\n- Primeiro\n- Segundo') {
@@ -111,6 +111,36 @@ test('SEO do artigo usa canonical próprio, capa e JSON-LD escapado', () => {
   assert.match(json.image, /\/images\/blog\/capa.webp$/)
   assert.doesNotMatch(serializeJsonLd(json), /<\/script>/)
   assert.deepEqual(JSON.parse(serializeJsonLd(json)), json)
+})
+
+test('campos do Google: opcionais, valem mais que título e resumo no <title> e na descrição; JSON-LD mantém o título', () => {
+  const plain = parseBlogPost(source(), 'sem-seo.md')
+  assert.deepEqual([plain.seoTitle, plain.seoDescription, plain.shareImage], ['', '', undefined])
+  assert.deepEqual([pageSeo('/blog/sem-seo', plain).title, pageSeo('/blog/sem-seo', plain).description], ['Título de teste — KeyToTwo', 'Resumo de teste'])
+  const post = parseBlogPost(source({ seoTitle: '  Título curto  ', seoDescription: 'Para o Google.' }), 'com-seo.md')
+  const seo = pageSeo('/blog/com-seo', post)
+  assert.deepEqual([seo.title, seo.description], ['Título curto — KeyToTwo', 'Para o Google.'])
+  assert.deepEqual([blogPostingJsonLd(post).headline, blogPostingJsonLd(post).description], ['Título de teste', 'Para o Google.'])
+  assert.equal(summarizeBlogPost(post).seoTitle, 'Título curto')
+  assert.throws(() => parseBlogPost(source({ seoTitle: 5 }), 'x.md'), /seoTitle deve ser texto/)
+})
+
+test('imagem de compartilhamento: só a do próprio post, em /images/blog/og/<endereço>.jpg', () => {
+  const post = parseBlogPost(source({ cover: '/images/blog/capa.webp', coverAlt: 'Capa', shareImage: '/images/blog/og/meu-post.jpg' }), 'meu-post.md')
+  assert.equal(post.shareImage, '/images/blog/og/meu-post.jpg')
+  assert.equal(summarizeBlogPost(post).shareImage, '/images/blog/og/meu-post.jpg')
+  for (const shareImage of ['/images/blog/og/outro-post.jpg', '/images/blog/capa.webp', 'https://exemplo.test/x.jpg']) {
+    assert.throws(() => parseBlogPost(source({ shareImage }), 'meu-post.md'), /shareImage deve ser/, shareImage)
+  }
+})
+
+test('posts relacionados: até 3 com tema em comum, do que divide mais temas ao mais novo; sem tema em comum, nenhum', () => {
+  const at = (slug, date, tags) => ({ slug, date, tags, title: slug, description: '', author: '', coverAlt: '', draft: false, readingMinutes: 1, seoTitle: '', seoDescription: '' })
+  const post = at('atual', '2026-10-20', ['Jogos', 'Casal'])
+  const posts = [post, at('um-tema-novo', '2026-10-22', ['casal']), at('dois-temas', '2026-10-01', ['Jogos', 'Casal']), at('um-tema-velho', '2026-09-01', ['Jogos']),
+    at('outro-um-tema', '2026-10-10', ['Jogos']), at('sem-tema', '2026-10-23', ['Receitas'])]
+  assert.deepEqual(relatedPosts(post, posts).map(item => item.slug), ['dois-temas', 'um-tema-novo', 'outro-um-tema'])
+  assert.deepEqual(relatedPosts(at('isolado', '2026-10-20', ['Receitas novas']), posts), [])
 })
 
 test('gerador inclui publicados no sitemap/RSS live e exclui rascunhos; preview mantém selo', async () => {

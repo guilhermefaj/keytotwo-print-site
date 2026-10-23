@@ -16,6 +16,9 @@ export interface BlogPostInput {
   tags: string[]
   body: string
   status: BlogStatus
+  // Para o Google e o compartilhamento (2026-10-23), opcionais: em branco, valem o título e o resumo.
+  seo_title: string
+  seo_description: string
 }
 
 export type BlogField = keyof BlogPostInput
@@ -32,7 +35,9 @@ export interface MarkdownToken {
   attrSet(name: string, value: string): void
 }
 
-export const BLOG_LIMITS = { slug: 80, title: 120, description: 300, author: 80, coverAlt: 300, tags: 10, tag: 40, body: 100_000 }
+export const BLOG_LIMITS = { slug: 80, title: 120, description: 300, author: 80, coverAlt: 300, tags: 10, tag: 40, body: 100_000, seoTitle: 80, seoDescription: 200 }
+// O que o Google costuma mostrar inteiro (a prévia do admin avisa quando passa; o limite de cima é o do banco).
+export const SEO_IDEAL = { title: 60, description: 155 }
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const datePattern = /^\d{4}-\d{2}-\d{2}$/
 // A trava do build live recusa conteúdo publicado com esta marcação.
@@ -60,15 +65,18 @@ export function readBlogPostInput(value: unknown): BlogPostInput | null {
   const text = (name: string) => (typeof fields[name] === 'string' ? fields[name] as string : null)
   const [slug, title, description, author, date, coverAlt, body] = ['slug', 'title', 'description', 'author', 'date', 'cover_alt', 'body'].map(text)
   const cover = fields.cover === null || fields.cover === undefined ? '' : text('cover')
+  // Os campos do Google chegaram depois: quem não manda (admin antigo) grava vazio.
+  const seoTitle = fields.seo_title === undefined ? '' : text('seo_title')
+  const seoDescription = fields.seo_description === undefined ? '' : text('seo_description')
   const tags = fields.tags
   const status = fields.status
-  if ([slug, title, description, author, date, coverAlt, body, cover].some(item => item === null)) return null
+  if ([slug, title, description, author, date, coverAlt, body, cover, seoTitle, seoDescription].some(item => item === null)) return null
   if (!Array.isArray(tags) || tags.some(tag => typeof tag !== 'string')) return null
   if (status !== 'draft' && status !== 'published') return null
   return {
     slug: slug!.trim(), title: title!.trim(), description: description!.trim(), author: author!.trim(), date: date!.trim(),
     cover: cover!.trim() || null, cover_alt: coverAlt!.trim(), tags: (tags as string[]).map(tag => tag.trim()).filter(Boolean),
-    body: body!, status,
+    body: body!, status, seo_title: seoTitle!.trim(), seo_description: seoDescription!.trim(),
   }
 }
 
@@ -106,6 +114,8 @@ export function blogProblems(post: BlogPostInput, images: BlogImage[]): BlogProb
   else if (post.slug.length > BLOG_LIMITS.slug || !slugPattern.test(post.slug)) add('slug', 'Use só letras minúsculas sem acento, números e hífens no endereço.')
   if (post.description.length > BLOG_LIMITS.description) add('description', `Use até ${BLOG_LIMITS.description} caracteres no resumo.`)
   else if (publishing && !post.description) add('description', 'Escreva o resumo antes de publicar. Ele aparece na lista e no Google.')
+  if (post.seo_title.length > BLOG_LIMITS.seoTitle) add('seo_title', `Use até ${BLOG_LIMITS.seoTitle} caracteres no título do Google.`)
+  if (post.seo_description.length > BLOG_LIMITS.seoDescription) add('seo_description', `Use até ${BLOG_LIMITS.seoDescription} caracteres na descrição do Google.`)
   if (post.author.length > BLOG_LIMITS.author) add('author', `Use até ${BLOG_LIMITS.author} caracteres no autor.`)
   else if (publishing && !post.author) add('author', 'Diga quem escreveu antes de publicar.')
   if (!isValidDate(post.date)) add('date', 'Escolha uma data válida.')
@@ -120,7 +130,7 @@ export function blogProblems(post: BlogPostInput, images: BlogImage[]): BlogProb
   else if (publishing && images.some(image => !isBlogImagePath(image.src))) add('body', 'Há uma imagem de fora do blog no texto. Envie as imagens pelo botão "Imagem".')
   else if (publishing && images.some(image => !image.alt)) add('body', 'Há uma imagem sem descrição no texto. Escreva a descrição entre os colchetes: ![descrição](endereço).')
   if (publishing) {
-    const marked = (['title', 'slug', 'description', 'author', 'cover_alt', 'tags', 'body'] as const)
+    const marked = (['title', 'slug', 'description', 'seo_title', 'seo_description', 'author', 'cover_alt', 'tags', 'body'] as const)
       .find(field => pendingMarker.test(Array.isArray(post[field]) ? (post[field] as string[]).join(' ') : String(post[field])))
     if (marked) add(marked, 'Tire a marcação PENDENTE antes de publicar: o site não publica conteúdo com ela.')
   }

@@ -157,6 +157,16 @@ select pg_temp.assert('imagem recusada não entra no histórico',
 select pg_temp.expect('imagem fora de /images/blog: KT001',
   format($q$select * from public.admin_register_blog_image(%L, '/images/blog/../segredo.webp')$q$, pg_temp.uid('adm')), 'KT001');
 
+-- ===== campos do Google (migração 20261023230000) =========================================================
+select pg_temp.assert('campos do Google: gravam com o post',
+  pg_temp.save('seo', 'adm', null, pg_temp.post('com-seo', 'draft', '{"seo_title": "Título curto", "seo_description": "Descrição para o Google"}'), null) = 'ok');
+select pg_temp.assert('campos do Google voltam no JSON do post e ficam na tabela',
+  (select post->>'seo_title' = 'Título curto' and post->>'seo_description' = 'Descrição para o Google' from pg_temp.saved where name = 'seo')
+  and exists (select 1 from private.blog_posts b where b.slug = 'com-seo' and b.seo_title = 'Título curto' and b.seo_description = 'Descrição para o Google'));
+select pg_temp.assert('sem os campos do Google, ficam vazios', (select post->>'seo_title' = '' and post->>'seo_description' = '' from pg_temp.saved where name = 'rasc'));
+select pg_temp.expect('título do Google com mais de 80 caracteres: 23514',
+  $q$update private.blog_posts set seo_title = repeat('x', 81) where slug = 'com-seo'$q$, '23514');
+
 -- ===== galeria e apagar imagens (migrações 20261023160000 e 20261023180000) ===============================
 select pg_temp.assert('galeria: rascunho com a capa repetida no texto e outra imagem',
   pg_temp.save('img', 'adm', null, pg_temp.post('com-imagens', 'draft', jsonb_build_object(

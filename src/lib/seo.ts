@@ -23,7 +23,8 @@ export function pageSeo(pathname: string, post?: BlogPostSummary) {
   const path = pathname.replace(/\/+$/, '') || '/'
   if (post && path === `/blog/${post.slug}`) {
     return {
-      title: `${post.title} — KeyToTwo`, description: post.description,
+      // Os campos do Google, quando preenchidos no admin, valem mais que o título e o resumo do post.
+      title: `${post.seoTitle || post.title} — KeyToTwo`, description: post.seoDescription || post.description,
       canonical: new URL(path, siteConfig.origin).href,
       robots: siteConfig.stage === 'live' && !post.draft ? 'index, follow' : 'noindex, nofollow',
     }
@@ -94,7 +95,7 @@ export function blogPostingJsonLd(post: BlogPostSummary) {
   const canonical = new URL(`/blog/${post.slug}`, siteConfig.origin).href
   return {
     '@context': 'https://schema.org', '@type': 'BlogPosting',
-    headline: post.title, description: post.description,
+    headline: post.title, description: post.seoDescription || post.description,
     datePublished: post.date, inLanguage: 'pt-BR',
     url: canonical, mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
     author: post.author ? { '@type': 'Person', name: post.author } : { '@type': 'Organization', name: 'KeyToTwo', url: siteConfig.origin },

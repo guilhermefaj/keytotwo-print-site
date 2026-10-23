@@ -5,7 +5,7 @@ import { apiBase, publishableKey, supabase } from './supabase'
 // Blog no admin (2026-10-23): os posts vêm da API (/admin/blog/*); as regras são as mesmas da API e do build do site.
 // O Markdown (markdown-it) fica em blog-markdown.ts, que só o editor carrega.
 export type { BlogPostInput, BlogProblem }
-export { slugify } from '../../supabase/functions/_shared/blog-rules.ts'
+export { BLOG_LIMITS, SEO_IDEAL, slugify } from '../../supabase/functions/_shared/blog-rules.ts'
 
 export interface BlogPost extends BlogPostInput {
   id: string
