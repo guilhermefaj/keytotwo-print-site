@@ -91,6 +91,15 @@ async function axe(page: Page) {
   expect(result.violations.map(({ id, nodes }) => ({ id, targets: nodes.map(n => n.target) }))).toEqual([])
 }
 const noSideScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)
+// O texto do post é um editor visual; o botão Markdown mostra o texto cru que vai ser salvo (e volta ao visual).
+const richText = (page: Page) => page.getByRole('textbox', { name: 'Texto do post' })
+const markdownButton = (page: Page) => page.getByRole('toolbar', { name: 'Formatação' }).getByRole('button', { name: 'Markdown' })
+async function markdownOf(page: Page) {
+  await markdownButton(page).click()
+  const value = await page.getByLabel('Texto em Markdown').inputValue()
+  await markdownButton(page).click()
+  return value
+}
 
 test('lista: posts do mais editado ao mais antigo, filtro por status, site em dia e link para o site', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -131,6 +140,7 @@ test('novo post: endereço sai do título, prévia ao lado, publicar incompleto 
   await page.getByLabel('Título', { exact: true }).fill('Jogos para casais: 5 ideias!')
   await expect(page.getByLabel('Endereço')).toHaveValue('jogos-para-casais-5-ideias')
   await page.getByLabel('Autor').fill('')
+  await markdownButton(page).click()
   await page.getByLabel('Texto em Markdown').fill('# Primeira ideia\n\nUm parágrafo com **negrito**.')
   const preview = page.getByRole('region', { name: 'Prévia do post' })
   await expect(preview.locator('.preview-title')).toHaveText('Jogos para casais: 5 ideias!')
@@ -151,7 +161,7 @@ test('novo post: endereço sai do título, prévia ao lado, publicar incompleto 
   await expect(page.getByRole('status').filter({ hasText: 'Rascunho salvo.' })).toBeVisible()
   await expect(page).toHaveURL(/\/blog\/novo2$/)
   const created = calls.find(call => call.method === 'POST')!
-  expect(created.body).toEqual({ post: { slug: 'jogos-para-casais-5-ideias', title: 'Jogos para casais: 5 ideias!', description: '', author: '', date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), cover: null, cover_alt: '', tags: [], body: '# Primeira ideia\n\nUm parágrafo com **negrito**.', status: 'draft' } })
+  expect(created.body).toEqual({ post: { slug: 'jogos-para-casais-5-ideias', title: 'Jogos para casais: 5 ideias!', description: '', author: '', date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), cover: null, cover_alt: '', tags: [], body: '# Primeira ideia\n\nUm parágrafo com **negrito**.', status: 'draft', seo_title: '', seo_description: '' } })
 
   await page.getByLabel('Resumo').fill('Cinco ideias para a noite.')
   await page.getByLabel('Autor').fill('Ana Souza')
@@ -174,14 +184,17 @@ test('imagens: a do texto vai reduzida em WebP e entra no Markdown; a capa pede 
   const { calls } = await blogApi(page, { posts: [post('a')], liveVersion: 'follow' })
   await page.goto('/blog/a')
   await expect(page.getByLabel('Título', { exact: true })).toHaveValue('Post a')
-  await page.getByLabel('Texto em Markdown').press('End')
+  await richText(page).click()
+  await page.keyboard.press('ControlOrMeta+End')
   await page.getByLabel('Enviar imagens para o texto').setInputFiles('public/media/icons/kito-192.png')
-  await expect(page.getByLabel('Texto em Markdown')).toHaveValue(/!\[Descreva a imagem\]\(\/images\/blog\/2026\/10\/ab12cd34-mesa\.webp\)/)
+  // A imagem entra selecionada e o foco vai para a descrição dela.
+  const alt = page.getByRole('group', { name: 'Imagem selecionada' }).getByLabel('Descrição da imagem')
+  await expect(alt).toBeFocused()
   const upload = calls.find(call => call.path.startsWith('/admin/blog/images'))!
   expect([upload.path, upload.type]).toEqual(['/admin/blog/images?name=kito-192.png', 'image/webp'])
-  // A descrição provisória fica selecionada: é só digitar por cima.
   await page.keyboard.type('Kito sentado')
-  await expect(page.getByLabel('Texto em Markdown')).toHaveValue(/!\[Kito sentado\]\(\/images\/blog\/2026\/10\/ab12cd34-mesa\.webp\)/)
+  await expect(richText(page).locator('img')).toHaveAttribute('src', `${MEDIA}/2026/10/ab12cd34-mesa.webp`)
+  expect(await markdownOf(page)).toMatch(/!\[Kito sentado\]\(\/images\/blog\/2026\/10\/ab12cd34-mesa\.webp\)/)
   await expect(page.getByRole('region', { name: 'Prévia do post' }).locator('.blog-prose img')).toHaveAttribute('src', `${MEDIA}/2026/10/ab12cd34-mesa.webp`)
 
   await page.locator('#campo-capa').setInputFiles('public/media/icons/kito-192.png')
@@ -202,7 +215,7 @@ test('galeria: as imagens do bucket entram no texto e na capa, sem enviar de nov
   const images = [image('2026/10/aa11bb22-mesa-de-jogo.webp', '2026-10-23T16:00:00.000Z', 31_858), image('2026/10/cc33dd44-kito.webp', '2026-10-22T10:00:00.000Z', 1_500_000), image('2026/09/ee55ff66-capa-antiga.png', '2026-09-30T09:00:00.000Z')]
   const { calls } = await blogApi(page, { posts: [post('a')], images })
   await page.goto('/blog/a')
-  await page.getByLabel('Texto em Markdown').press('End')
+  await richText(page).click()
   await page.getByRole('toolbar', { name: 'Formatação' }).getByRole('button', { name: 'Galeria' }).click()
   const gallery = page.getByRole('dialog', { name: 'Galeria de imagens' })
   await expect(gallery).toBeVisible()
@@ -215,9 +228,9 @@ test('galeria: as imagens do bucket entram no texto e na capa, sem enviar de nov
   await expect(gallery.getByRole('status')).toHaveText('1 de 3')
   await gallery.getByRole('button', { name: /^mesa-de-jogo\.webp/ }).click()
   await expect(gallery).toBeHidden()
-  await expect(page.getByLabel('Texto em Markdown')).toHaveValue(/!\[Descreva a imagem\]\(\/images\/blog\/2026\/10\/aa11bb22-mesa-de-jogo\.webp\)/)
+  await expect(page.getByRole('group', { name: 'Imagem selecionada' }).getByLabel('Descrição da imagem')).toBeFocused()
   await page.keyboard.type('Mesa de jogo')
-  await expect(page.getByLabel('Texto em Markdown')).toHaveValue(/!\[Mesa de jogo\]\(\/images\/blog\/2026\/10\/aa11bb22-mesa-de-jogo\.webp\)/)
+  expect(await markdownOf(page)).toMatch(/!\[Mesa de jogo\]\(\/images\/blog\/2026\/10\/aa11bb22-mesa-de-jogo\.webp\)/)
 
   const choose = page.getByRole('button', { name: 'Escolher da galeria' })
   await choose.click()
@@ -247,8 +260,10 @@ test('galeria: apaga do bucket só o que nenhum post usa, nem o aberto sem salva
   const { calls } = await blogApi(page, { posts: [post('a', { body: 'Texto.\n\n![Foto](/images/blog/2026/10/ee55ff66-salva.webp)' }), post('b', { title: 'Outro post' })], images })
   await page.goto('/blog/a')
   // Uma imagem posta no texto agora, ainda sem salvar, também conta como deste post.
-  await page.getByLabel('Texto em Markdown').press('End')
+  await markdownButton(page).click()
+  await page.getByLabel('Texto em Markdown').press('ControlOrMeta+End')
   await page.keyboard.type('\n\n![Nova](/images/blog/2026/10/ab77cd88-digitada.webp)')
+  await markdownButton(page).click()
   await page.getByRole('toolbar', { name: 'Formatação' }).getByRole('button', { name: 'Galeria' }).click()
   const gallery = page.getByRole('dialog', { name: 'Galeria de imagens' })
   const cards = gallery.locator('.gallery-card')
@@ -277,15 +292,18 @@ test('galeria: apaga do bucket só o que nenhum post usa, nem o aberto sem salva
   // Apagar não mexe no texto: a galeria continua aberta e o post, como estava.
   await expect(gallery).toBeVisible()
   await page.keyboard.press('Escape')
-  await expect(page.getByLabel('Texto em Markdown')).toHaveValue(/!\[Nova\]\(\/images\/blog\/2026\/10\/ab77cd88-digitada\.webp\)/)
+  expect(await markdownOf(page)).toMatch(/!\[Nova\]\(\/images\/blog\/2026\/10\/ab77cd88-digitada\.webp\)/)
 })
 
 test('arrastar e colar: as imagens vão para o bucket e entram no texto; texto colado segue como texto', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   const { calls } = await blogApi(page, { posts: [post('a', { body: 'Antes.' })] })
   await page.goto('/blog/a')
-  const text = page.getByLabel('Texto em Markdown')
-  await text.press('End')
+  const text = richText(page)
+  await text.click()
+  await page.keyboard.press('ControlOrMeta+End')
+  const box = (await text.boundingBox())!
+  const inside = { clientX: box.x + box.width / 2, clientY: box.y + 30 }
   // Um PNG de verdade, feito no navegador, num DataTransfer como o do sistema.
   const transfer = (count: number) => page.evaluateHandle(async count => {
     const canvas = Object.assign(document.createElement('canvas'), { width: 40, height: 30 })
@@ -298,18 +316,20 @@ test('arrastar e colar: as imagens vão para o bucket e entram no texto; texto c
 
   const pasted = await transfer(1)
   await text.evaluate((element, clipboardData) => element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true })), pasted)
-  await expect(text).toHaveValue(/^Antes\.\n\n!\[Descreva a imagem\]\(\/images\/blog\/2026\/10\/ab12cd34-mesa\.webp\)\n\n$/)
+  await expect(page.getByRole('group', { name: 'Imagem selecionada' }).getByLabel('Descrição da imagem')).toBeFocused()
   expect(calls.filter(call => call.method === 'POST').map(call => [call.path, call.type])).toEqual([['/admin/blog/images?name=foto-1.png', 'image/webp']])
+  expect(await markdownOf(page)).toMatch(/^Antes\.\n\n!\[\]\(\/images\/blog\/2026\/10\/ab12cd34-mesa\.webp\)/)
 
   const dropped = await transfer(2)
-  const box = (await text.boundingBox())!
-  await text.evaluate((element, [dataTransfer, x, y]) => {
-    element.dispatchEvent(new DragEvent('dragover', { dataTransfer, bubbles: true, cancelable: true, clientX: x, clientY: y }))
-    element.dispatchEvent(new DragEvent('drop', { dataTransfer, bubbles: true, cancelable: true, clientX: x, clientY: y }))
-  }, [dropped, box.x + box.width / 2, box.y + box.height - 20] as const)
-  await expect(page.getByRole('status').filter({ hasText: '2 imagens no texto. Escreva a descrição de cada uma entre os colchetes.' })).toBeVisible()
-  await expect(text).toHaveValue(/ab12cd35-mesa\.webp\)\n\n\n\n!\[Descreva a imagem\]\(\/images\/blog\/2026\/10\/ab12cd36-mesa\.webp\)/)
+  await text.evaluate((element, [dataTransfer, point]) => {
+    element.dispatchEvent(new DragEvent('dragover', { dataTransfer, bubbles: true, cancelable: true, ...point }))
+    element.dispatchEvent(new DragEvent('drop', { dataTransfer, bubbles: true, cancelable: true, ...point }))
+  }, [dropped, inside] as const)
+  await expect(page.getByRole('status').filter({ hasText: '2 imagens no texto. Clique em cada uma para escrever a descrição.' })).toBeVisible()
   expect(calls.filter(call => call.method === 'POST')).toHaveLength(3)
+  const markdown = await markdownOf(page)
+  expect(markdown).toContain('/images/blog/2026/10/ab12cd35-mesa.webp')
+  expect(markdown).toContain('/images/blog/2026/10/ab12cd36-mesa.webp')
 
   // Texto com imagem junto (Word, páginas): cola o texto, sem enviar nada.
   await text.evaluate(element => {
@@ -321,11 +341,11 @@ test('arrastar e colar: as imagens vão para o bucket e entram no texto; texto c
   expect(calls.filter(call => call.method === 'POST')).toHaveLength(3)
 
   // Arquivo que não é imagem: avisa e não envia.
-  await text.evaluate(element => {
+  await text.evaluate((element, point) => {
     const dataTransfer = new DataTransfer()
     dataTransfer.items.add(new File(['%PDF'], 'regras.pdf', { type: 'application/pdf' }))
-    element.dispatchEvent(new DragEvent('drop', { dataTransfer, bubbles: true, cancelable: true }))
-  })
+    element.dispatchEvent(new DragEvent('drop', { dataTransfer, bubbles: true, cancelable: true, ...point }))
+  }, inside)
   await expect(page.locator('#ajuda-body')).toHaveText('Só imagens entram no texto: PNG, JPG, WebP, AVIF ou GIF.')
   expect(calls.filter(call => call.method === 'POST')).toHaveLength(3)
 })
@@ -393,20 +413,83 @@ test('sair com mudanças pergunta antes; excluir pede confirmação e volta à l
   await expect(page.getByRole('heading', { name: 'Nenhum post ainda' })).toBeVisible()
 })
 
-test('celular: escrever e prévia em abas, sem rolagem lateral', async ({ page }) => {
+test('celular: editor e prévia abrem e fecham (a prévia começa fechada), sem rolagem lateral', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await blogApi(page, { posts: [post('a')] })
   await page.goto('/blog/a')
-  await expect(page.getByLabel('Texto em Markdown')).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Prévia do post' })).toBeHidden()
+  const preview = page.getByRole('region', { name: 'Prévia do post' })
+  await expect(richText(page)).toBeVisible()
+  await expect(preview).toBeHidden()
   await page.getByRole('button', { name: 'Prévia', exact: true }).click()
-  await expect(page.getByRole('region', { name: 'Prévia do post' }).locator('.blog-prose h2')).toHaveText('Começo')
-  await expect(page.getByLabel('Texto em Markdown')).toBeHidden()
+  await expect(preview.locator('.blog-prose h2')).toHaveText('Começo')
+  await expect(richText(page)).toBeVisible()
+  await page.getByRole('button', { name: 'Editor', exact: true }).click()
+  await expect(richText(page)).toBeHidden()
+  // Pelo menos um fica aberto: com só a prévia, o botão dela não fecha.
+  await expect(page.getByRole('button', { name: 'Prévia', exact: true })).toBeDisabled()
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 800 })
     expect(await noSideScroll(page)).toBe(true)
   }
   await axe(page)
+})
+
+test('editor visual: os botões ligam e desligam (negrito de novo tira), mostram o que está ativo e o texto sai em Markdown', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await blogApi(page, { posts: [post('a', { body: 'Primeira linha.\n\npalavra' })] })
+  await page.goto('/blog/a')
+  const toolbar = page.getByRole('toolbar', { name: 'Formatação' })
+  const bold = toolbar.getByRole('button', { name: 'Negrito (Ctrl+B)' })
+  const italic = toolbar.getByRole('button', { name: 'Itálico (Ctrl+I)' })
+  await richText(page).getByText('palavra').selectText()
+  await bold.click()
+  await expect(bold).toHaveAttribute('aria-pressed', 'true')
+  expect(await markdownOf(page)).toBe('Primeira linha.\n\n**palavra**')
+  await richText(page).getByText('palavra').selectText()
+  await bold.click()
+  await expect(bold).toHaveAttribute('aria-pressed', 'false')
+  await italic.click()
+  await expect(italic).toHaveAttribute('aria-pressed', 'true')
+  expect(await markdownOf(page)).toMatch(/^Primeira linha\.\n\n[*_]palavra[*_]$/)
+  await richText(page).getByText('palavra').selectText()
+  await italic.click()
+  await toolbar.getByRole('button', { name: 'Subtítulo', exact: true }).click()
+  await expect(toolbar.getByRole('button', { name: 'Subtítulo', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  expect(await markdownOf(page)).toBe('Primeira linha.\n\n## palavra')
+  await expect(page.getByRole('region', { name: 'Prévia do post' }).locator('.blog-prose h2')).toHaveText('palavra')
+  // Link: o endereço vai numa barra, sem janela do navegador.
+  await richText(page).getByText('Primeira linha.').selectText()
+  await toolbar.getByRole('button', { name: 'Link' }).click()
+  const linkBar = page.getByRole('group', { name: 'Link' })
+  await expect(linkBar.getByLabel('Endereço do link')).toBeFocused()
+  await linkBar.getByLabel('Endereço do link').fill('https://keytotwo.com.br/loja')
+  await linkBar.getByRole('button', { name: 'Aplicar' }).click()
+  expect(await markdownOf(page)).toMatch(/\]\(https:\/\/keytotwo\.com\.br\/loja\)/)
+  await expect(page.getByText('Mudanças sem salvar')).toBeVisible()
+  await axe(page)
+})
+
+test('Google e compartilhamento: campos opcionais com a prévia da busca, salvos com o post', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const { calls } = await blogApi(page, { posts: [post('a', { title: 'Jogos para a noite de sábado', description: 'Três ideias rápidas.' })] })
+  await page.goto('/blog/a')
+  const box = page.locator('details.seo-box')
+  await expect(box).not.toHaveAttribute('open', '')
+  await box.locator('summary').click()
+  const google = page.getByRole('group', { name: 'Prévia no Google' })
+  await expect(google.locator('.google-title')).toHaveText('Jogos para a noite de sábado — KeyToTwo')
+  await expect(google.locator('.google-description')).toHaveText('Três ideias rápidas.')
+  await expect(google.locator('.google-url')).toHaveText('keytotwo.com.br › blog › post-a')
+  await expect(page.getByLabel('Título no Google')).toHaveAttribute('placeholder', 'Jogos para a noite de sábado')
+  await page.getByLabel('Título no Google').fill('Jogos de sábado à noite')
+  await page.getByLabel('Descrição no Google').fill('x'.repeat(170))
+  await expect(google.locator('.google-title')).toHaveText('Jogos de sábado à noite — KeyToTwo')
+  await expect(google.locator('.google-description')).toHaveText(`${'x'.repeat(154)}…`)
+  await expect(page.locator('#ajuda-seo_description')).toContainText('Passou de 155: o Google deve cortar o fim.')
+  await axe(page)
+  await page.getByRole('button', { name: 'Salvar rascunho' }).click()
+  await expect(page.locator('.notice')).toHaveText('Rascunho salvo.')
+  expect(calls.find(call => call.method === 'PUT')!.body).toMatchObject({ post: { seo_title: 'Jogos de sábado à noite', seo_description: 'x'.repeat(170) } })
 })
 
 test('favicon do admin: o K escuro, não o Kito da loja', async ({ page }) => {

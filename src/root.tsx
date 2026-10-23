@@ -30,6 +30,8 @@ export function Layout({ children }: { children: ReactNode }) {
   const seo = pageSeo(pathname, post)
   const image = shareImage(pathname)
   const product = productForPath(pathname)
+  // Imagem do post ao compartilhar: a versão 1200×630 do build, ou a capa.
+  const postImage = post?.shareImage ?? post?.cover
   return (
     <html lang="pt-BR">
       <head>
@@ -44,12 +46,13 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta property="og:description" content={seo.description} />
         <meta property="og:url" content={seo.canonical} />
         <meta property="og:type" content={post ? 'article' : 'website'} />
-        {post?.cover ? <><meta property="og:image" content={new URL(post.cover, siteConfig.origin).href} /><meta property="og:image:alt" content={post.coverAlt} /></>
+        {post?.shareImage ? <><meta property="og:image" content={new URL(post.shareImage, siteConfig.origin).href} /><meta property="og:image:width" content={String(shareImageSize.width)} /><meta property="og:image:height" content={String(shareImageSize.height)} /><meta property="og:image:alt" content={post.coverAlt} /></>
+          : post?.cover ? <><meta property="og:image" content={new URL(post.cover, siteConfig.origin).href} /><meta property="og:image:alt" content={post.coverAlt} /></>
           : <><meta property="og:image" content={image.url} /><meta property="og:image:width" content={String(shareImageSize.width)} /><meta property="og:image:height" content={String(shareImageSize.height)} /><meta property="og:image:alt" content={image.alt} /></>}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={seo.title} />
         <meta name="twitter:description" content={seo.description} />
-        <meta name="twitter:image" content={post?.cover ? new URL(post.cover, siteConfig.origin).href : image.url} />
+        <meta name="twitter:image" content={postImage ? new URL(postImage, siteConfig.origin).href : image.url} />
         {pathname === '/' && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(homeJsonLd()) }} />}
         {product && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(productJsonLd(product)) }} />}
         {post && <><meta property="article:published_time" content={post.date} /><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(blogPostingJsonLd(post)) }} /></>}

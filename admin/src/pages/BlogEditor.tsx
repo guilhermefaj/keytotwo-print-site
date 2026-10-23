@@ -1,12 +1,13 @@
-import { IconArrowLeft, IconBlockquote, IconBold, IconExternalLink, IconHeading, IconItalic, IconLibraryPhoto, IconLink, IconList, IconPhoto } from '@tabler/icons-react'
-import { useDeferredValue, useEffect, useRef, useState, type ChangeEvent, type ClipboardEvent, type DragEvent, type ReactNode } from 'react'
+import { IconArrowLeft, IconExternalLink, IconLibraryPhoto, IconPhoto } from '@tabler/icons-react'
+import { useDeferredValue, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Link, useBlocker, useNavigate, useParams } from 'react-router'
 import { api, ApiError, apiMessage, useResource } from '../api'
-import { acceptedImages, formatDate, imagePathsIn, mediaUrl, readingMinutes, slugify, today, uploadImage, type BlogList, type BlogPost, type BlogPostInput, type BlogProblem } from '../blog'
+import { acceptedImages, BLOG_LIMITS, formatDate, imagePathsIn, mediaUrl, readingMinutes, SEO_IDEAL, slugify, today, uploadImage, type BlogList, type BlogPost, type BlogPostInput, type BlogProblem } from '../blog'
 import { problemsOf, renderMarkdown } from '../blog-markdown'
 import { SiteStatus } from '../SiteStatus'
 import { siteUrl } from '../supabase'
 import { ImageGallery } from './ImageGallery'
+import { TextEditor } from './TextEditor'
 
 // Editor do blog (2026-10-23): /blog/novo cria, /blog/:id edita. Rascunho guarda o que estiver pronto; publicar confere
 // o post inteiro com as regras do build do site. O endereço sai do título até a primeira publicação e depois fica fixo.
@@ -16,8 +17,9 @@ type Form = Omit<BlogPostInput, 'status' | 'tags'> & { tags: string }
 type Field = BlogProblem['field']
 
 const formOf = (post: BlogPost | null, author = ''): Form => post
-  ? { slug: post.slug, title: post.title, description: post.description, author: post.author, date: post.date, cover: post.cover, cover_alt: post.cover_alt, tags: post.tags.join(', '), body: post.body }
-  : { slug: '', title: '', description: '', author, date: today(), cover: null, cover_alt: '', tags: '', body: '' }
+  ? { slug: post.slug, title: post.title, description: post.description, author: post.author, date: post.date, cover: post.cover, cover_alt: post.cover_alt, tags: post.tags.join(', '), body: post.body,
+      seo_title: post.seo_title ?? '', seo_description: post.seo_description ?? '' }
+  : { slug: '', title: '', description: '', author, date: today(), cover: null, cover_alt: '', tags: '', body: '', seo_title: '', seo_description: '' }
 const inputOf = (form: Form, status: Status): BlogPostInput => ({ ...form, tags: form.tags.split(',').map(tag => tag.trim()).filter(Boolean), status })
 const sameForm = (a: Form, b: Form) => JSON.stringify(a) === JSON.stringify(b)
 
@@ -87,7 +89,11 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice, 
   const [serverProblems, setServerProblems] = useState<BlogProblem[]>([])
   const [busy, setBusy] = useState<Busy>(null)
   const [message, setMessage] = useState<Message | null>(notice ? { kind: 'ok', text: notice } : null)
-  const [tab, setTab] = useState<'write' | 'preview'>('write')
+  const [panes, setPanes] = useState(() => ({ editor: true, preview: typeof matchMedia !== 'function' || matchMedia('(min-width: 1200px)').matches }))
+  const togglePane = (pane: 'editor' | 'preview') => setPanes(current => {
+    const next = { ...current, [pane]: !current[pane] }
+    return next.editor || next.preview ? next : current
+  })
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [site, setSite] = useState(initialSite)
   const summary = useRef<HTMLDivElement>(null)
@@ -265,19 +271,26 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice, 
           <FieldError field="tags" text={problem('tags')} />
         </div>
         <Cover form={form} postId={saved?.id} mediaBase={mediaBase} problem={problem('cover')} altProblem={problem('cover_alt')} onChange={(cover, alt) => setForm(current => ({ ...current, cover, cover_alt: alt ?? current.cover_alt }))} altField={field('cover_alt')} />
+        <SeoFields form={form} field={field} problem={problem} />
       </section>
 
       <section className="editor-body" aria-labelledby="texto-titulo">
         <div className="editor-body-head">
           <h2 id="texto-titulo">Texto</h2>
           <div className="periods editor-tabs" role="group" aria-label="Mostrar">
-            <button type="button" aria-pressed={tab === 'write'} onClick={() => setTab('write')}>Escrever</button>
-            <button type="button" aria-pressed={tab === 'preview'} onClick={() => setTab('preview')}>Prévia</button>
+            <button type="button" aria-pressed={panes.editor} disabled={panes.editor && !panes.preview} title={panes.editor && !panes.preview ? 'Pelo menos um fica aberto' : undefined} onClick={() => togglePane('editor')}>Editor</button>
+            <button type="button" aria-pressed={panes.preview} disabled={panes.preview && !panes.editor} title={panes.preview && !panes.editor ? 'Pelo menos um fica aberto' : undefined} onClick={() => togglePane('preview')}>Prévia</button>
           </div>
         </div>
-        <div className={`editor-panes editor-panes-${tab}`}>
-          <MarkdownEditor value={form.body} cover={form.cover} postId={saved?.id} onChange={value => set('body', value)} problem={problem('body')} />
-          <Preview form={form} status={status} mediaBase={mediaBase} />
+        {/* Os dois ficam montados (o editor guarda o desfazer); fechar só esconde. */}
+        <div className={`editor-panes${panes.editor && panes.preview ? ' editor-panes-both' : ''}`}>
+          <div className="editor-pane" hidden={!panes.editor}>
+            {/* O endereço do bucket chegou depois (post recém-criado): o editor nasce de novo, com o texto atual. */}
+            <TextEditor key={mediaBase ?? 'sem-bucket'} value={form.body} cover={form.cover} postId={saved?.id} mediaBase={mediaBase} onChange={value => set('body', value)} problem={problem('body')} />
+          </div>
+          <div className="editor-pane" hidden={!panes.preview}>
+            <Preview form={form} status={status} mediaBase={mediaBase} />
+          </div>
         </div>
       </section>
 
@@ -366,129 +379,40 @@ function Cover({ form, postId, mediaBase, problem, altProblem, onChange, altFiel
   </div>
 }
 
-type Tool = { label: string; icon: ReactNode } & ({ kind: 'wrap'; before: string; after: string; placeholder: string } | { kind: 'prefix'; mark: string; placeholder: string })
-const icon = { size: 18, stroke: 1.75, 'aria-hidden': true } as const
-const tools: Tool[] = [
-  { label: 'Subtítulo', icon: <IconHeading {...icon} />, kind: 'prefix', mark: '## ', placeholder: 'Subtítulo' },
-  { label: 'Negrito', icon: <IconBold {...icon} />, kind: 'wrap', before: '**', after: '**', placeholder: 'texto em negrito' },
-  { label: 'Itálico', icon: <IconItalic {...icon} />, kind: 'wrap', before: '_', after: '_', placeholder: 'texto em itálico' },
-  { label: 'Link', icon: <IconLink {...icon} />, kind: 'wrap', before: '[', after: '](https://)', placeholder: 'texto do link' },
-  { label: 'Lista', icon: <IconList {...icon} />, kind: 'prefix', mark: '- ', placeholder: 'Item' },
-  { label: 'Citação', icon: <IconBlockquote {...icon} />, kind: 'prefix', mark: '> ', placeholder: 'Citação' },
-]
+// Google e compartilhamento (2026-10-23): opcionais; em branco, valem o título e o resumo. A prévia mostra o resultado
+// da busca como o Google costuma cortar (cerca de 60 caracteres no título, com " — KeyToTwo", e 155 na descrição).
+type FieldAttrs = { id: string; onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; 'aria-invalid'?: boolean; 'aria-describedby'?: string }
+const cut = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text)
 
-// Markdown com uma barra de atalhos. As inserções passam pelo histórico do campo (Ctrl+Z desfaz).
-function MarkdownEditor({ value, cover, postId, onChange, problem }: { value: string; cover: string | null; postId?: string; onChange: (value: string) => void; problem?: string }) {
-  const area = useRef<HTMLTextAreaElement>(null)
-  const [upload, setUpload] = useState<{ busy: boolean; text?: string; error?: string }>({ busy: false })
-  const [gallery, setGallery] = useState(false)
-  const [dropping, setDropping] = useState(false)
-
-  function insert(text: string, select?: [number, number]) {
-    const element = area.current!
-    element.focus()
-    const start = element.selectionStart
-    if (!document.execCommand('insertText', false, text)) {
-      element.setRangeText(text, start, element.selectionEnd, 'end')
-      onChange(element.value)
-    }
-    if (select) element.setSelectionRange(start + select[0], start + select[1])
-  }
-  function wrap(before: string, after: string, placeholder: string) {
-    const element = area.current!
-    const selected = element.value.slice(element.selectionStart, element.selectionEnd) || placeholder
-    insert(`${before}${selected}${after}`, [before.length, before.length + selected.length])
-  }
-  function prefix(mark: string, placeholder: string) {
-    const element = area.current!
-    const lineStart = element.value.lastIndexOf('\n', element.selectionStart - 1) + 1
-    element.setSelectionRange(lineStart, element.selectionEnd)
-    const lines = (element.value.slice(lineStart, element.selectionEnd) || placeholder).split('\n')
-    const text = lines.map(line => `${mark}${line.replace(/^(#{1,6} |> |- )/, '')}`).join('\n')
-    insert(text, lines.length === 1 ? [mark.length, text.length] : undefined)
-  }
-  // Imagens no texto: pelo botão, arrastadas ou coladas, cada uma reduzida e enviada ao bucket; da galeria, já estão lá.
-  // Entram onde está o cursor. Com uma só, a descrição fica selecionada para escrever por cima.
-  function insertImage(path: string, selectAlt: boolean) {
-    const alt = 'Descreva a imagem'
-    insert(`\n\n![${alt}](${path})\n\n`, selectAlt ? [4, 4 + alt.length] : undefined)
-  }
-  async function addImages(files: File[]) {
-    if (upload.busy) return
-    const images = files.filter(file => file.type.startsWith('image/'))
-    if (!images.length) {
-      setUpload({ busy: false, error: 'Só imagens entram no texto: PNG, JPG, WebP, AVIF ou GIF.' })
-      return
-    }
-    for (const [index, file] of images.entries()) {
-      setUpload({ busy: true, text: images.length > 1 ? `Reduzindo e enviando a imagem ${index + 1} de ${images.length}…` : 'Reduzindo e enviando a imagem…' })
-      try {
-        const { path } = await uploadImage(file)
-        insertImage(path, images.length === 1)
-      } catch (error) {
-        setUpload({ busy: false, error: images.length > 1 ? `${file.name}: ${apiMessage(error)}` : apiMessage(error) })
-        return
-      }
-    }
-    setUpload({ busy: false, text: images.length > 1 ? `${images.length} imagens no texto. Escreva a descrição de cada uma entre os colchetes.` : undefined })
-  }
-  function pickFiles(event: ChangeEvent<HTMLInputElement>) {
-    const files = [...(event.target.files ?? [])]
-    event.target.value = ''
-    if (files.length) void addImages(files)
-  }
-  // Colar: só a imagem pura (print, "copiar imagem"). Texto copiado com imagem junto (Word, páginas) cola como texto.
-  function paste(event: ClipboardEvent<HTMLTextAreaElement>) {
-    const files = [...event.clipboardData.files]
-    if (!files.some(file => file.type.startsWith('image/')) || event.clipboardData.getData('text/plain')) return
-    event.preventDefault()
-    void addImages(files)
-  }
-  // Arrastar: o editor inteiro recebe (soltar fora abriria o arquivo no lugar do admin); a imagem entra onde o ponteiro
-  // está, quando o navegador sabe dizer a posição no texto.
-  const hasFiles = (event: DragEvent) => event.dataTransfer.types.includes('Files')
-  function dragOver(event: DragEvent<HTMLDivElement>) {
-    if (!hasFiles(event)) return
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'copy'
-    setDropping(true)
-  }
-  function drop(event: DragEvent<HTMLDivElement>) {
-    if (!hasFiles(event)) return
-    event.preventDefault()
-    setDropping(false)
-    const element = area.current!
-    const caret = document.caretPositionFromPoint?.(event.clientX, event.clientY)
-    element.focus()
-    if (caret?.offsetNode === element) element.setSelectionRange(caret.offset, caret.offset)
-    void addImages([...event.dataTransfer.files])
-  }
-
-  function run(tool: Tool) {
-    if (tool.kind === 'wrap') wrap(tool.before, tool.after, tool.placeholder)
-    else prefix(tool.mark, tool.placeholder)
-  }
-  return <div className={`markdown-editor${dropping ? ' is-dropping' : ''}`} onDragOver={dragOver} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropping(false) }} onDrop={drop}>
-    <div className="markdown-toolbar" role="toolbar" aria-label="Formatação" aria-controls="campo-body">
-      {tools.map(tool => <button key={tool.label} type="button" className="tool" title={tool.label} aria-label={tool.label} onClick={() => run(tool)}>{tool.icon}</button>)}
-      <button type="button" className="tool tool-text" title="Galeria" disabled={upload.busy} onClick={() => setGallery(true)}>
-        <IconLibraryPhoto size={18} stroke={1.75} aria-hidden="true" /><span>Galeria</span>
-      </button>
-      <label className="tool tool-text" title="Imagem">
-        <IconPhoto size={18} stroke={1.75} aria-hidden="true" /><span>{upload.busy ? 'Enviando…' : 'Imagem'}</span>
-        <input className="sr-only" type="file" accept={acceptedImages} multiple disabled={upload.busy} onChange={pickFiles} aria-label="Enviar imagens para o texto" />
-      </label>
+function SeoFields({ form, field, problem }: { form: Form; field: (key: 'seo_title' | 'seo_description') => FieldAttrs; problem: (key: Field) => string | undefined }) {
+  const [open, setOpen] = useState(() => Boolean(form.seo_title || form.seo_description))
+  const shown = open || Boolean(problem('seo_title') || problem('seo_description'))
+  const title = `${form.seo_title || form.title || 'Sem título'} — KeyToTwo`
+  const description = form.seo_description || form.description
+  const long = (count: number, ideal: number) => (count > ideal ? ` Passou de ${ideal}: o Google deve cortar o fim.` : '')
+  return <details className="field-wide seo-box" open={shown} onToggle={event => setOpen(event.currentTarget.open)}>
+    <summary>Google e compartilhamento <span className="field-optional">(opcional)</span></summary>
+    <div className="seo-grid">
+      <div className="field">
+        <label htmlFor="campo-seo_title">Título no Google</label>
+        <input {...field('seo_title')} value={form.seo_title} placeholder={form.title} maxLength={BLOG_LIMITS.seoTitle} autoComplete="off" />
+        <p className="field-help" id="ajuda-seo_title">Em branco, usa o título do post. O Google mostra {title.length}/{SEO_IDEAL.title} caracteres.{long(title.length, SEO_IDEAL.title)}</p>
+        <FieldError field="seo_title" text={problem('seo_title')} />
+      </div>
+      <div className="field">
+        <label htmlFor="campo-seo_description">Descrição no Google</label>
+        <textarea {...field('seo_description')} value={form.seo_description} placeholder={form.description} rows={3} maxLength={BLOG_LIMITS.seoDescription} />
+        <p className="field-help" id="ajuda-seo_description">Em branco, usa o resumo. {description.length}/{SEO_IDEAL.description} caracteres.{long(description.length, SEO_IDEAL.description)}</p>
+        <FieldError field="seo_description" text={problem('seo_description')} />
+      </div>
+      <div className="google-preview" role="group" aria-label="Prévia no Google">
+        <p className="google-url">keytotwo.com.br › blog › {form.slug || 'endereco-do-post'}</p>
+        <p className="google-title">{cut(title, SEO_IDEAL.title)}</p>
+        <p className="google-description">{description ? cut(description, SEO_IDEAL.description) : 'O resumo do post aparece aqui.'}</p>
+        <p className="field-help">Ao compartilhar (WhatsApp, redes), vão este título, esta descrição e a capa.</p>
+      </div>
     </div>
-    {gallery && <ImageGallery purpose="body" postId={postId} current={imagePathsIn(value, cover)} onPick={image => insertImage(image.path, true)} onClose={() => setGallery(false)} />}
-    <label className="sr-only" htmlFor="campo-body">Texto em Markdown</label>
-    <textarea ref={area} id="campo-body" className="markdown-input" value={value} onChange={event => onChange(event.target.value)} onPaste={paste} spellCheck
-      aria-invalid={problem ? true : undefined} aria-describedby={['ajuda-body', problem && 'erro-body'].filter(Boolean).join(' ')}
-      placeholder={'Escreva em Markdown.\n\n## Um subtítulo\n\nUm parágrafo com **negrito** e um [link](https://keytotwo.com.br).'} />
-    <p className={`field-help${upload.error ? ' field-help-error' : ''}`} id="ajuda-body" role="status">{upload.error ?? upload.text ?? (dropping
-      ? 'Solte para enviar a imagem ao bucket e pôr no texto.'
-      : 'Subtítulos começam em ##. Imagens: arraste, cole (Ctrl+V) ou use Imagem e Galeria. HTML não funciona aqui, como no site.')}</p>
-    {problem && <p className="field-error" id="erro-body">{problem}</p>}
-  </div>
+  </details>
 }
 
 // Prévia com as classes do blog do site (src/blog.css): o post como vai aparecer, imagens vindas do bucket.

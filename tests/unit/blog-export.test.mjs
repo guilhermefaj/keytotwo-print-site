@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { tmpdir } from 'node:os'
+import sharp from 'sharp'
 import { exportBlog } from '../../scripts/blog-export.mjs'
 import { readBlogPosts } from '../../src/lib/blog.server.ts'
 
@@ -22,8 +23,9 @@ function fakeFetch({ posts = [post()], status = 200, images = {} } = {}) {
     calls.push({ url, apikey: new Headers(init.headers).get('apikey') })
     if (url.endsWith('/blog/posts')) return new Response(JSON.stringify({ version: VERSION, posts, media_base: MEDIA }), { status })
     const key = url.slice(MEDIA.length + 1)
-    // null no mapa: a imagem falta no bucket; as outras respondem com bytes quaisquer.
-    return images[key] === null ? new Response('nada', { status: 404 }) : new Response(images[key] ?? 'imagem')
+    // null no mapa: a imagem falta no bucket. A capa é uma imagem de verdade (vira a de compartilhar); as outras, bytes quaisquer.
+    if (images[key] === null) return new Response('nada', { status: 404 })
+    return new Response(images[key] ?? (key.endsWith('-capa.webp') ? await readFile('public/media/icons/kito-192.png') : 'imagem'))
   }
   return { fetch, calls }
 }
@@ -55,6 +57,19 @@ test('troca os arquivos do repositório pelos publicados, baixa as imagens e gra
   assert.equal(read.draft, false)
   assert.match(read.html, /<h2>Começo<\/h2>[\s\S]*<hr>[\s\S]*src="\/images\/blog\/2026\/10\/ef56ab78-cartas.webp"/)
   assert.deepEqual(JSON.parse(await readFile(path.join(root, 'public/blog/versao.json'), 'utf8')), { version: VERSION })
+  // A capa vira a imagem de compartilhar: JPEG 1200×630 no endereço do post.
+  assert.equal(read.shareImage, '/images/blog/og/jogos-para-casais.jpg')
+  const share = await sharp(path.join(root, 'public/images/blog/og/jogos-para-casais.jpg')).metadata()
+  assert.deepEqual([share.format, share.width, share.height], ['jpeg', 1200, 630])
+  assert.deepEqual([read.seoTitle, read.seoDescription], ['', ''])
+}))
+
+test('campos do Google vão para o frontmatter; post sem capa não ganha imagem de compartilhar', () => withRoot(async root => {
+  const { fetch } = fakeFetch({ posts: [post({ cover: null, cover_alt: '', body: 'Texto.', seo_title: 'Título curto', seo_description: 'Para o Google.' })] })
+  await exportBlog({ root, apiUrl: 'https://api.teste/functions/v1/api', apiKey: 'chave', fetch })
+  const [read] = await readBlogPosts({ root, stage: 'live' })
+  assert.deepEqual([read.seoTitle, read.seoDescription, read.shareImage], ['Título curto', 'Para o Google.', undefined])
+  assert.equal(existsSync(path.join(root, 'public/images/blog/og')), false)
 }))
 
 test('sem posts publicados: content/blog vazio e versão gravada', () => withRoot(async root => {

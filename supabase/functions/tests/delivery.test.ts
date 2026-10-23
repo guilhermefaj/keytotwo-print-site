@@ -179,6 +179,20 @@ contractTest('email-dispatch modo log: um botão por jogo com link /d/{token} v�
   assertEquals(claims.map((c) => c.ok && [c.claims.e, c.claims.g]), [[ENTITLEMENT, 7], [ENTITLEMENT, 8]])
 })
 
+contractTest('email-dispatch: presente (gift, 2026-10-23) com os mesmos botões de baixar, sem pedido nem pagamento', async () => {
+  Deno.env.set('EMAIL_MODE', 'log')
+  dispatchRpc([{ ...DELIVERY_ROW, kind: 'gift' }])
+  onExternal(() => ok({ ID: 'mailpit-2' }))
+  const { result } = await captureErrors(async () => await (await dispatchRequest({ outbox_id: OUTBOX_ID })).json())
+  assertEquals(result, { claimed: 1, sent: 1, failed: 0, rejected: 0 })
+  const mail = externalCalls[0].body as { Subject: string; HTML: string; Text: string }
+  assertEquals(mail.Subject, 'Um jogo de presente para vocês')
+  assert(mail.Text.includes('A KeyToTwo deu Jogo <Um> e TESTE-J02 para vocês. Já são de vocês: é só baixar, imprimir e jogar.'))
+  assert(mail.HTML.includes('A KeyToTwo deu Jogo &lt;Um&gt; e TESTE-J02 para vocês.') && mail.HTML.includes('Baixar TESTE-J02'))
+  assert(!/pedido|pagamento/i.test(mail.Text), 'presente não fala em pedido nem pagamento')
+  assertEquals([...mail.Text.matchAll(/\/functions\/v1\/api\/d\/[A-Za-z0-9_.-]+/g)].length, 2)
+})
+
 contractTest('email-dispatch modo brevo: chave v3, lista de teste, recusa definitiva e falha transitória', async () => {
   Deno.env.set('EMAIL_MODE', 'brevo')
   const run = async () => {

@@ -38,6 +38,28 @@ for (const width of [320, 390, 768, 1280]) {
   }
 }
 
+test('post: compartilhar (WhatsApp e copiar o link), Leia também com tema em comum e o título do Google', async ({ page, context }) => {
+  test.skip(!exampleExists, 'Rascunho excluído do live')
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto(`/blog/${slug}`)
+  const canonical = (await page.locator('link[rel="canonical"]').getAttribute('href'))!
+  const share = page.getByRole('region', { name: 'Compartilhar' })
+  await expect(share.getByRole('link', { name: /WhatsApp/ })).toHaveAttribute('href', `https://wa.me/?text=${encodeURIComponent(`Como publicar pelo painel do blog ${canonical}`)}`)
+  await share.getByRole('button', { name: 'Copiar o link' }).click()
+  await expect(share.getByRole('button', { name: 'Link copiado' })).toBeVisible()
+  await expect(share.getByRole('status')).toHaveText('O link do post foi copiado.')
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(canonical)
+  const related = page.getByRole('region', { name: 'Leia também' })
+  await expect(related.getByRole('link')).toHaveText(['Segundo exemplo de post'])
+  await related.getByRole('link').click()
+  // Os campos do Google do post valem no <title>, na descrição e no compartilhamento; o H1 continua o título.
+  await expect(page).toHaveTitle('Título curto do segundo exemplo — KeyToTwo')
+  await expect(page.locator('main h1')).toHaveText('Segundo exemplo de post')
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', 'Descrição para o Google do segundo exemplo.')
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Título curto do segundo exemplo — KeyToTwo')
+  await expect(page.getByRole('region', { name: 'Leia também' }).getByRole('link')).toHaveText(['Como publicar pelo painel do blog'])
+})
+
 test('navega da lista ao post e volta com metadados próprios e foco visível', async ({ page }) => {
   test.skip(!exampleExists, 'Rascunho excluído do live')
   await page.goto('/blog')

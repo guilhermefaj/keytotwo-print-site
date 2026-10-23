@@ -39,6 +39,14 @@ export function parseBlogPost(source: string, filename: string): BlogPost {
   if (fields.coverAlt !== undefined && typeof fields.coverAlt !== 'string') fail('coverAlt deve ser texto.')
   if (fields.author !== undefined && typeof fields.author !== 'string') fail('author deve ser texto.')
   const author = ((fields.author ?? '') as string).trim()
+  for (const name of ['seoTitle', 'seoDescription']) if (fields[name] !== undefined && typeof fields[name] !== 'string') fail(`${name} deve ser texto.`)
+  const seoTitle = ((fields.seoTitle ?? '') as string).trim()
+  const seoDescription = ((fields.seoDescription ?? '') as string).trim()
+  let shareImage: string | undefined
+  if (fields.shareImage !== undefined && fields.shareImage !== '') {
+    if (typeof fields.shareImage !== 'string' || fields.shareImage !== `/images/blog/og/${slug}.jpg`) fail('shareImage deve ser /images/blog/og/<endereço do post>.jpg.')
+    shareImage = fields.shareImage as string
+  }
   const coverAlt = ((fields.coverAlt ?? '') as string).trim()
   let cover: string | undefined
   if (fields.cover !== undefined && fields.cover !== '') {
@@ -71,7 +79,7 @@ export function parseBlogPost(source: string, filename: string): BlogPost {
     .join(' ')
   const wordCount = text.match(/[\p{L}\p{N}]+/gu)?.length ?? 0
   return {
-    slug, title, description, date, author, ...(cover ? { cover } : {}), coverAlt,
+    slug, title, description, date, author, ...(cover ? { cover } : {}), coverAlt, seoTitle, seoDescription, ...(shareImage ? { shareImage } : {}),
     tags: (tags as string[]).map(tag => tag.trim()), draft: fields.draft as boolean,
     wordCount, readingMinutes: Math.max(1, Math.ceil(wordCount / 200)),
     html: markdown.renderer.render(tokens, markdown.options, {}),
@@ -100,6 +108,6 @@ export async function readBlogPosts({ stage, root = process.cwd() }: { stage: Bl
 }
 
 export function summarizeBlogPost(post: BlogPost): BlogPostSummary {
-  const { slug, title, description, date, author, cover, coverAlt, tags, draft, readingMinutes } = post
-  return { slug, title, description, date, author, cover, coverAlt, tags, draft, readingMinutes }
+  const { slug, title, description, date, author, cover, coverAlt, tags, draft, readingMinutes, seoTitle, seoDescription, shareImage } = post
+  return { slug, title, description, date, author, cover, coverAlt, tags, draft, readingMinutes, seoTitle, seoDescription, ...(shareImage ? { shareImage } : {}) }
 }

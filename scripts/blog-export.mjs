@@ -2,9 +2,12 @@
 // imagens deles, do bucket público, para public/images/blog. Só os builds da VPS rodam isto (BLOG_SOURCE=api no
 // Dockerfile); fora dela, o site usa os arquivos do repositório. A versão do que veio vai para /blog/versao.json, que o
 // admin compara com a do banco. Qualquer falha (rede, post inválido, imagem ausente) para o build: o site no ar não muda.
+// Post com capa ganha a imagem de compartilhamento (JPEG 1200×630, recorte central, em /images/blog/og/<endereço>.jpg):
+// o WhatsApp e as redes nem sempre mostram WebP.
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
+import sharp from 'sharp'
 import { stringify } from 'yaml'
 import { parseBlogPost } from '../src/lib/blog.server.ts'
 
@@ -21,11 +24,16 @@ export async function exportBlog({ root, apiUrl, apiKey, fetch = globalThis.fetc
   await rm(directory, { recursive: true, force: true })
   await mkdir(directory, { recursive: true })
   const images = new Set()
+  const shares = []
   for (const post of posts) {
+    const shareImage = post.cover ? `/images/blog/og/${post.slug}.jpg` : undefined
     const front = {
       title: post.title, description: post.description, date: post.date, author: post.author,
       ...(post.cover ? { cover: post.cover } : {}), coverAlt: post.cover_alt ?? '', tags: post.tags ?? [], draft: false,
+      ...(post.seo_title ? { seoTitle: post.seo_title } : {}), ...(post.seo_description ? { seoDescription: post.seo_description } : {}),
+      ...(shareImage ? { shareImage } : {}),
     }
+    if (shareImage) shares.push({ cover: post.cover, shareImage })
     const filename = `${post.slug}.md`
     const source = `---\n${stringify(front, { defaultStringType: 'QUOTE_DOUBLE', defaultKeyType: 'PLAIN' })}---\n${post.body}\n`
     // As mesmas regras do build; um post que não passa para a exportação inteira, com o nome dele no erro.
@@ -43,6 +51,11 @@ export async function exportBlog({ root, apiUrl, apiKey, fetch = globalThis.fetc
     const target = path.join(root, 'public', image)
     await mkdir(path.dirname(target), { recursive: true })
     await writeFile(target, new Uint8Array(await file.arrayBuffer()))
+  }
+  for (const { cover, shareImage } of shares) {
+    const target = path.join(root, 'public', shareImage)
+    await mkdir(path.dirname(target), { recursive: true })
+    await sharp(path.join(root, 'public', cover)).resize(1200, 630, { fit: 'cover', position: 'centre' }).jpeg({ quality: 82, mozjpeg: true }).toFile(target)
   }
 
   await mkdir(path.join(root, 'public/blog'), { recursive: true })

@@ -42,7 +42,8 @@ export function useResource<T>(path: string) {
     return () => controller.abort()
   }, [path, key])
   const current = state.key === key
-  return { data: current ? state.data : undefined, error: current ? state.error : undefined, loading: !current, reload: () => setRevision(value => value + 1) }
+  // previous: a última resposta, mesmo de outro caminho, para a tela não piscar enquanto busca de novo.
+  return { data: current ? state.data : undefined, previous: state.data, error: current ? state.error : undefined, loading: !current, reload: () => setRevision(value => value + 1) }
 }
 
 export const money = (amount: number, currency: string) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(amount / 100)

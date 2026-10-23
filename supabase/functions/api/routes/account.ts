@@ -70,7 +70,7 @@ export async function exportAccount(req: Request): Promise<Response> {
   return json(data, 200, { 'Content-Disposition': 'attachment; filename="keytotwo-meus-dados.json"' })
 }
 
-const DELETION_BLOCKED: Record<string, string> = {
+export const DELETION_BLOCKED: Record<string, string> = {
   payment_pending: 'Há um pagamento em andamento nesta conta. Tente de novo quando ele terminar.',
   checkout_open: 'Há um pagamento em andamento nesta conta. Tente de novo quando ele terminar.',
   dispute_open: 'Há uma contestação de pagamento aberta nesta conta. Tente de novo quando ela terminar.',

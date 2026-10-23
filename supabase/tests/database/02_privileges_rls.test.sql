@@ -151,11 +151,11 @@ select pg_temp.assert('funções de private sem EXECUTE para os papéis de API',
    where p.pronamespace = 'private'::regnamespace and has_function_privilege(r, p.oid, 'EXECUTE')));
 
 -- ===== RPCs do I2b e do I3: ACL e modo de execução ========================================================
-select pg_temp.assert('as RPCs de public são exatamente as 37 do I2b ao blog (todas as do contrato)',
-  (select array_agg(p.proname::text order by p.proname collate "C") = array['admin_blog_image_usage','admin_delete_blog_image','admin_delete_blog_post','admin_get_blog_post','admin_list_blog_posts','admin_register_blog_image','admin_save_blog_post','attach_checkout_session','cart_add','cart_remove','claim_email_batch','create_order_from_cart','delete_account_data','export_account_data','fulfill_order','get_account','get_admin_metrics','get_blog_version','get_cart','get_catalog','get_library','get_order_status','get_stripe_prices','list_free_games','list_published_blog_posts','mark_email_result','mark_marketing_prompt','quote_cart','record_email_event','remember_stripe_prices','resolve_delivery','resolve_download','resolve_free_download','set_marketing_consent','set_order_status','set_stripe_customer','unsubscribe']
+select pg_temp.assert('as RPCs de public são exatamente as 49 do I2b aos usuários do admin (todas as do contrato)',
+  (select array_agg(p.proname::text order by p.proname collate "C") = array['admin_blog_image_usage','admin_check_user_block','admin_delete_blog_image','admin_delete_blog_post','admin_delete_user','admin_export_user','admin_follow_up','admin_get_blog_post','admin_get_user','admin_gift_products','admin_list_blog_posts','admin_list_users','admin_log_user_block','admin_newsletter_off','admin_register_blog_image','admin_resend_delivery','admin_revoke_entitlement','admin_save_blog_post','admin_set_admin','attach_checkout_session','cart_add','cart_remove','claim_email_batch','create_order_from_cart','delete_account_data','export_account_data','fulfill_order','get_account','get_admin_metrics','get_blog_version','get_cart','get_catalog','get_library','get_order_status','get_stripe_prices','list_free_games','list_published_blog_posts','mark_email_result','mark_marketing_prompt','quote_cart','record_email_event','remember_stripe_prices','resolve_delivery','resolve_download','resolve_free_download','set_marketing_consent','set_order_status','set_stripe_customer','unsubscribe']
    from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'));
 select pg_temp.assert('cada RPC: ACL = {dono, service_role} apenas, menos get_blog_version',
-  (select count(*) = 36 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
+  (select count(*) = 48 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
      and p.proname <> 'get_blog_version' and p.proacl::text = '{postgres=X/postgres,service_role=X/postgres}'));
 -- A exceção (blog, 2026-10-23): o vigia da VPS lê a versão do blog pela API de dados; é o dado de GET /blog/version.
 select pg_temp.assert('get_blog_version: EXECUTE para anon e service_role; nada para authenticated nem public',
@@ -164,7 +164,7 @@ select pg_temp.assert('get_blog_version: EXECUTE para anon e service_role; nada 
           and p.proacl::text = '{postgres=X/postgres,service_role=X/postgres,anon=X/postgres}'
    from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = 'get_blog_version'));
 select pg_temp.assert('cada RPC: SECURITY DEFINER com search_path vazio',
-  (select count(*) = 37 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
+  (select count(*) = 49 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
      and p.prosecdef and p.proconfig @> array['search_path=""']));
 
 -- ===== comportamento por papel ====================================================================

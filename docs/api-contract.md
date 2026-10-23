@@ -94,6 +94,10 @@ Headers enviados pelo site:
 | 409 | `SLUG_TAKEN` | Outro post já usa o endereço (6.13) |
 | 409 | `SLUG_LOCKED` | Mudança de endereço num post que já foi publicado (6.13) |
 | 409 | `IMAGE_IN_USE` | Apagar do bucket uma imagem que algum post usa; `details.used_by` traz os posts (6.13) |
+| 409 | `PROTECTED_ACCOUNT` | Bloquear, excluir ou retirar jogo da própria conta ou da de outro admin (6.14) |
+| 409 | `ALREADY_REVOKED` · `ORDER_NOT_DELIVERABLE` · `EMAIL_ALREADY_QUEUED` | Jogo já retirado; pedido sem acesso para reenviar; e-mail de acesso ainda na fila (6.14) |
+| 409 | `NOT_SUBSCRIBED` · `ALREADY_BLOCKED` · `NOT_BLOCKED` · `TARGET_NOT_CONFIRMED` | Conta fora das novidades; já bloqueada; não bloqueada; conta sem e-mail confirmado para exportar, excluir ou virar admin (6.14) |
+| 409 | `GIFT_OVERLAP` · `ADMIN_UNCHANGED` · `LAST_ADMIN` · `ACCOUNT_BLOCKED` | Presente com produtos de jogo em comum; a conta já está no estado pedido; a equipe ficaria sem admin; conta bloqueada não vira admin (6.14) |
 | 409 | `ALREADY_OWNED` | No checkout: nada a pagar (tudo na sacola já é do usuário ou já está num pacote dela) |
 | 409 | `CART_EMPTY` | Checkout com carrinho vazio |
 | 409 | `CART_CHANGED` | `cart_version` diferente da atual: o site recarrega o carrinho |
@@ -145,6 +149,12 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `POST /admin/blog/images` | `admin_register_blog_image(uid, path)` → grava no bucket público do blog | Blog (2026-10-23) |
 | `GET /admin/blog/images` | `admin_blog_image_usage(uid)` → lista o bucket público do blog | Blog, galeria (2026-10-23) |
 | `DELETE /admin/blog/images` | `admin_delete_blog_image(uid, path)` → apaga do bucket público do blog | Blog, galeria (2026-10-23) |
+| `GET /admin/users` · `GET /admin/users/{id}` | `admin_list_users(uid, q, filter, offset)` · `admin_get_user(uid, target)` | Usuários (2026-10-23) |
+| `POST /admin/users/{id}/gifts` | `admin_gift_products(uid, target, product_codes, reason, notify, livemode)` → e-mail do presente | Usuários (2026-10-23) |
+| `POST /admin/users/{id}/admin` · `GET /admin/follow-up` | `admin_set_admin(uid, target, admin, reason)` · `admin_follow_up(uid)` | Usuários, equipe e acompanhamento (2026-10-23) |
+| `POST …/entitlements/{entitlement}/revoke` · `POST …/orders/{order}/resend` · `POST …/newsletter/off` | `admin_revoke_entitlement` · `admin_resend_delivery` → e-mail · `admin_newsletter_off` | Usuários (2026-10-23) |
+| `POST /admin/users/{id}/block` · `POST …/unblock` | `admin_check_user_block` → Auth admin `PUT /auth/v1/admin/users/{id}` (`ban_duration`) → `admin_log_user_block` | Usuários (2026-10-23) |
+| `GET /admin/users/{id}/export` · `POST /admin/users/{id}/delete` | `admin_export_user` · `admin_delete_user` → Auth admin `DELETE /auth/v1/admin/users/{id}` | Usuários (2026-10-23) |
 | `GET /blog/posts` · `GET /blog/version` | `list_published_blog_posts()` · `get_blog_version()` | Blog (2026-10-23) |
 | `POST /email/unsubscribe` | `unsubscribe(user_id, 'unsubscribe_link')` | I5 |
 | `stripe-webhook` | `fulfill_order` ou `set_order_status` (seção 9) | I3 |
@@ -173,6 +183,7 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `GET /free-games` | Pública | Gratuitos | Implementada |
 | `POST /free-download` | Sessão + aceite de e-mails registrado alguma vez | Gratuitos | Implementada |
 | `GET /admin/metrics` | Sessão de admin (`app_metadata.admin`) com segundo fator (`aal2`) | Admin | Implementada |
+| `GET /admin/users` · `GET /admin/users/{id}` e as ações em `/admin/users/{id}/…` (6.14) | Sessão de admin com segundo fator (`aal2`) | Usuários | Implementada |
 | `GET` e `POST /admin/blog/posts` · `GET`, `PUT` e `DELETE /admin/blog/posts/{id}` · `GET`, `POST` e `DELETE /admin/blog/images` | Sessão de admin com segundo fator (`aal2`) | Blog | Implementada |
 | `GET /blog/posts` · `GET /blog/version` | Pública (só o que está publicado) | Blog | Implementada |
 | `GET` e `POST /email/unsubscribe` | Token HMAC | I5 | Planejada |
@@ -579,6 +590,7 @@ Post (`post` nos corpos e nas respostas; `snake_case`):
 ```
 
 - **Regras** (`supabase/functions/_shared/blog-rules.ts`, as mesmas do build e do editor): título até 120; endereço `a-z0-9` com hífens, até 80; data `AAAA-MM-DD` válida; capa só em `/images/blog/...` e com descrição; até 10 temas sem repetir; texto até 100 mil caracteres. Rascunho guarda o que estiver pronto. Publicar exige resumo, autor e texto, imagens do texto em `/images/blog/...` com descrição e nenhuma marcação `PENDENTE` (a trava do build live). Falhou: `400 INVALID_REQUEST` com `details.problems` (`[{ field, message }]`, na ordem do editor) e a primeira mensagem em `message`, sem tocar no banco.
+- Campos do Google (2026-10-23, migração `20261023230000_blog_seo.sql`): `seo_title` (até 80) e `seo_description` (até 200), opcionais. Em branco, o site usa o título e o resumo no `<title>`, na descrição e no compartilhamento; o admin recomenda até 60 e 155 caracteres. Admin antigo, que não manda os campos, grava vazio. A trava `PENDENTE` vale para eles também.
 - `GET /admin/blog/posts` → `{ version, posts, media_base }`: todos os posts sem o `body`, do editado mais recente ao mais antigo. `media_base` é a base pública do bucket das imagens (`null` sem o bucket configurado).
 - `POST /admin/blog/posts { post }` → `201 { post, version }`. `PUT /admin/blog/posts/{id} { post, expected_updated_at }` → `200 { post, version }`, só se `expected_updated_at` ainda for o do banco; senão `409 EDIT_CONFLICT` com o post atual em `details.post`. O endereço não muda depois da primeira publicação (`409 SLUG_LOCKED`), nem repete o de outro post (`409 SLUG_TAKEN`).
 - `GET /admin/blog/posts/{id}` → `{ post, media_base }`; `DELETE` → `{ "deleted": true, version }`. Id que não é uuid ou não existe → `404 NOT_FOUND`.
@@ -589,6 +601,22 @@ Post (`post` nos corpos e nas respostas; `snake_case`):
 - `GET /blog/posts` (pública) → `{ version, posts, media_base }` só com os publicados, com o `body`. `GET /blog/version` (pública) → `{ version }`: md5 de id e `updated_at` dos publicados; rascunho não muda a versão.
 - A mesma versão sai pela API de dados do Supabase, `POST /rest/v1/rpc/get_blog_version` com a chave publicável: é a única RPC com EXECUTE para `anon` (migração `20261023160000_blog_galeria.sql`). O vigia da VPS confere a cada minuto por ela, sem gastar invocações das funções.
 - Admin: o mesmo de 6.12 (`aal2`, `forbidden` → `403 NOT_ADMIN`, `KT009` → `403 EMAIL_NOT_CONFIRMED`).
+
+### 6.14 Usuários: `/admin/users/*`
+
+Responsável, 2026-10-23 (Fase 4 do admin): buscar contas, ver a ficha de cada pessoa e agir. Migração `20261023200000_admin_usuarios.sql`. O banco confere o admin em toda chamada (como em 6.12) e grava cada ação em `private.admin_events`, com o motivo (3 a 300 caracteres, obrigatório em toda ação que muda algo; `400 INVALID_REQUEST` sem ele, antes do banco). Bloquear, excluir e retirar jogo não valem para a própria conta nem para a de outro admin (`409 PROTECTED_ACCOUNT`). Tornar alguém admin continua fora da API.
+
+- `GET /admin/users?q=&filter=all|buyers|newsletter|blocked|admins&page=1` → `{ total, offset, limit: 50, page, users: [{ id, email, created_at, last_sign_in_at, confirmed, blocked, admin, providers, newsletter, purchases, games }] }`, da conta mais nova à mais antiga. `q` procura no e-mail; `buyers` = alguma compra paga (presente não conta); `blocked` = login bloqueado agora; `admins` = a equipe (a aba Equipe do admin).
+- `GET /admin/users/{id}` → a ficha: `account` (com `self`, `admin`, `blocked` e o cliente da Stripe), `newsletter` (estado e histórico), `library` (cada direito, com o pedido de origem e o tipo dele), `orders` (com `deliverable`: pago e sem jogo retirado), `emails` (os últimos 20), `suppressions`, `downloads`, `history` (o que a equipe fez, com o e-mail de quem fez) e `giftable` (produtos à venda, com `owned`). Conta apagada ou inexistente → `404 NOT_FOUND`.
+- `POST /admin/users/{id}/gifts { product_codes, reason, notify }` → `201 { order_id, email_queued, products }`: de 1 a 10 produtos (sem repetir) num pedido e num e-mail só. Presente = **pedido de cortesia** (`orders.kind = 'courtesy'`), de R$ 0, sem Stripe nem aceite de termos, pago na hora, com um direito e os jogos do produto; o produto sai da sacola da pessoa. Com `notify`, o e-mail do presente (`kind = 'gift'`, transacional, os mesmos links de baixar da entrega) sai na hora. Fica fora das vendas, da receita e do funil das métricas (6.12) e aparece em Minha conta como "Presente da KeyToTwo". Produto fora da venda → `409 PRODUCT_UNAVAILABLE`; a pessoa já tem todos os jogos de um deles → `409 ALREADY_OWNED`; dois produtos com jogo em comum (um pacote e um jogo que já vem nele) → `409 GIFT_OVERLAP`. Nas três, `details.products` diz quais.
+- `POST /admin/users/{id}/entitlements/{entitlement}/revoke { reason }` → `{ "revoked": true }`: o direito fica revogado com motivo `manual`; o pedido não muda (dinheiro de volta é reembolso). Já retirado → `409 ALREADY_REVOKED`.
+- `POST /admin/users/{id}/orders/{order}/resend` → `202 { "queued": true }`: o e-mail de acesso de novo (o do presente, num pedido de cortesia), para o e-mail atual da conta. Pedido não pago ou com jogo retirado → `409 ORDER_NOT_DELIVERABLE`; envio do mesmo pedido ainda na fila → `409 EMAIL_ALREADY_QUEUED`.
+- `POST /admin/users/{id}/newsletter/off { reason }` → `{ "newsletter": false }`: o descadastro, com origem `support`; os e-mails de marketing na fila são cancelados. Fora das novidades → `409 NOT_SUBSCRIBED`.
+- `POST /admin/users/{id}/block { reason }` e `POST /admin/users/{id}/unblock { reason }` → `{ blocked }`: o banco confere a conta, o Auth troca o bloqueio (`ban_duration` de 100 anos ou `none`, chave secreta) e só então o histórico registra. Entrar e renovar a sessão falham na hora; o token já emitido vale até vencer (até 1 hora). Já no estado pedido → `409 ALREADY_BLOCKED` / `NOT_BLOCKED`.
+- `POST /admin/users/{id}/admin { admin, reason }` → `{ admin }` (equipe, 2026-10-23): promove a admin ou tira o admin, gravando `app_metadata.admin` no Auth (`raw_app_meta_data`) na mesma transação do histórico (`user_admin_grant` / `user_admin_revoke`). Vale no banco na hora (`private.is_admin`); no token da pessoa, quando ela entrar de novo ou a sessão renovar (até 1 hora). Quem vira admin cadastra o segundo fator no primeiro acesso. Já no estado pedido → `409 ADMIN_UNCHANGED`; tirar o próprio admin → `409 PROTECTED_ACCOUNT`; equipe ficaria vazia → `409 LAST_ADMIN`; conta sem e-mail confirmado → `409 TARGET_NOT_CONFIRMED`; bloqueada → `409 ACCOUNT_BLOCKED`.
+- `GET /admin/follow-up` → `{ cart, no_download, delivery, unconfirmed }` (acompanhamento, 2026-10-23), cada um `{ total, items }` com até 100 pessoas, sem contas apagadas ou bloqueadas. `cart`: a última coisa posta na sacola tem mais de 1 dia (`items` com os nomes, `reminded` se o lembrete já saiu). `no_download`: pedido pago (compra ou presente) há 2 dias ou mais, nos últimos 90, sem download depois do pagamento. `delivery`: e-mail de acesso que falhou e nunca saiu (`problem: failed`, com o pedido) ou endereço bloqueado na Brevo por devolução ou spam numa conta com jogos (`problem: suppressed`). `unconfirmed`: conta criada há mais de 1 hora sem confirmar o e-mail.
+- `GET /admin/users/{id}/export` → a mesma cópia de `GET /account/export` (6.11), para baixar (`keytotwo-dados-<id>.json`). Conta sem e-mail confirmado → `409 TARGET_NOT_CONFIRMED`.
+- `POST /admin/users/{id}/delete { reason, confirm_email }` → `{ deleted: true, orders_anonymized }`: a mesma exclusão de `POST /account/delete` (`delete_account_data` e depois o Auth). `confirm_email` tem de ser o e-mail da conta (o banco confere; senão `400`). Bloqueada por pagamento em andamento ou contestação → `409 ACCOUNT_DELETION_BLOCKED`. O histórico guarda o motivo e quantos pedidos ficaram anonimizados, sem o e-mail.
 
 ## 7. Tokens HMAC (entrega e descadastro)
 
@@ -753,6 +781,10 @@ Contestação e reembolso valem para o pedido inteiro.
 ### 11.4 O que mudou na v0.3.4 (Painel)
 
 - `GET /admin/metrics` (6.12), com o erro `403 NOT_ADMIN`.
+
+### 11.4.0 O que mudou na v0.3.8 (Usuários no admin)
+
+- Rotas de usuários (6.14), os erros novos de 409 e o e-mail do presente (`kind = 'gift'`). `get_account` traz `kind` em cada pedido.
 
 ### 11.4.1 O que mudou na v0.3.7 (Blog no admin)
 

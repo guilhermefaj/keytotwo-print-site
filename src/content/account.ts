@@ -7,6 +7,9 @@ export const marketingConsent = {
   approved: true,
 }
 
+// Pedido de cortesia (presente dado pela equipe no admin, 2026-10-23).
+export const giftStatus = 'Presente da KeyToTwo'
+
 export const orderStatus: Record<string, string> = {
   pending_payment: 'Aguardando pagamento', paid: 'Pagamento confirmado', failed: 'Pagamento não concluído',
   disputed: 'Pagamento em contestação', dispute_lost: 'Contestação encerrada', refunded: 'Reembolsado',
