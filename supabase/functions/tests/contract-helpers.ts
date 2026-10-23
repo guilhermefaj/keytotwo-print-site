@@ -117,11 +117,12 @@ export function onStripe(reply: (call: StripeCall) => Reply) {
   stripeReply = reply
 }
 
-// Auth admin (exclusão de conta): método, id do usuário e se veio com a chave secreta.
+// Auth admin (exclusão de conta e bloqueio): método, id do usuário, se veio com a chave secreta e o corpo, quando há.
 export interface AuthAdminCall {
   method: string
   userId: string
   secretKeyOk: boolean
+  body?: unknown
 }
 
 export const authAdminCalls: AuthAdminCall[] = []
@@ -183,7 +184,8 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
   }
   if (url.href.startsWith(`${SUPABASE_URL}/auth/v1/admin/users/`)) {
     const headers = new Headers(init?.headers)
-    const call = { method: (init?.method ?? 'GET').toUpperCase(), userId: decodeURIComponent(url.pathname.split('/').pop()!), secretKeyOk: headers.get('apikey') === SECRET_KEY }
+    const call: AuthAdminCall = { method: (init?.method ?? 'GET').toUpperCase(), userId: decodeURIComponent(url.pathname.split('/').pop()!), secretKeyOk: headers.get('apikey') === SECRET_KEY }
+    if (typeof init?.body === 'string') call.body = JSON.parse(init.body)
     authAdminCalls.push(call)
     return Promise.resolve(respond(authAdminReply(call)))
   }

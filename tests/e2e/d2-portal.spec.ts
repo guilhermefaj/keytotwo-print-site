@@ -10,7 +10,7 @@ const user = { id: 'qa-d2', email: 'd2@example.test', email_confirmed_at: '2026-
 const session = { access_token: 'synthetic-d2-token', refresh_token: 'synthetic-d2-refresh', expires_at: 4102444800, expires_in: 3600, token_type: 'bearer', user }
 const product = { code: 'P001', name: 'Pacote de teste', unit_amount: 1990, currency: 'brl' }
 const games = ['TESTE-J01', 'TESTE-J02', 'TESTE-J03', 'TESTE-J04', 'TESTE-J05'].map((code, i) => ({ code, name: `Jogo de teste ${i + 1}`, acquired_at: '2026-10-01T12:00:00Z', products: [product], files: [{ id: `pdf-${i}`, kind: 'pdf', version: '1.0', size_bytes: 3600000 }] }))
-async function fixture(page: Page, { empty = false, failLibrary = false } = {}) {
+async function fixture(page: Page, { empty = false, failLibrary = false, gift = false } = {}) {
   test.skip(!readFileSync('build/client/index.html', 'utf8').includes('Ambiente de teste'), 'Requires configured stage=test build')
   let optedIn = false
   let failed = false
@@ -21,7 +21,8 @@ async function fixture(page: Page, { empty = false, failLibrary = false } = {}) 
     const path = new URL(route.request().url()).pathname.split('/api')[1]
     if (path === '/library' && failLibrary && !failed) { failed = true; return route.fulfill({ status: 503, json: { error: { code: 'INTERNAL_ERROR' } } }) }
     if (path === '/account/marketing') { const body = route.request().postDataJSON(); writes.push(body); optedIn = body.granted; return route.fulfill({ json: { opted_in: optedIn } }) }
-    const orders = empty ? [] : ['paid', 'pending_payment'].map((status, i) => ({ ref: `synthetic-d2-${i}`, status, created_at: '2026-10-01T12:00:00Z', paid_at: status === 'paid' ? '2026-10-01T12:00:00Z' : null, amount_total: 1990, currency: 'brl', items: [product] }))
+    const courtesy = { ref: 'PRESENTE1', kind: 'courtesy', status: 'paid', created_at: '2026-10-23T12:00:00Z', paid_at: '2026-10-23T12:00:00Z', amount_total: 0, currency: 'brl', items: [{ ...product, unit_amount: 0 }] }
+    const orders = empty ? [] : gift ? [courtesy] : ['paid', 'pending_payment'].map((status, i) => ({ ref: `synthetic-d2-${i}`, status, created_at: '2026-10-01T12:00:00Z', paid_at: status === 'paid' ? '2026-10-01T12:00:00Z' : null, amount_total: 1990, currency: 'brl', items: [product] }))
     const json = path === '/library' ? { games: empty ? [] : games, pending: [] } : path === '/account' ? { email: user.email, marketing: { opted_in: optedIn, prompted_at: null, updated_at: null, text_version: null }, orders } : path === '/catalog' ? { products: [] } : path === '/free-games' ? { games: [] } : { version: 0, items: [], subtotal: null, warnings: [] }
     return route.fulfill({ json })
   })
@@ -182,6 +183,19 @@ for (const width of [390, 1440]) test(`axe across three tabs and empty states at
   await page.setViewportSize({ width: 320, height: 900 })
   await page.evaluate(() => { document.documentElement.style.fontSize = '32px' })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+})
+
+test('gift order (courtesy from the admin) reads as a gift: no price, no payment', async ({ page }) => {
+  await fixture(page, { gift: true })
+  await page.goto('/pedidos')
+  const order = page.locator('.portal-order')
+  await expect(order.locator('.order-status')).toHaveText('Presente da KeyToTwo')
+  await expect(order.locator('.order-total strong')).toHaveText('Sem custo')
+  await expect(order.getByRole('link', { name: 'Ver meus jogos' })).toBeVisible()
+  await order.getByText('Detalhes do pedido').click()
+  await expect(order.locator('dt')).toHaveText(['Número do pedido', 'Recebido em'])
+  await expect(order).not.toContainText('R$')
+  await axe(page)
 })
 
 test('empty orders use the existing account response and keep portal navigation', async ({ page }) => {

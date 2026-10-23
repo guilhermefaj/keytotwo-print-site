@@ -135,16 +135,21 @@ async function unsubscribeParts(row: OutboxRow) {
   return { footer, text, headers }
 }
 
+// Um link de baixar por jogo do pedido (/d/{token}, válido por 30 dias), para a entrega e o presente.
+async function downloadLinks(row: OutboxRow, apiBase: string, missing: string) {
+  const games = (row.payload.games ?? []).filter((g) => g.entitlement_id && Number.isSafeInteger(g.game_id))
+  if (!games.length) throw new PermanentEmailError(missing)
+  return await Promise.all(games.map(async (game) => ({
+    name: displayName(game),
+    url: `${apiBase}/d/${await signDeliveryToken(game.entitlement_id!, game.game_id!)}`,
+  })))
+}
+
 // Entrega (transacional, pt-BR): um botão por jogo (link /d/{token}, válido por 30 dias) e o botão Meus jogos.
 export async function renderDelivery(row: OutboxRow, apiBase: string): Promise<Message> {
   const site = env.siteUrl()
   const ref = row.payload.order_ref ?? ''
-  const games = (row.payload.games ?? []).filter((g) => g.entitlement_id && Number.isSafeInteger(g.game_id))
-  if (!games.length) throw new PermanentEmailError('entrega_sem_jogos')
-  const links = await Promise.all(games.map(async (game) => ({
-    name: displayName(game),
-    url: `${apiBase}/d/${await signDeliveryToken(game.entitlement_id!, game.game_id!)}`,
-  })))
+  const links = await downloadLinks(row, apiBase, 'entrega_sem_jogos')
   const library = `${site}/meus-jogos`
   const help = `${site}/ajuda`
   const subject = ref ? `Seus jogos chegaram (pedido ${ref})` : 'Seus jogos chegaram'
@@ -158,6 +163,35 @@ export async function renderDelivery(row: OutboxRow, apiBase: string): Promise<M
   const text = [
     'KeyToTwo', '', 'Seus jogos chegaram', '',
     `O pagamento${ref ? ` do pedido ${ref}` : ''} foi confirmado e os jogos já são de vocês. É só baixar, imprimir e jogar.`, '',
+    ...links.map((l) => `Baixar ${l.name}: ${l.url}`), '',
+    'Estes links valem por 30 dias. Os jogos ficam sempre em Meus jogos: é só entrar com este e-mail.',
+    `Meus jogos: ${library}`, '',
+    `Precisa de ajuda? ${help}`,
+    ...textSignature,
+  ].join('\n')
+  return { to: row.to_email, subject, html, text, tag: row.kind }
+}
+
+// Presente (transacional, 2026-10-23): o jogo que a KeyToTwo deu pelo admin (pedido de cortesia), com os mesmos botões
+// da entrega. Sem valor nem pedido: não houve compra.
+export async function renderGift(row: OutboxRow, apiBase: string): Promise<Message> {
+  const site = env.siteUrl()
+  const links = await downloadLinks(row, apiBase, 'presente_sem_jogos')
+  const library = `${site}/meus-jogos`
+  const help = `${site}/ajuda`
+  const subject = 'Um jogo de presente para vocês'
+  const names = listNames(links.map((l) => ({ code: l.name, name: l.name })))
+  const intro = `A KeyToTwo deu ${names} para vocês. ${links.length > 1 ? 'Já são' : 'Já é'} de vocês: é só baixar, imprimir e jogar.`
+  const html = layout(subject, subject, [
+    paragraph(escapeHtml(intro)),
+    links.map((l) => button(l.url, `Baixar ${l.name}`)).join('\n    '),
+    paragraph('Estes botões valem por 30 dias. Os jogos ficam sempre em Meus jogos: é só entrar com este e-mail.', true),
+    button(library, 'Abrir Meus jogos'),
+    paragraph(`Precisa de ajuda? ${link(help, help)}`, true),
+  ].join('\n    '))
+  const text = [
+    'KeyToTwo', '', subject, '',
+    intro, '',
     ...links.map((l) => `Baixar ${l.name}: ${l.url}`), '',
     'Estes links valem por 30 dias. Os jogos ficam sempre em Meus jogos: é só entrar com este e-mail.',
     `Meus jogos: ${library}`, '',
@@ -222,6 +256,8 @@ export async function render(row: OutboxRow): Promise<Message> {
   switch (row.kind) {
     case 'delivery':
       return await renderDelivery(row, env.apiPublicUrl())
+    case 'gift':
+      return await renderGift(row, env.apiPublicUrl())
     case 'cart_reminder':
       return await renderCartReminder(row)
     case 'post_purchase':

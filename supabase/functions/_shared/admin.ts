@@ -53,6 +53,19 @@ export async function deleteAuthUser(userId: string): Promise<void> {
   if (!response.ok && response.status !== 404) throw new AuthAdminError(response.status)
 }
 
+// Bloqueia ou desbloqueia o login no Auth (admin API): ban_duration de 100 anos ou "none". Entrar e renovar a sessão
+// falham na hora; o token de acesso que já saiu vale até vencer (até 1 hora).
+export async function setAuthUserBan(userId: string, banned: boolean): Promise<void> {
+  const response = await fetch(`${env.supabaseUrl()}/auth/v1/admin/users/${encodeURIComponent(userId)}`, {
+    method: 'PUT',
+    headers: { apikey: env.secretKey(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ban_duration: banned ? '876000h' : 'none' }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  })
+  await response.body?.cancel()
+  if (!response.ok) throw new AuthAdminError(response.status)
+}
+
 export class AuthAdminError extends Error {
   constructor(readonly status: number) {
     super(`Auth admin falhou (HTTP ${status})`)

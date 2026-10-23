@@ -9,7 +9,7 @@ const sections = [
   { to: '/', label: 'Métricas', icon: IconChartBar, ready: true },
   { to: '/blog', label: 'Blog', icon: IconArticle, ready: true },
   { to: '/pedidos', label: 'Pedidos e reembolsos', icon: IconReceipt2, ready: false },
-  { to: '/usuarios', label: 'Usuários', icon: IconUsers, ready: false },
+  { to: '/usuarios', label: 'Usuários', icon: IconUsers, ready: true },
 ] as const
 
 const items = (ready: boolean) => sections.filter(section => section.ready === ready).map(({ to, label, icon: Icon }) => <li key={to}>

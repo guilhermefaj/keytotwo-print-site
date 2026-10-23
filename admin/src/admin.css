@@ -138,6 +138,9 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .button-danger { color: var(--color-paper); background: var(--color-error); }
 .button-danger:hover { background: color-mix(in srgb, var(--color-error) 85%, var(--color-ink)); }
 .text-button-danger { color: var(--color-error); }
+/* Desabilitado vale também para o botão de perigo (que vem depois de .button:disabled) e para os de texto. */
+.button-danger:disabled { color: var(--color-ink-soft); background: var(--color-ink-wash); }
+.text-button:disabled { color: var(--color-ink-soft); text-decoration: none; }
 
 /* Blog: lista */
 .site-sync { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; color: var(--color-ink-soft); font-size: var(--text-label); }
@@ -255,6 +258,65 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .leave-prompt { position: fixed; left: 50%; bottom: 24px; z-index: 50; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; width: min(calc(100% - 32px), 560px); padding: 16px 20px; border: var(--line-rule); border-radius: var(--radius-md); background: var(--color-paper); box-shadow: var(--shadow-menu); transform: translateX(-50%); }
 .leave-prompt p { flex-basis: 100%; font-weight: 600; }
 
+/* Usuários (2026-10-23, Fase 4): lista com busca e a ficha de cada conta, com as ações no lugar. */
+.users-toolbar { justify-content: flex-start; }
+/* Quatro filtros não cabem numa linha no celular: quebram em duas. */
+.users-toolbar .periods { flex-wrap: wrap; }
+.search-field { position: relative; flex: 1 1 280px; max-width: 420px; }
+.search-field svg { position: absolute; top: 50%; left: 14px; color: var(--color-ink-soft); transform: translateY(-50%); }
+.search-field input { width: 100%; min-height: 44px; padding: 8px 14px 8px 40px; border: 1.5px solid var(--color-ink-rule); border-radius: var(--radius-sm); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-body); }
+.search-field input:focus-visible { border-color: var(--color-deep-teal); outline-offset: 2px; }
+.user-list { margin: 12px 0 0; padding: 0; list-style: none; border-top: var(--line-rule); }
+.user-list[aria-busy="true"] { opacity: .6; }
+.user-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 460px); align-items: center; gap: 8px 24px; padding: 14px 4px; border-bottom: var(--line-rule); }
+.user-row-main { display: grid; gap: 2px; min-width: 0; }
+.user-row-title { overflow-wrap: anywhere; color: var(--color-ink); font-weight: 600; text-decoration: none; }
+.user-row-title:hover { color: var(--color-deep-teal); text-decoration: underline; text-underline-offset: 4px; }
+.user-row-sub { color: var(--color-ink-soft); font-size: var(--text-caption); }
+.user-row-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; font-size: var(--text-caption); }
+.user-row-meta dt { color: var(--color-ink-soft); }
+.user-row-meta dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.user-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.badge-danger { background: color-mix(in srgb, var(--color-error) 12%, var(--color-paper)); color: var(--color-error); }
+.pager { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 20px; color: var(--color-ink-soft); font-size: var(--text-label); }
+
+.user-heading .user-email { overflow-wrap: anywhere; }
+.user-heading .user-badges { margin-bottom: 8px; }
+.user-section { display: grid; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: var(--line-rule); }
+.user-section h2 { font-size: var(--text-title-sm); }
+.user-section > .text-button, .user-section > .field-help { justify-self: start; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 24px; margin: 0; }
+.facts dt { color: var(--color-ink-soft); font-size: var(--text-caption); }
+.facts dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.facts .text-link { display: inline-flex; align-items: center; gap: 4px; }
+.plain-list { margin: 0; padding: 0; list-style: none; border-top: var(--line-rule); }
+.plain-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 4px; border-bottom: var(--line-rule); }
+.plain-row-main { display: grid; flex: 1 1 260px; gap: 2px; min-width: 0; }
+.plain-row-sub { color: var(--color-ink-soft); font-size: var(--text-caption); }
+.plain-row-amount { min-width: 80px; font-variant-numeric: tabular-nums; text-align: right; }
+.timeline { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: var(--text-label); }
+.timeline time { margin-right: 6px; color: var(--color-ink-soft); font-variant-numeric: tabular-nums; }
+.timeline-by { color: var(--color-ink-soft); }
+.table-scroll { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: var(--text-label); font-variant-numeric: tabular-nums; }
+.data-table th, .data-table td { padding: 8px 16px 8px 0; border-bottom: var(--line-rule); text-align: left; white-space: nowrap; }
+.data-table thead th { color: var(--color-ink-soft); font-weight: 600; }
+.status-warning { padding: 10px 14px; border-left: 3px solid var(--color-highlight); border-radius: var(--radius-sm); background: var(--color-paper); font-size: var(--text-label); }
+.inline-action { display: grid; justify-items: start; gap: 4px; }
+.inline-action .text-button { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Ação com motivo: abre no lugar do botão, com borda Turquesa profundo (ou de Erro, quando tira ou apaga algo). */
+.reason-form { display: grid; flex-basis: 100%; gap: 12px; width: 100%; max-width: 640px; padding: 16px; border: var(--line-rule); border-left: 3px solid var(--color-deep-teal); border-radius: var(--radius-sm); background: var(--color-paper); }
+.reason-form-danger { border-left-color: var(--color-error); }
+.reason-form > p { font-size: var(--text-label); }
+.reason-form textarea, .reason-form select { min-height: 48px; padding: 10px 14px; border: 1.5px solid var(--color-ink-rule); border-radius: var(--radius-sm); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-body); font-weight: 400; }
+.reason-form textarea { resize: vertical; }
+.reason-form textarea:focus-visible, .reason-form select:focus-visible { border-color: var(--color-deep-teal); outline-offset: 2px; }
+.reason-form .field-error { margin: 0; }
+.reason-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.check-field { display: flex; align-items: flex-start; gap: 10px; font-size: var(--text-label); }
+.check-field input { flex-shrink: 0; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--color-deep-teal); }
+
 /* Telas médias: o texto e a prévia viram abas; a linha do post quebra em duas. */
 @media (max-width: 1199px) {
   .editor-tabs { display: inline-flex; }
@@ -262,6 +324,8 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
   .editor-panes-write .preview, .editor-panes-preview .markdown-editor { display: none; }
   .post-row { grid-template-columns: minmax(0, 1fr) auto 44px 44px; }
   .post-row-meta { grid-column: 1 / -1; grid-row: 2; max-width: 480px; }
+  .user-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .user-row-meta { grid-column: 1 / -1; max-width: 560px; }
 }
 
 /* Celular: a barra lateral vira faixa no topo, com as seções numa linha que rola de lado. */
@@ -292,5 +356,9 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
   .post-row-meta { grid-row: 3; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .post-row-meta > div:last-child { display: none; }
   .gallery-inner { padding: 16px; }
+  .user-row-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .plain-row-amount { min-width: 0; text-align: left; }
+  /* No celular o nome ocupa a linha; selo, valor e ação vão juntos para a de baixo, em toda linha igual. */
+  .plain-row-main { flex-basis: 100%; }
   .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 }

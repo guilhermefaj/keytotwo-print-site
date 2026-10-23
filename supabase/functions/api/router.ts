@@ -2,6 +2,7 @@ import { allowedOrigin, preflight, withCors } from '../_shared/cors.ts'
 import { errorResponse, HttpError, json, toErrorResponse } from '../_shared/http.ts'
 import { deleteAccount, exportAccount, getAccount, markPrompt, putMarketing } from './routes/account.ts'
 import { adminMetrics } from './routes/admin.ts'
+import { adminBlockUser, adminDeleteUser, adminExportUser, adminGiftProduct, adminNewsletterOff, adminResendDelivery, adminRevokeEntitlement, adminUnblockUser, adminUser, adminUsers } from './routes/users.ts'
 import { adminBlogImage, adminBlogImages, adminBlogPost, adminBlogPosts, adminCreateBlogPost, adminDeleteBlogImage, adminDeleteBlogPost, adminUpdateBlogPost, blogPublished, blogVersion } from './routes/blog.ts'
 import { addCartItem, getCart, mergeCart, quoteCart, removeCartItem } from './routes/cart.ts'
 import { catalog } from './routes/catalog.ts'
@@ -58,6 +59,16 @@ const routes: Route[] = [
   route('/admin/blog/posts', { GET: adminBlogPosts, POST: adminCreateBlogPost }),
   route('/admin/blog/posts/:id', { GET: adminBlogPost, PUT: adminUpdateBlogPost, DELETE: adminDeleteBlogPost }),
   route('/admin/blog/images', { GET: adminBlogImages, POST: adminBlogImage, DELETE: adminDeleteBlogImage }),
+  route('/admin/users', { GET: adminUsers }),
+  route('/admin/users/:id', { GET: adminUser }),
+  route('/admin/users/:id/gifts', { POST: adminGiftProduct }),
+  route('/admin/users/:id/entitlements/:entitlement/revoke', { POST: adminRevokeEntitlement }),
+  route('/admin/users/:id/orders/:order/resend', { POST: adminResendDelivery }),
+  route('/admin/users/:id/newsletter/off', { POST: adminNewsletterOff }),
+  route('/admin/users/:id/block', { POST: adminBlockUser }),
+  route('/admin/users/:id/unblock', { POST: adminUnblockUser }),
+  route('/admin/users/:id/export', { GET: adminExportUser }),
+  route('/admin/users/:id/delete', { POST: adminDeleteUser }),
   route('/blog/posts', { GET: blogPublished }),
   route('/blog/version', { GET: blogVersion }),
 ]
