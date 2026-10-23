@@ -142,6 +142,7 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `POST /admin/blog/posts` · `PUT /admin/blog/posts/{id}` | `admin_save_blog_post(uid, id, post, expected_updated_at)` | Blog (2026-10-23) |
 | `GET /admin/blog/posts/{id}` · `DELETE /admin/blog/posts/{id}` | `admin_get_blog_post(uid, id)` · `admin_delete_blog_post(uid, id)` | Blog (2026-10-23) |
 | `POST /admin/blog/images` | `admin_register_blog_image(uid, path)` → grava no bucket público do blog | Blog (2026-10-23) |
+| `GET /admin/blog/images` | `admin_blog_access(uid)` → lista o bucket público do blog | Blog, galeria (2026-10-23) |
 | `GET /blog/posts` · `GET /blog/version` | `list_published_blog_posts()` · `get_blog_version()` | Blog (2026-10-23) |
 | `POST /email/unsubscribe` | `unsubscribe(user_id, 'unsubscribe_link')` | I5 |
 | `stripe-webhook` | `fulfill_order` ou `set_order_status` (seção 9) | I3 |
@@ -170,7 +171,7 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `GET /free-games` | Pública | Gratuitos | Implementada |
 | `POST /free-download` | Sessão + aceite de e-mails registrado alguma vez | Gratuitos | Implementada |
 | `GET /admin/metrics` | Sessão de admin (`app_metadata.admin`) com segundo fator (`aal2`) | Admin | Implementada |
-| `GET` e `POST /admin/blog/posts` · `GET`, `PUT` e `DELETE /admin/blog/posts/{id}` · `POST /admin/blog/images` | Sessão de admin com segundo fator (`aal2`) | Blog | Implementada |
+| `GET` e `POST /admin/blog/posts` · `GET`, `PUT` e `DELETE /admin/blog/posts/{id}` · `GET` e `POST /admin/blog/images` | Sessão de admin com segundo fator (`aal2`) | Blog | Implementada |
 | `GET /blog/posts` · `GET /blog/version` | Pública (só o que está publicado) | Blog | Implementada |
 | `GET` e `POST /email/unsubscribe` | Token HMAC | I5 | Planejada |
 
@@ -577,10 +578,13 @@ Post (`post` nos corpos e nas respostas; `snake_case`):
 
 - **Regras** (`supabase/functions/_shared/blog-rules.ts`, as mesmas do build e do editor): título até 120; endereço `a-z0-9` com hífens, até 80; data `AAAA-MM-DD` válida; capa só em `/images/blog/...` e com descrição; até 10 temas sem repetir; texto até 100 mil caracteres. Rascunho guarda o que estiver pronto. Publicar exige resumo, autor e texto, imagens do texto em `/images/blog/...` com descrição e nenhuma marcação `PENDENTE` (a trava do build live). Falhou: `400 INVALID_REQUEST` com `details.problems` (`[{ field, message }]`, na ordem do editor) e a primeira mensagem em `message`, sem tocar no banco.
 - `GET /admin/blog/posts` → `{ version, posts, media_base }`: todos os posts sem o `body`, do editado mais recente ao mais antigo. `media_base` é a base pública do bucket das imagens (`null` sem o bucket configurado).
-- `POST /admin/blog/posts { post }` → `201 { post }`. `PUT /admin/blog/posts/{id} { post, expected_updated_at }` → `200 { post }`, só se `expected_updated_at` ainda for o do banco; senão `409 EDIT_CONFLICT` com o post atual em `details.post`. O endereço não muda depois da primeira publicação (`409 SLUG_LOCKED`), nem repete o de outro post (`409 SLUG_TAKEN`).
-- `GET /admin/blog/posts/{id}` → `{ post, media_base }`; `DELETE` → `{ "deleted": true }`. Id que não é uuid ou não existe → `404 NOT_FOUND`.
+- `POST /admin/blog/posts { post }` → `201 { post, version }`. `PUT /admin/blog/posts/{id} { post, expected_updated_at }` → `200 { post, version }`, só se `expected_updated_at` ainda for o do banco; senão `409 EDIT_CONFLICT` com o post atual em `details.post`. O endereço não muda depois da primeira publicação (`409 SLUG_LOCKED`), nem repete o de outro post (`409 SLUG_TAKEN`).
+- `GET /admin/blog/posts/{id}` → `{ post, media_base }`; `DELETE` → `{ "deleted": true, version }`. Id que não é uuid ou não existe → `404 NOT_FOUND`.
+- `version` nas respostas de salvar e excluir: a versão do blog publicado depois da mudança (a de `GET /blog/version`). O admin compara com o `/blog/versao.json` do site e avisa até o site ficar com ela.
 - `POST /admin/blog/images?name=<arquivo>`: a imagem crua no corpo (até 5 MB; WebP, PNG, JPG, GIF ou AVIF, conferidos pelo começo do arquivo). O admin já reduz para 1600 px e converte para WebP. Grava em `<ano>/<mês>/<sorteio>-<nome>.<ext>` no bucket público e responde `201 { path: "/images/blog/<chave>", url: "<media_base>/<chave>" }`. O `path` é o que vai no texto e na capa; no build, a imagem é copiada para `public/images/blog`.
+- `GET /admin/blog/images` (galeria, 2026-10-23) → `{ images: [{ path, url, size, uploaded_at }], truncated, media_base }`: o que está no bucket público do blog (ListObjectsV2 assinado com a chave do blog), da imagem mais nova à mais antiga. Só entra o que pode ir num post (`/images/blog/...` com nome no padrão e extensão de imagem). Até 5 páginas de 1000 arquivos; passou disso, `truncated: true`. O admin é conferido no banco antes (`admin_blog_access`, migração `20261023160000_blog_galeria.sql`).
 - `GET /blog/posts` (pública) → `{ version, posts, media_base }` só com os publicados, com o `body`. `GET /blog/version` (pública) → `{ version }`: md5 de id e `updated_at` dos publicados; rascunho não muda a versão.
+- A mesma versão sai pela API de dados do Supabase, `POST /rest/v1/rpc/get_blog_version` com a chave publicável: é a única RPC com EXECUTE para `anon` (migração `20261023160000_blog_galeria.sql`). O vigia da VPS confere a cada minuto por ela, sem gastar invocações das funções.
 - Admin: o mesmo de 6.12 (`aal2`, `forbidden` → `403 NOT_ADMIN`, `KT009` → `403 EMAIL_NOT_CONFIRMED`).
 
 ## 7. Tokens HMAC (entrega e descadastro)

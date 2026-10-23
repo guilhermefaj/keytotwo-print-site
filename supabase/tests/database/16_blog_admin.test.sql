@@ -157,6 +157,13 @@ select pg_temp.assert('imagem recusada não entra no histórico',
 select pg_temp.expect('imagem fora de /images/blog: KT001',
   format($q$select * from public.admin_register_blog_image(%L, '/images/blog/../segredo.webp')$q$, pg_temp.uid('adm')), 'KT001');
 
+-- ===== galeria (migração 20261023160000) ==================================================================
+select pg_temp.assert('galeria: admin recebe ok', (select outcome = 'ok' from public.admin_blog_access(pg_temp.uid('adm'))));
+select pg_temp.assert('galeria: quem não é admin recebe forbidden', (select outcome = 'forbidden' from public.admin_blog_access(pg_temp.uid('comum'))));
+select pg_temp.expect('galeria sem pessoa: KT001', $q$select * from public.admin_blog_access(null)$q$, 'KT001');
+select pg_temp.expect('galeria: admin sem e-mail confirmado: KT009',
+  format($q$select * from public.admin_blog_access(%L)$q$, pg_temp.uid('naoconf')), 'KT009');
+
 -- ===== quem não é admin ===================================================================================
 select pg_temp.assert('não admin: forbidden em listar, abrir, salvar e excluir',
   (select outcome = 'forbidden' and result is null from public.admin_list_blog_posts(pg_temp.uid('comum')))

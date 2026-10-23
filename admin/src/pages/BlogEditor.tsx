@@ -1,10 +1,12 @@
-import { IconArrowLeft, IconBlockquote, IconBold, IconExternalLink, IconHeading, IconItalic, IconLink, IconList, IconPhoto } from '@tabler/icons-react'
-import { useDeferredValue, useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
+import { IconArrowLeft, IconBlockquote, IconBold, IconExternalLink, IconHeading, IconItalic, IconLibraryPhoto, IconLink, IconList, IconPhoto } from '@tabler/icons-react'
+import { useDeferredValue, useEffect, useRef, useState, type ChangeEvent, type ClipboardEvent, type DragEvent, type ReactNode } from 'react'
 import { Link, useBlocker, useNavigate, useParams } from 'react-router'
 import { api, ApiError, apiMessage, useResource } from '../api'
 import { acceptedImages, formatDate, mediaUrl, readingMinutes, slugify, today, uploadImage, type BlogList, type BlogPost, type BlogPostInput, type BlogProblem } from '../blog'
 import { problemsOf, renderMarkdown } from '../blog-markdown'
+import { SiteStatus } from '../SiteStatus'
 import { siteUrl } from '../supabase'
+import { ImageGallery } from './ImageGallery'
 
 // Editor do blog (2026-10-23): /blog/novo cria, /blog/:id edita. Rascunho guarda o que estiver pronto; publicar confere
 // o post inteiro com as regras do build do site. O endereço sai do título até a primeira publicação e depois fica fixo.
@@ -20,7 +22,7 @@ const inputOf = (form: Form, status: Status): BlogPostInput => ({ ...form, tags:
 const sameForm = (a: Form, b: Form) => JSON.stringify(a) === JSON.stringify(b)
 
 // Logo depois de criar, o post passa direto para o editor do endereço novo, uma vez só (recarregar busca na API).
-const handoff = new Map<string, { post: BlogPost; notice: string }>()
+const handoff = new Map<string, { post: BlogPost; notice: string; site: Site | null }>()
 
 // Um editor por endereço: trocar de post (ou de /blog/novo para o post criado) monta tudo de novo.
 export function BlogEditorRoute() {
@@ -35,7 +37,7 @@ function BlogEditorPage({ id }: { id?: string }) {
     return entry
   })
   if (!id) return <NewPost />
-  if (fresh) return <Editor initial={fresh.post} mediaBase={null} notice={fresh.notice} />
+  if (fresh) return <Editor initial={fresh.post} mediaBase={null} notice={fresh.notice} site={fresh.site} />
   return <ExistingPost id={id} />
 }
 
@@ -72,8 +74,10 @@ const BackToList = () => <Link className="back-link" to="/blog"><IconArrowLeft a
 
 type Busy = null | 'save' | 'publish' | 'unpublish' | 'delete'
 type Message = { kind: 'ok' | 'error'; text: string; conflict?: BlogPost }
+// Depois de salvar algo que muda o site: a versão do blog que o site precisa ter e o aviso de quando tiver.
+type Site = { version: string; synced: string }
 
-function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice }: { initial: BlogPost | null; mediaBase: string | null; defaultAuthor?: string; notice?: string }) {
+function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice, site: initialSite = null }: { initial: BlogPost | null; mediaBase: string | null; defaultAuthor?: string; notice?: string; site?: Site | null }) {
   const navigate = useNavigate()
   const [saved, setSaved] = useState(initial)
   const [form, setForm] = useState(() => formOf(initial, defaultAuthor))
@@ -85,6 +89,7 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice }
   const [message, setMessage] = useState<Message | null>(notice ? { kind: 'ok', text: notice } : null)
   const [tab, setTab] = useState<'write' | 'preview'>('write')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [site, setSite] = useState(initialSite)
   const summary = useRef<HTMLDivElement>(null)
   const leaving = useRef(false)
 
@@ -138,21 +143,26 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice }
     setBusy(next === status ? 'save' : next === 'published' ? 'publish' : 'unpublish')
     try {
       const result = saved
-        ? await api<{ post: BlogPost }>(`/admin/blog/posts/${saved.id}`, { method: 'PUT', body: { post, expected_updated_at: saved.updated_at } })
-        : await api<{ post: BlogPost }>('/admin/blog/posts', { method: 'POST', body: { post } })
+        ? await api<{ post: BlogPost; version: string }>(`/admin/blog/posts/${saved.id}`, { method: 'PUT', body: { post, expected_updated_at: saved.updated_at } })
+        : await api<{ post: BlogPost; version: string }>('/admin/blog/posts', { method: 'POST', body: { post } })
       const text = next === 'draft'
-        ? (published ? 'O post voltou para rascunho e sai do site em poucos minutos.' : 'Rascunho salvo.')
-        : (published ? 'Alterações salvas. O site atualiza em poucos minutos.' : 'Publicado. O post entra no site em poucos minutos.')
+        ? (published ? 'O post voltou para rascunho.' : 'Rascunho salvo.')
+        : (published ? 'Alterações salvas.' : 'Publicado.')
+      // Publicar, mudar um publicado ou tirá-lo do ar muda o site: o aviso acompanha até o site ficar com a versão nova.
+      const nextSite = published || next === 'published'
+        ? { version: result.version, synced: next === 'published' ? 'O post já está no ar no site, com esta versão.' : 'O post já saiu do site.' }
+        : null
       setAttempt(null)
       if (!saved) {
         leaving.current = true
-        handoff.set(result.post.id, { post: result.post, notice: text })
+        handoff.set(result.post.id, { post: result.post, notice: text, site: nextSite })
         navigate(`/blog/${result.post.id}`, { replace: true })
         return
       }
       setSaved(result.post)
       setForm(formOf(result.post))
       setMessage({ kind: 'ok', text })
+      setSite(nextSite)
     } catch (error) {
       if (error instanceof ApiError && error.code === 'INVALID_REQUEST' && Array.isArray(error.details?.problems)) {
         setServerProblems(error.details.problems as BlogProblem[])
@@ -172,7 +182,7 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice }
     try {
       await api(`/admin/blog/posts/${saved.id}`, { method: 'DELETE' })
       leaving.current = true
-      navigate('/blog', { state: { notice: published ? `“${saved.title}” foi excluído e sai do site em poucos minutos.` : `“${saved.title}” foi excluído.` } })
+      navigate('/blog', { state: { notice: published ? `“${saved.title}” foi excluído e sai do site em 1 ou 2 minutos.` : `“${saved.title}” foi excluído.` } })
     } catch (error) {
       setMessage({ kind: 'error', text: apiMessage(error) })
       setBusy(null)
@@ -210,6 +220,7 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice }
       <p>{message.text}</p>
       {message.conflict && <button className="button button-secondary" type="button" onClick={() => { setSaved(message.conflict!); setForm(formOf(message.conflict!)); setMessage(null) }}>Carregar a versão salva (descarta o que mudou aqui)</button>}
     </div>}
+    {site && <SiteStatus version={site.version} synced={site.synced} />}
     {problems.length > 0 && <div className="error-summary" ref={summary} tabIndex={-1} role="alert" aria-labelledby="erros-titulo">
       <h2 id="erros-titulo">Antes de {verb}, corrija:</h2>
       <ul>{problems.map(item => <li key={item.field}><a href={`#campo-${item.field === 'cover' ? 'capa' : item.field}`}>{item.message}</a></li>)}</ul>
@@ -316,6 +327,7 @@ type AltField = { id: string; value: string; onChange: (event: ChangeEvent<HTMLI
 
 function Cover({ form, mediaBase, problem, altProblem, onChange, altField }: { form: Form; mediaBase: string | null; problem?: string; altProblem?: string; onChange: (cover: string | null, alt?: string) => void; altField: AltField }) {
   const [state, setState] = useState<{ busy: boolean; error?: string }>({ busy: false })
+  const [gallery, setGallery] = useState(false)
   async function pick(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     event.target.value = ''
@@ -338,9 +350,11 @@ function Cover({ form, mediaBase, problem, altProblem, onChange, altField }: { f
           <IconPhoto aria-hidden="true" size={18} stroke={1.75} />{state.busy ? 'Enviando…' : form.cover ? 'Trocar capa' : 'Enviar capa'}
           <input id="campo-capa" className="sr-only" type="file" accept={acceptedImages} disabled={state.busy} onChange={event => void pick(event)} />
         </label>
+        <button className="button button-secondary" type="button" disabled={state.busy} onClick={() => setGallery(true)}><IconLibraryPhoto aria-hidden="true" size={18} stroke={1.75} />Escolher da galeria</button>
         {form.cover && <button className="text-button" type="button" onClick={() => onChange(null, '')}>Remover capa</button>}
       </div>
     </div>
+    {gallery && <ImageGallery purpose="cover" onPick={image => onChange(image.path)} onClose={() => setGallery(false)} />}
     <p className="field-help" role="status">{state.error ?? (state.busy ? 'Reduzindo e enviando a imagem…' : 'Ela é reduzida e convertida para WebP antes de subir.')}</p>
     {problem && <p className="field-error">{problem}</p>}
     {form.cover && <div className="field">
@@ -366,7 +380,9 @@ const tools: Tool[] = [
 // Markdown com uma barra de atalhos. As inserções passam pelo histórico do campo (Ctrl+Z desfaz).
 function MarkdownEditor({ value, onChange, problem }: { value: string; onChange: (value: string) => void; problem?: string }) {
   const area = useRef<HTMLTextAreaElement>(null)
-  const [upload, setUpload] = useState<{ busy: boolean; error?: string }>({ busy: false })
+  const [upload, setUpload] = useState<{ busy: boolean; text?: string; error?: string }>({ busy: false })
+  const [gallery, setGallery] = useState(false)
+  const [dropping, setDropping] = useState(false)
 
   function insert(text: string, select?: [number, number]) {
     const element = area.current!
@@ -391,38 +407,86 @@ function MarkdownEditor({ value, onChange, problem }: { value: string; onChange:
     const text = lines.map(line => `${mark}${line.replace(/^(#{1,6} |> |- )/, '')}`).join('\n')
     insert(text, lines.length === 1 ? [mark.length, text.length] : undefined)
   }
-  async function image(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
-    setUpload({ busy: true })
-    try {
-      const { path } = await uploadImage(file)
-      setUpload({ busy: false })
-      const alt = 'Descreva a imagem'
-      insert(`\n\n![${alt}](${path})\n\n`, [4, 4 + alt.length])
-    } catch (error) {
-      setUpload({ busy: false, error: apiMessage(error) })
+  // Imagens no texto: pelo botão, arrastadas ou coladas, cada uma reduzida e enviada ao bucket; da galeria, já estão lá.
+  // Entram onde está o cursor. Com uma só, a descrição fica selecionada para escrever por cima.
+  function insertImage(path: string, selectAlt: boolean) {
+    const alt = 'Descreva a imagem'
+    insert(`\n\n![${alt}](${path})\n\n`, selectAlt ? [4, 4 + alt.length] : undefined)
+  }
+  async function addImages(files: File[]) {
+    if (upload.busy) return
+    const images = files.filter(file => file.type.startsWith('image/'))
+    if (!images.length) {
+      setUpload({ busy: false, error: 'Só imagens entram no texto: PNG, JPG, WebP, AVIF ou GIF.' })
+      return
     }
+    for (const [index, file] of images.entries()) {
+      setUpload({ busy: true, text: images.length > 1 ? `Reduzindo e enviando a imagem ${index + 1} de ${images.length}…` : 'Reduzindo e enviando a imagem…' })
+      try {
+        const { path } = await uploadImage(file)
+        insertImage(path, images.length === 1)
+      } catch (error) {
+        setUpload({ busy: false, error: images.length > 1 ? `${file.name}: ${apiMessage(error)}` : apiMessage(error) })
+        return
+      }
+    }
+    setUpload({ busy: false, text: images.length > 1 ? `${images.length} imagens no texto. Escreva a descrição de cada uma entre os colchetes.` : undefined })
+  }
+  function pickFiles(event: ChangeEvent<HTMLInputElement>) {
+    const files = [...(event.target.files ?? [])]
+    event.target.value = ''
+    if (files.length) void addImages(files)
+  }
+  // Colar: só a imagem pura (print, "copiar imagem"). Texto copiado com imagem junto (Word, páginas) cola como texto.
+  function paste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    const files = [...event.clipboardData.files]
+    if (!files.some(file => file.type.startsWith('image/')) || event.clipboardData.getData('text/plain')) return
+    event.preventDefault()
+    void addImages(files)
+  }
+  // Arrastar: o editor inteiro recebe (soltar fora abriria o arquivo no lugar do admin); a imagem entra onde o ponteiro
+  // está, quando o navegador sabe dizer a posição no texto.
+  const hasFiles = (event: DragEvent) => event.dataTransfer.types.includes('Files')
+  function dragOver(event: DragEvent<HTMLDivElement>) {
+    if (!hasFiles(event)) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+    setDropping(true)
+  }
+  function drop(event: DragEvent<HTMLDivElement>) {
+    if (!hasFiles(event)) return
+    event.preventDefault()
+    setDropping(false)
+    const element = area.current!
+    const caret = document.caretPositionFromPoint?.(event.clientX, event.clientY)
+    element.focus()
+    if (caret?.offsetNode === element) element.setSelectionRange(caret.offset, caret.offset)
+    void addImages([...event.dataTransfer.files])
   }
 
   function run(tool: Tool) {
     if (tool.kind === 'wrap') wrap(tool.before, tool.after, tool.placeholder)
     else prefix(tool.mark, tool.placeholder)
   }
-  return <div className="markdown-editor">
+  return <div className={`markdown-editor${dropping ? ' is-dropping' : ''}`} onDragOver={dragOver} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropping(false) }} onDrop={drop}>
     <div className="markdown-toolbar" role="toolbar" aria-label="Formatação" aria-controls="campo-body">
       {tools.map(tool => <button key={tool.label} type="button" className="tool" title={tool.label} aria-label={tool.label} onClick={() => run(tool)}>{tool.icon}</button>)}
+      <button type="button" className="tool tool-text" title="Galeria" disabled={upload.busy} onClick={() => setGallery(true)}>
+        <IconLibraryPhoto size={18} stroke={1.75} aria-hidden="true" /><span>Galeria</span>
+      </button>
       <label className="tool tool-text" title="Imagem">
         <IconPhoto size={18} stroke={1.75} aria-hidden="true" /><span>{upload.busy ? 'Enviando…' : 'Imagem'}</span>
-        <input className="sr-only" type="file" accept={acceptedImages} disabled={upload.busy} onChange={event => void image(event)} aria-label="Inserir imagem no texto" />
+        <input className="sr-only" type="file" accept={acceptedImages} multiple disabled={upload.busy} onChange={pickFiles} aria-label="Enviar imagens para o texto" />
       </label>
     </div>
+    {gallery && <ImageGallery purpose="body" onPick={image => insertImage(image.path, true)} onClose={() => setGallery(false)} />}
     <label className="sr-only" htmlFor="campo-body">Texto em Markdown</label>
-    <textarea ref={area} id="campo-body" className="markdown-input" value={value} onChange={event => onChange(event.target.value)} spellCheck
+    <textarea ref={area} id="campo-body" className="markdown-input" value={value} onChange={event => onChange(event.target.value)} onPaste={paste} spellCheck
       aria-invalid={problem ? true : undefined} aria-describedby={['ajuda-body', problem && 'erro-body'].filter(Boolean).join(' ')}
       placeholder={'Escreva em Markdown.\n\n## Um subtítulo\n\nUm parágrafo com **negrito** e um [link](https://keytotwo.com.br).'} />
-    <p className="field-help" id="ajuda-body" role="status">{upload.error ?? (upload.busy ? 'Reduzindo e enviando a imagem…' : 'Subtítulos começam em ##. HTML não funciona aqui, como no site.')}</p>
+    <p className={`field-help${upload.error ? ' field-help-error' : ''}`} id="ajuda-body" role="status">{upload.error ?? upload.text ?? (dropping
+      ? 'Solte para enviar a imagem ao bucket e pôr no texto.'
+      : 'Subtítulos começam em ##. Imagens: arraste, cole (Ctrl+V) ou use Imagem e Galeria. HTML não funciona aqui, como no site.')}</p>
     {problem && <p className="field-error" id="erro-body">{problem}</p>}
   </div>
 }

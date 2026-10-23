@@ -1,10 +1,12 @@
 #!/bin/sh
 # Blog (2026-10-23): publicar no admin muda a versão do blog no banco. Este vigia roda no cron do usuário deploy a cada
-# 2 minutos e, quando a versão no ar de um site (teste ou produção) difere da do banco, reconstrói esse site no MESMO
+# minuto e, quando a versão no ar de um site (produção, depois teste) difere da do banco, reconstrói esse site no MESMO
 # commit que já está no ar: só o conteúdo do blog muda. O atualizar.sh espera a vez (flock), sem brigar com um deploy.
+# A versão vem da API de dados do Supabase (get_blog_version, liberada para a chave publicável), mais leve que chamar a
+# função a cada minuto. Uma conferência por minuto basta (responsável, 2026-10-23: sem pressa à custa de processamento).
 # Fica em /opt/keytotwo-site/blog/vigiar.sh (o deploy da produção copia a versão do repositório) e só escreve no log
 # quando reconstrói ou falha. Uma versão que já falhou num site não é tentada de novo até o banco mudar.
-# Cron: */2 * * * * sh /opt/keytotwo-site/blog/vigiar.sh >> /opt/keytotwo-site/blog/vigia.log 2>&1
+# Cron: * * * * * sh /opt/keytotwo-site/blog/vigiar.sh >> /opt/keytotwo-site/blog/vigia.log 2>&1
 set -eu
 
 main() {
@@ -16,8 +18,8 @@ main() {
   set -a
   . "$base/producao/build.env"
   set +a
-  want=$(curl -fsS --max-time 20 -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_URL/functions/v1/api/blog/version" \
-    | sed -n 's/.*"version":"\([0-9a-f]\{32\}\)".*/\1/p')
+  want=$(curl -fsS --max-time 20 -X POST -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H 'Content-Type: application/json' \
+    -d '{}' "$VITE_SUPABASE_URL/rest/v1/rpc/get_blog_version" | sed -n 's/^"\([0-9a-f]\{32\}\)"$/\1/p')
   if [ -z "$want" ]; then echo "$(date -Is) a API não respondeu a versão do blog" >&2; return 1; fi
 
   for site in producao teste; do
@@ -34,6 +36,7 @@ main() {
     echo "$(date -Is) $site: blog ${live:-sem versão} → $want; reconstruindo o commit $commit"
     if sh "$base/repo/deploy/$site/atualizar.sh" "$commit"; then
       rm -f "$base/blog/$site.falhou"
+      echo "$(date -Is) $site: blog no ar"
     else
       echo "$want" > "$base/blog/$site.falhou"
       echo "$(date -Is) $site: a reconstrução falhou; o site continua com o blog anterior" >&2

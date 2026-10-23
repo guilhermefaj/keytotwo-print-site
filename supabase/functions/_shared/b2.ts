@@ -109,6 +109,35 @@ export async function presignUrl(config: B2Config, options: PresignOptions): Pro
   }
 }
 
+export interface StoredObject {
+  key: string
+  size: number
+  lastModified: string
+}
+
+const entities: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }
+const xmlText = (xml: string, tag: string) =>
+  (xml.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`))?.[1] ?? '').replace(/&(amp|lt|gt|quot|apos);/g, (_, name) => entities[name])
+
+// Lista o bucket (ListObjectsV2, 1000 por página) pelo endereço pré-assinado. Para em `maxPages` páginas e avisa.
+export async function listObjects(config: B2Config, maxPages = 5): Promise<{ objects: StoredObject[]; truncated: boolean }> {
+  const objects: StoredObject[] = []
+  let token = ''
+  for (let page = 0; page < maxPages; page++) {
+    const query: Record<string, string> = { 'list-type': '2', 'max-keys': '1000', ...(token ? { 'continuation-token': token } : {}) }
+    const { url } = await presignUrl(config, { method: 'GET', key: '', expiresIn: 60, query })
+    const response = await fetch(url, { signal: AbortSignal.timeout(20_000) })
+    const xml = await response.text()
+    if (!response.ok) throw new Error(`B2 LIST falhou (HTTP ${response.status})`)
+    for (const [, item] of xml.matchAll(/<Contents>([\s\S]*?)<\/Contents>/g)) {
+      objects.push({ key: xmlText(item, 'Key'), size: Number(xmlText(item, 'Size')), lastModified: xmlText(item, 'LastModified') })
+    }
+    token = /<IsTruncated>true<\/IsTruncated>/.test(xml) ? xmlText(xml, 'NextContinuationToken') : ''
+    if (!token) return { objects, truncated: false }
+  }
+  return { objects, truncated: true }
+}
+
 // Grava um objeto pelo endereço pré-assinado (PUT de 60 s). O Content-Type vai junto, fora da assinatura.
 export async function putObject(config: B2Config, key: string, body: Uint8Array, contentType: string): Promise<void> {
   const { url } = await presignUrl(config, { method: 'PUT', key, expiresIn: 60 })

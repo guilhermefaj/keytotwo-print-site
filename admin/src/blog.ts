@@ -16,6 +16,14 @@ export interface BlogPost extends BlogPostInput {
 export type BlogPostSummary = Omit<BlogPost, 'body'>
 export interface BlogList { version: string; posts: BlogPostSummary[]; media_base: string | null }
 
+// Uma imagem do bucket do blog, como a galeria lista (GET /admin/blog/images).
+export interface BlogImage { path: string; url: string; size: number; uploaded_at: string }
+export interface BlogImages { images: BlogImage[]; truncated: boolean; media_base: string }
+
+// "/images/blog/2026/10/ab12cd34-mesa-de-jogo.webp" vira "mesa-de-jogo.webp" (sem a pasta e sem o sorteio do envio).
+export const imageName = (path: string) => path.split('/').pop()!.replace(/^[0-9a-f]{8}-/, '')
+export const formatSize = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`)
+
 // Endereço de uma imagem do blog (/images/blog/<chave>) no bucket público, para a prévia e a capa.
 export function mediaUrl(path: string, mediaBase: string | null): string {
   return mediaBase && path.startsWith('/images/blog/') ? `${mediaBase}/${path.slice('/images/blog/'.length)}` : path

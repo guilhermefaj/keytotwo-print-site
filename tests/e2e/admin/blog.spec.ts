@@ -3,8 +3,9 @@ import AxeBuilder from '@axe-core/playwright'
 import { existsSync, readFileSync } from 'node:fs'
 import { authStorageKey, session } from './session'
 
-// Blog no admin (2026-10-23): lista, criar, editar, publicar, imagens, conflito e excluir. A API do blog é simulada em
-// memória (mesmos códigos e formatos de docs/api-contract.md); o bucket e o /blog/versao.json do site também.
+// Blog no admin (2026-10-23): lista, criar, editar, publicar, imagens (botão, galeria do bucket, arrastar e colar),
+// conflito e excluir (no editor e na lista). A API do blog é simulada em memória (mesmos códigos e formatos de
+// docs/api-contract.md); o bucket e o /blog/versao.json do site também.
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 test.skip(() => !existsSync('admin/dist/index.html'), 'Requires `npm run build:admin`')
 
@@ -17,17 +18,25 @@ function post(id: string, extra: Partial<Post> = {}): Post {
     tags: ['Jogos'], body: '## Começo\n\nTexto do post.', status: 'draft', published_at: null, created_at: '2026-10-20T12:00:00.000001+00:00', updated_at: '2026-10-20T12:00:00.000001+00:00', ...extra }
 }
 
-interface Options { posts?: Post[]; liveVersion?: string | null; conflict?: boolean }
+type Image = { path: string; url: string; size: number; uploaded_at: string }
+const image = (key: string, uploaded_at: string, size = 48_000): Image => ({ path: `/images/blog/${key}`, url: `${MEDIA}/${key}`, size, uploaded_at })
+// liveVersion 'follow': o site fica logo com a versão do banco (como se o vigia já tivesse reconstruído).
+interface Options { posts?: Post[]; liveVersion?: string | null; conflict?: boolean; images?: Image[] }
 
-// API simulada: guarda os posts, devolve 409 quando a versão aberta não é a atual e registra cada chamada.
-async function blogApi(page: Page, { posts = [], liveVersion = VERSION, conflict = false }: Options = {}) {
+// API simulada: guarda os posts, devolve 409 quando a versão aberta não é a atual e registra cada chamada. A versão do
+// blog muda quando um publicado muda, como no banco.
+async function blogApi(page: Page, { posts = [], liveVersion = VERSION, conflict = false, images = [] }: Options = {}) {
   const store = new Map(posts.map(item => [item.id, structuredClone(item)]))
   const calls: { method: string; path: string; body: unknown; type?: string }[] = []
   let clock = 0
+  let version = VERSION
+  let generation = 0
+  let uploads = 0
   const stamp = () => `2026-10-23T12:00:${String(++clock).padStart(2, '0')}.123456+00:00`
+  const bump = () => { version = String(++generation).padStart(32, 'c') }
   await page.addInitScript(([key, value]) => localStorage.setItem(key, JSON.stringify(value)), [authStorageKey, session('aal2')] as const)
   await page.route('**/auth/v1/**', route => route.fulfill({ json: session('aal2').user }))
-  await page.route('**/blog/versao.json', route => (liveVersion ? route.fulfill({ json: { version: liveVersion } }) : route.fulfill({ status: 404, body: '' })))
+  await page.route('**/blog/versao.json', route => (liveVersion ? route.fulfill({ json: { version: liveVersion === 'follow' ? version : liveVersion } }) : route.fulfill({ status: 404, body: '' })))
   await page.route(`${MEDIA}/**`, route => route.fulfill({ contentType: 'image/png', body: readFileSync('public/media/icons/kito-192.png') }))
   await page.route('**/functions/v1/api/admin/blog/**', async route => {
     const request = route.request()
@@ -38,20 +47,27 @@ async function blogApi(page: Page, { posts = [], liveVersion = VERSION, conflict
     calls.push({ method, path: `${path}${url.search}`, body, type: request.headers()['content-type'] })
     const id = path.split('/')[4]
     if (path === '/admin/blog/posts' && method === 'GET') {
-      return route.fulfill({ json: { version: VERSION, media_base: MEDIA, posts: [...store.values()].map(item => Object.fromEntries(Object.entries(item).filter(([key]) => key !== 'body'))) } })
+      return route.fulfill({ json: { version, media_base: MEDIA, posts: [...store.values()].map(item => Object.fromEntries(Object.entries(item).filter(([key]) => key !== 'body'))) } })
     }
     if (path === '/admin/blog/posts' && method === 'POST') {
       const created = { ...body.post, id: `novo${store.size + 1}`, published_at: body.post.status === 'published' ? stamp() : null, created_at: stamp(), updated_at: stamp() }
       store.set(created.id, created)
-      return route.fulfill({ status: 201, json: { post: created } })
+      if (created.status === 'published') bump()
+      return route.fulfill({ status: 201, json: { post: created, version } })
     }
+    if (path === '/admin/blog/images' && method === 'GET') return route.fulfill({ json: { images, truncated: false, media_base: MEDIA } })
     if (path === '/admin/blog/images') {
-      return route.fulfill({ status: 201, json: { path: '/images/blog/2026/10/ab12cd34-mesa.webp', url: `${MEDIA}/2026/10/ab12cd34-mesa.webp` } })
+      const key = `2026/10/ab12cd3${3 + ++uploads}-mesa.webp`
+      return route.fulfill({ status: 201, json: { path: `/images/blog/${key}`, url: `${MEDIA}/${key}` } })
     }
     const current = store.get(id)
     if (!current) return route.fulfill({ status: 404, json: { error: { code: 'NOT_FOUND', message: 'Post não encontrado.' } } })
     if (method === 'GET') return route.fulfill({ json: { post: current, media_base: MEDIA } })
-    if (method === 'DELETE') { store.delete(id); return route.fulfill({ json: { deleted: true } }) }
+    if (method === 'DELETE') {
+      store.delete(id)
+      if (current.status === 'published') bump()
+      return route.fulfill({ json: { deleted: true, version } })
+    }
     if (conflict || body.expected_updated_at !== current.updated_at) {
       const saved = { ...current, title: 'Salvo em outra aba', updated_at: stamp() }
       store.set(id, saved)
@@ -59,7 +75,8 @@ async function blogApi(page: Page, { posts = [], liveVersion = VERSION, conflict
     }
     const updated = { ...current, ...body.post, published_at: current.published_at ?? (body.post.status === 'published' ? stamp() : null), updated_at: stamp() }
     store.set(id, updated)
-    return route.fulfill({ json: { post: updated } })
+    if (current.status === 'published' || updated.status === 'published') bump()
+    return route.fulfill({ json: { post: updated, version } })
   })
   return { calls, store }
 }
@@ -135,7 +152,9 @@ test('novo post: endereço sai do título, prévia ao lado, publicar incompleto 
   await page.getByLabel('Autor').fill('Ana Souza')
   await page.getByLabel('Temas').fill('Jogos, Casal')
   await page.getByRole('button', { name: 'Publicar' }).click()
-  await expect(page.getByRole('status').filter({ hasText: 'Publicado. O post entra no site em poucos minutos.' })).toBeVisible()
+  await expect(page.locator('.notice')).toHaveText('Publicado.')
+  // O site ainda está com a versão anterior: o aviso acompanha até ele atualizar.
+  await expect(page.getByRole('status').filter({ hasText: 'Atualizando o site' })).toBeVisible()
   const put = calls.find(call => call.method === 'PUT')!
   expect(put.path).toBe('/admin/blog/posts/novo2')
   expect(put.body).toMatchObject({ expected_updated_at: expect.stringMatching(/^2026-10-23T12:00:\d{2}\.123456\+00:00$/), post: { status: 'published', author: 'Ana Souza', tags: ['Jogos', 'Casal'] } })
@@ -147,11 +166,11 @@ test('novo post: endereço sai do título, prévia ao lado, publicar incompleto 
 
 test('imagens: a do texto vai reduzida em WebP e entra no Markdown; a capa pede descrição para publicar', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  const { calls } = await blogApi(page, { posts: [post('a')] })
+  const { calls } = await blogApi(page, { posts: [post('a')], liveVersion: 'follow' })
   await page.goto('/blog/a')
   await expect(page.getByLabel('Título', { exact: true })).toHaveValue('Post a')
   await page.getByLabel('Texto em Markdown').press('End')
-  await page.getByLabel('Inserir imagem no texto').setInputFiles('public/media/icons/kito-192.png')
+  await page.getByLabel('Enviar imagens para o texto').setInputFiles('public/media/icons/kito-192.png')
   await expect(page.getByLabel('Texto em Markdown')).toHaveValue(/!\[Descreva a imagem\]\(\/images\/blog\/2026\/10\/ab12cd34-mesa\.webp\)/)
   const upload = calls.find(call => call.path.startsWith('/admin/blog/images'))!
   expect([upload.path, upload.type]).toEqual(['/admin/blog/images?name=kito-192.png', 'image/webp'])
@@ -161,14 +180,136 @@ test('imagens: a do texto vai reduzida em WebP e entra no Markdown; a capa pede 
   await expect(page.getByRole('region', { name: 'Prévia do post' }).locator('.blog-prose img')).toHaveAttribute('src', `${MEDIA}/2026/10/ab12cd34-mesa.webp`)
 
   await page.locator('#campo-capa').setInputFiles('public/media/icons/kito-192.png')
-  await expect(page.locator('.cover-thumb')).toHaveAttribute('src', `${MEDIA}/2026/10/ab12cd34-mesa.webp`)
+  await expect(page.locator('.cover-thumb')).toHaveAttribute('src', `${MEDIA}/2026/10/ab12cd35-mesa.webp`)
   await page.getByRole('button', { name: 'Publicar' }).click()
   await expect(page.getByRole('alert').getByRole('link', { name: 'Descreva a capa para quem não vê a imagem.' })).toBeVisible()
   await page.getByLabel('Descrição da capa').fill('Mesa com o jogo aberto')
   await page.getByRole('button', { name: 'Publicar' }).click()
-  await expect(page.getByRole('status').filter({ hasText: 'Publicado.' })).toBeVisible()
-  expect(calls.find(call => call.method === 'PUT')!.body).toMatchObject({ post: { cover: '/images/blog/2026/10/ab12cd34-mesa.webp', cover_alt: 'Mesa com o jogo aberto' } })
+  await expect(page.locator('.notice')).toHaveText('Publicado.')
+  // O site já está com a versão nova (vigia simulado): o aviso confirma.
+  await expect(page.getByRole('status').filter({ hasText: 'O post já está no ar no site, com esta versão.' })).toBeVisible()
+  expect(calls.find(call => call.method === 'PUT')!.body).toMatchObject({ post: { cover: '/images/blog/2026/10/ab12cd35-mesa.webp', cover_alt: 'Mesa com o jogo aberto' } })
   await axe(page)
+})
+
+test('galeria: as imagens do bucket entram no texto e na capa, sem enviar de novo; procura pelo nome e Esc fecha', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const images = [image('2026/10/aa11bb22-mesa-de-jogo.webp', '2026-10-23T16:00:00.000Z', 31_858), image('2026/10/cc33dd44-kito.webp', '2026-10-22T10:00:00.000Z', 1_500_000), image('2026/09/ee55ff66-capa-antiga.png', '2026-09-30T09:00:00.000Z')]
+  const { calls } = await blogApi(page, { posts: [post('a')], images })
+  await page.goto('/blog/a')
+  await page.getByLabel('Texto em Markdown').press('End')
+  await page.getByRole('toolbar', { name: 'Formatação' }).getByRole('button', { name: 'Galeria' }).click()
+  const gallery = page.getByRole('dialog', { name: 'Galeria de imagens' })
+  await expect(gallery).toBeVisible()
+  await expect(gallery.getByRole('status')).toHaveText('3 imagens')
+  await expect(gallery.locator('.gallery-name')).toHaveText(['mesa-de-jogo.webp', 'kito.webp', 'capa-antiga.png'])
+  await expect(gallery.locator('.gallery-meta').nth(1)).toContainText('1,4 MB')
+  await expect(gallery.getByLabel('Procurar pelo nome do arquivo')).toBeFocused()
+  await axe(page)
+  await gallery.getByLabel('Procurar pelo nome do arquivo').fill('mesa')
+  await expect(gallery.getByRole('status')).toHaveText('1 de 3')
+  await gallery.getByRole('button', { name: /mesa-de-jogo\.webp/ }).click()
+  await expect(gallery).toBeHidden()
+  await expect(page.getByLabel('Texto em Markdown')).toHaveValue(/!\[Descreva a imagem\]\(\/images\/blog\/2026\/10\/aa11bb22-mesa-de-jogo\.webp\)/)
+  await page.keyboard.type('Mesa de jogo')
+  await expect(page.getByLabel('Texto em Markdown')).toHaveValue(/!\[Mesa de jogo\]\(\/images\/blog\/2026\/10\/aa11bb22-mesa-de-jogo\.webp\)/)
+
+  const choose = page.getByRole('button', { name: 'Escolher da galeria' })
+  await choose.click()
+  const cover = page.getByRole('dialog', { name: 'Escolher a capa' })
+  await cover.getByRole('button', { name: /kito\.webp/ }).click()
+  await expect(cover).toBeHidden()
+  await expect(page.locator('.cover-thumb')).toHaveAttribute('src', `${MEDIA}/2026/10/cc33dd44-kito.webp`)
+  await expect(page.getByLabel('Descrição da capa')).toBeVisible()
+
+  await choose.click()
+  await expect(cover).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(cover).toBeHidden()
+  await expect(choose).toBeFocused()
+  // Escolher da galeria não envia nada: só lista o bucket.
+  expect(calls.filter(call => call.path.startsWith('/admin/blog/images')).map(call => call.method)).toEqual(['GET', 'GET', 'GET'])
+})
+
+test('arrastar e colar: as imagens vão para o bucket e entram no texto; texto colado segue como texto', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const { calls } = await blogApi(page, { posts: [post('a', { body: 'Antes.' })] })
+  await page.goto('/blog/a')
+  const text = page.getByLabel('Texto em Markdown')
+  await text.press('End')
+  // Um PNG de verdade, feito no navegador, num DataTransfer como o do sistema.
+  const transfer = (count: number) => page.evaluateHandle(async count => {
+    const canvas = Object.assign(document.createElement('canvas'), { width: 40, height: 30 })
+    canvas.getContext('2d')!.fillRect(0, 0, 40, 30)
+    const blob = await new Promise<Blob>(resolve => canvas.toBlob(png => resolve(png!), 'image/png'))
+    const data = new DataTransfer()
+    for (let index = 0; index < count; index++) data.items.add(new File([blob], `foto-${index + 1}.png`, { type: 'image/png' }))
+    return data
+  }, count)
+
+  const pasted = await transfer(1)
+  await text.evaluate((element, clipboardData) => element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true })), pasted)
+  await expect(text).toHaveValue(/^Antes\.\n\n!\[Descreva a imagem\]\(\/images\/blog\/2026\/10\/ab12cd34-mesa\.webp\)\n\n$/)
+  expect(calls.filter(call => call.method === 'POST').map(call => [call.path, call.type])).toEqual([['/admin/blog/images?name=foto-1.png', 'image/webp']])
+
+  const dropped = await transfer(2)
+  const box = (await text.boundingBox())!
+  await text.evaluate((element, [dataTransfer, x, y]) => {
+    element.dispatchEvent(new DragEvent('dragover', { dataTransfer, bubbles: true, cancelable: true, clientX: x, clientY: y }))
+    element.dispatchEvent(new DragEvent('drop', { dataTransfer, bubbles: true, cancelable: true, clientX: x, clientY: y }))
+  }, [dropped, box.x + box.width / 2, box.y + box.height - 20] as const)
+  await expect(page.getByRole('status').filter({ hasText: '2 imagens no texto. Escreva a descrição de cada uma entre os colchetes.' })).toBeVisible()
+  await expect(text).toHaveValue(/ab12cd35-mesa\.webp\)\n\n\n\n!\[Descreva a imagem\]\(\/images\/blog\/2026\/10\/ab12cd36-mesa\.webp\)/)
+  expect(calls.filter(call => call.method === 'POST')).toHaveLength(3)
+
+  // Texto com imagem junto (Word, páginas): cola o texto, sem enviar nada.
+  await text.evaluate(element => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData('text/plain', 'Um parágrafo copiado.')
+    clipboardData.items.add(new File(['x'], 'figura.png', { type: 'image/png' }))
+    element.dispatchEvent(new ClipboardEvent('paste', { clipboardData, bubbles: true, cancelable: true }))
+  })
+  expect(calls.filter(call => call.method === 'POST')).toHaveLength(3)
+
+  // Arquivo que não é imagem: avisa e não envia.
+  await text.evaluate(element => {
+    const dataTransfer = new DataTransfer()
+    dataTransfer.items.add(new File(['%PDF'], 'regras.pdf', { type: 'application/pdf' }))
+    element.dispatchEvent(new DragEvent('drop', { dataTransfer, bubbles: true, cancelable: true }))
+  })
+  await expect(page.locator('#ajuda-body')).toHaveText('Só imagens entram no texto: PNG, JPG, WebP, AVIF ou GIF.')
+  expect(calls.filter(call => call.method === 'POST')).toHaveLength(3)
+})
+
+test('excluir na lista: confirma na própria linha, o post some na hora e o aviso acompanha o site', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const { calls } = await blogApi(page, { posts: [post('a', { status: 'published', published_at: '2026-10-21T10:00:00Z', title: 'Publicado A' }), post('b', { title: 'Rascunho B' })] })
+  await page.goto('/blog')
+  const list = page.getByRole('list', { name: 'Posts' })
+  const remove = list.getByRole('button', { name: 'Excluir “Publicado A”' })
+  await remove.click()
+  const confirm = list.getByRole('group', { name: 'Confirmar a exclusão de “Publicado A”' })
+  await expect(confirm).toContainText('Ele sai do admin e do site. Não dá para desfazer.')
+  await expect(confirm.getByRole('button', { name: 'Cancelar' })).toBeFocused()
+  await axe(page)
+  await confirm.getByRole('button', { name: 'Cancelar' }).click()
+  await expect(confirm).toBeHidden()
+  await expect(remove).toBeFocused()
+  expect(calls.filter(call => call.method === 'DELETE')).toEqual([])
+
+  await remove.click()
+  await confirm.getByRole('button', { name: 'Excluir de vez' }).click()
+  await expect(list.locator('.post-row-title')).toHaveText(['Rascunho B'])
+  const notice = page.locator('.notice')
+  await expect(notice).toHaveText('“Publicado A” foi excluído e sai do site em 1 ou 2 minutos.')
+  await expect(notice).toBeFocused()
+  await expect(page.getByRole('status').filter({ hasText: 'Atualizando o site' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Todos/ })).toContainText('1')
+  expect(calls.filter(call => call.method === 'DELETE').map(call => call.path)).toEqual(['/admin/blog/posts/a'])
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 800 })
+    expect(await noSideScroll(page)).toBe(true)
+  }
 })
 
 test('conflito: outra aba salvou antes; dá para carregar a versão salva', async ({ page }) => {
