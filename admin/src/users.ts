@@ -1,6 +1,6 @@
 // Usuários no admin (2026-10-23, Fase 4): os formatos de /admin/users e /admin/users/:id e os nomes que a tela mostra.
 
-export type UserFilter = 'all' | 'buyers' | 'newsletter' | 'blocked'
+export type UserFilter = 'all' | 'buyers' | 'newsletter' | 'blocked' | 'admins'
 
 export interface UserSummary {
   id: string
@@ -68,6 +68,15 @@ export interface UserDetail {
   giftable: { code: string; name: string | null; kind: string; owned: boolean }[]
 }
 
+// Acompanhamento (GET /admin/follow-up): cada lista com o total e até 100 pessoas.
+export interface FollowUpList<T> { total: number; items: T[] }
+export interface FollowUp {
+  cart: FollowUpList<{ user_id: string; email: string; since: string; last_added: string; items: string[]; reminded: boolean }>
+  no_download: FollowUpList<{ user_id: string; email: string; order_id: string; order_ref: string; order_kind: 'purchase' | 'courtesy'; paid_at: string; items: string[] }>
+  delivery: FollowUpList<{ user_id: string; email: string; order_id: string | null; order_ref: string | null; problem: 'failed' | 'suppressed'; reason: string | null; at: string }>
+  unconfirmed: FollowUpList<{ user_id: string; email: string; created_at: string }>
+}
+
 const label = (labels: Record<string, string>, value: string | null | undefined) => (value && Object.hasOwn(labels, value) ? labels[value] : value ?? '')
 
 const PROVIDERS: Record<string, string> = { email: 'Código por e-mail', google: 'Google' }
@@ -104,6 +113,7 @@ export const consentLabel = (entry: { action: string; source: string }) => `${en
 const ACTIONS: Record<string, string> = {
   user_gift: 'Deu um jogo de presente', user_revoke: 'Retirou um jogo', user_resend: 'Reenviou o e-mail de acesso',
   user_newsletter_off: 'Tirou das novidades', user_block: 'Bloqueou o login', user_unblock: 'Desbloqueou o login', user_export: 'Exportou os dados',
+  user_admin_grant: 'Tornou admin', user_admin_revoke: 'Tirou o admin',
 }
 export const actionLabel = (action: string) => label(ACTIONS, action)
 

@@ -305,6 +305,30 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .inline-action { display: grid; justify-items: start; gap: 4px; }
 .inline-action .text-button { display: inline-flex; align-items: center; gap: 6px; }
 
+/* Abas de uma seção (Usuários: Contas | Acompanhamento | Equipe): sublinhado de 3 px Turquesa profundo na ativa, como
+   as abas do Portal da loja. No celular rolam de lado. */
+.users-heading { margin-bottom: 16px; }
+.section-tabs { display: flex; gap: 24px; margin-bottom: 24px; overflow-x: auto; border-bottom: var(--line-rule); }
+.section-tabs a { flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 48px; padding: 8px 2px; border-bottom: 3px solid transparent; margin-bottom: -1px; color: var(--color-ink-soft); font-size: var(--text-label); font-weight: 600; text-decoration: none; }
+.section-tabs a:hover { color: var(--color-ink); }
+.section-tabs a[aria-current="page"] { border-bottom-color: var(--color-deep-teal); color: var(--color-ink); }
+
+/* Acompanhamento: o resumo (quantas pessoas em cada lista, com o link para ela) e as linhas com o que fazer. */
+.follow-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 0 0 8px; padding: 0; list-style: none; }
+.follow-summary a { display: grid; gap: 2px; padding: 14px 16px; border: var(--line-rule); border-radius: var(--radius-sm); background: var(--color-paper); color: var(--color-ink); text-decoration: none; }
+.follow-summary a:hover { border-color: var(--color-deep-teal); }
+.follow-summary strong { font-family: var(--font-display); font-size: var(--text-title); font-variant-numeric: tabular-nums; }
+.follow-summary span { color: var(--color-ink-soft); font-size: var(--text-label); }
+.follow-section { scroll-margin-top: 16px; }
+.follow-row .plain-row-main { gap: 4px; }
+.follow-detail { font-size: var(--text-label); }
+.follow-hint { color: var(--color-ink-soft); font-size: var(--text-caption); }
+.follow-done { color: var(--color-deep-teal); font-size: var(--text-label); font-weight: 600; }
+
+/* Caixas de marcar em grupo (os jogos do presente). */
+.check-group { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.check-group legend { margin-bottom: 4px; padding: 0; font-size: var(--text-label); font-weight: 600; }
+
 /* Ação com motivo: abre no lugar do botão, com borda Turquesa profundo (ou de Erro, quando tira ou apaga algo). */
 .reason-form { display: grid; flex-basis: 100%; gap: 12px; width: 100%; max-width: 640px; padding: 16px; border: var(--line-rule); border-left: 3px solid var(--color-deep-teal); border-radius: var(--radius-sm); background: var(--color-paper); }
 .reason-form-danger { border-left-color: var(--color-error); }

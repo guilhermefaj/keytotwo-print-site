@@ -4,11 +4,14 @@ import { Link, useLocation, useSearchParams } from 'react-router'
 import { apiMessage, count, useResource } from '../api'
 import { formatMoment, formatShortDate } from '../blog'
 import { providersLabel, type UserFilter, type UserList, type UserSummary } from '../users'
+import { UsersHeader } from './UsersHeader'
 
 const filters: { value: UserFilter; label: string }[] = [
   { value: 'all', label: 'Todas' }, { value: 'buyers', label: 'Com compra' }, { value: 'newsletter', label: 'Nas novidades' }, { value: 'blocked', label: 'Bloqueadas' },
 ]
 const isFilter = (value: string | null): value is UserFilter => filters.some(filter => filter.value === value)
+
+// Contas (2026-10-23): a primeira aba de Usuários. A equipe tem a aba dela (Equipe).
 
 // Usuários (2026-10-23, Fase 4): as contas da loja, da mais nova à mais antiga, 50 por página. Busca, filtro e página
 // ficam no endereço (?q=&filter=&page=): voltar da ficha de uma pessoa cai na mesma lista.
@@ -43,10 +46,7 @@ export function UsersPage() {
   const last = list ? list.offset + list.users.length : 0
   return <>
     <title>Usuários — Admin KeyToTwo</title>
-    <header className="page-heading">
-      <h1>Usuários</h1>
-      <p>As contas da loja: como entram, o que compraram e o que têm. Abra uma conta para ver tudo e agir.</p>
-    </header>
+    <UsersHeader text="As contas da loja: como entram, o que compraram e o que têm. Abra uma conta para ver tudo e agir." />
     <div className="toolbar users-toolbar">
       <form role="search" className="search-field" onSubmit={event => { event.preventDefault(); update({ q: draft.trim(), page: '1' }) }}>
         <IconSearch aria-hidden="true" size={18} stroke={1.75} />

@@ -3,8 +3,9 @@ import AxeBuilder from '@axe-core/playwright'
 import { existsSync } from 'node:fs'
 import { authStorageKey, session } from './session'
 
-// Usuários no admin (2026-10-23, Fase 4): lista com busca, filtros e páginas; ficha com presente, retirar jogo, reenviar
-// acesso, novidades, bloqueio, exportar e excluir. A API é simulada (formatos de docs/api-contract.md 6.14).
+// Usuários no admin (2026-10-23, Fase 4): abas Contas | Acompanhamento | Equipe; lista com busca, filtros e páginas;
+// ficha com presente (um ou vários jogos), retirar jogo, reenviar acesso, novidades, bloqueio, equipe, exportar e
+// excluir. A API é simulada (formatos de docs/api-contract.md 6.14).
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 test.skip(() => !existsSync('admin/dist/index.html'), 'Requires `npm run build:admin`')
 
@@ -34,8 +35,16 @@ function detail(id: string, extra: { admin?: boolean; self?: boolean } = {}) {
     suppressions: [],
     downloads: { count: 3, last_at: '2026-10-22T15:05:00Z' },
     history: [],
-    giftable: [{ code: 'J001', name: 'Rapadura', kind: 'single', owned: true }, { code: 'P001', name: 'Pacote completo', kind: 'bundle', owned: false }],
+    giftable: [{ code: 'J001', name: 'Rapadura', kind: 'single', owned: true }, { code: 'P001', name: 'Pacote completo', kind: 'bundle', owned: false },
+      { code: 'J005', name: 'Mapa do Casal', kind: 'single', owned: false }],
   }
+}
+
+const followUp = {
+  cart: { total: 1, items: [{ user_id: ANA, email: 'ana@example.test', since: '2026-10-20T10:00:00Z', last_added: '2026-10-20T10:00:00Z', items: ['Rapadura'], reminded: true }] },
+  no_download: { total: 1, items: [{ user_id: ANA, email: 'ana@example.test', order_id: ORDER, order_ref: 'F4F4F4F4', order_kind: 'purchase', paid_at: '2026-10-19T10:00:00Z', items: ['Rapadura'] }] },
+  delivery: { total: 1, items: [{ user_id: CHEFE, email: 'chefe@example.test', order_id: null, order_ref: null, problem: 'suppressed', reason: 'hard_bounce', at: '2026-10-21T10:00:00Z' }] },
+  unconfirmed: { total: 0, items: [] },
 }
 
 type Call = { method: string; path: string; body: unknown }
@@ -43,6 +52,10 @@ async function usersApi(page: Page, { failGift = false } = {}) {
   const calls: Call[] = []
   await page.addInitScript(([key, value]) => localStorage.setItem(key, JSON.stringify(value)), [authStorageKey, session('aal2')] as const)
   await page.route('**/auth/v1/**', route => route.fulfill({ json: session('aal2').user }))
+  await page.route('**/functions/v1/api/admin/follow-up', route => {
+    calls.push({ method: 'GET', path: '/admin/follow-up', body: null })
+    return route.fulfill({ json: followUp })
+  })
   await page.route('**/functions/v1/api/admin/users**', route => {
     const request = route.request()
     const url = new URL(request.url())
@@ -53,13 +66,14 @@ async function usersApi(page: Page, { failGift = false } = {}) {
       const filter = url.searchParams.get('filter') ?? 'all'
       const page = Number(url.searchParams.get('page') ?? '1')
       const all = Array.from({ length: 60 }, (_, index) => summary(index))
+      if (filter === 'admins') return route.fulfill({ json: { total: 2, offset: 0, limit: 50, page: 1, users: [summary(1, { id: 'qa-admin', email: 'admin@example.test', admin: true }), summary(2, { id: CHEFE, email: 'chefe@example.test', admin: true })] } })
       const matching = all.filter(user => (!url.searchParams.get('q') || user.email.includes(url.searchParams.get('q')!)) && (filter !== 'buyers' || user.purchases > 0))
       return route.fulfill({ json: { total: matching.length, offset: (page - 1) * 50, limit: 50, page, users: matching.slice((page - 1) * 50, page * 50) } })
     }
     const [, , , id, ...rest] = path.split('/')
     const action = rest.join('/')
     if (!action) return route.fulfill({ json: detail(id, id === CHEFE ? { admin: true } : {}) })
-    if (action === 'gifts' && failGift) return route.fulfill({ status: 409, json: { error: { code: 'ALREADY_OWNED', message: 'A pessoa já tem todos os jogos deste produto.' } } })
+    if (action === 'gifts' && failGift) return route.fulfill({ status: 409, json: { error: { code: 'GIFT_OVERLAP', message: 'Estes têm jogo em comum: P001, J005.', details: { products: ['P001', 'J005'] } } } })
     if (action === 'gifts') return route.fulfill({ status: 201, json: { order_id: ORDER, email_queued: request.postDataJSON().notify } })
     if (action === 'export') return route.fulfill({ json: { generated_at: '2026-10-23T12:00:00Z', orders: [] }, headers: { 'Content-Disposition': 'attachment' } })
     if (action === 'delete') return route.fulfill({ json: { deleted: true, orders_anonymized: 1 } })
@@ -123,20 +137,22 @@ test('ficha: presente com motivo e e-mail, retirar um jogo e reenviar o acesso; 
 
   await games.getByRole('button', { name: 'Dar um jogo de presente' }).click()
   const gift = page.getByRole('form', { name: 'Dar um jogo de presente' })
-  await expect(gift.getByLabel('Jogo')).toBeFocused()
-  await expect(gift.getByLabel('Jogo').locator('option')).toHaveText(['Escolha um jogo', 'Pacote completo (pacote)'])
+  const choices = gift.getByRole('group', { name: 'Jogos' }).getByRole('checkbox')
+  await expect(choices).toHaveCount(2)
+  await expect(choices.first()).toBeFocused()
   await expect(gift.getByRole('button', { name: 'Dar o presente' })).toBeDisabled()
-  await gift.getByLabel('Jogo').selectOption('P001')
+  await gift.getByLabel('Pacote completo (pacote)').check()
+  await gift.getByLabel('Mapa do Casal').check()
   await expect(gift.getByLabel(/Enviar o e-mail do presente/)).toBeChecked()
   await gift.getByLabel('Motivo').fill('oi')
-  await gift.getByRole('button', { name: 'Dar o presente' }).click()
+  await gift.getByRole('button', { name: 'Dar os 2 presentes' }).click()
   await expect(gift.getByRole('alert')).toHaveText('Escreva o motivo, de 3 a 300 caracteres. Ele fica no histórico.')
   await axe(page)
   await gift.getByLabel('Motivo').fill('Compensação pelo atraso')
-  await gift.getByRole('button', { name: 'Dar o presente' }).click()
-  await expect(page.locator('.notice')).toHaveText('Pacote completo foi dado de presente e o e-mail está saindo.')
+  await gift.getByRole('button', { name: 'Dar os 2 presentes' }).click()
+  await expect(page.locator('.notice')).toHaveText('Pacote completo e Mapa do Casal foram dados de presente e o e-mail está saindo.')
   await expect(page.locator('.notice')).toBeFocused()
-  expect(calls.find(call => call.path.endsWith('/gifts'))!.body).toEqual({ product_code: 'P001', reason: 'Compensação pelo atraso', notify: true })
+  expect(calls.find(call => call.path.endsWith('/gifts'))!.body).toEqual({ product_codes: ['P001', 'J005'], reason: 'Compensação pelo atraso', notify: true })
 
   await games.getByRole('button', { name: 'Retirar Rapadura' }).click()
   const revoke = page.getByRole('form', { name: 'Retirar Rapadura' })
@@ -151,7 +167,7 @@ test('ficha: presente com motivo e e-mail, retirar um jogo e reenviar o acesso; 
   await page.getByRole('button', { name: 'Reenviar o e-mail de acesso do pedido F4F4F4F4' }).click()
   await expect(page.locator('.notice')).toHaveText('O e-mail de acesso do pedido F4F4F4F4 foi para a fila de envio.')
   expect(calls.filter(call => call.method === 'POST').map(call => [call.path, call.body])).toEqual([
-    [`/admin/users/${ANA}/gifts`, { product_code: 'P001', reason: 'Compensação pelo atraso', notify: true }],
+    [`/admin/users/${ANA}/gifts`, { product_codes: ['P001', 'J005'], reason: 'Compensação pelo atraso', notify: true }],
     [`/admin/users/${ANA}/entitlements/${ENT}/revoke`, { reason: 'Pedido por engano' }],
     [`/admin/users/${ANA}/orders/${ORDER}/resend`, null],
   ])
@@ -174,6 +190,13 @@ test('novidades, bloqueio, exportar e excluir com o e-mail digitado; recusa da A
   await block.getByRole('button', { name: 'Bloquear' }).click()
   await expect(page.locator('.notice')).toHaveText('O login foi bloqueado.')
 
+  await page.getByRole('button', { name: 'Tornar admin' }).click()
+  const promote = page.getByRole('form', { name: 'Tornar admin' })
+  await expect(promote).toContainText('Ela cadastra o app autenticador no primeiro acesso.')
+  await promote.getByLabel('Motivo').fill('Vai cuidar do blog')
+  await promote.getByRole('button', { name: 'Tornar admin' }).click()
+  await expect(page.locator('.notice')).toHaveText('A conta entrou na equipe. A pessoa vê o admin quando entrar de novo.')
+
   const download = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Exportar os dados (LGPD)' }).click()
   expect((await download).suggestedFilename()).toBe('keytotwo-dados-a1a1a1a1.json')
@@ -181,10 +204,11 @@ test('novidades, bloqueio, exportar e excluir com o e-mail digitado; recusa da A
 
   await page.getByRole('button', { name: 'Dar um jogo de presente' }).click()
   const gift = page.getByRole('form', { name: 'Dar um jogo de presente' })
-  await gift.getByLabel('Jogo').selectOption('P001')
+  await gift.getByLabel('Pacote completo (pacote)').check()
+  await gift.getByLabel('Mapa do Casal').check()
   await gift.getByLabel('Motivo').fill('Sorteio')
-  await gift.getByRole('button', { name: 'Dar o presente' }).click()
-  await expect(gift.getByRole('alert')).toHaveText('A pessoa já tem todos os jogos deste produto.')
+  await gift.getByRole('button', { name: 'Dar os 2 presentes' }).click()
+  await expect(gift.getByRole('alert')).toHaveText('Pacote completo e Mapa do Casal têm jogo em comum (um pacote e um jogo que já vem nele). Escolha só um.')
   await gift.getByRole('button', { name: 'Cancelar' }).click()
 
   await page.getByRole('button', { name: 'Excluir a conta' }).click()
@@ -197,8 +221,61 @@ test('novidades, bloqueio, exportar e excluir com o e-mail digitado; recusa da A
   await remove.getByRole('button', { name: 'Excluir de vez' }).click()
   await expect(page).toHaveURL(/\/usuarios$/)
   await expect(page.locator('.notice')).toHaveText('A conta ana@example.test foi excluída e 1 pedido ficou anonimizado.')
-  expect(calls.filter(call => call.method === 'POST').map(call => call.path.split('/').slice(4).join('/'))).toEqual(['newsletter/off', 'block', 'gifts', 'delete'])
+  expect(calls.filter(call => call.method === 'POST').map(call => call.path.split('/').slice(4).join('/'))).toEqual(['newsletter/off', 'block', 'admin', 'gifts', 'delete'])
+  expect(calls.find(call => call.path.endsWith('/admin'))!.body).toEqual({ admin: true, reason: 'Vai cuidar do blog' })
   expect(calls.find(call => call.path.endsWith('/delete'))!.body).toEqual({ reason: 'Pedido da pessoa por e-mail', confirm_email: 'ANA@example.test' })
+})
+
+test('abas: Acompanhamento com as quatro listas e o reenvio; Equipe com remover e adicionar admin pelo e-mail', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const calls = await usersApi(page)
+  await page.goto('/usuarios')
+  const tabs = page.getByRole('navigation', { name: 'Usuários' })
+  await expect(tabs.getByRole('link')).toHaveText(['Contas', 'Acompanhamento', 'Equipe'])
+  await expect(tabs.getByRole('link', { name: 'Contas' })).toHaveAttribute('aria-current', 'page')
+
+  await tabs.getByRole('link', { name: 'Acompanhamento' }).click()
+  await expect(page).toHaveURL(/\/usuarios\/acompanhamento$/)
+  await expect(tabs.getByRole('link', { name: 'Acompanhamento' })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByRole('list', { name: 'Resumo' }).getByRole('link')).toHaveText(['1Sacola esquecida', '1Comprou e não baixou', '1Entrega com problema', '0Conta sem confirmação'])
+  await expect(page.getByRole('region', { name: /Sacola esquecida/ })).toContainText('O lembrete automático já saiu.')
+  await expect(page.getByRole('region', { name: /Entrega com problema/ })).toContainText('A Brevo não entrega para este endereço: o endereço não existe (devolução permanente)')
+  await expect(page.getByRole('region', { name: /Conta sem confirmação/ })).toContainText('Ninguém aqui agora.')
+  await axe(page)
+  await page.getByRole('region', { name: /Comprou e não baixou/ }).getByRole('button', { name: 'Reenviar o e-mail de acesso do pedido F4F4F4F4' }).click()
+  await expect(page.getByText('E-mail de acesso do pedido F4F4F4F4 na fila de envio.')).toBeVisible()
+  expect(calls.filter(call => call.method === 'POST').map(call => call.path)).toEqual([`/admin/users/${ANA}/orders/${ORDER}/resend`])
+
+  await tabs.getByRole('link', { name: 'Equipe' }).click()
+  const team = page.getByRole('list', { name: 'Admins' })
+  await expect(team.getByRole('listitem')).toHaveCount(2)
+  await expect(team.getByRole('listitem').first().locator('.badge')).toHaveText('Você')
+  await expect(team.getByRole('listitem').first().getByRole('button')).toHaveCount(0)
+  await team.getByRole('button', { name: 'Remover chefe@example.test da equipe' }).click()
+  await page.getByRole('form', { name: 'Remover chefe@example.test da equipe' }).getByLabel('Motivo').fill('Saiu da empresa')
+  await page.getByRole('form', { name: 'Remover chefe@example.test da equipe' }).getByRole('button', { name: 'Remover admin' }).click()
+  await expect(page.locator('.notice')).toHaveText('chefe@example.test saiu da equipe.')
+
+  await page.getByRole('button', { name: 'Adicionar à equipe' }).click()
+  const add = page.getByRole('form', { name: 'Adicionar à equipe' })
+  await expect(add.getByLabel('E-mail da conta')).toBeFocused()
+  await expect(add.getByRole('button', { name: 'Tornar admin' })).toBeDisabled()
+  await add.getByLabel('E-mail da conta').fill('ninguem@example.test')
+  await add.getByLabel('Motivo').fill('Nova pessoa')
+  await add.getByRole('button', { name: 'Tornar admin' }).click()
+  await expect(add.getByRole('alert')).toHaveText('Nenhuma conta com esse e-mail. A pessoa precisa entrar na loja uma vez antes.')
+  await add.getByLabel('E-mail da conta').fill('ANA@example.test')
+  await add.getByRole('button', { name: 'Tornar admin' }).click()
+  await expect(page.locator('.notice')).toHaveText('ana@example.test entrou na equipe. Ela vê o admin quando entrar de novo e cadastra o app autenticador no primeiro acesso.')
+  expect(calls.filter(call => call.method === 'POST').map(call => [call.path, call.body]).slice(1)).toEqual([
+    [`/admin/users/${CHEFE}/admin`, { admin: false, reason: 'Saiu da empresa' }],
+    [`/admin/users/${ANA}/admin`, { admin: true, reason: 'Nova pessoa' }],
+  ])
+  await axe(page)
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 800 })
+    expect(await noSideScroll(page)).toBe(true)
+  }
 })
 
 test('conta de admin: sem bloquear, excluir nem retirar jogo; celular sem rolagem lateral', async ({ page }) => {
@@ -207,7 +284,8 @@ test('conta de admin: sem bloquear, excluir nem retirar jogo; celular sem rolage
   await page.goto(`/usuarios/${CHEFE}`)
   await expect(page.getByRole('heading', { level: 1, name: 'chefe@example.test' })).toBeVisible()
   await expect(page.getByText('Esta é uma conta de admin: bloquear, excluir e retirar jogos não valem aqui.')).toBeVisible()
-  for (const name of ['Bloquear o login', 'Excluir a conta', 'Retirar Rapadura']) await expect(page.getByRole('button', { name })).toHaveCount(0)
+  for (const name of ['Bloquear o login', 'Excluir a conta', 'Retirar Rapadura', 'Tornar admin']) await expect(page.getByRole('button', { name })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Remover admin' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Dar um jogo de presente' })).toBeVisible()
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 800 })

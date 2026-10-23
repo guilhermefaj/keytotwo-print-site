@@ -21,7 +21,7 @@ contractTest('usuários no admin: sem sessão 401; sem o segundo fator 403 MFA_R
   const routes: [string, string][] = [
     ['/admin/users', 'GET'], [base, 'GET'], [`${base}/gifts`, 'POST'], [`${base}/entitlements/${ENT}/revoke`, 'POST'],
     [`${base}/orders/${ORDER}/resend`, 'POST'], [`${base}/newsletter/off`, 'POST'], [`${base}/block`, 'POST'], [`${base}/unblock`, 'POST'],
-    [`${base}/export`, 'GET'], [`${base}/delete`, 'POST'],
+    [`${base}/export`, 'GET'], [`${base}/delete`, 'POST'], [`${base}/admin`, 'POST'], ['/admin/follow-up', 'GET'],
   ]
   for (const [path, method] of routes) {
     const body = method === 'GET' ? undefined : {}
@@ -40,10 +40,12 @@ contractTest('GET /admin/users: busca, filtro e página viram o offset; inválid
   assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['admin_list_users', { p_user_id: userId(token), p_query: 'ana@', p_filter: 'buyers', p_offset: 50 }]])
   await send('/admin/users', { token })
   assertEquals(rpcCalls[1].args, { p_user_id: userId(token), p_query: null, p_filter: 'all', p_offset: 0 })
+  await send('/admin/users?filter=admins', { token })
+  assertEquals(rpcCalls[2].args.p_filter, 'admins')
   for (const query of ['filter=todos', 'page=0', 'page=1.5', `q=${'a'.repeat(201)}`]) {
     assertEquals((await send(`/admin/users?${query}`, { token })).status, 400, query)
   }
-  assertEquals(rpcCalls.length, 2)
+  assertEquals(rpcCalls.length, 3)
   onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden', result: null }] }))
   assertEquals((await send('/admin/users', { token })).body.error.code, 'NOT_ADMIN')
 })
@@ -59,32 +61,35 @@ contractTest('GET /admin/users/:id: a ficha do banco; id inválido ou conta apag
   assertEquals([gone.status, gone.body.error.message], [404, 'Conta não encontrada. Ela pode ter sido excluída.'])
 })
 
-contractTest('POST gifts: presente com motivo e o modo da Stripe; com aviso, o e-mail sai na hora; recusas viram 409', async () => {
+contractTest('POST gifts: vários jogos num presente, com motivo e o modo da Stripe; com aviso, o e-mail sai na hora; recusas dizem quais', async () => {
   const token = await admin()
   const tasks: Promise<unknown>[] = []
   setBackgroundRunner((task) => tasks.push(task))
   try {
-    onRpc((fn) => ({ status: 200, body: fn === 'claim_email_batch' ? [] : [{ outcome: 'ok', order_id: ORDER, outbox_id: OUTBOX }] }))
-    const res = await send(`${base}/gifts`, { method: 'POST', token, body: { product_code: 'J001', reason: '  Compensação  ', notify: true } })
-    assertEquals([res.status, res.body], [201, { order_id: ORDER, email_queued: true }])
+    onRpc((fn) => ({ status: 200, body: fn === 'claim_email_batch' ? [] : [{ outcome: 'ok', order_id: ORDER, outbox_id: OUTBOX, products: ['J001', 'J002'] }] }))
+    const res = await send(`${base}/gifts`, { method: 'POST', token, body: { product_codes: ['J001', 'J002'], reason: '  Compensação  ', notify: true } })
+    assertEquals([res.status, res.body], [201, { order_id: ORDER, email_queued: true, products: ['J001', 'J002'] }])
     await Promise.all(tasks)
-    assertEquals(rpcCalls.map((c) => c.fn), ['admin_gift_product', 'claim_email_batch'])
-    assertEquals(rpcCalls[0].args, { p_user_id: userId(token), p_target: TARGET, p_product_code: 'J001', p_reason: 'Compensação', p_notify: true, p_livemode: false })
+    assertEquals(rpcCalls.map((c) => c.fn), ['admin_gift_products', 'claim_email_batch'])
+    assertEquals(rpcCalls[0].args, { p_user_id: userId(token), p_target: TARGET, p_product_codes: ['J001', 'J002'], p_reason: 'Compensação', p_notify: true, p_livemode: false })
     assertEquals(rpcCalls[1].args, { p_limit: 20, p_outbox_id: OUTBOX })
 
-    onRpc(() => ({ status: 200, body: [{ outcome: 'ok', order_id: ORDER, outbox_id: null }] }))
+    onRpc(() => ({ status: 200, body: [{ outcome: 'ok', order_id: ORDER, outbox_id: null, products: ['J001'] }] }))
     tasks.length = 0
-    assertEquals((await send(`${base}/gifts`, { method: 'POST', token, body: { product_code: 'J001', reason: 'Sem aviso', notify: false } })).body.email_queued, false)
+    assertEquals((await send(`${base}/gifts`, { method: 'POST', token, body: { product_codes: ['J001'], reason: 'Sem aviso', notify: false } })).body.email_queued, false)
     assertEquals(tasks.length, 0)
   } finally {
     setBackgroundRunner(null)
   }
 
   const bad: [unknown, string][] = [
-    [{ reason: 'Motivo', notify: true }, 'Escolha o jogo do presente.'],
-    [{ product_code: 'j001', reason: 'Motivo', notify: true }, 'Escolha o jogo do presente.'],
-    [{ product_code: 'J001', reason: 'Motivo' }, 'Diga se a pessoa recebe o e-mail do presente.'],
-    [{ product_code: 'J001', reason: ' oi ', notify: true }, 'Escreva o motivo, de 3 a 300 caracteres.'],
+    [{ reason: 'Motivo', notify: true }, 'Escolha de 1 a 10 jogos para o presente.'],
+    [{ product_codes: [], reason: 'Motivo', notify: true }, 'Escolha de 1 a 10 jogos para o presente.'],
+    [{ product_codes: ['j001'], reason: 'Motivo', notify: true }, 'Escolha de 1 a 10 jogos para o presente.'],
+    [{ product_codes: ['J001', 'J001'], reason: 'Motivo', notify: true }, 'Escolha de 1 a 10 jogos para o presente.'],
+    [{ product_codes: Array.from({ length: 11 }, (_, i) => `J${100 + i}`), reason: 'Motivo', notify: true }, 'Escolha de 1 a 10 jogos para o presente.'],
+    [{ product_codes: ['J001'], reason: 'Motivo' }, 'Diga se a pessoa recebe o e-mail do presente.'],
+    [{ product_codes: ['J001'], reason: ' oi ', notify: true }, 'Escreva o motivo, de 3 a 300 caracteres.'],
   ]
   onRpc(() => ({ status: 200, body: [{ outcome: 'ok' }] }))
   for (const [body, message] of bad) {
@@ -92,10 +97,54 @@ contractTest('POST gifts: presente com motivo e o modo da Stripe; com aviso, o e
     assertEquals([res.status, res.body.error.message], [400, message], JSON.stringify(body))
   }
   assertEquals(rpcCalls.length, 0)
-  for (const [outcome, code] of [['product_unavailable', 'PRODUCT_UNAVAILABLE'], ['already_owned', 'ALREADY_OWNED'], ['not_found', 'NOT_FOUND'], ['forbidden', 'NOT_ADMIN']]) {
-    onRpc(() => ({ status: 200, body: [{ outcome, order_id: null, outbox_id: null }] }))
-    assertEquals((await send(`${base}/gifts`, { method: 'POST', token, body: { product_code: 'J001', reason: 'Motivo', notify: true } })).body.error.code, code, outcome)
+  const refusals: [string, string, string][] = [
+    ['product_unavailable', 'PRODUCT_UNAVAILABLE', 'Fora da venda agora, não dá para dar de presente: J002.'],
+    ['already_owned', 'ALREADY_OWNED', 'A pessoa já tem todos os jogos de: J002.'],
+    ['overlap', 'GIFT_OVERLAP', 'Estes têm jogo em comum (um pacote e um jogo que já vem nele): J002. Escolha só um.'],
+  ]
+  for (const [outcome, code, message] of refusals) {
+    onRpc(() => ({ status: 200, body: [{ outcome, order_id: null, outbox_id: null, products: ['J002'] }] }))
+    const res = await send(`${base}/gifts`, { method: 'POST', token, body: { product_codes: ['J001', 'J002'], reason: 'Motivo', notify: true } })
+    assertEquals([res.body.error.code, res.body.error.message, res.body.error.details.products], [code, message, ['J002']], outcome)
   }
+  for (const [outcome, code] of [['not_found', 'NOT_FOUND'], ['forbidden', 'NOT_ADMIN']]) {
+    onRpc(() => ({ status: 200, body: [{ outcome, order_id: null, outbox_id: null, products: null }] }))
+    assertEquals((await send(`${base}/gifts`, { method: 'POST', token, body: { product_codes: ['J001'], reason: 'Motivo', notify: true } })).body.error.code, code, outcome)
+  }
+})
+
+contractTest('POST /admin/users/:id/admin: promover e tirar admin pelo banco, cada recusa com a sua mensagem', async () => {
+  const token = await admin()
+  onRpc(() => ({ status: 200, body: [{ outcome: 'ok' }] }))
+  assertEquals((await send(`${base}/admin`, { method: 'POST', token, body: { admin: true, reason: 'Entrou na equipe' } })).body, { admin: true })
+  assertEquals(rpcCalls[0].args, { p_user_id: userId(token), p_target: TARGET, p_admin: true, p_reason: 'Entrou na equipe' })
+  for (const body of [{ reason: 'Sem decidir' }, { admin: 'sim', reason: 'Texto' }, { admin: true, reason: 'x' }]) {
+    assertEquals((await send(`${base}/admin`, { method: 'POST', token, body })).status, 400, JSON.stringify(body))
+  }
+  const refusals: [string, boolean, string, string][] = [
+    ['unchanged', true, 'ADMIN_UNCHANGED', 'Esta conta já é admin.'],
+    ['unchanged', false, 'ADMIN_UNCHANGED', 'Esta conta não é admin.'],
+    ['self', false, 'PROTECTED_ACCOUNT', 'Você não pode tirar o seu próprio admin. Peça para outra pessoa da equipe.'],
+    ['last_admin', false, 'LAST_ADMIN', 'A equipe precisa de pelo menos um admin.'],
+    ['not_confirmed', true, 'TARGET_NOT_CONFIRMED', 'Só vira admin uma conta com o e-mail confirmado.'],
+    ['blocked', true, 'ACCOUNT_BLOCKED', 'Desbloqueie o login desta conta antes de torná-la admin.'],
+  ]
+  for (const [outcome, grant, code, message] of refusals) {
+    onRpc(() => ({ status: 200, body: [{ outcome }] }))
+    const res = await send(`${base}/admin`, { method: 'POST', token, body: { admin: grant, reason: 'Motivo' } })
+    assertEquals([res.status, res.body.error.code, res.body.error.message], [409, code, message], outcome)
+  }
+})
+
+contractTest('GET /admin/follow-up: as quatro listas do banco; não admin 403', async () => {
+  const token = await admin()
+  const result = { cart: { total: 0, items: [] }, no_download: { total: 0, items: [] }, delivery: { total: 0, items: [] }, unconfirmed: { total: 1, items: [{ user_id: TARGET }] } }
+  onRpc(() => ({ status: 200, body: [{ outcome: 'ok', result }] }))
+  const res = await send('/admin/follow-up', { token })
+  assertEquals([res.status, res.body], [200, result])
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['admin_follow_up', { p_user_id: userId(token) }]])
+  onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden', result: null }] }))
+  assertEquals((await send('/admin/follow-up', { token })).body.error.code, 'NOT_ADMIN')
 })
 
 contractTest('retirar jogo, reenviar acesso e tirar das novidades: o banco decide, cada recusa com o seu código', async () => {

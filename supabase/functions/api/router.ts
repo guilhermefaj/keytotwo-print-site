@@ -2,7 +2,7 @@ import { allowedOrigin, preflight, withCors } from '../_shared/cors.ts'
 import { errorResponse, HttpError, json, toErrorResponse } from '../_shared/http.ts'
 import { deleteAccount, exportAccount, getAccount, markPrompt, putMarketing } from './routes/account.ts'
 import { adminMetrics } from './routes/admin.ts'
-import { adminBlockUser, adminDeleteUser, adminExportUser, adminGiftProduct, adminNewsletterOff, adminResendDelivery, adminRevokeEntitlement, adminUnblockUser, adminUser, adminUsers } from './routes/users.ts'
+import { adminBlockUser, adminDeleteUser, adminExportUser, adminFollowUp, adminGiftProduct, adminNewsletterOff, adminResendDelivery, adminRevokeEntitlement, adminSetAdmin, adminUnblockUser, adminUser, adminUsers } from './routes/users.ts'
 import { adminBlogImage, adminBlogImages, adminBlogPost, adminBlogPosts, adminCreateBlogPost, adminDeleteBlogImage, adminDeleteBlogPost, adminUpdateBlogPost, blogPublished, blogVersion } from './routes/blog.ts'
 import { addCartItem, getCart, mergeCart, quoteCart, removeCartItem } from './routes/cart.ts'
 import { catalog } from './routes/catalog.ts'
@@ -69,6 +69,8 @@ const routes: Route[] = [
   route('/admin/users/:id/unblock', { POST: adminUnblockUser }),
   route('/admin/users/:id/export', { GET: adminExportUser }),
   route('/admin/users/:id/delete', { POST: adminDeleteUser }),
+  route('/admin/users/:id/admin', { POST: adminSetAdmin }),
+  route('/admin/follow-up', { GET: adminFollowUp }),
   route('/blog/posts', { GET: blogPublished }),
   route('/blog/version', { GET: blogVersion }),
 ]

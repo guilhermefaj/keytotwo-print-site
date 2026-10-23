@@ -5,6 +5,8 @@ import { Layout } from './Layout'
 import { BlogPage } from './pages/Blog'
 import { MetricsPage } from './pages/Metrics'
 import { NotFoundPage, SoonPage } from './pages/Soon'
+import { FollowUpPage } from './pages/FollowUp'
+import { TeamPage } from './pages/Team'
 import { UsersPage } from './pages/Users'
 import './admin.css'
 
@@ -19,6 +21,8 @@ const router = createBrowserRouter([{
     { path: 'blog/:id', lazy: async () => ({ Component: (await import('./pages/BlogEditor')).BlogEditorRoute }) },
     { path: 'pedidos', element: <SoonPage section="pedidos" /> },
     { path: 'usuarios', element: <UsersPage /> },
+    { path: 'usuarios/acompanhamento', element: <FollowUpPage /> },
+    { path: 'usuarios/equipe', element: <TeamPage /> },
     { path: 'usuarios/:id', lazy: async () => ({ Component: (await import('./pages/User')).UserRoute }) },
     { path: '*', element: <NotFoundPage /> },
   ],

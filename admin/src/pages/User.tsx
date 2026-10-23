@@ -1,5 +1,5 @@
 import { IconArrowLeft, IconDownload, IconExternalLink } from '@tabler/icons-react'
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { api, ApiError, apiMessage, count, money, useResource } from '../api'
 import { formatMoment } from '../blog'
@@ -7,6 +7,7 @@ import {
   actionLabel, consentLabel, emailKindLabel, emailStatusLabel, orderStatusLabel, providersLabel, revokeReasonLabel, stripeCustomerUrl,
   suppressionLabel, type LibraryEntry, type UserDetail, type UserOrder,
 } from '../users'
+import { ReasonAction } from '../ReasonAction'
 
 // Ficha de uma conta (2026-10-23, Fase 4): conta, jogos, pedidos, novidades, e-mails e o histórico do admin, com as
 // ações. Cada ação pede o motivo (vai para o histórico) e, no fim, a ficha é buscada de novo. Bloquear, excluir e
@@ -119,6 +120,7 @@ function UserPage({ id }: { id: string }) {
           onConfirm={reason => api(`/admin/users/${account.id}/unblock`, { method: 'POST', body: { reason } }).then(() => done('O login foi desbloqueado.'))} />
         : <ReasonAction label="Bloquear o login" confirm="Bloquear" danger intro="A pessoa não consegue mais entrar nem baixar os jogos. Uma sessão já aberta cai em até 1 hora."
           onConfirm={reason => api(`/admin/users/${account.id}/block`, { method: 'POST', body: { reason } }).then(() => done('O login foi bloqueado.'))} />)}
+      {!account.self && <AdminRole account={account} onDone={done} />}
       {!guarded && <DeleteAccount account={account} />}
     </section>
   </>
@@ -194,93 +196,65 @@ function OrderRow({ order, userId, onDone }: { order: UserOrder; userId: string;
   </li>
 }
 
-// Botão que abre, no lugar, o pedido do motivo e a confirmação. children: campos a mais (a exclusão pede o e-mail).
-function ReasonAction({ label, short, confirm, intro, danger = false, onConfirm, children, ready = true }: {
-  label: string; short?: string; confirm: string; intro: string; danger?: boolean; ready?: boolean
-  onConfirm: (reason: string) => Promise<unknown>; children?: ReactNode
-}) {
-  const [open, setOpen] = useState(false)
-  const [reason, setReason] = useState('')
-  const [state, setState] = useState<{ busy: boolean; error?: string }>({ busy: false })
-  const opener = useRef<HTMLButtonElement>(null)
-  const form = useRef<HTMLFormElement>(null)
-  const returnFocus = useRef(false)
-  const field = useId()
-  // Aberto, o foco vai para o primeiro campo (o jogo do presente, o e-mail da exclusão ou o motivo); fechado sem
-  // concluir, volta para o botão que abriu.
-  useEffect(() => {
-    if (open) {
-      form.current?.querySelector<HTMLElement>('select, input, textarea')?.focus()
-      return
-    }
-    if (!returnFocus.current) return
-    returnFocus.current = false
-    opener.current?.focus()
-  }, [open])
-  const close = () => { returnFocus.current = true; setOpen(false); setReason(''); setState({ busy: false }) }
+// "A", "A e B", "A, B e C"
+const listNames = (names: string[]) => (names.length <= 1 ? names[0] ?? '' : `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`)
 
-  async function submit(event: FormEvent) {
-    event.preventDefault()
-    if (reason.trim().length < 3) {
-      setState({ busy: false, error: 'Escreva o motivo, de 3 a 300 caracteres. Ele fica no histórico.' })
-      return
-    }
-    setState({ busy: true })
-    try {
-      await onConfirm(reason.trim())
-      setOpen(false)
-      setReason('')
-      setState({ busy: false })
-    } catch (error) {
-      setState({ busy: false, error: apiMessage(error) })
-    }
-  }
-
-  if (!open) return <button ref={opener} className={`text-button${danger ? ' text-button-danger' : ''}`} type="button" onClick={() => setOpen(true)} aria-label={short ? label : undefined}>{short ?? label}</button>
-  return <form ref={form} className={`reason-form${danger ? ' reason-form-danger' : ''}`} onSubmit={event => void submit(event)} aria-label={label} noValidate>
-    <p>{intro}</p>
-    {children}
-    <div className="field">
-      <label htmlFor={field}>Motivo</label>
-      <textarea id={field} value={reason} onChange={event => setReason(event.target.value)} rows={2} maxLength={300}
-        aria-invalid={state.error ? true : undefined} aria-describedby={`${field}-ajuda`} />
-      <p className="field-help" id={`${field}-ajuda`}>Fica no histórico do admin, com o seu e-mail e a data.</p>
-    </div>
-    {state.error && <p className="field-error" role="alert">{state.error}</p>}
-    <div className="reason-actions">
-      <button className={`button ${danger ? 'button-danger' : 'button-primary'}`} type="submit" disabled={state.busy || !ready}>{state.busy ? 'Salvando…' : confirm}</button>
-      <button className="button button-secondary" type="button" disabled={state.busy} onClick={close}>Cancelar</button>
-    </div>
-  </form>
-}
-
-// Presente: um produto à venda que a pessoa ainda não tem por inteiro, com o motivo e o e-mail do presente (marcado).
+// Presente: um ou mais produtos à venda que a pessoa ainda não tem por inteiro, num pedido de R$ 0 e num e-mail só.
+// Um pacote e um jogo que já vem nele não vão juntos (a API recusa e diz quais; aqui os nomes trocam os códigos).
 function GiftForm({ user, onDone }: { user: UserDetail; onDone: (text: string) => void }) {
   const options = user.giftable.filter(product => !product.owned)
-  const [product, setProduct] = useState('')
+  const [chosen, setChosen] = useState<string[]>([])
   const [notify, setNotify] = useState(true)
-  const select = useId()
-  const chosen = options.find(option => option.code === product)
+  const legend = useId()
+  const nameOf = (code: string) => user.giftable.find(product => product.code === code)?.name ?? code
   if (!options.length) return <p className="field-help">A conta já tem todos os jogos à venda.</p>
-  return <ReasonAction label="Dar um jogo de presente" confirm="Dar o presente" ready={Boolean(chosen)}
-    intro="O jogo entra na biblioteca da pessoa na hora, como um pedido de R$ 0 marcado como presente. Não conta nas vendas."
-    onConfirm={reason => api<{ email_queued: boolean }>(`/admin/users/${user.account.id}/gifts`, { method: 'POST', body: { product_code: product, reason, notify } })
-      .then(result => {
-        onDone(`${chosen?.name ?? product} foi dado de presente${result.email_queued ? ' e o e-mail está saindo' : ''}.`)
-        setProduct('')
-      })}>
-    <div className="field">
-      <label htmlFor={select}>Jogo</label>
-      <select id={select} value={product} onChange={event => setProduct(event.target.value)}>
-        <option value="">Escolha um jogo</option>
-        {options.map(option => <option key={option.code} value={option.code}>{option.name ?? option.code}{option.kind === 'bundle' ? ' (pacote)' : ''}</option>)}
-      </select>
-    </div>
+  const toggle = (code: string, on: boolean) => setChosen(current => (on ? [...current, code] : current.filter(item => item !== code)))
+  async function give(reason: string) {
+    try {
+      const result = await api<{ email_queued: boolean }>(`/admin/users/${user.account.id}/gifts`, { method: 'POST', body: { product_codes: chosen, reason, notify } })
+      const names = listNames(chosen.map(nameOf))
+      onDone(`${names} ${chosen.length > 1 ? 'foram dados' : 'foi dado'} de presente${result.email_queued ? ' e o e-mail está saindo' : ''}.`)
+      setChosen([])
+    } catch (error) {
+      const products = error instanceof ApiError && Array.isArray(error.details?.products) ? error.details.products as string[] : []
+      if (!products.length) throw error
+      const names = listNames(products.map(nameOf))
+      const text = error instanceof ApiError && error.code === 'GIFT_OVERLAP' ? `${names} têm jogo em comum (um pacote e um jogo que já vem nele). Escolha só um.`
+        : error instanceof ApiError && error.code === 'ALREADY_OWNED' ? `A pessoa já tem todos os jogos de ${names}.`
+          : `Fora da venda agora: ${names}.`
+      throw new ApiError((error as ApiError).code, text)
+    }
+  }
+  return <ReasonAction label="Dar um jogo de presente" confirm={chosen.length > 1 ? `Dar os ${chosen.length} presentes` : 'Dar o presente'} ready={chosen.length > 0}
+    intro="Os jogos entram na biblioteca da pessoa na hora, num pedido de R$ 0 marcado como presente. Não contam nas vendas."
+    onConfirm={give}>
+    <fieldset className="check-group" aria-describedby={legend}>
+      <legend>Jogos</legend>
+      <p className="field-help" id={legend}>Marque um ou mais. Um pacote já traz os jogos dele.</p>
+      {options.map(option => <label key={option.code} className="check-field">
+        <input type="checkbox" checked={chosen.includes(option.code)} onChange={event => toggle(option.code, event.target.checked)} />
+        <span>{option.name ?? option.code}{option.kind === 'bundle' ? ' (pacote)' : ''}</span>
+      </label>)}
+    </fieldset>
     <label className="check-field">
       <input type="checkbox" checked={notify} onChange={event => setNotify(event.target.checked)} />
       <span>Enviar o e-mail do presente, com os links de baixar, para {user.account.email}</span>
     </label>
   </ReasonAction>
+}
+
+// Equipe: tornar admin ou tirar o admin (não aparece na própria conta). Vale no banco na hora; a pessoa vê o admin
+// quando entrar de novo e cadastra o segundo fator no primeiro acesso.
+function AdminRole({ account, onDone }: { account: UserDetail['account']; onDone: (text: string) => void }) {
+  if (account.admin) {
+    return <ReasonAction label="Remover admin" confirm="Remover admin" danger intro="A pessoa perde o acesso ao admin na hora. A conta dela na loja continua igual."
+      onConfirm={reason => api(`/admin/users/${account.id}/admin`, { method: 'POST', body: { admin: false, reason } }).then(() => onDone('A conta saiu da equipe.'))} />
+  }
+  return <ReasonAction label="Tornar admin" confirm="Tornar admin" ready={Boolean(account.confirmed_at) && !account.blocked}
+    intro={account.confirmed_at && !account.blocked
+      ? 'A pessoa passa a ver e mudar tudo no admin: contas, presentes, exclusões, blog e métricas. Ela cadastra o app autenticador no primeiro acesso.'
+      : 'Só vira admin uma conta com o e-mail confirmado e sem bloqueio.'}
+    onConfirm={reason => api(`/admin/users/${account.id}/admin`, { method: 'POST', body: { admin: true, reason } }).then(() => onDone('A conta entrou na equipe. A pessoa vê o admin quando entrar de novo.'))} />
 }
 
 // Exportar (LGPD): a mesma cópia que a pessoa baixa em Minha conta, num arquivo JSON.

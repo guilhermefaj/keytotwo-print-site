@@ -11,8 +11,9 @@ import { DELETION_BLOCKED } from './account.ts'
 // para a própria conta nem para a de outro admin (409 PROTECTED_ACCOUNT).
 
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const PRODUCT_CODE = /^[A-Z][A-Z0-9-]{1,23}$/
 const PAGE_SIZE = 50
-const FILTERS = ['all', 'buyers', 'newsletter', 'blocked']
+const FILTERS = ['all', 'buyers', 'newsletter', 'blocked', 'admins']
 
 const notAdmin = () => new HttpError(403, 'NOT_ADMIN', 'Esta área é só para a equipe da KeyToTwo.')
 const notFound = (message = 'Conta não encontrada. Ela pode ter sido excluída.') => new HttpError(404, 'NOT_FOUND', message)
@@ -40,7 +41,7 @@ function reasonOf(body: Record<string, unknown>): string {
   return reason
 }
 
-// GET /admin/users?q=&filter=all|buyers|newsletter|blocked&page=1: 50 contas por página, a mais nova primeiro.
+// GET /admin/users?q=&filter=all|buyers|newsletter|blocked|admins&page=1: 50 contas por página, a mais nova primeiro.
 export async function adminUsers(req: Request, url: URL): Promise<Response> {
   const user = await requireAdminSession(req)
   const query = (url.searchParams.get('q') ?? '').trim()
@@ -64,26 +65,59 @@ export async function adminUser(req: Request, _url: URL, params: Record<string, 
   return json(result.result)
 }
 
-// POST /admin/users/:id/gifts { product_code, reason, notify }: pedido de cortesia de R$ 0 com o produto. Com notify, o
-// e-mail do presente sai na hora (e, se falhar, pela fila).
+// POST /admin/users/:id/gifts { product_codes, reason, notify }: um pedido de cortesia de R$ 0 com até 10 produtos.
+// Com notify, um e-mail do presente sai na hora (e, se falhar, pela fila). Nas recusas, details.products diz quais.
 export async function adminGiftProduct(req: Request, _url: URL, params: Record<string, string>): Promise<Response> {
   const user = await requireAdminSession(req)
   const target = param(params, 'id')
   const body = await readJsonObject(req)
-  const product = typeof body.product_code === 'string' ? body.product_code.trim() : ''
-  if (!/^[A-Z][A-Z0-9-]{1,23}$/.test(product)) throw new HttpError(400, 'INVALID_REQUEST', 'Escolha o jogo do presente.')
+  const codes = Array.isArray(body.product_codes) ? body.product_codes : []
+  if (!codes.length || codes.length > 10 || codes.some((code) => typeof code !== 'string' || !PRODUCT_CODE.test(code)) || new Set(codes).size !== codes.length) {
+    throw new HttpError(400, 'INVALID_REQUEST', 'Escolha de 1 a 10 jogos para o presente.')
+  }
   if (typeof body.notify !== 'boolean') throw new HttpError(400, 'INVALID_REQUEST', 'Diga se a pessoa recebe o e-mail do presente.')
   const reason = reasonOf(body)
-  const result = await rpcRow<{ outcome: string; order_id: string | null; outbox_id: string | null }>('admin_gift_product', {
-    p_user_id: user.id, p_target: target, p_product_code: product, p_reason: reason, p_notify: body.notify, p_livemode: livemode(),
+  const result = await rpcRow<{ outcome: string; order_id: string | null; outbox_id: string | null; products: string[] | null }>('admin_gift_products', {
+    p_user_id: user.id, p_target: target, p_product_codes: codes, p_reason: reason, p_notify: body.notify, p_livemode: livemode(),
   })
+  const products = result.products ?? []
+  const list = products.join(', ')
   settle(result.outcome, {
-    product_unavailable: () => new HttpError(409, 'PRODUCT_UNAVAILABLE', 'Este jogo não está à venda agora, então não dá para dar de presente.'),
-    already_owned: () => new HttpError(409, 'ALREADY_OWNED', 'A pessoa já tem todos os jogos deste produto.'),
+    product_unavailable: () => new HttpError(409, 'PRODUCT_UNAVAILABLE', `Fora da venda agora, não dá para dar de presente: ${list}.`, { details: { products } }),
+    already_owned: () => new HttpError(409, 'ALREADY_OWNED', `A pessoa já tem todos os jogos de: ${list}.`, { details: { products } }),
+    overlap: () => new HttpError(409, 'GIFT_OVERLAP', `Estes têm jogo em comum (um pacote e um jogo que já vem nele): ${list}. Escolha só um.`, { details: { products } }),
   })
   const outboxId = result.outbox_id
   if (outboxId) runInBackground('admin: e-mail do presente', () => dispatchEmails({ outboxId }))
-  return json({ order_id: result.order_id, email_queued: Boolean(outboxId) }, 201)
+  return json({ order_id: result.order_id, email_queued: Boolean(outboxId), products }, 201)
+}
+
+// POST /admin/users/:id/admin { admin, reason }: promove a admin ou tira o admin. Vale no banco na hora; no admin da
+// pessoa, quando ela entrar de novo (ou a sessão renovar, até 1 hora). Quem vira admin cadastra o segundo fator.
+export async function adminSetAdmin(req: Request, _url: URL, params: Record<string, string>): Promise<Response> {
+  const user = await requireAdminSession(req)
+  const target = param(params, 'id')
+  const body = await readJsonObject(req)
+  if (typeof body.admin !== 'boolean') throw new HttpError(400, 'INVALID_REQUEST', 'Diga se a conta vira admin ou deixa de ser.')
+  const reason = reasonOf(body)
+  const result = await rpcRow<{ outcome: string }>('admin_set_admin', { p_user_id: user.id, p_target: target, p_admin: body.admin, p_reason: reason })
+  settle(result.outcome, {
+    unchanged: () => new HttpError(409, 'ADMIN_UNCHANGED', body.admin ? 'Esta conta já é admin.' : 'Esta conta não é admin.'),
+    self: () => new HttpError(409, 'PROTECTED_ACCOUNT', 'Você não pode tirar o seu próprio admin. Peça para outra pessoa da equipe.'),
+    last_admin: () => new HttpError(409, 'LAST_ADMIN', 'A equipe precisa de pelo menos um admin.'),
+    not_confirmed: () => new HttpError(409, 'TARGET_NOT_CONFIRMED', 'Só vira admin uma conta com o e-mail confirmado.'),
+    blocked: () => new HttpError(409, 'ACCOUNT_BLOCKED', 'Desbloqueie o login desta conta antes de torná-la admin.'),
+  })
+  return json({ admin: body.admin })
+}
+
+// GET /admin/follow-up: quem precisa de atenção (sacola esquecida, comprou e não baixou, entrega com problema e conta
+// sem confirmação), cada lista com o total e até 100 pessoas.
+export async function adminFollowUp(req: Request): Promise<Response> {
+  const user = await requireAdminSession(req)
+  const result = await rpcRow<{ outcome: string; result: Record<string, unknown> | null }>('admin_follow_up', { p_user_id: user.id })
+  settle(result.outcome)
+  return json(result.result)
 }
 
 // POST /admin/users/:id/entitlements/:entitlement/revoke { reason }: o jogo sai da biblioteca; o pedido não muda.
