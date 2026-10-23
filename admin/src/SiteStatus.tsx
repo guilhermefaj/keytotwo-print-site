@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { siteUrl } from './supabase'
 
 // O site guarda a versão do blog que foi para o ar (/blog/versao.json); igual à do banco, está em dia.
-// Enquanto difere, confere de novo a cada 10 s: o vigia da VPS percebe em até 10 s e reconstrói o site em cerca de 1 minuto.
+// Enquanto difere, confere de novo a cada 10 s (um arquivo estático do site): o vigia da VPS percebe em até 1 minuto e
+// reconstrói o site em cerca de 1 minuto.
 type Sync = 'checking' | 'synced' | 'pending' | 'unknown'
 
 export function SiteStatus({ version, hasPublished = true, synced = 'O site está em dia com os posts publicados.' }: { version: string; hasPublished?: boolean; synced?: string }) {
