@@ -6,6 +6,7 @@ import { handleRequest } from '../api/router.ts'
 const ID = '0b6c8f8e-3f0a-4c1e-9a55-2d5f6b0d1a11'
 const SAVED_AT = '2026-10-23T12:00:00.123456+00:00'
 const MEDIA = 'https://blog-de-teste.s3.teste-001.backblazeb2.com'
+const BLOG_KEY_ID = Deno.env.get('B2_BLOG_KEY_ID')
 
 function post(extra: Record<string, unknown> = {}) {
   return { slug: 'jogos-para-casais', title: 'Jogos para casais', description: 'Ideias para a noite.', author: 'Equipe KeyToTwo',
@@ -21,7 +22,7 @@ const send = async (path: string, options: { method?: string; token?: string; bo
 contractTest('rotas do blog no admin: sem sessão 401; sem o segundo fator 403 MFA_REQUIRED, antes do banco', async () => {
   onRpc(() => ({ status: 200, body: null }))
   const aal1 = await sessionToken({ aal: 'aal1' })
-  for (const [path, method] of [['/admin/blog/posts', 'GET'], ['/admin/blog/posts', 'POST'], [`/admin/blog/posts/${ID}`, 'GET'], [`/admin/blog/posts/${ID}`, 'PUT'], [`/admin/blog/posts/${ID}`, 'DELETE'], ['/admin/blog/images', 'POST']]) {
+  for (const [path, method] of [['/admin/blog/posts', 'GET'], ['/admin/blog/posts', 'POST'], [`/admin/blog/posts/${ID}`, 'GET'], [`/admin/blog/posts/${ID}`, 'PUT'], [`/admin/blog/posts/${ID}`, 'DELETE'], ['/admin/blog/images', 'GET'], ['/admin/blog/images', 'POST']]) {
     const body = method === 'GET' || method === 'DELETE' ? undefined : {}
     assertEquals((await send(path, { method, body })).body.error.code, 'UNAUTHENTICATED', `${method} ${path}`)
     const res = await send(path, { method, token: aal1, body })
@@ -42,21 +43,24 @@ contractTest('GET /admin/blog/posts: lista do banco com a versão e a base públ
   assertEquals([denied.status, denied.body.error.code], [403, 'NOT_ADMIN'])
 })
 
+// Depois de salvar, a API lê a versão do que está publicado (get_blog_version) e devolve junto do post.
+const saving = (saved: Record<string, unknown> | null, outcome = 'ok') => (fn: string) =>
+  ({ status: 200, body: fn === 'get_blog_version' ? 'v3' : [{ outcome, post: saved }] })
+
 contractTest('POST /admin/blog/posts: rascunho só com título e endereço; textos aparados e capa vazia vira null', async () => {
   const token = await admin()
-  onRpc(() => ({ status: 200, body: [{ outcome: 'ok', post: stored({ status: 'draft' }) }] }))
+  onRpc(saving(stored({ status: 'draft' })))
   const draft = { ...post({ status: 'draft', description: '', author: '', body: '' }), title: '  Jogos para casais  ', cover: '', tags: [' Jogos ', ''] }
   const res = await send('/admin/blog/posts', { method: 'POST', token, body: { post: draft } })
-  assertEquals(res.status, 201)
-  assertEquals(res.body.post.id, ID)
-  assertEquals(rpcCalls[0].fn, 'admin_save_blog_post')
+  assertEquals([res.status, res.body.post.id, res.body.version], [201, ID, 'v3'])
+  assertEquals(rpcCalls.map((c) => c.fn), ['admin_save_blog_post', 'get_blog_version'])
   assertEquals(rpcCalls[0].args, { p_user_id: userId(token), p_post_id: null, p_expected_updated_at: null,
     p_post: { ...post({ status: 'draft', description: '', author: '', body: '' }), cover: null, tags: ['Jogos'] } })
 })
 
 contractTest('publicar exige o post completo e as regras do build, sem chegar ao banco', async () => {
   const token = await admin()
-  onRpc(() => ({ status: 200, body: [{ outcome: 'ok', post: stored() }] }))
+  onRpc(saving(stored()))
   const cases: [Record<string, unknown>, string, string][] = [
     [{ description: '', author: '', body: '  ' }, 'description', 'Escreva o resumo antes de publicar. Ele aparece na lista e no Google.'],
     [{ body: '![Foto](https://exemplo.test/foto.png)' }, 'body', 'Há uma imagem de fora do blog no texto. Envie as imagens pelo botão "Imagem".'],
@@ -79,21 +83,21 @@ contractTest('publicar exige o post completo e as regras do build, sem chegar ao
   }
   // Rascunho guarda mesmo com imagem de fora: a regra só vale para publicar.
   await send('/admin/blog/posts', { method: 'POST', token, body: { post: post({ status: 'draft', body: '![Foto](https://exemplo.test/foto.png)' }) } })
-  assertEquals(rpcCalls.map((c) => c.fn), ['admin_save_blog_post'])
+  assertEquals(rpcCalls.map((c) => c.fn), ['admin_save_blog_post', 'get_blog_version'])
 })
 
 contractTest('PUT /admin/blog/posts/:id: grava com a versão aberta; conflito, endereço repetido e fixo viram 409', async () => {
   const token = await admin()
-  onRpc(() => ({ status: 200, body: [{ outcome: 'ok', post: stored({ title: 'Novo' }) }] }))
+  onRpc(saving(stored({ title: 'Novo' })))
   const missing = await send(`/admin/blog/posts/${ID}`, { method: 'PUT', token, body: { post: post() } })
   assertEquals([missing.status, missing.body.error.code], [400, 'INVALID_REQUEST'])
   const ok = await send(`/admin/blog/posts/${ID}`, { method: 'PUT', token, body: { post: post({ title: 'Novo' }), expected_updated_at: SAVED_AT } })
-  assertEquals([ok.status, ok.body.post.title], [200, 'Novo'])
-  assertEquals(rpcCalls.map((c) => c.args), [{ p_user_id: userId(token), p_post_id: ID, p_post: post({ title: 'Novo' }), p_expected_updated_at: SAVED_AT }])
+  assertEquals([ok.status, ok.body.post.title, ok.body.version], [200, 'Novo', 'v3'])
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['admin_save_blog_post', { p_user_id: userId(token), p_post_id: ID, p_post: post({ title: 'Novo' }), p_expected_updated_at: SAVED_AT }], ['get_blog_version', {}]])
 
   const outcomes: [string, number, string][] = [['conflict', 409, 'EDIT_CONFLICT'], ['slug_taken', 409, 'SLUG_TAKEN'], ['slug_locked', 409, 'SLUG_LOCKED'], ['not_found', 404, 'NOT_FOUND'], ['forbidden', 403, 'NOT_ADMIN']]
   for (const [outcome, status, code] of outcomes) {
-    onRpc(() => ({ status: 200, body: [{ outcome, post: outcome === 'conflict' ? stored({ title: 'Salvo em outra aba' }) : null }] }))
+    onRpc(saving(outcome === 'conflict' ? stored({ title: 'Salvo em outra aba' }) : null, outcome))
     const res = await send(`/admin/blog/posts/${ID}`, { method: 'PUT', token, body: { post: post(), expected_updated_at: SAVED_AT } })
     assertEquals([res.status, res.body.error.code], [status, code], outcome)
     if (outcome === 'conflict') assertEquals(res.body.error.details.post.title, 'Salvo em outra aba')
@@ -102,14 +106,14 @@ contractTest('PUT /admin/blog/posts/:id: grava com a versão aberta; conflito, e
 
 contractTest('GET e DELETE /admin/blog/posts/:id: id inválido é 404 sem banco; abre e exclui pelo banco', async () => {
   const token = await admin()
-  onRpc((fn) => ({ status: 200, body: [fn === 'admin_get_blog_post' ? { outcome: 'ok', post: stored() } : { outcome: 'ok' }] }))
+  onRpc((fn) => ({ status: 200, body: fn === 'get_blog_version' ? 'v4' : [fn === 'admin_get_blog_post' ? { outcome: 'ok', post: stored() } : { outcome: 'ok' }] }))
   assertEquals((await send('/admin/blog/posts/nao-e-um-id', { token })).status, 404)
   assertEquals(rpcCalls.length, 0)
   const opened = await send(`/admin/blog/posts/${ID}`, { token })
   assertEquals([opened.status, opened.body.post.body, opened.body.media_base], [200, stored().body, MEDIA])
   const deleted = await send(`/admin/blog/posts/${ID}`, { method: 'DELETE', token })
-  assertEquals([deleted.status, deleted.body], [200, { deleted: true }])
-  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['admin_get_blog_post', { p_user_id: userId(token), p_post_id: ID }], ['admin_delete_blog_post', { p_user_id: userId(token), p_post_id: ID }]])
+  assertEquals([deleted.status, deleted.body], [200, { deleted: true, version: 'v4' }])
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['admin_get_blog_post', { p_user_id: userId(token), p_post_id: ID }], ['admin_delete_blog_post', { p_user_id: userId(token), p_post_id: ID }], ['get_blog_version', {}]])
   onRpc(() => ({ status: 200, body: [{ outcome: 'not_found', post: null }] }))
   assertEquals((await send(`/admin/blog/posts/${ID}`, { token })).body.error.code, 'NOT_FOUND')
 })
@@ -140,6 +144,46 @@ contractTest('POST /admin/blog/images: confere o admin no banco, grava no bucket
   }
   onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden' }] }))
   assertEquals((await upload(token, webp(), 'image/webp')).body.error.code, 'NOT_ADMIN')
+  assertEquals(b2Calls.length, 0)
+})
+
+const listing = (keys: [string, string, number][], next = '') => `<?xml version="1.0" encoding="UTF-8"?>
+<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+${keys.map(([key, at, size]) => `<Contents><Key>${key}</Key><LastModified>${at}</LastModified><Size>${size}</Size></Contents>`).join('')}
+<IsTruncated>${next ? 'true' : 'false'}</IsTruncated>${next ? `<NextContinuationToken>${next}</NextContinuationToken>` : ''}
+</ListBucketResult>`
+
+contractTest('GET /admin/blog/images: confere o admin no banco e lista o bucket do blog, da imagem mais nova à mais antiga', async () => {
+  const token = await admin()
+  onRpc(() => ({ status: 200, body: [{ outcome: 'ok' }] }))
+  onB2((call) => ({
+    status: 200,
+    body: call.query.get('continuation-token') === 'pagina-2'
+      ? listing([['2026/10/cc33dd44-mesa.webp', '2026-10-23T16:00:00.000Z', 300]])
+      : listing([['2026/10/aa11bb22-capa.webp', '2026-10-22T10:00:00.000Z', 100], ['2026/10/leia-me.txt', '2026-10-23T18:00:00.000Z', 5], ['2026/10/Foto &amp; Cia.png', '2026-10-23T17:00:00.000Z', 9]], 'pagina-2'),
+  }))
+  const res = await send('/admin/blog/images', { token })
+  assertEquals(res.status, 200)
+  // Só o que pode ir num post: imagem com nome no padrão do site (o .txt e o nome com espaço e & ficam fora).
+  assertEquals(res.body, {
+    images: [
+      { path: '/images/blog/2026/10/cc33dd44-mesa.webp', url: `${MEDIA}/2026/10/cc33dd44-mesa.webp`, size: 300, uploaded_at: '2026-10-23T16:00:00.000Z' },
+      { path: '/images/blog/2026/10/aa11bb22-capa.webp', url: `${MEDIA}/2026/10/aa11bb22-capa.webp`, size: 100, uploaded_at: '2026-10-22T10:00:00.000Z' },
+    ],
+    truncated: false,
+    media_base: MEDIA,
+  })
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['admin_blog_access', { p_user_id: userId(token) }]])
+  // Lista assinada (ListObjectsV2) no bucket do blog; a segunda página vem pelo token da primeira.
+  assertEquals(b2Calls.map((c) => [c.method, c.host, c.key, c.query.get('list-type'), c.query.get('continuation-token'), c.query.get('X-Amz-Credential')?.split('/')[0]]), [
+    ['GET', 'blog-de-teste.s3.teste-001.backblazeb2.com', '', '2', null, BLOG_KEY_ID],
+    ['GET', 'blog-de-teste.s3.teste-001.backblazeb2.com', '', '2', 'pagina-2', BLOG_KEY_ID],
+  ])
+
+  onB2(() => ({ status: 200, body: listing([]) }))
+  onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden' }] }))
+  const denied = await send('/admin/blog/images', { token })
+  assertEquals([denied.status, denied.body.error.code], [403, 'NOT_ADMIN'])
   assertEquals(b2Calls.length, 0)
 })
 

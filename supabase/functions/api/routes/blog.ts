@@ -2,8 +2,8 @@
 import MarkdownIt from 'markdown-it'
 import { rpc, rpcRow } from '../../_shared/admin.ts'
 import { requireAdminSession } from '../../_shared/auth.ts'
-import { blogConfig, blogMediaBase, putObject } from '../../_shared/b2.ts'
-import { blogProblems, markdownImages, readBlogPostInput, slugify, type BlogPostInput, type MarkdownToken } from '../../_shared/blog-rules.ts'
+import { blogConfig, blogMediaBase, listObjects, putObject } from '../../_shared/b2.ts'
+import { blogProblems, isBlogImagePath, markdownImages, readBlogPostInput, slugify, type BlogPostInput, type MarkdownToken } from '../../_shared/blog-rules.ts'
 import { ConfigError } from '../../_shared/env.ts'
 import { HttpError, json, readBytes, readJsonObject } from '../../_shared/http.ts'
 
@@ -54,10 +54,11 @@ function postInput(body: Record<string, unknown>): BlogPostInput {
 
 type Saved = { outcome: string; post: Record<string, unknown> | null }
 
-function savedPost(result: Saved, status = 200): Response {
+// Com a versão do que está publicado depois de salvar: o editor acompanha quando o site fica com ela.
+async function savedPost(result: Saved, status = 200): Promise<Response> {
   switch (result.outcome) {
     case 'ok':
-      return json({ post: result.post }, status)
+      return json({ post: result.post, version: await rpc<string>('get_blog_version') }, status)
     case 'forbidden':
       throw notAdmin()
     case 'not_found':
@@ -86,7 +87,7 @@ export async function adminCreateBlogPost(req: Request): Promise<Response> {
   const user = await requireAdminSession(req)
   const post = postInput(await readJsonObject(req, POST_BYTES))
   const result = await rpcRow<Saved>('admin_save_blog_post', { p_user_id: user.id, p_post_id: null, p_post: post, p_expected_updated_at: null })
-  return savedPost(result, 201)
+  return await savedPost(result, 201)
 }
 
 // GET /admin/blog/posts/:id: o post inteiro, para o editor.
@@ -109,7 +110,7 @@ export async function adminUpdateBlogPost(req: Request, _url: URL, params: Recor
     throw new HttpError(400, 'INVALID_REQUEST', 'Informe expected_updated_at, a versão que o editor abriu.')
   }
   const post = postInput(body)
-  return savedPost(await rpcRow<Saved>('admin_save_blog_post', { p_user_id: user.id, p_post_id: id, p_post: post, p_expected_updated_at: expected }))
+  return await savedPost(await rpcRow<Saved>('admin_save_blog_post', { p_user_id: user.id, p_post_id: id, p_post: post, p_expected_updated_at: expected }))
 }
 
 // DELETE /admin/blog/posts/:id: some do admin e, se estava publicado, do site na próxima atualização.
@@ -119,7 +120,7 @@ export async function adminDeleteBlogPost(req: Request, _url: URL, params: Recor
   const result = await rpcRow<{ outcome: string }>('admin_delete_blog_post', { p_user_id: user.id, p_post_id: id })
   if (result.outcome === 'forbidden') throw notAdmin()
   if (result.outcome !== 'ok') throw notFound()
-  return json({ deleted: true })
+  return json({ deleted: true, version: await rpc<string>('get_blog_version') })
 }
 
 // POST /admin/blog/images?name=<nome do arquivo>: a imagem crua no corpo (o admin já reduz e converte para WebP).
@@ -143,6 +144,21 @@ export async function adminBlogImage(req: Request, url: URL): Promise<Response> 
   if (allowed.outcome !== 'ok') throw notAdmin()
   await putObject(config, key, bytes, type)
   return json({ path, url: `${blogMediaBase()}/${key}` }, 201)
+}
+
+// GET /admin/blog/images: a galeria do editor, com o que está no bucket público do blog, da imagem mais nova à mais
+// antiga. Vem do bucket, não do banco: também aparece o que foi enviado por fora do admin, se seguir o padrão de nome.
+export async function adminBlogImages(req: Request): Promise<Response> {
+  const user = await requireAdminSession(req)
+  const allowed = await rpcRow<{ outcome: string }>('admin_blog_access', { p_user_id: user.id })
+  if (allowed.outcome !== 'ok') throw notAdmin()
+  const base = blogMediaBase()
+  const { objects, truncated } = await listObjects(blogConfig())
+  const images = objects
+    .filter((object) => isBlogImagePath(`/images/blog/${object.key}`))
+    .sort((a, b) => b.lastModified.localeCompare(a.lastModified) || a.key.localeCompare(b.key))
+    .map((object) => ({ path: `/images/blog/${object.key}`, url: `${base}/${object.key}`, size: object.size, uploaded_at: object.lastModified }))
+  return json({ images, truncated, media_base: base })
 }
 
 // GET /blog/posts (pública): os publicados com o texto, para o build do site, mais a versão e a base das imagens.

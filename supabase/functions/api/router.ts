@@ -2,7 +2,7 @@ import { allowedOrigin, preflight, withCors } from '../_shared/cors.ts'
 import { errorResponse, HttpError, json, toErrorResponse } from '../_shared/http.ts'
 import { deleteAccount, exportAccount, getAccount, markPrompt, putMarketing } from './routes/account.ts'
 import { adminMetrics } from './routes/admin.ts'
-import { adminBlogImage, adminBlogPost, adminBlogPosts, adminCreateBlogPost, adminDeleteBlogPost, adminUpdateBlogPost, blogPublished, blogVersion } from './routes/blog.ts'
+import { adminBlogImage, adminBlogImages, adminBlogPost, adminBlogPosts, adminCreateBlogPost, adminDeleteBlogPost, adminUpdateBlogPost, blogPublished, blogVersion } from './routes/blog.ts'
 import { addCartItem, getCart, mergeCart, quoteCart, removeCartItem } from './routes/cart.ts'
 import { catalog } from './routes/catalog.ts'
 import { checkout } from './routes/checkout.ts'
@@ -57,7 +57,7 @@ const routes: Route[] = [
   route('/admin/metrics', { GET: adminMetrics }),
   route('/admin/blog/posts', { GET: adminBlogPosts, POST: adminCreateBlogPost }),
   route('/admin/blog/posts/:id', { GET: adminBlogPost, PUT: adminUpdateBlogPost, DELETE: adminDeleteBlogPost }),
-  route('/admin/blog/images', { POST: adminBlogImage }),
+  route('/admin/blog/images', { GET: adminBlogImages, POST: adminBlogImage }),
   route('/blog/posts', { GET: blogPublished }),
   route('/blog/version', { GET: blogVersion }),
 ]

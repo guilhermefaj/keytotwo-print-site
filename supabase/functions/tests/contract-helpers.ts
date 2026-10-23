@@ -147,11 +147,12 @@ export function onExternal(reply: (call: ExternalCall) => Reply) {
   externalReply = reply
 }
 
-// Gravações no B2 (imagens do blog): método, host, chave, tipo e tamanho.
+// Chamadas ao B2 (imagens do blog): método, host, chave, query, tipo e tamanho. Corpo em texto responde como XML.
 export interface B2Call {
   method: string
   host: string
   key: string
+  query: URLSearchParams
   contentType: string | null
   size: number
 }
@@ -204,9 +205,10 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
   if (url.hostname.endsWith('.backblazeb2.com')) {
     const body = init?.body
     const size = body instanceof ArrayBuffer ? body.byteLength : body instanceof Uint8Array ? body.byteLength : 0
-    const call = { method: (init?.method ?? 'GET').toUpperCase(), host: url.hostname, key: decodeURIComponent(url.pathname.slice(1)), contentType: new Headers(init?.headers).get('Content-Type'), size }
+    const call = { method: (init?.method ?? 'GET').toUpperCase(), host: url.hostname, key: decodeURIComponent(url.pathname.slice(1)), query: url.searchParams, contentType: new Headers(init?.headers).get('Content-Type'), size }
     b2Calls.push(call)
-    return Promise.resolve(respond(b2Reply(call)))
+    const reply = b2Reply(call)
+    return Promise.resolve(typeof reply.body === 'string' ? new Response(reply.body, { status: reply.status, headers: { 'Content-Type': 'application/xml' } }) : respond(reply))
   }
   return Promise.reject(new Error(`fetch não simulado: ${url.origin}${url.pathname}`))
 }
