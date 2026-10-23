@@ -232,6 +232,15 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .gallery-item img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; background: var(--color-ink-wash); }
 .gallery-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-label); font-weight: 600; }
 .gallery-meta { color: var(--color-ink-soft); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
+.gallery-card { display: grid; align-content: start; gap: 4px; }
+.gallery-use { overflow: hidden; padding: 0 6px; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-soft); font-size: var(--text-caption); line-height: 44px; }
+.gallery-delete { justify-self: start; padding-inline: 6px; font-size: var(--text-label); }
+/* Confirmação de apagar, no próprio cartão: borda de Erro e os dois botões dividindo a largura. */
+.gallery-confirm { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border-left: 3px solid var(--color-error); border-radius: var(--radius-sm); background: var(--color-ink-wash); }
+.gallery-confirm p { flex-basis: 100%; font-size: var(--text-caption); }
+.gallery-confirm .field-error { margin: 0; }
+.gallery-confirm .button { flex: 1 1 0; min-height: 40px; padding: 6px 8px; font-size: var(--text-label); }
+.gallery-notice { margin-bottom: 0; }
 .preview { min-width: 0; min-height: 520px; height: calc(100svh - 240px); overflow: auto; padding: 28px 32px; border: var(--line-rule); border-radius: var(--radius-sm); background: var(--color-paper); }
 .preview .blog-post { max-width: 70ch; }
 .preview .blog-post-heading { margin-block: 0 32px; }

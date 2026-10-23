@@ -157,12 +157,40 @@ select pg_temp.assert('imagem recusada não entra no histórico',
 select pg_temp.expect('imagem fora de /images/blog: KT001',
   format($q$select * from public.admin_register_blog_image(%L, '/images/blog/../segredo.webp')$q$, pg_temp.uid('adm')), 'KT001');
 
--- ===== galeria (migração 20261023160000) ==================================================================
-select pg_temp.assert('galeria: admin recebe ok', (select outcome = 'ok' from public.admin_blog_access(pg_temp.uid('adm'))));
-select pg_temp.assert('galeria: quem não é admin recebe forbidden', (select outcome = 'forbidden' from public.admin_blog_access(pg_temp.uid('comum'))));
-select pg_temp.expect('galeria sem pessoa: KT001', $q$select * from public.admin_blog_access(null)$q$, 'KT001');
+-- ===== galeria e apagar imagens (migrações 20261023160000 e 20261023180000) ===============================
+select pg_temp.assert('galeria: rascunho com a capa repetida no texto e outra imagem',
+  pg_temp.save('img', 'adm', null, pg_temp.post('com-imagens', 'draft', jsonb_build_object(
+    'cover', '/images/blog/2026/10/aa11bb22-capa.webp', 'cover_alt', 'Capa',
+    'body', E'Texto.\n\n![Mesa](/images/blog/2026/10/cc33dd44-mesa.webp)\n\n![Capa de novo](/images/blog/2026/10/aa11bb22-capa.webp "Título")')), null) = 'ok');
+select pg_temp.assert('galeria: admin recebe onde cada imagem é usada, uma vez por post',
+  (select outcome = 'ok'
+          and usage -> '/images/blog/2026/10/aa11bb22-capa.webp' = jsonb_build_array(jsonb_build_object('id', pg_temp.saved_id('img'), 'title', 'Título com-imagens', 'status', 'draft'))
+          and usage -> '/images/blog/2026/10/cc33dd44-mesa.webp' -> 0 ->> 'title' = 'Título com-imagens'
+          and not usage ? '/images/blog/2026/10/livre.webp'
+   from public.admin_blog_image_usage(pg_temp.uid('adm'))));
+select pg_temp.assert('galeria: quem não é admin recebe forbidden, sem o uso',
+  (select outcome = 'forbidden' and usage is null from public.admin_blog_image_usage(pg_temp.uid('comum'))));
+select pg_temp.expect('galeria sem pessoa: KT001', $q$select * from public.admin_blog_image_usage(null)$q$, 'KT001');
 select pg_temp.expect('galeria: admin sem e-mail confirmado: KT009',
-  format($q$select * from public.admin_blog_access(%L)$q$, pg_temp.uid('naoconf')), 'KT009');
+  format($q$select * from public.admin_blog_image_usage(%L)$q$, pg_temp.uid('naoconf')), 'KT009');
+
+select pg_temp.assert('apagar imagem usada num rascunho: in_use com o post',
+  (select outcome = 'in_use' and used_by -> 0 ->> 'id' = pg_temp.saved_id('img')::text
+   from public.admin_delete_blog_image(pg_temp.uid('adm'), '/images/blog/2026/10/cc33dd44-mesa.webp')));
+select pg_temp.assert('imagem em uso não entra no histórico',
+  not exists (select 1 from private.admin_events e where e.action = 'blog_image_delete'));
+select pg_temp.assert('apagar imagem que nenhum post usa: ok',
+  (select outcome = 'ok' and used_by is null from public.admin_delete_blog_image(pg_temp.uid('adm'), '/images/blog/2026/10/livre.webp')));
+select pg_temp.assert('imagem apagada fica no histórico, com quem apagou',
+  exists (select 1 from private.admin_events e where e.action = 'blog_image_delete' and e.details->>'path' = '/images/blog/2026/10/livre.webp' and e.user_id = pg_temp.uid('adm')));
+select pg_temp.assert('apagar imagem: quem não é admin recebe forbidden',
+  (select outcome = 'forbidden' from public.admin_delete_blog_image(pg_temp.uid('comum'), '/images/blog/2026/10/outra.webp')));
+select pg_temp.assert('recusada não entra no histórico',
+  not exists (select 1 from private.admin_events e where e.details->>'path' = '/images/blog/2026/10/outra.webp'));
+select pg_temp.expect('apagar imagem fora de /images/blog: KT001',
+  format($q$select * from public.admin_delete_blog_image(%L, '/images/blog/../segredo.webp')$q$, pg_temp.uid('adm')), 'KT001');
+select pg_temp.expect('apagar imagem: admin sem e-mail confirmado: KT009',
+  format($q$select * from public.admin_delete_blog_image(%L, '/images/blog/2026/10/x.webp')$q$, pg_temp.uid('naoconf')), 'KT009');
 
 -- ===== quem não é admin ===================================================================================
 select pg_temp.assert('não admin: forbidden em listar, abrir, salvar e excluir',

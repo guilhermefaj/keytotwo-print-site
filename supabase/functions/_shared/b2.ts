@@ -70,7 +70,7 @@ function encodeRfc3986(value: string): string {
 const amzDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 
 export interface PresignOptions {
-  method?: 'GET' | 'HEAD' | 'PUT'
+  method?: 'GET' | 'HEAD' | 'PUT' | 'DELETE'
   key: string
   expiresIn?: number
   now?: Date
@@ -136,6 +136,24 @@ export async function listObjects(config: B2Config, maxPages = 5): Promise<{ obj
     if (!token) return { objects, truncated: false }
   }
   return { objects, truncated: true }
+}
+
+// Apaga um objeto de vez. O B2 guarda versões: um DELETE sem versão só esconderia o arquivo (e ele seguiria cobrado),
+// então apaga versão por versão (HEAD dá a atual) até o arquivo não existir mais. Já ausente conta como feito.
+export async function deleteObject(config: B2Config, key: string): Promise<void> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const head = await fetch((await presignUrl(config, { method: 'HEAD', key, expiresIn: 60 })).url, { method: 'HEAD', signal: AbortSignal.timeout(20_000) })
+    await head.body?.cancel()
+    if (head.status === 404) return
+    if (!head.ok) throw new Error(`B2 HEAD falhou (HTTP ${head.status})`)
+    const versionId = head.headers.get('x-amz-version-id')
+    const { url } = await presignUrl(config, { method: 'DELETE', key, expiresIn: 60, query: versionId ? { versionId } : undefined })
+    const response = await fetch(url, { method: 'DELETE', signal: AbortSignal.timeout(20_000) })
+    await response.body?.cancel()
+    if (!response.ok) throw new Error(`B2 DELETE falhou (HTTP ${response.status})`)
+    if (!versionId) return
+  }
+  throw new Error('B2: o arquivo ainda existe depois de 10 versões apagadas')
 }
 
 // Grava um objeto pelo endereço pré-assinado (PUT de 60 s). O Content-Type vai junto, fora da assinatura.

@@ -3,8 +3,8 @@ import AxeBuilder from '@axe-core/playwright'
 import { existsSync, readFileSync } from 'node:fs'
 import { authStorageKey, session } from './session'
 
-// Blog no admin (2026-10-23): lista, criar, editar, publicar, imagens (botão, galeria do bucket, arrastar e colar),
-// conflito e excluir (no editor e na lista). A API do blog é simulada em memória (mesmos códigos e formatos de
+// Blog no admin (2026-10-23): lista, criar, editar, publicar, imagens (botão, galeria do bucket, arrastar e colar,
+// apagar do bucket), conflito e excluir (no editor e na lista). A API do blog é simulada em memória (mesmos códigos e formatos de
 // docs/api-contract.md); o bucket e o /blog/versao.json do site também.
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
 test.skip(() => !existsSync('admin/dist/index.html'), 'Requires `npm run build:admin`')
@@ -18,15 +18,16 @@ function post(id: string, extra: Partial<Post> = {}): Post {
     tags: ['Jogos'], body: '## Começo\n\nTexto do post.', status: 'draft', published_at: null, created_at: '2026-10-20T12:00:00.000001+00:00', updated_at: '2026-10-20T12:00:00.000001+00:00', ...extra }
 }
 
-type Image = { path: string; url: string; size: number; uploaded_at: string }
-const image = (key: string, uploaded_at: string, size = 48_000): Image => ({ path: `/images/blog/${key}`, url: `${MEDIA}/${key}`, size, uploaded_at })
+type Image = { path: string; url: string; size: number; uploaded_at: string; used_by: { id: string; title: string; status: string }[] }
+const image = (key: string, uploaded_at: string, size = 48_000, used_by: Image['used_by'] = []): Image => ({ path: `/images/blog/${key}`, url: `${MEDIA}/${key}`, size, uploaded_at, used_by })
 // liveVersion 'follow': o site fica logo com a versão do banco (como se o vigia já tivesse reconstruído).
 interface Options { posts?: Post[]; liveVersion?: string | null; conflict?: boolean; images?: Image[] }
 
 // API simulada: guarda os posts, devolve 409 quando a versão aberta não é a atual e registra cada chamada. A versão do
 // blog muda quando um publicado muda, como no banco.
-async function blogApi(page: Page, { posts = [], liveVersion = VERSION, conflict = false, images = [] }: Options = {}) {
+async function blogApi(page: Page, { posts = [], liveVersion = VERSION, conflict = false, images: initialImages = [] }: Options = {}) {
   const store = new Map(posts.map(item => [item.id, structuredClone(item)]))
+  let images = structuredClone(initialImages)
   const calls: { method: string; path: string; body: unknown; type?: string }[] = []
   let clock = 0
   let version = VERSION
@@ -56,6 +57,10 @@ async function blogApi(page: Page, { posts = [], liveVersion = VERSION, conflict
       return route.fulfill({ status: 201, json: { post: created, version } })
     }
     if (path === '/admin/blog/images' && method === 'GET') return route.fulfill({ json: { images, truncated: false, media_base: MEDIA } })
+    if (path === '/admin/blog/images' && method === 'DELETE') {
+      images = images.filter(item => item.path !== url.searchParams.get('path'))
+      return route.fulfill({ json: { deleted: true } })
+    }
     if (path === '/admin/blog/images') {
       const key = `2026/10/ab12cd3${3 + ++uploads}-mesa.webp`
       return route.fulfill({ status: 201, json: { path: `/images/blog/${key}`, url: `${MEDIA}/${key}` } })
@@ -208,7 +213,7 @@ test('galeria: as imagens do bucket entram no texto e na capa, sem enviar de nov
   await axe(page)
   await gallery.getByLabel('Procurar pelo nome do arquivo').fill('mesa')
   await expect(gallery.getByRole('status')).toHaveText('1 de 3')
-  await gallery.getByRole('button', { name: /mesa-de-jogo\.webp/ }).click()
+  await gallery.getByRole('button', { name: /^mesa-de-jogo\.webp/ }).click()
   await expect(gallery).toBeHidden()
   await expect(page.getByLabel('Texto em Markdown')).toHaveValue(/!\[Descreva a imagem\]\(\/images\/blog\/2026\/10\/aa11bb22-mesa-de-jogo\.webp\)/)
   await page.keyboard.type('Mesa de jogo')
@@ -217,7 +222,7 @@ test('galeria: as imagens do bucket entram no texto e na capa, sem enviar de nov
   const choose = page.getByRole('button', { name: 'Escolher da galeria' })
   await choose.click()
   const cover = page.getByRole('dialog', { name: 'Escolher a capa' })
-  await cover.getByRole('button', { name: /kito\.webp/ }).click()
+  await cover.getByRole('button', { name: /^kito\.webp/ }).click()
   await expect(cover).toBeHidden()
   await expect(page.locator('.cover-thumb')).toHaveAttribute('src', `${MEDIA}/2026/10/cc33dd44-kito.webp`)
   await expect(page.getByLabel('Descrição da capa')).toBeVisible()
@@ -229,6 +234,50 @@ test('galeria: as imagens do bucket entram no texto e na capa, sem enviar de nov
   await expect(choose).toBeFocused()
   // Escolher da galeria não envia nada: só lista o bucket.
   expect(calls.filter(call => call.path.startsWith('/admin/blog/images')).map(call => call.method)).toEqual(['GET', 'GET', 'GET'])
+})
+
+test('galeria: apaga do bucket só o que nenhum post usa, nem o aberto sem salvar; confirma no próprio cartão', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const images = [
+    image('2026/10/aa11bb22-livre.webp', '2026-10-23T16:00:00.000Z'),
+    image('2026/10/cc33dd44-capa-de-outro.webp', '2026-10-22T10:00:00.000Z', 48_000, [{ id: 'b', title: 'Outro post', status: 'published' }]),
+    image('2026/10/ee55ff66-salva.webp', '2026-10-21T10:00:00.000Z'),
+    image('2026/10/ab77cd88-digitada.webp', '2026-10-20T10:00:00.000Z'),
+  ]
+  const { calls } = await blogApi(page, { posts: [post('a', { body: 'Texto.\n\n![Foto](/images/blog/2026/10/ee55ff66-salva.webp)' }), post('b', { title: 'Outro post' })], images })
+  await page.goto('/blog/a')
+  // Uma imagem posta no texto agora, ainda sem salvar, também conta como deste post.
+  await page.getByLabel('Texto em Markdown').press('End')
+  await page.keyboard.type('\n\n![Nova](/images/blog/2026/10/ab77cd88-digitada.webp)')
+  await page.getByRole('toolbar', { name: 'Formatação' }).getByRole('button', { name: 'Galeria' }).click()
+  const gallery = page.getByRole('dialog', { name: 'Galeria de imagens' })
+  const cards = gallery.locator('.gallery-card')
+  await expect(cards.locator('.gallery-use')).toHaveText(['Em uso em “Outro post”', 'Neste post', 'Neste post'])
+  await expect(gallery.getByRole('button', { name: /^Apagar/ })).toHaveCount(1)
+
+  const remove = gallery.getByRole('button', { name: 'Apagar livre.webp do bucket' })
+  await remove.click()
+  const confirm = gallery.getByRole('group', { name: 'Confirmar: apagar livre.webp' })
+  await expect(confirm).toContainText('Apagar do bucket? Não dá para desfazer.')
+  await expect(confirm.getByRole('button', { name: 'Cancelar' })).toBeFocused()
+  await axe(page)
+  await confirm.getByRole('button', { name: 'Cancelar' }).click()
+  await expect(confirm).toBeHidden()
+  await expect(remove).toBeFocused()
+  expect(calls.filter(call => call.method === 'DELETE')).toEqual([])
+
+  await remove.click()
+  await confirm.getByRole('button', { name: 'Apagar', exact: true }).click()
+  const notice = gallery.locator('.gallery-notice')
+  await expect(notice).toHaveText('“livre.webp” foi apagada do bucket.')
+  await expect(notice).toBeFocused()
+  await expect(gallery.locator('.gallery-name')).toHaveText(['capa-de-outro.webp', 'salva.webp', 'digitada.webp'])
+  await expect(gallery.locator('.gallery-count')).toHaveText('3 imagens')
+  expect(calls.filter(call => call.method === 'DELETE').map(call => call.path)).toEqual([`/admin/blog/images?path=${encodeURIComponent('/images/blog/2026/10/aa11bb22-livre.webp')}`])
+  // Apagar não mexe no texto: a galeria continua aberta e o post, como estava.
+  await expect(gallery).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByLabel('Texto em Markdown')).toHaveValue(/!\[Nova\]\(\/images\/blog\/2026\/10\/ab77cd88-digitada\.webp\)/)
 })
 
 test('arrastar e colar: as imagens vão para o bucket e entram no texto; texto colado segue como texto', async ({ page }) => {

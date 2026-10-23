@@ -2,7 +2,7 @@
 import MarkdownIt from 'markdown-it'
 import { rpc, rpcRow } from '../../_shared/admin.ts'
 import { requireAdminSession } from '../../_shared/auth.ts'
-import { blogConfig, blogMediaBase, listObjects, putObject } from '../../_shared/b2.ts'
+import { blogConfig, blogMediaBase, deleteObject, listObjects, putObject } from '../../_shared/b2.ts'
 import { blogProblems, isBlogImagePath, markdownImages, readBlogPostInput, slugify, type BlogPostInput, type MarkdownToken } from '../../_shared/blog-rules.ts'
 import { ConfigError } from '../../_shared/env.ts'
 import { HttpError, json, readBytes, readJsonObject } from '../../_shared/http.ts'
@@ -147,18 +147,39 @@ export async function adminBlogImage(req: Request, url: URL): Promise<Response> 
 }
 
 // GET /admin/blog/images: a galeria do editor, com o que está no bucket público do blog, da imagem mais nova à mais
-// antiga. Vem do bucket, não do banco: também aparece o que foi enviado por fora do admin, se seguir o padrão de nome.
+// antiga, e os posts que usam cada uma (used_by). Vem do bucket, não do banco: também aparece o que foi enviado por fora
+// do admin, se seguir o padrão de nome.
 export async function adminBlogImages(req: Request): Promise<Response> {
   const user = await requireAdminSession(req)
-  const allowed = await rpcRow<{ outcome: string }>('admin_blog_access', { p_user_id: user.id })
-  if (allowed.outcome !== 'ok') throw notAdmin()
+  const result = await rpcRow<{ outcome: string; usage: Record<string, unknown[]> | null }>('admin_blog_image_usage', { p_user_id: user.id })
+  if (result.outcome !== 'ok') throw notAdmin()
+  const usage = result.usage ?? {}
   const base = blogMediaBase()
   const { objects, truncated } = await listObjects(blogConfig())
   const images = objects
     .filter((object) => isBlogImagePath(`/images/blog/${object.key}`))
     .sort((a, b) => b.lastModified.localeCompare(a.lastModified) || a.key.localeCompare(b.key))
-    .map((object) => ({ path: `/images/blog/${object.key}`, url: `${base}/${object.key}`, size: object.size, uploaded_at: object.lastModified }))
+    .map((object) => {
+      const path = `/images/blog/${object.key}`
+      return { path, url: `${base}/${object.key}`, size: object.size, uploaded_at: object.lastModified, used_by: Object.hasOwn(usage, path) ? usage[path] : [] }
+    })
   return json({ images, truncated, media_base: base })
+}
+
+// DELETE /admin/blog/images?path=/images/blog/<chave>: apaga do bucket uma imagem que nenhum post usa (rascunho
+// incluído). Em uso, 409 IMAGE_IN_USE com os posts em details.used_by: sem ela no bucket, o build do site pararia.
+export async function adminDeleteBlogImage(req: Request, url: URL): Promise<Response> {
+  const user = await requireAdminSession(req)
+  const path = url.searchParams.get('path') ?? ''
+  if (!isBlogImagePath(path)) throw new HttpError(400, 'INVALID_REQUEST', 'Imagem inválida.')
+  const result = await rpcRow<{ outcome: string; used_by: { title: string }[] | null }>('admin_delete_blog_image', { p_user_id: user.id, p_path: path })
+  if (result.outcome === 'forbidden') throw notAdmin()
+  if (result.outcome === 'in_use') {
+    const titles = (result.used_by ?? []).map((post) => `“${post.title}”`).join(', ')
+    throw new HttpError(409, 'IMAGE_IN_USE', `Esta imagem está em uso em ${titles}. Tire-a do post antes de apagar.`, { details: { used_by: result.used_by } })
+  }
+  await deleteObject(blogConfig(), path.slice('/images/blog/'.length))
+  return json({ deleted: true })
 }
 
 // GET /blog/posts (pública): os publicados com o texto, para o build do site, mais a versão e a base das imagens.

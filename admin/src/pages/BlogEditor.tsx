@@ -2,7 +2,7 @@ import { IconArrowLeft, IconBlockquote, IconBold, IconExternalLink, IconHeading,
 import { useDeferredValue, useEffect, useRef, useState, type ChangeEvent, type ClipboardEvent, type DragEvent, type ReactNode } from 'react'
 import { Link, useBlocker, useNavigate, useParams } from 'react-router'
 import { api, ApiError, apiMessage, useResource } from '../api'
-import { acceptedImages, formatDate, mediaUrl, readingMinutes, slugify, today, uploadImage, type BlogList, type BlogPost, type BlogPostInput, type BlogProblem } from '../blog'
+import { acceptedImages, formatDate, imagePathsIn, mediaUrl, readingMinutes, slugify, today, uploadImage, type BlogList, type BlogPost, type BlogPostInput, type BlogProblem } from '../blog'
 import { problemsOf, renderMarkdown } from '../blog-markdown'
 import { SiteStatus } from '../SiteStatus'
 import { siteUrl } from '../supabase'
@@ -264,7 +264,7 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice, 
           <p className="field-help" id="ajuda-tags">Separe com vírgula. Até 10.</p>
           <FieldError field="tags" text={problem('tags')} />
         </div>
-        <Cover form={form} mediaBase={mediaBase} problem={problem('cover')} altProblem={problem('cover_alt')} onChange={(cover, alt) => setForm(current => ({ ...current, cover, cover_alt: alt ?? current.cover_alt }))} altField={field('cover_alt')} />
+        <Cover form={form} postId={saved?.id} mediaBase={mediaBase} problem={problem('cover')} altProblem={problem('cover_alt')} onChange={(cover, alt) => setForm(current => ({ ...current, cover, cover_alt: alt ?? current.cover_alt }))} altField={field('cover_alt')} />
       </section>
 
       <section className="editor-body" aria-labelledby="texto-titulo">
@@ -276,7 +276,7 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice, 
           </div>
         </div>
         <div className={`editor-panes editor-panes-${tab}`}>
-          <MarkdownEditor value={form.body} onChange={value => set('body', value)} problem={problem('body')} />
+          <MarkdownEditor value={form.body} cover={form.cover} postId={saved?.id} onChange={value => set('body', value)} problem={problem('body')} />
           <Preview form={form} status={status} mediaBase={mediaBase} />
         </div>
       </section>
@@ -325,7 +325,7 @@ function FieldError({ field, text }: { field: string; text?: string }) {
 
 type AltField = { id: string; value: string; onChange: (event: ChangeEvent<HTMLInputElement>) => void; 'aria-invalid'?: boolean; 'aria-describedby'?: string }
 
-function Cover({ form, mediaBase, problem, altProblem, onChange, altField }: { form: Form; mediaBase: string | null; problem?: string; altProblem?: string; onChange: (cover: string | null, alt?: string) => void; altField: AltField }) {
+function Cover({ form, postId, mediaBase, problem, altProblem, onChange, altField }: { form: Form; postId?: string; mediaBase: string | null; problem?: string; altProblem?: string; onChange: (cover: string | null, alt?: string) => void; altField: AltField }) {
   const [state, setState] = useState<{ busy: boolean; error?: string }>({ busy: false })
   const [gallery, setGallery] = useState(false)
   async function pick(event: ChangeEvent<HTMLInputElement>) {
@@ -354,7 +354,7 @@ function Cover({ form, mediaBase, problem, altProblem, onChange, altField }: { f
         {form.cover && <button className="text-button" type="button" onClick={() => onChange(null, '')}>Remover capa</button>}
       </div>
     </div>
-    {gallery && <ImageGallery purpose="cover" onPick={image => onChange(image.path)} onClose={() => setGallery(false)} />}
+    {gallery && <ImageGallery purpose="cover" postId={postId} current={imagePathsIn(form.body, form.cover)} onPick={image => onChange(image.path)} onClose={() => setGallery(false)} />}
     <p className="field-help" role="status">{state.error ?? (state.busy ? 'Reduzindo e enviando a imagem…' : 'Ela é reduzida e convertida para WebP antes de subir.')}</p>
     {problem && <p className="field-error">{problem}</p>}
     {form.cover && <div className="field">
@@ -378,7 +378,7 @@ const tools: Tool[] = [
 ]
 
 // Markdown com uma barra de atalhos. As inserções passam pelo histórico do campo (Ctrl+Z desfaz).
-function MarkdownEditor({ value, onChange, problem }: { value: string; onChange: (value: string) => void; problem?: string }) {
+function MarkdownEditor({ value, cover, postId, onChange, problem }: { value: string; cover: string | null; postId?: string; onChange: (value: string) => void; problem?: string }) {
   const area = useRef<HTMLTextAreaElement>(null)
   const [upload, setUpload] = useState<{ busy: boolean; text?: string; error?: string }>({ busy: false })
   const [gallery, setGallery] = useState(false)
@@ -479,7 +479,7 @@ function MarkdownEditor({ value, onChange, problem }: { value: string; onChange:
         <input className="sr-only" type="file" accept={acceptedImages} multiple disabled={upload.busy} onChange={pickFiles} aria-label="Enviar imagens para o texto" />
       </label>
     </div>
-    {gallery && <ImageGallery purpose="body" onPick={image => insertImage(image.path, true)} onClose={() => setGallery(false)} />}
+    {gallery && <ImageGallery purpose="body" postId={postId} current={imagePathsIn(value, cover)} onPick={image => insertImage(image.path, true)} onClose={() => setGallery(false)} />}
     <label className="sr-only" htmlFor="campo-body">Texto em Markdown</label>
     <textarea ref={area} id="campo-body" className="markdown-input" value={value} onChange={event => onChange(event.target.value)} onPaste={paste} spellCheck
       aria-invalid={problem ? true : undefined} aria-describedby={['ajuda-body', problem && 'erro-body'].filter(Boolean).join(' ')}
