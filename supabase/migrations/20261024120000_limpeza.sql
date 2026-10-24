@@ -5,7 +5,7 @@
 --      dos eventos da Stripe e a situação dos direitos de um pedido;
 --   2. fulfill_order monta a entrega com private.delivery_payload (era uma cópia dela); private.access_effect sai;
 --   3. sai o que ninguém usa: mark_marketing_prompt (o convite do site saiu em 2026-10-10), o ZIP do pacote
---      (files.product_id: nenhuma RPC entrega ZIP), o índice orders_stale_idx e os valores nunca gravados
+--      (files.product_id: nenhuma RPC entrega ZIP) e os valores nunca gravados
 --      (consentimento 'cart', supressão 'unsubscribe_link'/'support', descadastro 'support', evento 'system');
 --   4. set_stripe_customer troca o Customer guardado quando a Stripe diz que ele foi apagado (p_replaces).
 -- Antes de aplicar no hospedado: as conferências só leitura do responsável (nenhuma linha com os valores que saem).
@@ -132,8 +132,8 @@ end $$;
 -- consentimento com origem signup_prompt ainda grava a primeira vez, e a conta e a exportação mostram.
 drop function public.mark_marketing_prompt(uuid);
 
--- Nenhuma consulta procura pedido aberto ou pendente por data (não há rotina de reconciliação).
-drop index public.orders_stale_idx;
+-- orders_stale_idx fica: no hospedado ele é usado (idx_scan 157 em 2026-10-24), pelas consultas de pedido aberto ou
+-- pendente.
 
 -- Valores que nenhum caminho grava: consentimento pela sacola, supressão por link ou suporte (só a Brevo suprime) e
 -- evento 'system' no pedido. 'support' no consentimento fica: é o que o admin grava ao tirar das novidades.
