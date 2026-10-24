@@ -44,6 +44,7 @@ async function fixture(page: Page, { stored, who = user() }: { stored?: ReturnTy
     const url = new URL(route.request().url())
     calls.push({ method: route.request().method(), path: `api${url.pathname.split('/api')[1]}${url.search}`, body: null, auth: route.request().headers().authorization })
     if (url.pathname.includes('/admin/blog/')) return route.fulfill({ json: { version: '0'.repeat(32), posts: [], media_base: null } })
+    if (url.pathname.endsWith('/admin/alerts')) return route.fulfill({ json: { open: [], resolved: [] } })
     return route.fulfill({ json: metrics(Number(url.searchParams.get('days'))) })
   })
   return calls
@@ -128,7 +129,7 @@ test('métricas: barra lateral com as seções, 7 e 30 dias, celular sem rolagem
   await page.goto('/')
   const nav = page.getByRole('navigation', { name: 'Seções do admin' })
   // Desde a Fase 3 (2026-10-24) todas as seções existem: sem o grupo "Em breve".
-  await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Blog', 'Pedidos e reembolsos', 'Usuários'])
+  await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Atenção', 'Blog', 'Pedidos e reembolsos', 'Usuários'])
   await expect(nav.getByRole('link', { name: 'Métricas' })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('region', { name: 'Vendas' }).locator('.cards dd')).toHaveText(['R$ 19,80', '2', 'R$ 9,90'])
   await expect(page.locator('.bars span')).toHaveCount(7)
@@ -136,7 +137,9 @@ test('métricas: barra lateral com as seções, 7 e 30 dias, celular sem rolagem
   await axe(page)
   await page.getByRole('button', { name: '30 dias' }).click()
   await expect(page.locator('.bars span')).toHaveCount(30)
-  expect(calls.filter(call => call.path.startsWith('api')).map(call => call.path)).toEqual(['api/admin/metrics?days=7', 'api/admin/metrics?days=30'])
+  expect(calls.filter(call => call.path.startsWith('api/admin/metrics')).map(call => call.path)).toEqual(['api/admin/metrics?days=7', 'api/admin/metrics?days=30'])
+  // os alertas da barra lateral: uma busca só, não uma por troca de período
+  expect(calls.filter(call => call.path === 'api/admin/alerts')).toHaveLength(1)
 
   await nav.getByRole('link', { name: /Blog/ }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Blog' })).toBeVisible()

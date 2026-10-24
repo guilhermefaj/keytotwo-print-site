@@ -1,5 +1,5 @@
 import type Stripe from 'stripe'
-import { RpcError } from '../_shared/admin.ts'
+import { RpcError, rpcRow } from '../_shared/admin.ts'
 import { dispatchSoon } from '../_shared/email.ts'
 import { ConfigError, env } from '../_shared/env.ts'
 import { applySession, idOf, loadSession, orderIdFromSession, type OrderOutcome, setStatus } from '../_shared/fulfillment.ts'
@@ -21,7 +21,21 @@ async function orderIdFromPaymentIntent(paymentIntent: string | Stripe.PaymentIn
   return sessions.data[0] ? orderIdFromSession(sessions.data[0]) : null
 }
 
-// Um evento → no máximo uma RPC. null = evento de sessão ou cobrança que não é nossa.
+// A contestação abre o alerta do admin na hora, com o prazo das provas. Se a chamada falhar, a varredura do banco abre
+// o mesmo alerta (sem o prazo) em até 5 minutos: o webhook não falha por isso.
+async function openDisputeAlert(orderId: string, dispute: Stripe.Dispute): Promise<void> {
+  const dueBy = dispute.evidence_details?.due_by
+  try {
+    await rpcRow('record_dispute_alert', {
+      p_order_id: orderId, p_dispute_id: dispute.id, p_due_by: dueBy ? new Date(dueBy * 1000).toISOString() : null,
+      p_amount: dispute.amount, p_currency: dispute.currency, p_reason: dispute.reason,
+    })
+  } catch (error) {
+    console.error(`stripe-webhook: alerta da contestação ${dispute.id} falhou (${errorLabel(error)})`)
+  }
+}
+
+// Um evento → uma RPC do pedido (a contestação também abre o alerta). null = evento de sessão ou cobrança que não é nossa.
 async function processEvent(event: Stripe.Event): Promise<OrderOutcome | null> {
   const ref = { id: event.id, type: event.type }
   switch (event.type) {
@@ -42,7 +56,9 @@ async function processEvent(event: Stripe.Event): Promise<OrderOutcome | null> {
       const dispute = event.data.object
       const orderId = await orderIdFromPaymentIntent(dispute.payment_intent)
       if (!orderId) return null
-      return await setStatus(orderId, 'disputed', 'webhook', { p_reason: dispute.reason }, ref)
+      const result = await setStatus(orderId, 'disputed', 'webhook', { p_reason: dispute.reason }, ref)
+      if (result.outcome !== 'deferred') await openDisputeAlert(orderId, dispute)
+      return result
     }
     case 'charge.dispute.closed': {
       const dispute = event.data.object

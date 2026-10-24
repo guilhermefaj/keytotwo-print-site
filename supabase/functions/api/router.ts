@@ -2,6 +2,7 @@ import { allowedOrigin, preflight, withCors } from '../_shared/cors.ts'
 import { errorResponse, HttpError, toErrorResponse } from '../_shared/http.ts'
 import { deleteAccount, exportAccount, getAccount, putMarketing } from './routes/account.ts'
 import { adminMetrics } from './routes/admin.ts'
+import { adminAlerts, adminResolveAlert } from './routes/alerts.ts'
 import { adminBlockUser, adminDeleteUser, adminExportUser, adminFollowUp, adminGiftProduct, adminNewsletterOff, adminResendDelivery, adminRevokeEntitlement, adminSetAdmin, adminUnblockUser, adminUser, adminUsers } from './routes/users.ts'
 import { adminBlogImage, adminBlogImages, adminBlogPost, adminBlogPosts, adminCreateBlogPost, adminDeleteBlogImage, adminDeleteBlogPost, adminUpdateBlogPost, blogPublished, blogVersion } from './routes/blog.ts'
 import { addCartItem, getCart, mergeCart, quoteCart, removeCartItem } from './routes/cart.ts'
@@ -74,6 +75,8 @@ const routes: Route[] = [
   route('/admin/orders/:id', { GET: adminOrder }),
   route('/admin/orders/:id/refund', { POST: adminRefundOrder }),
   route('/admin/orders/:id/reconcile', { POST: adminReconcileOrder }),
+  route('/admin/alerts', { GET: adminAlerts }),
+  route('/admin/alerts/:id/resolve', { POST: adminResolveAlert }),
   route('/blog/posts', { GET: blogPublished }),
   route('/blog/version', { GET: blogVersion }),
 ]

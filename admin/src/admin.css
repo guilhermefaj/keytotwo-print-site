@@ -63,6 +63,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .sidebar-item:hover { background: var(--color-ink-wash); color: var(--color-ink); }
 .sidebar-item[aria-current="page"] { background: var(--color-ink-wash); color: var(--color-ink); font-weight: 600; }
 .sidebar-item[aria-current="page"] svg { color: var(--color-deep-teal); }
+.sidebar-badge { margin-left: auto; min-width: 22px; padding: 0 7px; border-radius: 999px; background: color-mix(in srgb, var(--color-error) 12%, var(--color-paper)); color: var(--color-error); font-size: var(--text-caption); font-weight: 600; line-height: 1.6; text-align: center; font-variant-numeric: tabular-nums; }
 .sidebar-account { display: grid; gap: 2px; margin-top: auto; padding-top: 12px; border-top: var(--line-rule); }
 .sidebar-account p { padding: 4px 10px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-soft); font-size: var(--text-caption); }
 .content { min-width: 0; padding: 40px clamp(16px, 4vw, 56px) 80px; max-width: var(--container-wide); }
@@ -314,6 +315,7 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .plain-row-main { display: grid; flex: 1 1 260px; gap: 2px; min-width: 0; }
 .plain-row-sub { color: var(--color-ink-soft); font-size: var(--text-caption); }
 .plain-row-amount { min-width: 80px; font-variant-numeric: tabular-nums; text-align: right; }
+.alert-links { display: flex; flex-wrap: wrap; gap: 0 16px; }
 .timeline { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: var(--text-label); }
 .timeline time { margin-right: 6px; color: var(--color-ink-soft); font-variant-numeric: tabular-nums; }
 .timeline-by { color: var(--color-ink-soft); }

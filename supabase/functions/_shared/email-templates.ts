@@ -5,6 +5,9 @@ import { DELIVERY_TTL_SECONDS, signDeliveryToken, signUnsubscribeToken } from '.
 
 type Named = { code: string; name: string | null }
 
+// Um alerta como a varredura do banco fotografa (private.alert_json).
+type Alert = { kind: string; order_id: string | null; order_ref: string | null; livemode: boolean | null; details: Record<string, unknown> }
+
 export interface OutboxRow {
   id: string
   kind: string
@@ -19,6 +22,7 @@ export interface OutboxRow {
     currency?: string
     items?: Named[]
     games?: (Named & { entitlement_id?: string; game_id?: number })[]
+    alerts?: Alert[]
   }
   attempts: number
 }
@@ -250,10 +254,74 @@ async function refund(row: OutboxRow): Promise<Message> {
   return { to: row.to_email, subject, html, text, tag: row.kind }
 }
 
+// Alerta dos admins (transacional, 2026-10-24): o que abriu na varredura ou no webhook, uma linha por alerta com o que
+// fazer e os links (o pedido no admin, a contestação ou o evento na Stripe). Sem e-mail nem nome de cliente.
+const EMAIL_KINDS: Record<string, string> = { delivery: 'O e-mail de acesso', gift: 'O e-mail do presente', refund: 'O aviso de reembolso' }
+
+function alertCopy(alert: Alert): { text: string; links: { href: string; label: string }[] } {
+  const d = alert.details
+  const ref = alert.order_ref ?? ''
+  const stripe = `https://dashboard.stripe.com/${(d.livemode ?? alert.livemode) === false ? 'test/' : ''}`
+  const links: { href: string; label: string }[] = alert.order_id ? [{ href: `${env.adminUrl()}/pedidos/${alert.order_id}`, label: 'Ver o pedido' }] : []
+  switch (alert.kind) {
+    case 'dispute': {
+      const amount = Number.isSafeInteger(d.amount) && typeof d.currency === 'string'
+        ? ` (${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: d.currency.toUpperCase() }).format((d.amount as number) / 100)})` : ''
+      const due = typeof d.due_by === 'string'
+        ? `até ${new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Sao_Paulo' }).format(new Date(d.due_by))}`
+        : 'dentro do prazo que ela der'
+      if (typeof d.dispute_id === 'string') links.push({ href: `${stripe}disputes/${d.dispute_id}`, label: 'Abrir na Stripe' })
+      return { text: `Contestação no pedido ${ref}${amount}. Mande as provas na Stripe ${due}.`, links }
+    }
+    case 'delivery_failed': {
+      const what = `${EMAIL_KINDS[String(d.email_kind)] ?? 'O e-mail'} do pedido ${ref}`
+      const problem = d.cause === 'bounced' ? `${what} voltou: o endereço não recebe e-mails.` : `${what} não saiu.`
+      const action = d.email_kind === 'refund' ? 'Avise a pessoa por outro caminho.' : 'Confira o e-mail da pessoa e use Reenviar na ficha do pedido.'
+      return { text: `${problem} ${action}`, links }
+    }
+    case 'order_stuck':
+      return { text: `O pedido ${ref} está aberto há mais de 26 horas: o aviso da Stripe não chegou. Use Conferir com a Stripe na ficha do pedido.`, links }
+    case 'stripe_unmatched':
+      if (typeof d.event_id === 'string') links.push({ href: `${stripe}events/${d.event_id}`, label: 'Abrir na Stripe' })
+      return { text: `A Stripe avisou um pagamento (${String(d.type)}) de um pedido que não existe aqui. Confira o evento na Stripe.`, links }
+    case 'email_queue_stuck':
+      return { text: 'Os e-mails estão parados na fila há mais de 30 minutos.', links }
+    case 'backup_late':
+      return { text: 'A cópia de segurança do banco não roda há mais de 26 horas.', links }
+    default:
+      throw new PermanentEmailError('alerta_desconhecido')
+  }
+}
+
+async function adminAlert(row: OutboxRow): Promise<Message> {
+  const alerts = (row.payload.alerts ?? []).map(alertCopy)
+  if (!alerts.length) throw new PermanentEmailError('alerta_sem_itens')
+  const page = `${env.adminUrl()}/atencao`
+  const count = alerts.length
+  const subject = `Admin KeyToTwo: ${count} ${count > 1 ? 'alertas novos' : 'alerta novo'}`
+  const heading = 'Precisa de atenção'
+  const intro = count > 1 ? `Apareceram ${count} alertas novos no admin da KeyToTwo.` : 'Apareceu um alerta novo no admin da KeyToTwo.'
+  const why = 'Você recebe este aviso porque é admin da KeyToTwo. Cada alerta avisa uma vez só.'
+  const html = layout(subject, heading, [
+    paragraph(escapeHtml(intro)),
+    ...alerts.map((a) => paragraph(`${escapeHtml(a.text)}${a.links.map((l) => ` ${link(l.href, l.label)}`).join(' ·')}`)),
+    button(page, 'Abrir Atenção no admin'),
+    paragraph(why, true),
+  ].join('\n    '))
+  const text = [
+    'KeyToTwo', '', heading, '', intro, '',
+    ...alerts.flatMap((a) => [`- ${a.text}`, ...a.links.map((l) => `  ${l.label}: ${l.href}`)]), '',
+    `Abrir Atenção no admin: ${page}`, '', why,
+    ...textSignature(false),
+  ].join('\n')
+  return { to: row.to_email, subject, html, text, tag: row.kind }
+}
+
 const templates: Record<string, (row: OutboxRow) => Promise<Message>> = {
   delivery,
   gift,
   refund,
+  admin_alert: adminAlert,
   cart_reminder: cartReminder,
   post_purchase: postPurchase,
 }

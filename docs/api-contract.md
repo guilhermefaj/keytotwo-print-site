@@ -1,8 +1,8 @@
-# Contrato da API — KeyToTwo (v0.3.10)
+# Contrato da API — KeyToTwo (v0.3.11)
 
 | | |
 | --- | --- |
-| Versão | 0.3.10, 2026-10-24 (Fase 3 do admin: pedidos e reembolsos em `/admin/orders/*`, seção 6.15; o aviso de reembolso por e-mail, seção 8). 0.3.9, 2026-10-24 (limpeza: saem `GET /health`, `POST /account/marketing/prompt`, a origem `cart` e o `Content-Disposition` das exportações; Customer apagado na Stripe é trocado: seção 11.7). 0.3.8, 2026-10-23 (usuários no admin). 0.3.7, 2026-10-23 (blog no admin). 0.3.6, 2026-10-22 (preços da Stripe guardados no banco: seção 6.1). 0.3.5, 2026-10-22 (sacola sem login e jogo repetido: seções 6.2, 6.2.1 e 6.5). 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
+| Versão | 0.3.11, 2026-10-24 (alertas do admin em `/admin/alerts/*`, seção 6.16; o e-mail dos admins e a contestação que abre o alerta, seções 8.2 e 9). 0.3.10, 2026-10-24 (Fase 3 do admin: pedidos e reembolsos em `/admin/orders/*`, seção 6.15; o aviso de reembolso por e-mail, seção 8). 0.3.9, 2026-10-24 (limpeza: saem `GET /health`, `POST /account/marketing/prompt`, a origem `cart` e o `Content-Disposition` das exportações; Customer apagado na Stripe é trocado: seção 11.7). 0.3.8, 2026-10-23 (usuários no admin). 0.3.7, 2026-10-23 (blog no admin). 0.3.6, 2026-10-22 (preços da Stripe guardados no banco: seção 6.1). 0.3.5, 2026-10-22 (sacola sem login e jogo repetido: seções 6.2, 6.2.1 e 6.5). 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
 | Dono | Ferrolho (Backend sênior). Banco, permissões e RPCs: `docs/data-contract.md` v0.3 (Lastro). |
 | Estado | I4: além do I3 (`POST /checkout`, `GET /order-status`, `stripe-webhook`), implementadas `POST /download-url`, `GET /d/{token}`, `GET /free-games`, `POST /free-download` e a função `email-dispatch` (entrega; modo log no local). I5: e-mails de marketing (`cart_reminder`, `post_purchase`) no `email-dispatch`, `GET`/`POST /email/unsubscribe`, a função `brevo-webhook` e a agenda (`pg_cron` + `pg_net`, migração do Lastro). Testes em `supabase/functions/tests`. Passos restantes da Stripe: `docs/stripe.md`. |
 | Fontes | Nota "Plano do site P2" (ajustes do orquestrador, seções 4 e 5) e decisões do responsável registradas nas notas P1 e P2. |
@@ -620,6 +620,24 @@ Responsável, 2026-10-24 (Fase 3 do admin): buscar pedidos, ver a ficha de cada 
 - `POST /admin/orders/{id}/reconcile { reason }` → `{ outcome, status }`: busca a sessão na Stripe e aplica o que ela diz, com a mesma regra do webhook e da confirmação (`applySession`, origem `reconcile`): paga libera e manda o acesso; completa sem pagamento fica `pending_payment`; expirada expira. Só pedido de compra aberto, em andamento ou expirado, com sessão (`reconcilable`); senão `409 ORDER_NOT_RECONCILABLE`. Sessão ainda aberta → `409 ORDER_NOT_RECONCILABLE` (a pessoa não terminou de pagar). Stripe fora do ar → `502 PAYMENT_PROVIDER_ERROR`.
 - Reenviar o acesso de um pedido usa a rota da conta dona (6.14, `POST /admin/users/{id}/orders/{order}/resend`).
 
+### 6.16 Alertas: `/admin/alerts/*`
+
+Responsável, 2026-10-24: o que precisa de atenção num lugar só, com e-mail para os admins. Migração `20261024180000_backup_alertas.sql`. A varredura `private.scan_admin_alerts` roda no `dispatch_tick` (a cada 5 minutos, antes do despacho) e abre um alerta por coisa (a chave é única para sempre: resolver à mão não faz reabrir), olhando os últimos 7 dias:
+
+| `kind` | Abre quando | Fecha sozinho quando |
+| --- | --- | --- |
+| `dispute` | o pedido está `disputed`. O webhook abre na hora (`record_dispute_alert`, com o id `dp_…`, o prazo das provas `due_by`, o valor e o motivo); se essa chamada falhar, a varredura abre sem eles | o pedido sai de `disputed` |
+| `delivery_failed` | e-mail de acesso, presente ou aviso de reembolso `failed`, ou `sent` com devolução permanente (`email_suppressions.hard_bounce` com o mesmo Message-ID, sem os `< >`) | um reenvio do mesmo e-mail sai (`sent`), ou o pedido não está mais pago (acesso e presente) |
+| `order_stuck` | pedido de compra `open` ou `pending_payment`, com sessão, criado há mais de 26 horas (a sessão vence em 24: o aviso da Stripe não chegou) | o pedido muda de status |
+| `stripe_unmatched` | `stripe_events` com `not_found` (a Stripe confirmou o pagamento de um pedido que não existe aqui) | não fecha sozinho |
+| `email_queue_stuck` | e-mail na fila há mais de 30 minutos (a chave é o mais antigo; um por vez) | a fila anda. Do sistema: não se resolve à mão |
+| `backup_late` | a última cópia do backup (`private.backup_runs`) tem mais de 26 horas; sem cópia nenhuma, não abre | chega uma cópia nova. Do sistema: não se resolve à mão |
+
+Cada alerta novo vai num e-mail `admin_alert` (seção 8.2) para cada admin com o e-mail confirmado, uma vez só. Os resolvidos há mais de 180 dias saem.
+
+- `GET /admin/alerts` → `{ open: [alerta], resolved: [alerta] }`: os abertos (todos, do mais novo) e os resolvidos nos últimos 30 dias (até 100). Alerta: `{ id, kind, details, opened_at, order_id, order_ref, order_status, livemode, user_id, resolved_at, resolution, resolved_by, manual }`; `resolution` é `auto` quando fechou sozinho (`resolved_by` nulo) ou o motivo de quem resolveu (`resolved_by` = e-mail); `manual` diz se dá para resolver à mão.
+- `POST /admin/alerts/{id}/resolve { reason }` → `{ resolved: true }`. Motivo de 3 a 300 caracteres (`400` antes do banco); id que não é número → `404`. Alerta que não existe → `404 NOT_FOUND`; já resolvido ou do sistema → `409 ALERT_NOT_RESOLVABLE`. Vai para `private.admin_events` (`alert_resolve`), com o dono do pedido como alvo.
+
 ## 7. Tokens HMAC (entrega e descadastro)
 
 Formato: `<payload>.<assinatura>`, ambos em base64url sem preenchimento.
@@ -667,8 +685,8 @@ Todo e-mail do app sai pela API v3 da Brevo (as Edge Functions não podem usar S
 - **Passos:**
   1. `claim_email_batch(limit, outbox_id)` (o terceiro parâmetro, `p_now`, só serve aos testes). A RPC troca as linhas para `sending` com `SKIP LOCKED` e retoma as presas em `sending` há mais de 10 minutos.
      - Marketing: pula (`skipped`, com motivo) quem não tem opt-in, quem está suprimido, o lembrete de carrinho que mudou ou foi pago e o pós-compra de pedido fora de `paid`. O limite de 1 e-mail de marketing por dia adia para o dia seguinte.
-     - Entrega: cancela se o pedido não está `paid` ou se algum direito foi revogado.
-  2. Para cada linha, monta o e-mail a partir do `payload`. Entrega: assunto "Seus jogos chegaram (pedido <ref>)", um botão por jogo com link `GET /d/{token}` (30 dias, base `API_PUBLIC_URL`), o botão Meus jogos (`SITE_URL/meus-jogos`) e o link de ajuda. Lembrete de carrinho: assunto "Ficou um jogo no carrinho", os itens e o botão Voltar ao carrinho (`/carrinho`). Pós-compra: "Já rolou a primeira partida?", os jogos, Meus jogos e as dicas de impressão (`/ajuda#impressao`). Aviso de reembolso (`refund`, transacional, 2026-10-24): assunto "Reembolso do pedido <ref>", o valor devolvido pelo mesmo meio de pagamento, que o prazo é do banco ou do cartão, que os jogos saíram de Meus jogos e o link de ajuda; sem botão de baixar. Sem valor na fotografia → `rejected`. Todo marketing leva o rodapé de descadastro (seção 6.10) e os headers `List-Unsubscribe: <API_PUBLIC_URL/email/unsubscribe?token=...>` e `List-Unsubscribe-Post: List-Unsubscribe=One-Click`. Marketing sem `user_id` ou sem itens e `kind` desconhecido → `rejected`.
+     - Entrega e presente: cancela se o pedido não está `paid` ou se algum direito foi revogado. O aviso de reembolso e o alerta dos admins não passam por essa conferência.
+  2. Para cada linha, monta o e-mail a partir do `payload`. Entrega: assunto "Seus jogos chegaram (pedido <ref>)", um botão por jogo com link `GET /d/{token}` (30 dias, base `API_PUBLIC_URL`), o botão Meus jogos (`SITE_URL/meus-jogos`) e o link de ajuda. Lembrete de carrinho: assunto "Ficou um jogo no carrinho", os itens e o botão Voltar ao carrinho (`/carrinho`). Pós-compra: "Já rolou a primeira partida?", os jogos, Meus jogos e as dicas de impressão (`/ajuda#impressao`). Aviso de reembolso (`refund`, transacional, 2026-10-24): assunto "Reembolso do pedido <ref>", o valor devolvido pelo mesmo meio de pagamento, que o prazo é do banco ou do cartão, que os jogos saíram de Meus jogos e o link de ajuda; sem botão de baixar. Sem valor na fotografia → `rejected`. Alerta dos admins (`admin_alert`, transacional, sem pedido, 2026-10-24): assunto "Admin KeyToTwo: <n> alerta(s) novo(s)", uma linha por alerta com o que fazer, os links do pedido no admin (`ADMIN_URL/pedidos/<id>`) e da contestação ou do evento na Stripe, e o botão para `ADMIN_URL/atencao`; sem e-mail nem nome de cliente. Sem alertas na fotografia → `rejected`. Todo marketing leva o rodapé de descadastro (seção 6.10) e os headers `List-Unsubscribe: <API_PUBLIC_URL/email/unsubscribe?token=...>` e `List-Unsubscribe-Post: List-Unsubscribe=One-Click`. Marketing sem `user_id` ou sem itens e `kind` desconhecido → `rejected`.
   3. Envia pelo modo configurado. Brevo: `POST https://api.brevo.com/v3/smtp/email` com `sender`, `to`, `subject`, `htmlContent`, `textContent`, `tags: [kind]` e, no marketing, `headers`. No modo log, a cópia no Mailpit leva os mesmos headers.
   4. `mark_email_result(id, status, message_id, erro)`:
      - `sent`;
@@ -702,7 +720,7 @@ Todo e-mail do app sai pela API v3 da Brevo (as Edge Functions não podem usar S
 | `checkout.session.async_payment_succeeded` | `fulfill_order` |
 | `checkout.session.async_payment_failed` | `set_order_status('failed')` |
 | `checkout.session.expired` | `set_order_status('expired')`; o funil registra `checkout_expired` |
-| `charge.dispute.created` | `set_order_status('disputed')`: revoga todos os itens |
+| `charge.dispute.created` | `set_order_status('disputed')`: revoga todos os itens; depois `record_dispute_alert` abre o alerta do admin com o prazo das provas (seção 6.16; se falhar, o webhook responde 200 mesmo assim e a varredura abre o alerta sem o prazo) |
 | `charge.dispute.closed`, `won` ou `warning_closed` | `set_order_status('paid')`: reativa |
 | `charge.dispute.closed`, `lost` | `set_order_status('dispute_lost')`: o acesso fica revogado |
 | `charge.refunded`, reembolso total (só por ação manual, excepcional) | `set_order_status('refunded')`: revoga |

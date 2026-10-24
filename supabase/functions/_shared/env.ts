@@ -56,6 +56,8 @@ export const env = {
   stripeSecretKey: () => read('STRIPE_SECRET_KEY'),
   stripeWebhookSecret: () => required('STRIPE_WEBHOOK_SECRET'),
   siteUrl: () => required('SITE_URL').replace(/\/+$/, ''),
+  // Admin: base dos links do e-mail de alerta dos admins.
+  adminUrl: () => required('ADMIN_URL').replace(/\/+$/, ''),
   termsVersion: () => required('TERMS_VERSION'),
   // Sem ALLOWED_ORIGINS nenhuma origem de navegador é aceita.
   allowedOrigins: () => (origins ??= parseOrigins()),

@@ -1,4 +1,6 @@
 import { useState, type CSSProperties } from 'react'
+import { Link } from 'react-router'
+import { useAlertsContext } from '../alerts'
 import { useResource } from '../api'
 import { count, money } from '../format'
 import { LoadError } from '../LoadError'
@@ -28,9 +30,12 @@ export function MetricsPage() {
   const [days, setDays] = useState<typeof periods[number]>(7)
   const metrics = useResource<Metrics>(`/admin/metrics?days=${days}`)
   const data = metrics.data
+  const alerts = useAlertsContext()
+  const open = (alerts.data ?? alerts.previous)?.open?.length ?? 0
   return <>
     <title>Métricas — Admin KeyToTwo</title>
     <header className="page-heading"><h1>Métricas</h1><p>Como a loja está indo: vendas, contas, funil e downloads.</p></header>
+    {open > 0 && <p className="notice"><Link className="text-link" to="/atencao">{open > 1 ? `${open} alertas precisam` : '1 alerta precisa'} de atenção</Link></p>}
     <div className="toolbar">
       <div className="periods" role="group" aria-label="Período">{periods.map(value => <button key={value} type="button" aria-pressed={days === value} onClick={() => setDays(value)}>{value} dias</button>)}</div>
       {data && <p className="range">{day(data.since)} a {day(data.until)}, contando hoje{!data.livemode && <> · <strong>vendas do modo de teste da Stripe</strong></>}</p>}
