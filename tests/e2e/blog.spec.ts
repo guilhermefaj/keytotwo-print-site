@@ -38,17 +38,58 @@ for (const width of [320, 390, 768, 1280]) {
   }
 }
 
-test('post: compartilhar (WhatsApp e copiar o link), Leia também com tema em comum e o título do Google', async ({ page, context }) => {
+// Sem o compartilhar do sistema (o Chrome do Windows tem; o do Linux, não): o teste vale igual nos dois.
+const withoutNativeShare = () => { delete (Navigator.prototype as { share?: unknown }).share }
+
+test('lista: atalho de compartilhar em cada post, com o link do próprio post', async ({ page, context }) => {
   test.skip(!exampleExists, 'Rascunho excluído do live')
+  await page.addInitScript(withoutNativeShare)
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto('/blog')
+  const share = page.getByRole('group', { name: 'Compartilhar Como publicar pelo painel do blog' })
+  const url = new URL(`/blog/${slug}`, (await page.locator('link[rel="canonical"]').getAttribute('href'))!).href
+  await expect(share.getByRole('link', { name: 'WhatsApp (abre em nova aba)' })).toHaveAttribute('href', `https://wa.me/?text=${encodeURIComponent(`Como publicar pelo painel do blog ${url}`)}`)
+  await expect(share.getByRole('button', { name: 'Mais opções' })).toHaveCount(0)
+  await share.getByRole('button', { name: 'Copiar o link' }).click()
+  await expect(share.getByRole('button', { name: 'Link copiado' })).toBeFocused()
+  await expect(share.getByRole('status')).toHaveText('Link copiado.')
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(url)
+  await expect(page.getByRole('group', { name: /^Compartilhar / })).toHaveCount(await page.locator('.blog-entry').count())
+})
+
+test('post: compartilhar no topo, botão flutuante durante a leitura, Leia também e o título do Google', async ({ page, context }) => {
+  test.skip(!exampleExists, 'Rascunho excluído do live')
+  await page.addInitScript(withoutNativeShare)
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.setViewportSize({ width: 390, height: 700 })
   await page.goto(`/blog/${slug}`)
   const canonical = (await page.locator('link[rel="canonical"]').getAttribute('href'))!
-  const share = page.getByRole('region', { name: 'Compartilhar' })
-  await expect(share.getByRole('link', { name: /WhatsApp/ })).toHaveAttribute('href', `https://wa.me/?text=${encodeURIComponent(`Como publicar pelo painel do blog ${canonical}`)}`)
+  const share = page.getByRole('group', { name: 'Compartilhar', exact: true })
+  await expect(share.getByRole('link', { name: 'WhatsApp (abre em nova aba)' })).toHaveAttribute('href', `https://wa.me/?text=${encodeURIComponent(`Como publicar pelo painel do blog ${canonical}`)}`)
   await share.getByRole('button', { name: 'Copiar o link' }).click()
-  await expect(share.getByRole('button', { name: 'Link copiado' })).toBeVisible()
-  await expect(share.getByRole('status')).toHaveText('O link do post foi copiado.')
+  await expect(share.getByRole('status')).toHaveText('Link copiado.')
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(canonical)
+
+  // No começo o atalho do topo basta; o flutuante só aparece depois que ele sai da tela, e some quando o texto acaba.
+  const floating = page.getByRole('button', { name: 'Compartilhar este post' })
+  await expect(floating).toBeHidden()
+  await page.locator('.blog-prose h2').nth(1).scrollIntoViewIfNeeded()
+  await expect(floating).toBeVisible()
+  await expect(floating).toHaveAttribute('aria-expanded', 'false')
+  await floating.click()
+  const panel = page.getByRole('group', { name: 'Opções para compartilhar' })
+  await expect(floating).toHaveAttribute('aria-expanded', 'true')
+  await expect(panel.getByRole('link', { name: 'WhatsApp (abre em nova aba)' })).toHaveAttribute('href', `https://wa.me/?text=${encodeURIComponent(`Como publicar pelo painel do blog ${canonical}`)}`)
+  await panel.getByRole('button', { name: 'Copiar o link' }).click()
+  await expect(panel.getByRole('button', { name: 'Link copiado' })).toBeVisible()
+  await expect(new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).include('.blog-share-float').analyze().then(r => r.violations)).resolves.toEqual([])
+  await page.keyboard.press('Escape')
+  await expect(panel).toHaveCount(0)
+  await expect(floating).toBeFocused()
+  await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight))
+  await expect(floating).toBeHidden()
+  await page.evaluate(() => scrollTo(0, 0))
+  await expect(floating).toBeHidden()
   const related = page.getByRole('region', { name: 'Leia também' })
   await expect(related.getByRole('link')).toHaveText(['Segundo exemplo de post'])
   await related.getByRole('link').click()
@@ -58,6 +99,23 @@ test('post: compartilhar (WhatsApp e copiar o link), Leia também com tema em co
   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', 'Descrição para o Google do segundo exemplo.')
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Título curto do segundo exemplo — KeyToTwo')
   await expect(page.getByRole('region', { name: 'Leia também' }).getByRole('link')).toHaveText(['Como publicar pelo painel do blog'])
+})
+
+test('post: no aparelho com o compartilhar do sistema, o flutuante abre direto o do sistema', async ({ page }) => {
+  test.skip(!exampleExists, 'Rascunho excluído do live')
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'share', { configurable: true, value(data: ShareData) { (window as { shared?: ShareData }).shared = data; return Promise.resolve() } })
+  })
+  await page.setViewportSize({ width: 390, height: 700 })
+  await page.goto(`/blog/${slug}`)
+  const canonical = (await page.locator('link[rel="canonical"]').getAttribute('href'))!
+  await expect(page.getByRole('group', { name: 'Compartilhar', exact: true }).getByRole('button', { name: 'Mais opções' })).toBeVisible()
+  await page.locator('.blog-prose h2').nth(1).scrollIntoViewIfNeeded()
+  const floating = page.getByRole('button', { name: 'Compartilhar este post' })
+  await expect(floating).not.toHaveAttribute('aria-expanded')
+  await floating.click()
+  await expect(page.getByRole('group', { name: 'Opções para compartilhar' })).toHaveCount(0)
+  expect(await page.evaluate(() => (window as { shared?: ShareData }).shared)).toEqual({ title: 'Como publicar pelo painel do blog', url: canonical })
 })
 
 test('navega da lista ao post e volta com metadados próprios e foco visível', async ({ page }) => {

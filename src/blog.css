@@ -22,13 +22,27 @@
 .blog-empty h2 { margin: 0 0 16px; }
 .blog-empty p { max-width: 56ch; margin: 0 0 16px; }
 .blog-rss { margin-top: 32px; }
-/* Compartilhar e Leia também (2026-10-23), no fim do post, antes do convite para a Loja. */
-.blog-share { margin-top: 48px; padding-top: 24px; border-top: var(--line-rule); }
-.blog-share h2, .blog-related h2 { margin: 0 0 16px; font-size: var(--text-title); }
-.blog-share ul { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; padding: 0; list-style: none; }
-.blog-share .button { gap: 8px; }
-.blog-share-status { min-height: 1.5em; margin: 12px 0 0; color: var(--color-ink-soft); font-size: var(--text-label); overflow-wrap: anywhere; }
-.blog-related { margin-top: 40px; padding-top: 24px; border-top: var(--line-rule); }
+/* Compartilhar (2026-10-24): ícones em cada post da lista e sob o título do post; o aviso de copiado fica ao lado. */
+.blog-share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 20px; }
+.blog-share ul { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.blog-share-label { color: var(--color-ink-soft); font-size: var(--text-label); }
+.blog-share-status { margin: 0; color: var(--color-ink-soft); font-size: var(--text-label); line-height: 1.6; overflow-wrap: anywhere; }
+.blog-share-status:empty { display: none; }
+/* Botão flutuante: aparece quando o atalho do topo sai da tela e some quando o texto acaba. */
+.blog-share-float { position: fixed; z-index: 40; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: flex-end; gap: 12px; visibility: hidden; opacity: 0; transform: translateY(8px); pointer-events: none; }
+.blog-share-float[data-visible] { visibility: visible; opacity: 1; transform: none; pointer-events: auto; }
+.blog-share-float-button { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; padding: 0; border: 1.5px solid var(--color-ink); border-radius: 50%; color: var(--color-ink); background: var(--color-paper); box-shadow: var(--shadow-menu); cursor: pointer; }
+.blog-share-float-button:hover { background: var(--color-ink-wash); }
+.blog-share-float-panel { display: grid; gap: 8px; width: min(240px, calc(100vw - 32px)); padding: 12px; border: var(--line-card-quiet); border-radius: var(--radius-md); background: var(--color-paper); box-shadow: var(--shadow-menu); font-size: var(--text-body); }
+.blog-share-float-panel .button { gap: 8px; justify-content: flex-start; }
+@media (prefers-reduced-motion: no-preference) {
+  .blog-share-float { transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out), visibility 0s linear 180ms; }
+  .blog-share-float[data-visible] { transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out), visibility 0s; }
+}
+@media print { .blog-share, .blog-share-float { display: none; } }
+/* Leia também (2026-10-23), no fim do post, antes do convite para a Loja. */
+.blog-related h2 { margin: 0 0 16px; font-size: var(--text-title); }
+.blog-related { margin-top: 48px; padding-top: 24px; border-top: var(--line-rule); }
 .blog-related ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin: 0; padding: 0; list-style: none; }
 .blog-related img { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 12px; }
 .blog-related h3 { margin: 0 0 8px; font-size: var(--text-title-sm); line-height: 1.3; }
