@@ -4,26 +4,8 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select * from no_plan();
 
--- ===== helpers (só existem nesta transação; pg_temp) ============================================
-create function pg_temp.expect(p_label text, p_sql text, p_state text) returns text language plpgsql as $$
-declare st text := 'OK';
-begin
-  begin execute p_sql; exception when others then get stacked diagnostics st = returned_sqlstate; end;
-  return extensions.is(st, p_state, p_label);
-end $$;
-
-create function pg_temp.expect_as(p_label text, p_role text, p_sql text, p_state text) returns text language plpgsql as $$
-declare st text := 'OK';
-begin
-  execute format('set local role %I', p_role);
-  begin execute p_sql; exception when others then get stacked diagnostics st = returned_sqlstate; end;
-  reset role;
-  return extensions.is(st, p_state, p_label);
-end $$;
-
-create function pg_temp.assert(p_label text, p_cond boolean) returns text language sql as $$
-  select extensions.ok(coalesce(p_cond, false), p_label)
-$$;
+-- ===== helpers (só existem nesta transação; pg_temp): supabase/tests/database/helpers ===========
+\ir helpers/base.psql
 
 -- ===== guardar e ler ==============================================================================
 select pg_temp.assert('remember_stripe_prices guarda dois Prices',

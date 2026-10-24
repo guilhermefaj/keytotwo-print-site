@@ -1,0 +1,107 @@
+-- Incluído com \ir depois de fixtures.psql: carrinho, pedido aberto e liberação (05, 09, 12 e 90).
+-- ===== ajudantes do checkout ==================================================================
+create temp table oids (name text primary key, id uuid);
+create function pg_temp.oid(p_name text) returns uuid language sql as $$ select id from pg_temp.oids where name = p_name $$;
+
+-- preenche o carrinho pelas RPCs e devolve a version
+create function pg_temp.fill_cart(p_user uuid, p_codes text[]) returns integer language plpgsql as $$
+declare c text;
+begin
+  foreach c in array p_codes loop perform public.cart_add(p_user, c); end loop;
+  return coalesce((select ca.version from public.carts ca where ca.user_id = p_user), 0);
+end $$;
+
+-- pedido open pelas RPCs (carrinho -> create_order_from_cart -> attach_checkout_session)
+create function pg_temp.open_order(p_user uuid, p_codes text[], p_attach boolean default true) returns uuid language plpgsql as $$
+declare v_ver integer; v_order uuid;
+begin
+  v_ver := pg_temp.fill_cart(p_user, p_codes);
+  select c.order_id into v_order from public.create_order_from_cart(p_user, false, v_ver, 'v-pgtap', true) c;
+  if p_attach then
+    perform public.attach_checkout_session(v_order, 'cs_test_PGTAP_' || replace(v_order::text, '-', ''));
+  end if;
+  return v_order;
+end $$;
+
+-- line_items da sessão para os itens do pedido (preço cheio por position)
+create function pg_temp.sess_items(p_order uuid, p_amounts bigint[]) returns jsonb language sql as $$
+  select jsonb_agg(jsonb_build_object('stripe_price_id', oi.stripe_price_id, 'quantity', 1,
+                                      'unit_amount', p_amounts[oi.position], 'currency', 'brl') order by oi.position)
+  from public.order_items oi where oi.order_id = p_order
+$$;
+
+-- fulfill_order com valores coerentes por padrão; p_over troca campos: discount, subtotal, total, code, intent, customer,
+-- event, event_type, status, session, source, livemode, currency, items
+create function pg_temp.fulfill(p_order uuid, p_amounts bigint[], p_over jsonb default '{}'::jsonb)
+returns table (outcome text, order_id uuid, order_status text, entitlement_count integer, outbox_id uuid, send_delivery boolean)
+language plpgsql as $$
+declare
+  v_sub  bigint := coalesce((select sum(a) from unnest(p_amounts) a), 0);
+  v_disc bigint := coalesce((p_over->>'discount')::bigint, 0);
+begin
+  return query select * from public.fulfill_order(
+    p_order_id => p_order,
+    p_checkout_session_id => coalesce(p_over->>'session', 'cs_test_PGTAP_' || replace(p_order::text, '-', '')),
+    p_payment_status => coalesce(p_over->>'status', 'paid'),
+    p_amount_subtotal => coalesce((p_over->>'subtotal')::bigint, v_sub),
+    p_amount_discount => v_disc,
+    p_amount_total => coalesce((p_over->>'total')::bigint, v_sub - v_disc),
+    p_currency => coalesce(p_over->>'currency', 'brl'),
+    p_promotion_code => p_over->>'code',
+    p_payment_intent_id => case when p_over ? 'intent' then p_over->>'intent' else 'pi_PGTAP_' || replace(p_order::text, '-', '') end,
+    p_customer_id => p_over->>'customer',
+    p_livemode => coalesce((p_over->>'livemode')::boolean, false),
+    p_items => coalesce(p_over->'items', pg_temp.sess_items(p_order, p_amounts)),
+    p_source => coalesce(p_over->>'source', 'webhook'),
+    p_stripe_event_id => p_over->>'event',
+    p_event_type => p_over->>'event_type');
+end $$;
+
+-- set_order_status: p_over troca: event, event_type, reason, source, subtotal, discount, total, currency, code, intent
+create function pg_temp.setst(p_order uuid, p_new text, p_over jsonb default '{}'::jsonb)
+returns table (outcome text, order_id uuid, previous_status text, order_status text, entitlement_status text)
+language plpgsql as $$
+begin
+  return query select * from public.set_order_status(
+    p_order_id => p_order, p_new_status => p_new,
+    p_source => coalesce(p_over->>'source', 'webhook'),
+    p_stripe_event_id => p_over->>'event',
+    p_reason => p_over->>'reason',
+    p_amount_total => (p_over->>'total')::bigint,
+    p_currency => p_over->>'currency',
+    p_payment_intent_id => p_over->>'intent',
+    p_amount_subtotal => (p_over->>'subtotal')::bigint,
+    p_amount_discount => (p_over->>'discount')::bigint,
+    p_promotion_code => p_over->>'code',
+    p_event_type => p_over->>'event_type');
+end $$;
+
+-- compra completa pelas RPCs; devolve o pedido
+create function pg_temp.buy(p_user uuid, p_codes text[], p_amounts bigint[], p_over jsonb default '{}'::jsonb) returns uuid language plpgsql as $$
+declare v_order uuid;
+begin
+  v_order := pg_temp.open_order(p_user, p_codes);
+  perform * from pg_temp.fulfill(v_order, p_amounts, p_over);
+  return v_order;
+end $$;
+
+-- I-5 no estado atual: dispara os gatilhos diferidos agora e volta ao modo diferido
+create function pg_temp.i5(p_label text) returns text language plpgsql as $$
+declare st text := 'OK';
+begin
+  begin set constraints all immediate; exception when others then get stacked diagnostics st = returned_sqlstate; end;
+  set constraints all deferred;
+  return extensions.is(st, 'OK', p_label);
+end $$;
+
+-- contagens de um pedido, para provar que nada mudou
+create function pg_temp.footprint(p_order uuid) returns text language sql as $$
+  select concat_ws('|',
+    (select count(*) from public.entitlements where order_id = p_order),
+    (select count(*) from public.entitlement_games eg join public.entitlements e on e.id = eg.entitlement_id where e.order_id = p_order),
+    (select count(*) from public.email_outbox where order_id = p_order),
+    (select count(*) from public.order_events where order_id = p_order),
+    (select count(*) from public.funnel_events where order_id = p_order),
+    (select count(*) from public.stripe_events where order_id = p_order),
+    (select status from public.orders where id = p_order))
+$$;
