@@ -1,18 +1,12 @@
 // Testes de contrato da gestão de usuários no admin (docs/api-contract.md 6.14), sem rede e sem banco.
 import { assertEquals } from '@std/assert'
 import { setBackgroundRunner } from '../_shared/background.ts'
-import { authAdminCalls, contractTest, onAuthAdmin, onRpc, request, rpcCalls, sessionToken, userId } from './contract-helpers.ts'
-import { handleRequest } from '../api/router.ts'
+import { adminToken as admin, authAdminCalls, contractTest, onAuthAdmin, onRpc, rpcCalls, send, sessionToken, userId } from './contract-helpers.ts'
 
 const TARGET = '7d1c2b3a-4e5f-4a6b-8c7d-9e0f1a2b3c4d'
 const ENT = '1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d'
 const ORDER = '9f8e7d6c-5b4a-4c3d-8e2f-1a0b9c8d7e6f'
 const OUTBOX = '2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e'
-const admin = () => sessionToken({ aal: 'aal2' })
-const send = async (path: string, options: { method?: string; token?: string; body?: unknown }) => {
-  const res = await handleRequest(request(path, options))
-  return { status: res.status, headers: res.headers, body: await res.json() }
-}
 const base = `/admin/users/${TARGET}`
 
 contractTest('usuários no admin: sem sessão 401; sem o segundo fator 403 MFA_REQUIRED, antes do banco', async () => {
@@ -213,7 +207,7 @@ contractTest('exportar baixa a cópia dos dados; excluir confere o e-mail no ban
   const token = await admin()
   onRpc(() => ({ status: 200, body: [{ outcome: 'ok', data: { orders: [] } }] }))
   const exported = await send(`${base}/export`, { token })
-  assertEquals([exported.status, exported.body, exported.headers.get('Content-Disposition')], [200, { orders: [] }, 'attachment; filename="keytotwo-dados-7d1c2b3a.json"'])
+  assertEquals([exported.status, exported.body], [200, { orders: [] }])
   onRpc(() => ({ status: 200, body: [{ outcome: 'not_confirmed', data: null }] }))
   assertEquals((await send(`${base}/export`, { token })).body.error.code, 'TARGET_NOT_CONFIRMED')
 

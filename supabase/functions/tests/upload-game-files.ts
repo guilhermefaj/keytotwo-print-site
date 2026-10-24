@@ -8,14 +8,10 @@
 // conteúdo diferente: um arquivo trocado sobe com --versao=X.Y, que vira o sufixo -vX.Y na chave (a 1.0 não tem sufixo).
 // --pasta-free cria free/.bzEmpty, o marcador de pasta do B2, enquanto não há jogo grátis no bucket.
 // Nada é impresso além de chave, tamanho, sha256 e o id do arquivo no B2; o registro no banco é outro passo.
-import { type B2Config, presignUrl } from '../_shared/b2.ts'
+import { attachment, presignUrl } from '../_shared/b2.ts'
+import { bucketKeys, sha256 } from './upload-config.ts'
 
-const hex = (bytes: ArrayBuffer) => Array.from(new Uint8Array(bytes), (b) => b.toString(16).padStart(2, '0')).join('')
-const sha256 = async (bytes: ArrayBuffer) => hex(await crypto.subtle.digest('SHA-256', bytes))
 const slug = (name: string) => name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-// Mesmo formato do download (api/routes/downloads.ts): nome ASCII seguro e filename* em UTF-8.
-const attachment = (filename: string) =>
-  `attachment; filename="${filename.normalize('NFKD').replace(/[^\x20-\x7e]/g, '').replace(/["\\]/g, '_').trim()}"; filename*=UTF-8''${encodeURIComponent(filename)}`
 
 const [secretsPath, ...rest] = Deno.args
 const createFreeFolder = rest.includes('--pasta-free')
@@ -23,14 +19,7 @@ const version = rest.find((arg) => arg.startsWith('--versao='))?.slice('--versao
 const files = rest.filter((arg) => !arg.startsWith('--'))
 if (!secretsPath || !/^\d+\.\d+(\.\d+)?$/.test(version)) throw new Error('Uso: <segredos .env> <arquivos...> [--versao=X.Y] [--pasta-free]')
 
-const secrets: Record<string, string> = {}
-for (const line of (await Deno.readTextFile(secretsPath)).split(/\r?\n/)) {
-  const m = /^([A-Z0-9_]+)=(.*)$/.exec(line)
-  if (m) secrets[m[1]] = m[2].trim().replace(/^["']|["']$/g, '')
-}
-const base = { endpoint: secrets.B2_ENDPOINT.replace(/^https?:\/\//, '').replace(/\/+$/, ''), region: secrets.B2_REGION, bucket: secrets.B2_BUCKET }
-const write: B2Config = { ...base, keyId: secrets.B2_WRITE_KEY_ID, secret: secrets.B2_WRITE_APPLICATION_KEY }
-const read: B2Config = { ...base, keyId: secrets.B2_READ_KEY_ID, secret: secrets.B2_READ_APPLICATION_KEY }
+const { bucket, write, read } = await bucketKeys(secretsPath)
 
 async function exists(key: string) {
   const head = await fetch((await presignUrl(read, { method: 'HEAD', key, expiresIn: 60 })).url, { method: 'HEAD' })
@@ -72,4 +61,4 @@ if (createFreeFolder && !(await exists('free/.bzEmpty'))) {
   await put('free/.bzEmpty', new ArrayBuffer(0), { 'Content-Type': 'application/octet-stream' })
   result.push({ object_key: 'free/.bzEmpty', status: 'pasta free criada' })
 }
-console.log(JSON.stringify({ bucket: base.bucket, arquivos: result }, null, 2))
+console.log(JSON.stringify({ bucket, arquivos: result }, null, 2))

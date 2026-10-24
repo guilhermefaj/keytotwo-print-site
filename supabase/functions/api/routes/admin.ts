@@ -2,6 +2,7 @@ import { rpcRow } from '../../_shared/admin.ts'
 import { requireAdminSession } from '../../_shared/auth.ts'
 import { HttpError, json } from '../../_shared/http.ts'
 import { livemode } from '../../_shared/stripe.ts'
+import { settle } from './outcome.ts'
 
 // Períodos do painel: os últimos 7 ou 30 dias do calendário de Brasília, contando hoje.
 const PERIODS = [7, 30]
@@ -17,6 +18,6 @@ export async function adminMetrics(req: Request, url: URL): Promise<Response> {
     p_days: days,
     p_livemode: livemode(),
   })
-  if (result.outcome !== 'ok') throw new HttpError(403, 'NOT_ADMIN', 'Esta área é só para a equipe da KeyToTwo.')
+  settle(result.outcome)
   return json(result.metrics)
 }

@@ -43,7 +43,7 @@ export type ErrorCode =
   | 'FILE_UNAVAILABLE'
 
 // details: dado de apoio ao site (códigos de produto, versão do carrinho), nunca dado pessoal.
-export interface ErrorExtra {
+interface ErrorExtra {
   headers?: HeadersInit
   details?: Record<string, unknown>
 }
@@ -76,6 +76,27 @@ export function errorResponse(status: number, code: ErrorCode, message: string, 
   const error = extra.details ? { code, message, details: extra.details } : { code, message }
   return json({ error }, status, extra.headers)
 }
+
+// Para log: o tipo do erro e o código, quando há (RpcError, HttpError); nunca a mensagem, que pode citar dado pessoal.
+export function errorLabel(error: unknown): string {
+  if (!(error instanceof Error)) return 'erro'
+  const code = (error as { code?: unknown }).code
+  return typeof code === 'string' && code ? `${error.name} ${code}` : error.name
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function isUuid(value: unknown): value is string {
+  return typeof value === 'string' && UUID.test(value)
+}
+
+// Redirecionamento que não fica em cache nem leva o endereço (com token) como Referer.
+export function redirect(location: string): Response {
+  return new Response(null, { status: 302, headers: { Location: location, 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' } })
+}
+
+// Funções que só aceitam POST (webhooks e o email-dispatch).
+export const postOnly = () => errorResponse(405, 'METHOD_NOT_ALLOWED', 'Método não permitido.', { headers: { Allow: 'POST' } })
 
 // Nunca registra corpo, headers, e-mail ou token: só o tipo e a mensagem do erro.
 export function toErrorResponse(error: unknown): Response {

@@ -114,7 +114,7 @@ export async function removeTestUsers(): Promise<{ removed: number; kept: number
   return { removed, kept }
 }
 
-export interface Mail {
+interface Mail {
   subject: string
   text: string
   html: string

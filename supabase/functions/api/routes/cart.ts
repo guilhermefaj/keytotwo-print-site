@@ -4,7 +4,7 @@ import { type CartLine, priceLines, subtotal, warnings } from '../../_shared/car
 import { HttpError, json, readJsonObject } from '../../_shared/http.ts'
 
 // Mesmo formato do CHECK de products.code (data-contract 2.2).
-const PRODUCT_CODE = /^[A-Z][A-Z0-9-]{1,23}$/
+export const PRODUCT_CODE = /^[A-Z][A-Z0-9-]{1,23}$/
 // A sacola guardada no navegador vai inteira na cotação e na junção (quote_cart aceita até 20).
 const MAX_CODES = 20
 

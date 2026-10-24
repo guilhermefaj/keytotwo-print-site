@@ -4,7 +4,7 @@ import { requireSessionUser } from '../../_shared/auth.ts'
 import { type ChargeableItem, orderItemCharge } from '../../_shared/cart-pricing.ts'
 import { env } from '../../_shared/env.ts'
 import { basePriceKey } from '../../_shared/fulfillment.ts'
-import { type ErrorCode, HttpError, json, readJsonObject } from '../../_shared/http.ts'
+import { type ErrorCode, errorLabel, HttpError, json, readJsonObject } from '../../_shared/http.ts'
 import { primePrices, stripePriceProduct } from '../../_shared/prices.ts'
 import { isStripeError, livemode, stripe, STRIPE_UI_MODE, stripeErrorLabel } from '../../_shared/stripe.ts'
 
@@ -58,16 +58,26 @@ async function lineItems(items: ChargeableItem[]) {
 }
 
 // Customer por usuário: criado no 1º checkout (idempotente) e gravado no perfil; o e-mail segue o da conta.
+// Customer apagado no painel da Stripe: cria outro e troca o guardado, senão nenhuma compra da conta passaria.
 async function customerFor(userId: string, order: CheckoutOrder): Promise<string> {
   const email = order.email ?? undefined
-  if (order.stripe_customer_id) {
-    const id = order.stripe_customer_id
-    await withStripe('customer', () => stripe().customers.update(id, { email }))
-    return id
+  const stored = order.stripe_customer_id
+  if (stored) {
+    const kept = await withStripe('customer', async () => {
+      try {
+        await stripe().customers.update(stored, { email })
+        return true
+      } catch (error) {
+        if (isStripeError(error) && error.code === 'resource_missing') return false
+        throw error
+      }
+    })
+    if (kept) return stored
   }
+  // A chave do 1º checkout devolveria, por 24 horas, o mesmo Customer apagado: a troca tem chave própria.
   const customer = await withStripe('customer', () =>
-    stripe().customers.create({ email, metadata: { user_id: userId } }, { idempotencyKey: `customer:${userId}` }))
-  return await rpc<string>('set_stripe_customer', { p_user_id: userId, p_stripe_customer_id: customer.id })
+    stripe().customers.create({ email, metadata: { user_id: userId } }, { idempotencyKey: stored ? `customer:${userId}:${stored}` : `customer:${userId}` }))
+  return await rpc<string>('set_stripe_customer', { p_user_id: userId, p_stripe_customer_id: customer.id, ...(stored ? { p_replaces: stored } : {}) })
 }
 
 // POST /checkout { cart_version, terms_accepted, terms_version } → { client_secret } do formulário embutido.
@@ -132,7 +142,7 @@ export async function checkout(req: Request): Promise<Response> {
     })
   } catch (error) {
     // O webhook e a confirmação acham o pedido pelo client_reference_id.
-    console.error(`checkout: attach_checkout_session falhou (${error instanceof Error ? error.message : 'erro'})`)
+    console.error(`checkout: attach_checkout_session falhou (${errorLabel(error)})`)
   }
   return json({ client_secret: session.client_secret })
 }

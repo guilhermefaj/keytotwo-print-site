@@ -1,7 +1,7 @@
 import { RpcError, rpcRow } from '../_shared/admin.ts'
 import { sameSecret } from '../_shared/compare.ts'
 import { env } from '../_shared/env.ts'
-import { errorResponse, HttpError, isContentType, json, readText, toErrorResponse } from '../_shared/http.ts'
+import { HttpError, json, postOnly, readJson, toErrorResponse } from '../_shared/http.ts'
 
 // brevo-webhook (I5): eventos transacionais da Brevo → record_email_event (docs/api-contract.md 8.1).
 // Autenticação: Authorization: Bearer <BREVO_WEBHOOK_SECRET> (webhook criado com auth.type = bearer).
@@ -28,15 +28,17 @@ interface BrevoEvent {
   ts?: unknown
 }
 
-export interface WebhookSummary {
+interface WebhookSummary {
   received: number
   recorded: number
   ignored: number
 }
 
+// Data do evento; fora do que uma data aceita (lixo no payload), fica sem data e o banco usa a hora do registro.
 function occurredAt(event: BrevoEvent): string | null {
   const seconds = typeof event.ts_event === 'number' ? event.ts_event : typeof event.ts === 'number' ? event.ts : null
-  return seconds === null || !Number.isFinite(seconds) ? null : new Date(seconds * 1000).toISOString()
+  const date = seconds === null ? null : new Date(seconds * 1000)
+  return date && Number.isFinite(date.getTime()) ? date.toISOString() : null
 }
 
 async function record(event: BrevoEvent): Promise<boolean> {
@@ -62,19 +64,12 @@ async function record(event: BrevoEvent): Promise<boolean> {
 }
 
 export async function handleBrevoWebhook(req: Request): Promise<Response> {
-  if (req.method !== 'POST') return errorResponse(405, 'METHOD_NOT_ALLOWED', 'Método não permitido.', { headers: { Allow: 'POST' } })
+  if (req.method !== 'POST') return postOnly()
   try {
     const auth = req.headers.get('Authorization') ?? ''
     const token = /^Bearer\s+(.+)$/i.exec(auth)?.[1]?.trim() ?? ''
     if (!(await sameSecret(token, env.brevoWebhookSecret()))) throw new HttpError(401, 'UNAUTHENTICATED', 'Credencial inválida.')
-    if (!isContentType(req, 'application/json')) throw new HttpError(415, 'UNSUPPORTED_MEDIA_TYPE', 'Envie o corpo como application/json.')
-    let body: unknown
-    try {
-      body = JSON.parse(await readText(req, MAX_BODY_BYTES))
-    } catch (error) {
-      if (error instanceof HttpError) throw error
-      throw new HttpError(400, 'INVALID_REQUEST', 'Corpo JSON inválido.')
-    }
+    const body = await readJson(req, MAX_BODY_BYTES)
     const events = (Array.isArray(body) ? body : [body]).filter((e): e is BrevoEvent => Boolean(e) && typeof e === 'object' && !Array.isArray(e))
     if (!events.length) throw new HttpError(400, 'INVALID_REQUEST', 'Nenhum evento no corpo.')
     const summary: WebhookSummary = { received: events.length, recorded: 0, ignored: 0 }

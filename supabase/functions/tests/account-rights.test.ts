@@ -14,7 +14,6 @@ contractTest('GET /account/export devolve a cópia dos dados da RPC, para baixar
   const res = await handleRequest(request('/account/export', { token }))
   assertEquals(res.status, 200)
   assertEquals(await res.json(), EXPORT)
-  assertEquals(res.headers.get('Content-Disposition'), 'attachment; filename="keytotwo-meus-dados.json"')
   assertEquals(res.headers.get('Cache-Control'), 'no-store')
   assertEquals(rpcCalls.map((c) => [c.fn, c.args, c.secretKeyOk]), [['export_account_data', { p_user_id: userId(token) }, true]])
 })

@@ -1,6 +1,6 @@
 // Testes de contrato do blog no admin e das rotas públicas do build (docs/api-contract.md), sem rede e sem banco.
 import { assertEquals, assertMatch } from '@std/assert'
-import { b2Calls, contractTest, onB2, onRpc, request, rpcCalls, sessionToken, userId } from './contract-helpers.ts'
+import { adminToken as admin, b2Calls, contractTest, onB2, onRpc, rpcCalls, send, sessionToken, userId } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 
 const ID = '0b6c8f8e-3f0a-4c1e-9a55-2d5f6b0d1a11'
@@ -14,11 +14,6 @@ function post(extra: Record<string, unknown> = {}) {
     seo_title: '', seo_description: '', ...extra }
 }
 const stored = (extra: Record<string, unknown> = {}) => ({ id: ID, ...post(), published_at: SAVED_AT, created_at: SAVED_AT, updated_at: SAVED_AT, ...extra })
-const admin = () => sessionToken({ aal: 'aal2' })
-const send = async (path: string, options: { method?: string; token?: string; body?: unknown; headers?: HeadersInit }) => {
-  const res = await handleRequest(request(path, options))
-  return { status: res.status, body: await res.json() }
-}
 
 contractTest('rotas do blog no admin: sem sessão 401; sem o segundo fator 403 MFA_REQUIRED, antes do banco', async () => {
   onRpc(() => ({ status: 200, body: null }))

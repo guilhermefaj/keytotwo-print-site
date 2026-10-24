@@ -1,15 +1,17 @@
+import { handleRequest } from '../api/router.ts'
+
 // Ambiente dos testes de contrato: sem rede e sem banco. As sessões são JWT ES256 assinados aqui,
 // com o JWKS servido pelo fetch simulado; RPCs e preços da Stripe também são simulados.
 // Com KT_INTEGRATION=1 este módulo fica inerte (não grava env nem troca o fetch) e os testes de contrato são
 // ignorados: env e fetch valem para o processo inteiro, e as integrações do mesmo processo usariam os fictícios.
-export const integrationMode = Deno.env.get('KT_INTEGRATION') === '1'
+const integrationMode = Deno.env.get('KT_INTEGRATION') === '1'
 
-export const SUPABASE_URL = 'http://supabase.teste'
+const SUPABASE_URL = 'http://supabase.teste'
 export const SECRET_KEY = 'chave-secreta-de-teste'
 export const WEBHOOK_SECRET = 'segredo-webhook-de-teste'
 export const TERMS_VERSION = 'termos-teste-1'
 export const LINK_SECRET = 'segredo-dos-links-de-teste'
-export const MAILPIT_URL = 'http://mailpit.teste'
+const MAILPIT_URL = 'http://mailpit.teste'
 export const BREVO_WEBHOOK_SECRET = 'segredo-webhook-brevo-teste'
 
 const contractEnv: Record<string, string> = {
@@ -80,7 +82,7 @@ export function tampered(token: string): string {
   return `${token.slice(0, dot + 1)}${signature.slice(0, i)}${signature[i] === 'A' ? 'B' : 'A'}${signature.slice(i + 1)}`
 }
 
-export interface RpcCall {
+interface RpcCall {
   fn: string
   args: Record<string, unknown>
   secretKeyOk: boolean
@@ -88,6 +90,10 @@ export interface RpcCall {
 }
 
 type Reply = { status: number; body: unknown; headers?: Record<string, string> }
+
+// Respostas simuladas: um corpo qualquer, ou a lista de uma linha das RPCs "returns table".
+export const ok = (body: unknown): Reply => ({ status: 200, body })
+export const row = (body: Record<string, unknown>) => ok([body])
 export const rpcCalls: RpcCall[] = []
 let rpcReply: (fn: string, args: Record<string, unknown>) => Reply = () => ({ status: 200, body: null })
 let priceReply: (id: string) => Reply = () => ({ status: 404, body: {} })
@@ -118,7 +124,7 @@ export function onStripe(reply: (call: StripeCall) => Reply) {
 }
 
 // Auth admin (exclusão de conta e bloqueio): método, id do usuário, se veio com a chave secreta e o corpo, quando há.
-export interface AuthAdminCall {
+interface AuthAdminCall {
   method: string
   userId: string
   secretKeyOk: boolean
@@ -134,7 +140,7 @@ export function onAuthAdmin(reply: (call: AuthAdminCall) => Reply) {
 }
 
 // Outros serviços externos (Brevo, Mailpit): URL, corpo JSON e headers.
-export interface ExternalCall {
+interface ExternalCall {
   url: string
   body: Record<string, unknown>
   headers: Headers
@@ -150,7 +156,7 @@ export function onExternal(reply: (call: ExternalCall) => Reply) {
 
 // Chamadas ao B2 (imagens do blog): método, host, chave, query, tipo e tamanho. Corpo em texto responde como XML;
 // HEAD, 204 e corpo null respondem sem corpo, com os headers da resposta simulada (x-amz-version-id, por exemplo).
-export interface B2Call {
+interface B2Call {
   method: string
   host: string
   key: string
@@ -231,6 +237,18 @@ export function request(path: string, options: { method?: string; token?: string
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   })
+}
+
+// email-dispatch: o claim devolve estas linhas e cada mark_email_result é aceito.
+export function dispatchRpc(rows: unknown[]) {
+  onRpc((fn) => (fn === 'claim_email_batch' ? ok(rows) : row({ outcome: 'applied', status: 'sent', next_attempt_at: null })))
+}
+
+// Rotas de admin: sessão com o segundo fator e a resposta já lida.
+export const adminToken = () => sessionToken({ aal: 'aal2' })
+export async function send(path: string, options: { method?: string; token?: string; body?: unknown; headers?: HeadersInit }) {
+  const res = await handleRequest(request(path, options))
+  return { status: res.status, headers: res.headers, body: await res.json() }
 }
 
 // Erros esperados (500 simulados) não poluem a saída; os testes conferem o conteúdo do log.
