@@ -76,6 +76,9 @@ test('post: compartilhar no topo, botão flutuante durante a leitura, Leia tamb�
   await page.locator('.blog-prose h2').nth(1).scrollIntoViewIfNeeded()
   await expect(floating).toBeVisible()
   await expect(floating).toHaveAttribute('aria-expanded', 'false')
+  // Fundo opaco no hover (que no celular fica preso depois do toque): o texto de trás não aparece através do botão.
+  await floating.hover()
+  expect(await floating.evaluate(el => getComputedStyle(el).backgroundColor)).not.toMatch(/rgba|\/\s*0?\.\d/)
   await floating.click()
   const panel = page.getByRole('group', { name: 'Opções para compartilhar' })
   await expect(floating).toHaveAttribute('aria-expanded', 'true')
