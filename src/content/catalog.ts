@@ -11,4 +11,7 @@ export type CatalogEntry = {
   games: readonly string[]
 }
 
+// Faixa do topo (2026-10-24): o cupom ativo com faixa, criado no admin. {cupom} no texto vira o código em destaque.
+export type PromoBanner = { code: string; text: string }
+
 export const catalogEntry = (code: string): CatalogEntry | undefined => catalogSnapshot.find(entry => entry.code === code)

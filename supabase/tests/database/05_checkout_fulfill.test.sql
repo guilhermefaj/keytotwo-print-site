@@ -43,9 +43,8 @@ select pg_temp.expect('checkout: p_livemode nulo', format($q$select * from publi
 select pg_temp.expect('checkout: versão do carrinho nula', format($q$select * from public.create_order_from_cart(%L, false, null, 'v1', true)$q$, pg_temp.uid('kempty')), 'KT001');
 select pg_temp.expect('checkout: versão do carrinho negativa', format($q$select * from public.create_order_from_cart(%L, false, -1, 'v1', true)$q$, pg_temp.uid('kempty')), 'KT001');
 select pg_temp.expect('checkout: versão dos termos em branco', format($q$select * from public.create_order_from_cart(%L, false, 0, '  ', true)$q$, pg_temp.uid('kempty')), 'KT001');
-select pg_temp.expect('checkout: sem o aceite dos termos (false) é KT007', format($q$select * from public.create_order_from_cart(%L, false, 0, 'v1', false)$q$, pg_temp.uid('kempty')), 'KT007');
-select pg_temp.expect('checkout: sem o aceite dos termos (nulo) é KT007', format($q$select * from public.create_order_from_cart(%L, false, 0, 'v1', null)$q$, pg_temp.uid('kempty')), 'KT007');
-select pg_temp.assert('checkout: KT007 não grava nada', (select count(*) = 0 from public.orders where user_id = pg_temp.uid('kempty')));
+-- Sem o aceite (false ou nulo) não é recusa desde 20261024230000: o aceite vem depois, no pagamento (22_accept_terms).
+select pg_temp.assert('checkout: sem o aceite não é recusa (aqui o carrinho vazio responde)', (select outcome = 'cart_empty' from public.create_order_from_cart(pg_temp.uid('kempty'), false, 0, 'v1', false)));
 select pg_temp.assert('checkout: sem carrinho = cart_empty', (select outcome = 'cart_empty' and order_id is null and email is null and items is null and not reused
   from public.create_order_from_cart(pg_temp.uid('kempty'), false, 0, 'v1', true)));
 do $c$ begin

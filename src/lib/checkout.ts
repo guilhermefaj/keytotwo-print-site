@@ -22,7 +22,6 @@ export function checkoutError(error: unknown) {
       CART_EMPTY: 'Sua sacola está vazia. Escolha um jogo para continuar.',
       ALREADY_OWNED: 'Tudo o que está na sacola já é seu ou já está num pacote dela. Confira a sacola.',
       TERMS_CHANGED: 'Os termos foram atualizados. Recarregue esta página para ler a versão atual e aceitar novamente.',
-      TERMS_NOT_ACCEPTED: 'Leia e aceite os termos para continuar.',
       PAYMENT_PROVIDER_ERROR: 'Não conseguimos abrir o pagamento agora. Tente novamente em instantes.',
     }
     return messages[error.code] || apiErrorMessage(error)

@@ -24,7 +24,8 @@ const CLOSED = alert(3, 'order_stuck', { order_id: ORDER, order_ref: 'F4F4F4F4',
 
 const metrics = { days: 7, since: '2026-10-18', until: '2026-10-24', livemode: true, sales: { orders: 0, revenue: 0, currency: 'brl' }, accounts: 0,
   funnel: { cart: 0, checkout: 0, paid: 0 }, downloads: { paid: 0, free: 0 }, free_unlocks: 0, newsletter: { subscribed: 0 },
-  daily: Array.from({ length: 7 }, (_, i) => ({ date: `2026-10-${18 + i}`, orders: 0, revenue: 0, accounts: 0 })) }
+  daily: Array.from({ length: 7 }, (_, i) => ({ date: `2026-10-${18 + i}`, orders: 0, revenue: 0, accounts: 0 })),
+  marketing: { codes: [], partners: [], campaigns: [] } }
 
 type Call = { method: string; path: string; body: unknown }
 async function alertsApi(page: Page, open = [DISPUTE, BACKUP]) {

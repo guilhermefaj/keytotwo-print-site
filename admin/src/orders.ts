@@ -44,6 +44,8 @@ export interface OrderDetail {
     reconcilable: boolean
   }
   person: { id: string | null; email: string | null; order_email: string | null; exists: boolean; stripe_customer_id: string | null }
+  // De onde veio (2026-10-24): o parceiro (pelo cupom ou pelo link) e as marcas de campanha; null sem indicação.
+  origin: { partner?: { id: string; slug: string; name: string }; source?: 'code' | 'link'; landed_at?: string; path?: string; utm_source?: string; utm_medium?: string; utm_campaign?: string; utm_content?: string } | null
   items: { code: string; name: string | null; kind: string; unit_amount: number | null; currency: string | null }[]
   events: { from_status: string | null; to_status: string; source: string; reason: string | null; created_at: string }[]
   entitlements: {

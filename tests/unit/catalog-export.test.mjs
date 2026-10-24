@@ -12,12 +12,14 @@ const SUPABASE = 'https://projeto.supabase.teste'
 const pack = { code: 'P001', kind: 'bundle', name: 'Pacote', price: { unit_amount: 2990, currency: 'brl' }, list_price: { amount: 3990, label: 'Preço de lançamento' }, games: [{ code: 'J001', name: 'A' }, { code: 'J004', name: 'B' }] }
 const single = { code: 'J001', kind: 'single', name: 'A', price: { unit_amount: 990, currency: 'brl' }, games: [{ code: 'J001', name: 'A' }] }
 
-function fakeFetch({ products = [pack, single], version = VERSION, status = 200 } = {}) {
+const BANNER = { code: 'BLACK26', text: 'Black Friday: 30% com {cupom}' }
+
+function fakeFetch({ products = [pack, single], banner = BANNER, version = VERSION, status = 200 } = {}) {
   const calls = []
   const fetch = async (url, init = {}) => {
     calls.push({ url, method: init.method ?? 'GET', apikey: new Headers(init.headers).get('apikey') })
     if (url.endsWith('/rest/v1/rpc/get_catalog_version')) return new Response(JSON.stringify(version))
-    return new Response(JSON.stringify({ products }), { status })
+    return new Response(JSON.stringify({ products, banner }), { status })
   }
   return { fetch, calls }
 }
@@ -43,11 +45,20 @@ test('catálogo: a versão (antes) e o /catalog viram o retrato do build e o /ca
     ])
     assert.deepEqual(JSON.parse(await readFile(path.join(root, 'public/catalogo/versao.json'), 'utf8')), { version: VERSION })
     // O arquivo gerado é TypeScript de verdade: o tipo vem de catalog.ts, que aqui não existe; o Node só tira os tipos.
-    const { catalogSnapshot } = await import(pathToFileURL(path.join(root, 'src/content/catalog-snapshot.ts')).href)
+    const { catalogSnapshot, promoBanner } = await import(pathToFileURL(path.join(root, 'src/content/catalog-snapshot.ts')).href)
     assert.deepEqual(catalogSnapshot, [
       { code: 'P001', price: { unit_amount: 2990, currency: 'brl' }, list_price: { amount: 3990, label: 'Preço de lançamento' }, games: ['J001', 'J004'] },
       { code: 'J001', price: { unit_amount: 990, currency: 'brl' }, list_price: null, games: ['J001'] },
     ])
+    assert.deepEqual(promoBanner, BANNER)
+  })
+})
+
+test('catálogo: sem cupom com faixa, a faixa do build é null', async () => {
+  await withRoot(async (root) => {
+    await exportCatalog({ root, supabaseUrl: SUPABASE, apiKey: 'k', fetch: fakeFetch({ banner: null }).fetch })
+    const { promoBanner } = await import(pathToFileURL(path.join(root, 'src/content/catalog-snapshot.ts')).href)
+    assert.equal(promoBanner, null)
   })
 })
 
@@ -58,6 +69,7 @@ test('catálogo: resposta ruim para o build sem gravar nada', async () => {
     ['produto sem código', { products: [{ ...single, code: 'j1' }] }],
     ['preço inválido', { products: [{ ...single, price: { unit_amount: '990', currency: 'brl' } }] }],
     ['riscado sem rótulo', { products: [{ ...pack, list_price: { amount: 3990, label: ' ' } }] }],
+    ['faixa sem código', { banner: { code: 'black 26', text: 'Black Friday' } }],
   ]) {
     await withRoot(async (root) => {
       await assert.rejects(exportCatalog({ root, supabaseUrl: SUPABASE, apiKey: 'k', fetch: fakeFetch(options).fetch }), /Catálogo:/, label)

@@ -62,18 +62,17 @@ async function webhook(event: Record<string, unknown>, signed = true) {
   return { status: res.status, body: await res.json() }
 }
 
-const checkoutBody = { cart_version: 3, terms_accepted: true, terms_version: TERMS_VERSION }
+// O formulário abre com a página, antes do aceite (2026-10-24); o aceite vem em POST /checkout/terms.
+const checkoutBody = { cart_version: 3, terms_version: TERMS_VERSION }
 
 // ---------- POST /checkout ----------
 
-contractTest('checkout: valida sessão, termos e versão do carrinho antes do banco', async () => {
+contractTest('checkout: valida sessão, versão dos termos e do carrinho antes do banco', async () => {
   onRpc(() => ok(null))
   onStripe(() => ok({}))
   assertEquals((await handleRequest(request('/checkout', { method: 'POST', body: checkoutBody }))).status, 401)
   const token = await sessionToken()
   const cases: [Record<string, unknown>, number, string][] = [
-    [{ ...checkoutBody, terms_accepted: false }, 400, 'TERMS_NOT_ACCEPTED'],
-    [{ ...checkoutBody, terms_accepted: 'sim' }, 400, 'TERMS_NOT_ACCEPTED'],
     [{ ...checkoutBody, terms_version: 'termos-antigos' }, 409, 'TERMS_CHANGED'],
     [{ ...checkoutBody, cart_version: -1 }, 400, 'INVALID_REQUEST'],
     [{ ...checkoutBody, cart_version: '3' }, 400, 'INVALID_REQUEST'],
@@ -85,6 +84,29 @@ contractTest('checkout: valida sessão, termos e versão do carrinho antes do ba
     if (code === 'TERMS_CHANGED') assertEquals(json.error.details, { terms_version: TERMS_VERSION })
   }
   assertEquals([rpcCalls.length, stripeCalls.length], [0, 0])
+})
+
+contractTest('checkout/terms: grava o aceite no pedido aberto da pessoa; versão antiga, pedido fechado e sem sessão recusam', async () => {
+  const token = await sessionToken()
+  const body = { order_id: ORDER_ID, terms_version: TERMS_VERSION }
+  onRpc(() => ok('ok'))
+  assertEquals((await handleRequest(request('/checkout/terms', { method: 'POST', body }))).status, 401)
+  const res = await handleRequest(request('/checkout/terms', { method: 'POST', token, body }))
+  assertEquals([res.status, await res.json()], [200, { accepted: true }])
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['accept_order_terms', { p_user_id: userId(token), p_order_id: ORDER_ID, p_terms_version: TERMS_VERSION }]])
+  for (const [over, status, code] of [[{ order_id: 'x' }, 400, 'INVALID_REQUEST'], [{ terms_version: 'termos-antigos' }, 409, 'TERMS_CHANGED']] as const) {
+    const refused = await handleRequest(request('/checkout/terms', { method: 'POST', token, body: { ...body, ...over } }))
+    assertEquals([refused.status, (await refused.json()).error.code], [status, code])
+  }
+  assertEquals(rpcCalls.length, 1)
+  for (const [outcome, status] of [['terms_changed', 409], ['not_found', 404]] as const) {
+    onRpc(() => ok(outcome))
+    assertEquals((await handleRequest(request('/checkout/terms', { method: 'POST', token, body }))).status, status)
+  }
+  // o site anterior manda o aceite junto: vai para o banco
+  onRpc((fn) => (fn === 'create_order_from_cart' ? row({ outcome: 'cart_empty', order_id: null, email: null, stripe_customer_id: null, items: null, reused: false, detail: null }) : ok(null)))
+  await handleRequest(request('/checkout', { method: 'POST', token, body: { ...checkoutBody, terms_accepted: true } }))
+  assertEquals(rpcCalls.at(-1)!.args.p_terms_accepted, true)
 })
 
 contractTest('checkout: recusas do carrinho viram 409 com details, sem chamar a Stripe', async () => {
@@ -122,10 +144,10 @@ contractTest('checkout: cria Customer, sessão do formulário embutido com os pa
 
   const res = await handleRequest(request('/checkout', { method: 'POST', token, body: checkoutBody }))
   assertEquals(res.status, 200)
-  assertEquals(await res.json(), { client_secret: CLIENT_SECRET })
+  assertEquals(await res.json(), { client_secret: CLIENT_SECRET, order_id: ORDER_ID })
 
   assertEquals(rpcCalls.map((c) => c.fn), ['create_order_from_cart', 'set_stripe_customer', 'attach_checkout_session'])
-  assertEquals(rpcCalls[0].args, { p_user_id: uid, p_livemode: false, p_cart_version: 3, p_terms_version: TERMS_VERSION, p_terms_accepted: true })
+  assertEquals(rpcCalls[0].args, { p_user_id: uid, p_livemode: false, p_cart_version: 3, p_terms_version: TERMS_VERSION, p_terms_accepted: false })
   assertEquals(rpcCalls[1].args, { p_user_id: uid, p_stripe_customer_id: 'cus_novo' })
   assertEquals(rpcCalls[2].args, { p_order_id: ORDER_ID, p_checkout_session_id: SESSION_ID, p_expires_at: new Date(1791000000 * 1000).toISOString() })
 
@@ -151,6 +173,30 @@ contractTest('checkout: cria Customer, sessão do formulário embutido com os pa
     locale: 'pt-BR',
     return_url: 'http://127.0.0.1:5176/pedido/confirmacao?session_id={CHECKOUT_SESSION_ID}',
   })
+})
+
+contractTest('checkout: a indicação (link do parceiro e campanhas) vai para o banco; falha nela não impede o pagamento', async () => {
+  const token = await sessionToken()
+  const referral = { partner: 'ana-souza', landed_at: '2026-10-24T12:00:00.000Z', path: '/loja', utm_source: 'instagram' }
+  for (const referralReply of [ok([{ outcome: 'ok' }]), { status: 500, body: {} }]) {
+    onRpc((fn) => {
+      if (fn === 'create_order_from_cart') {
+        return row({ outcome: 'ok', order_id: ORDER_ID, email: 'teste@example.com', stripe_customer_id: 'cus_teste', items: [{ product_code: 'P001', stripe_price_id: PRICE }], reused: false, detail: null })
+      }
+      if (fn === 'set_order_referral') return referralReply
+      return ok('applied')
+    })
+    onStripe((call) => (call.method === 'POST' && call.path === '/v1/checkout/sessions' ? ok(session({ status: 'open', payment_status: 'unpaid' })) : ok({ id: 'cus_teste', object: 'customer' })))
+    const { result: res } = await captureErrors(() => handleRequest(request('/checkout', { method: 'POST', token, body: { ...checkoutBody, referral } })))
+    assertEquals(res.status, 200)
+    assertEquals(rpcCalls.find((c) => c.fn === 'set_order_referral')!.args, { p_user_id: userId(token), p_order_id: ORDER_ID, p_referral: referral })
+  }
+  // sem indicação, o banco nem é chamado para isso
+  onRpc((fn) => (fn === 'create_order_from_cart'
+    ? row({ outcome: 'ok', order_id: ORDER_ID, email: 'teste@example.com', stripe_customer_id: 'cus_teste', items: [{ product_code: 'P001', stripe_price_id: PRICE }], reused: false, detail: null })
+    : ok('applied')))
+  await handleRequest(request('/checkout', { method: 'POST', token, body: checkoutBody }))
+  assertEquals(rpcCalls.some((c) => c.fn === 'set_order_referral'), false)
 })
 
 contractTest('checkout e liberação: o pacote de completar a coleção vai com price_data e volta pelo Price de tabela', async () => {

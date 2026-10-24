@@ -275,6 +275,7 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .danger-zone { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 24px; margin-top: 40px; padding-top: 24px; border-top: var(--line-rule); }
 .danger-zone > h2, .danger-zone > .field-error { flex-basis: 100%; }
 .action-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 24px; }
+.copy-link { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
 .danger-zone h2 { font-family: var(--font-sans); font-size: var(--text-body); font-weight: 600; letter-spacing: 0; }
 .danger-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .danger-confirm p { flex-basis: 100%; color: var(--color-ink-soft); font-size: var(--text-label); }

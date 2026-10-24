@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 // Synthetic boundary fixtures, never payment credentials. The separate opt-in local
 // integration test uses the real Auth/API/Stripe test-mode stack.
 test.use({ trace: 'off', screenshot: 'off', video: 'off' })
-import { cart, product, fixture } from './fixtures/checkout'
+import { cart, product, fixture, SYNTHETIC_ORDER } from './fixtures/checkout'
 
 async function start(page: Page) {
   await page.goto('/pagamento')
@@ -28,8 +28,11 @@ test('explicit mock: acceptance, coupon and simulated confirmation without a che
   await start(page)
   test.skip(await page.getByText('Demonstração: o pagamento real ainda não está conectado neste ambiente.').count() === 0, 'Only applies to mock builds')
   await expect(page.locator('#checkout-form')).toHaveCount(0)
-  await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
+  // aparece com a página, travado até o aceite
   await expect(page.getByText('Demonstração de pagamento.', { exact: true })).toBeVisible()
+  await expect(page.locator('.payment-lock').first()).toHaveAttribute('data-locked', 'true')
+  await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
+  await expect(page.locator('.payment-lock').first()).toHaveAttribute('data-locked', 'false')
   await page.getByLabel('Código do cupom').fill('TESTE10')
   await page.getByRole('button', { name: 'Aplicar cupom' }).click()
   await expect(page.locator('.payment-total')).toContainText('17,91')
@@ -38,16 +41,36 @@ test('explicit mock: acceptance, coupon and simulated confirmation without a che
   expect(calls).toBe(0)
 })
 
-test('acceptance gates API and form; coupon invalid/apply/remove; confirmation', async ({ page }) => {
-  let calls = 0
-  page.on('request', request => { if (request.url().endsWith('/api/checkout')) { calls++; expect(request.postDataJSON()).toEqual({ cart_version: 3, terms_accepted: true, terms_version: 'termos-2026-10-22' }) } })
+// Link de parceiro (2026-10-24): o pedido leva de onde a pessoa veio, e o código do parceiro entra sozinho no formulário.
+test('partner link: referral goes with the order and the partner code is applied on its own', async ({ page }) => {
+  const referral = { partner: 'ana-souza', landed_at: new Date().toISOString(), path: '/loja', utm_source: 'instagram', name: 'Ana Souza', code: 'TESTE10', percent_off: 10, counted_on: '2026-10-24' }
+  await page.addInitScript(value => localStorage.setItem('keytotwo:indicacao', JSON.stringify(value)), referral)
+  const bodies: unknown[] = []
+  page.on('request', request => { if (request.url().endsWith('/api/checkout')) bodies.push(request.postDataJSON()) })
   await stripeMode(page)
-  await expect(page.locator('#checkout-form')).toHaveCount(0)
-  expect(calls).toBe(0)
-  await expect(page.locator('#checkout-form')).toHaveCount(0)
-  await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
-  await expect(page.getByRole('button', { name: 'Pagar (simulação de teste)' })).toBeVisible()
-  expect(calls).toBe(1)
+  await expect(page.locator('.payment-total')).toContainText('17,91')
+  await expect(page.getByText('Cupom TESTE10 aplicado (indicação de Ana Souza).')).toBeVisible()
+  expect(bodies).toEqual([{ cart_version: 3, terms_version: 'termos-2026-10-22', referral: { partner: 'ana-souza', landed_at: referral.landed_at, path: '/loja', utm_source: 'instagram' } }])
+})
+
+// O formulário abre com a página e fica travado até o aceite (responsável, 2026-10-24); o aceite vai para o pedido.
+test('form opens with the page, locked until acceptance; coupon invalid/apply/remove; confirmation', async ({ page }) => {
+  const bodies: Record<string, unknown[]> = { '/api/checkout': [], '/api/checkout/terms': [] }
+  page.on('request', request => { const key = Object.keys(bodies).find(path => request.url().endsWith(path)); if (key) bodies[key].push(request.postDataJSON()) })
+  await stripeMode(page)
+  const terms = page.getByRole('checkbox', { name: /Li e aceito os/ })
+  // travado: o botão aparece, mas fica fora do alcance (inert) até o aceite
+  await expect(page.locator('#checkout-form button')).toBeVisible()
+  await expect(page.locator('.payment-lock').first()).toHaveAttribute('data-locked', 'true')
+  await expect(page.locator('.payment-lock').first()).toHaveAttribute('inert', '')
+  await expect(page.getByRole('button', { name: 'Pagar (simulação de teste)' }).click({ timeout: 1000 })).rejects.toThrow()
+  await expect(page).toHaveURL(/\/pagamento$/)
+  await expect(page.getByText('Marque o aceite para liberar o pagamento.')).toBeVisible()
+  expect(bodies['/api/checkout']).toEqual([{ cart_version: 3, terms_version: 'termos-2026-10-22' }])
+  expect(bodies['/api/checkout/terms']).toEqual([])
+  await terms.check()
+  await expect(page.locator('.payment-lock').first()).toHaveAttribute('data-locked', 'false')
+  expect(bodies['/api/checkout/terms']).toEqual([{ order_id: SYNTHETIC_ORDER, terms_version: 'termos-2026-10-22' }])
   await page.getByLabel('Código do cupom').fill('INVALIDO')
   await page.getByRole('button', { name: 'Aplicar cupom' }).click()
   await expect(page.getByRole('alert')).toContainText('Esse cupom não pôde ser aplicado')
@@ -56,9 +79,12 @@ test('acceptance gates API and form; coupon invalid/apply/remove; confirmation',
   await expect(page.locator('.payment-total')).toContainText('17,91')
   await page.getByRole('button', { name: 'Remover cupom' }).click()
   await expect(page.locator('.payment-total')).toContainText('19,90')
-  await page.getByRole('checkbox', { name: /Li e aceito os/ }).uncheck()
-  await expect(page.locator('#checkout-form')).toHaveCount(0)
-  await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
+  // desmarcar trava de novo, sem outro pedido; marcar de novo não grava outra vez
+  await terms.uncheck()
+  await expect(page.locator('.payment-lock').first()).toHaveAttribute('data-locked', 'true')
+  await terms.check()
+  await expect(page.locator('.payment-lock').first()).toHaveAttribute('data-locked', 'false')
+  expect([bodies['/api/checkout'].length, bodies['/api/checkout/terms'].length]).toEqual([1, 1])
   await page.getByRole('button', { name: 'Pagar (simulação de teste)' }).click()
   await expect(page.getByRole('heading', { name: 'Pronto. Os jogos são de vocês.' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Abrir Meus jogos', exact: true })).toHaveAttribute('href', '/meus-jogos')
@@ -68,13 +94,23 @@ for (const [code, message] of [['CART_CHANGED', 'Sua sacola mudou'], ['TERMS_CHA
   test(`checkout error ${code} never mounts form or fabricates success`, async ({ page }) => {
     await page.route('**/api/checkout', route => route.fulfill({ status: 409, json: { error: { code } } }))
     await stripeMode(page)
-    // click, não check: o erro desmarca a caixa logo em seguida, e o check exigiria que ela continuasse marcada.
-    await page.getByRole('checkbox', { name: /Li e aceito os/ }).click()
     await expect(page.getByRole('alert')).toContainText(message)
-    await expect(page.getByRole('checkbox', { name: /Li e aceito os/ })).not.toBeChecked()
+    await expect(page.getByRole('checkbox', { name: /Li e aceito os/ })).toBeDisabled()
     await expect(page.locator('#checkout-form')).toHaveCount(0)
   })
 }
+
+test('acceptance that fails keeps the box unchecked and the form locked', async ({ page }) => {
+  await page.route('**/api/checkout/terms', route => route.fulfill({ status: 409, json: { error: { code: 'TERMS_CHANGED' } } }))
+  await stripeMode(page)
+  await expect(page.locator('#checkout-form button')).toBeVisible()
+  // click, não check: a recusa deixa a caixa desmarcada, e o check exigiria que ela ficasse marcada.
+  await page.getByRole('checkbox', { name: /Li e aceito os/ }).click()
+  await expect(page.getByRole('alert')).toContainText('Os termos foram atualizados')
+  await expect(page.getByRole('checkbox', { name: /Li e aceito os/ })).not.toBeChecked()
+  await expect(page.locator('.payment-lock').first()).toHaveAttribute('data-locked', 'true')
+  await expect(page.getByRole('link', { name: 'Recarregar e revisar os termos' })).toBeVisible()
+})
 for (const [state, title] of [['paid', 'Pronto. Os jogos são de vocês.'], ['processing', 'Estamos preparando seus jogos'], ['pending_payment', 'Aguardando o pagamento'], ['failed', 'Vamos tentar de novo?'], ['expired', 'Vamos tentar de novo?'], ['not_found', 'Não encontramos esse pedido'], ['other_account', 'Este pedido é de outra conta']]) {
   test(`confirmation ${state}`, async ({ page }) => {
     await page.route('**/api/order-status?*', route => route.fulfill({ json: state === 'other_account' ? { state: 'paid', next: 'other_account' } : { state, next: state === 'paid' ? 'open_library' : undefined } }))
@@ -101,7 +137,6 @@ test('processing polls with backoff, then shows paid', async ({ page }) => {
 
 test('payment is responsive at 320, 390, 768, 1280 and 1440 with double text', async ({ page }) => {
   await start(page)
-  await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
   for (const width of [320, 390, 768, 1280, 1440]) {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 900 })
     for (const size of ['16px', '32px']) {
@@ -116,23 +151,4 @@ test('cart without price cannot finalize; preview mock is explicit when enabled'
   await page.goto('/carrinho')
   test.skip(page.url().includes('/entrar'), 'Requires configured stage=test build')
   await expect(page.getByRole('button', { name: 'Finalizar compra' })).toBeDisabled()
-})
-
-test('unchecking terms cancels an in-flight checkout; accepting again creates a fresh form', async ({ page }) => {
-  let calls = 0
-  await page.route('**/api/checkout', async route => {
-    calls++
-    await new Promise(resolve => setTimeout(resolve, 450))
-    await route.fulfill({ json: { client_secret: 'synthetic-only-no-stripe-secret' } }).catch(() => {})
-  })
-  await stripeMode(page)
-  const terms = page.getByRole('checkbox', { name: /Li e aceito os/ })
-  await terms.check()
-  await expect.poll(() => calls).toBe(1)
-  await terms.uncheck()
-  await page.waitForTimeout(500)
-  await expect(page.locator('#checkout-form')).toHaveCount(0)
-  await terms.check()
-  await expect(page.getByRole('button', { name: 'Pagar (simulação de teste)' })).toBeVisible()
-  expect(calls).toBe(2)
 })

@@ -10,7 +10,8 @@ test.skip(() => !existsSync('admin/dist/index.html'), 'Requires `npm run build:a
 
 function metrics(days: number) {
   const daily = Array.from({ length: days }, (_, i) => ({ date: new Date(Date.UTC(2026, 9, 23 - (days - 1) + i)).toISOString().slice(0, 10), orders: i === days - 1 ? 2 : 0, revenue: i === days - 1 ? 1980 : 0, accounts: i % 2 }))
-  return { days, since: daily[0].date, until: daily.at(-1)!.date, livemode: true, sales: { orders: 2, revenue: 1980, currency: 'brl' }, accounts: 3, funnel: { cart: 10, checkout: 6, paid: 2 }, downloads: { paid: 4, free: 9 }, free_unlocks: 5, newsletter: { subscribed: 12 }, daily }
+  return { days, since: daily[0].date, until: daily.at(-1)!.date, livemode: true, sales: { orders: 2, revenue: 1980, currency: 'brl' }, accounts: 3, funnel: { cart: 10, checkout: 6, paid: 2 }, downloads: { paid: 4, free: 9 }, free_unlocks: 5, newsletter: { subscribed: 12 }, daily,
+    marketing: { codes: [{ code: 'ANA10', orders: 1, revenue: 891, discount: 99 }], partners: [{ name: 'Ana Souza', slug: 'ana-souza', orders: 1, revenue: 891 }], campaigns: [] } }
 }
 
 // Auth e API simulados. `stored`: a sessão que já está no navegador; `factors`: os fatores do usuário no Auth.
@@ -129,11 +130,15 @@ test('métricas: barra lateral com as seções, 7 e 30 dias, celular sem rolagem
   await page.goto('/')
   const nav = page.getByRole('navigation', { name: 'Seções do admin' })
   // Desde a Fase 3 (2026-10-24) todas as seções existem: sem o grupo "Em breve".
-  await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Atenção', 'Pedidos e reembolsos', 'Catálogo', 'Usuários', 'Blog'])
+  await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Atenção', 'Pedidos e reembolsos', 'Catálogo', 'Cupons e parceiros', 'Usuários', 'Blog'])
   await expect(nav.getByRole('link', { name: 'Métricas' })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('region', { name: 'Vendas' }).locator('.cards dd')).toHaveText(['R$ 19,80', '2', 'R$ 9,90'])
   await expect(page.locator('.bars span')).toHaveCount(7)
   await expect(page.locator('.funnel-share')).toHaveText(['60% da sacola', '20% da sacola'])
+  const marketing = page.getByRole('region', { name: 'Cupons e parceiros' })
+  await expect(marketing.getByRole('table', { name: 'Vendas por cupom' })).toContainText(/ANA10\s*1\s*R\$\s8,91\s*R\$\s0,99/)
+  await expect(marketing.getByRole('table', { name: 'Vendas por parceiro' })).toContainText('Ana Souza')
+  await expect(marketing.getByRole('table', { name: 'Vendas por campanha' })).toHaveCount(0)
   await axe(page)
   await page.getByRole('button', { name: '30 dias' }).click()
   await expect(page.locator('.bars span')).toHaveCount(30)

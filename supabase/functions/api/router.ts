@@ -7,13 +7,15 @@ import { adminBlockUser, adminDeleteUser, adminExportUser, adminFollowUp, adminG
 import { adminBlogImage, adminBlogImages, adminBlogPost, adminBlogPosts, adminCreateBlogPost, adminDeleteBlogImage, adminDeleteBlogPost, adminUpdateBlogPost, blogPublished, blogVersion } from './routes/blog.ts'
 import { addCartItem, getCart, mergeCart, quoteCart, removeCartItem } from './routes/cart.ts'
 import { catalog } from './routes/catalog.ts'
-import { checkout } from './routes/checkout.ts'
+import { checkout, checkoutTerms } from './routes/checkout.ts'
 import { deliveryLink, downloadUrl } from './routes/downloads.ts'
 import { freeDownload, freeGames } from './routes/free.ts'
 import { orderStatus } from './routes/order-status.ts'
 import { unsubscribe, unsubscribePage } from './routes/unsubscribe.ts'
 import { library } from './routes/library.ts'
 import { adminOrder, adminOrders, adminReconcileOrder, adminRefundOrder } from './routes/orders.ts'
+import { adminCreateDiscount, adminDiscounts, adminDiscountState, internalDiscountsTick } from './routes/discounts.ts'
+import { adminPartner, adminPartnerExport, adminPartnerPayout, adminPartners, adminSavePartner, referralVisit } from './routes/partners.ts'
 import { adminAddPackGame, adminCatalog, adminProductListPrice, adminProductPrice, adminProductStatus, adminRemovePackGame } from './routes/products.ts'
 
 type Params = Record<string, string>
@@ -50,12 +52,15 @@ const routes: Route[] = [
   route('/account/delete', { POST: deleteAccount }),
   route('/library', { GET: library }),
   route('/checkout', { POST: checkout }),
+  route('/checkout/terms', { POST: checkoutTerms }),
   route('/order-status', { GET: orderStatus }),
   route('/download-url', { POST: downloadUrl }),
   route('/d/:token', { GET: deliveryLink }),
   route('/free-games', { GET: freeGames }),
   route('/free-download', { POST: freeDownload }),
   route('/email/unsubscribe', { GET: unsubscribePage, POST: unsubscribe }),
+  route('/referral/visit', { POST: referralVisit }),
+  route('/internal/discounts/tick', { POST: internalDiscountsTick }),
   route('/admin/metrics', { GET: adminMetrics }),
   route('/admin/blog/posts', { GET: adminBlogPosts, POST: adminCreateBlogPost }),
   route('/admin/blog/posts/:id', { GET: adminBlogPost, PUT: adminUpdateBlogPost, DELETE: adminDeleteBlogPost }),
@@ -78,6 +83,12 @@ const routes: Route[] = [
   route('/admin/orders/:id/reconcile', { POST: adminReconcileOrder }),
   route('/admin/alerts', { GET: adminAlerts }),
   route('/admin/catalog', { GET: adminCatalog }),
+  route('/admin/discounts', { GET: adminDiscounts, POST: adminCreateDiscount }),
+  route('/admin/discounts/:id/state', { POST: adminDiscountState }),
+  route('/admin/partners', { GET: adminPartners, POST: adminSavePartner }),
+  route('/admin/partners/:id', { GET: adminPartner, POST: adminSavePartner }),
+  route('/admin/partners/:id/payouts', { POST: adminPartnerPayout }),
+  route('/admin/partners/:id/export', { GET: adminPartnerExport }),
   route('/admin/products/:code/status', { POST: adminProductStatus }),
   route('/admin/products/:code/price', { POST: adminProductPrice }),
   route('/admin/products/:code/list-price', { POST: adminProductListPrice }),

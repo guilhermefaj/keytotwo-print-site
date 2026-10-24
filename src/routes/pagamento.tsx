@@ -12,6 +12,7 @@ import { checkoutMock, canCheckout, checkoutError, termsVersion } from '../lib/c
 import { useShop } from '../lib/shop-context'
 import { useAuth } from '../lib/auth-context'
 import { toReais, trackBeginCheckout } from '../lib/analytics'
+import { referralForOrder, useReferral } from '../lib/referral'
 
 // Aceite expresso (Política de reembolso): termos, reembolso e entrega imediata numa caixa só. O pedido grava a
 // versão (terms_version) e o momento do aceite (terms_accepted_at); a versão vem de legal.ts.
@@ -26,46 +27,57 @@ function Payment({ cart, refresh }: { cart: Cart; refresh: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const [accepted, setAccepted] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [secret, setSecret] = useState('')
-  const [demo, setDemo] = useState(false)
+  const [accepting, setAccepting] = useState(false)
+  const [order, setOrder] = useState<{ secret: string; id: string }>()
+  const demo = checkoutMock
   const [error, setError] = useState('')
   const [termsChanged, setTermsChanged] = useState(false)
-  const request = useRef<AbortController | null>(null)
-  useEffect(() => () => request.current?.abort(), [])
-  async function start() {
-    if (request.current || termsChanged) return
-    if (checkoutMock) { setDemo(true); return }
-    if (!canCheckout(cart)) return
-    const controller = new AbortController(); request.current = controller
-    setBusy(true); setError('')
+  const referral = useReferral()
+  const recorded = useRef(false)
+  // O formulário abre com a página (responsável, 2026-10-24), travado até o aceite logo acima dele: o pedido nasce
+  // aqui e o aceite é gravado quando a pessoa marca a caixa (POST /checkout/terms).
+  useEffect(() => {
+    if (demo || !canCheckout(cart)) return
+    const controller = new AbortController()
+    api<{ client_secret: string; order_id: string }>('/checkout', { method: 'POST', body: { cart_version: cart.version, terms_version: termsVersion, referral: referralForOrder(referral) }, signal: controller.signal }).then(
+      response => setOrder({ secret: response.client_secret, id: response.order_id }),
+      cause => {
+        if (controller.signal.aborted) return
+        setError(checkoutError(cause))
+        if (cause instanceof ApiError) {
+          if (cause.code === 'TERMS_CHANGED') setTermsChanged(true)
+          if (['CART_CHANGED', 'CART_EMPTY', 'PRODUCT_UNAVAILABLE', 'ALREADY_OWNED'].includes(cause.code)) refresh()
+        }
+      })
+    return () => controller.abort()
+    // Uma vez por versão da sacola: o componente é montado de novo quando ela muda.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  async function changeAcceptance(value: boolean) {
+    setError('')
+    if (!value || demo || recorded.current) { setAccepted(value); return }
+    if (!order) return
+    setAccepting(true)
     try {
-      const response = await api<{ client_secret: string }>('/checkout', { method: 'POST', body: { cart_version: cart.version, terms_accepted: true, terms_version: termsVersion }, signal: controller.signal })
-      if (!controller.signal.aborted) setSecret(response.client_secret)
+      await api('/checkout/terms', { method: 'POST', body: { order_id: order.id, terms_version: termsVersion } })
+      recorded.current = true
+      setAccepted(true)
     } catch (cause) {
-      if (controller.signal.aborted) return
-      setError(checkoutError(cause)); setAccepted(false)
-      if (cause instanceof ApiError) {
-        if (cause.code === 'TERMS_CHANGED') setTermsChanged(true)
-        if (['CART_CHANGED', 'CART_EMPTY', 'PRODUCT_UNAVAILABLE', 'ALREADY_OWNED'].includes(cause.code)) refresh()
-      }
-    } finally { if (request.current === controller) { request.current = null; setBusy(false) } }
+      setError(checkoutError(cause))
+      if (cause instanceof ApiError && cause.code === 'TERMS_CHANGED') setTermsChanged(true)
+    } finally { setAccepting(false) }
   }
-  function changeAcceptance(value: boolean) {
-    request.current?.abort(); request.current = null; setBusy(false); setAccepted(value); setSecret(''); setDemo(false); setError('')
-    if (value) void start()
-  }
+  const ready = demo || Boolean(order)
   return <div className="payment-layout"><aside className="cart-summary payment-summary" aria-labelledby="payment-summary-title"><h2 id="payment-summary-title">Resumo do pedido</h2><ul className="payment-items">{paid.map(item => { const product = productByCode(item.code); return <li key={item.code}><PurchaseThumbnail code={item.code} name={item.name} /><div className="payment-item-copy"><span>{productName(item.code, item.name)}</span>{product?.tagline && <span className="payment-item-tagline">{product.tagline}</span>}<ItemPrice item={item} className="payment-item-price" /></div></li> })}</ul>{paid.length < cart.items.length && <p className="field-help">O que você já tem ou que já está num pacote da sacola não entra no pedido.</p>}{(() => { const delivery = paid.map(item => productByCode(item.code)?.delivery).find(Boolean); return delivery ? <p className="payment-delivery">{delivery.map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</p> : null })()}<p className="cart-subtotal">Subtotal <strong>{cart.subtotal ? money(cart.subtotal.amount, cart.subtotal.currency) : 'A confirmar'}</strong></p><p className="field-help">O total com seu cupom aparece antes de pagar.</p></aside>
     <section className="payment-card" aria-labelledby="payment-heading"><h2 id="payment-heading">Último passo</h2>
-      {checkoutMock && <p className="checkout-demo">Demonstração: o pagamento real ainda não está conectado neste ambiente.</p>}
-      <div><label className="checkbox-label payment-terms"><input type="checkbox" required disabled={termsChanged || (!checkoutMock && !canCheckout(cart))} checked={accepted} onChange={event => changeAcceptance(event.target.checked)} /><span>Li e aceito os <Link className="inline-link" to="/termos" target="_blank" rel="noopener">termos de uso</Link> e a <Link className="inline-link" to="/reembolsos" target="_blank" rel="noopener">política de reembolso</Link>. Estou ciente de que os jogos são conteúdo digital, liberado para download assim que o pagamento é confirmado, e peço essa entrega imediata.</span></label>
-        <p className="field-help">Arquivo com defeito, jogo não entregue ou cobrança indevida continuam com solução: corrigimos, reenviamos ou devolvemos o valor.</p>
-        {!secret && !demo && <p className="field-help" role="status">{busy ? 'Preparando pagamento…' : 'Ao aceitar os termos, o formulário de pagamento aparece aqui.'}</p>}
-      </div>
+      {demo && <p className="checkout-demo">Demonstração: o pagamento real ainda não está conectado neste ambiente.</p>}
+      <label className="checkbox-label payment-terms"><input type="checkbox" required disabled={termsChanged || accepting || !ready} checked={accepted || accepting} onChange={event => void changeAcceptance(event.target.checked)} /><span>Li e aceito os <Link className="inline-link" to="/termos" target="_blank" rel="noopener">termos de uso</Link> e a <Link className="inline-link" to="/reembolsos" target="_blank" rel="noopener">política de reembolso</Link>, e peço a entrega imediata dos jogos.</span></label>
+      {ready && !accepted && !termsChanged && <p className="field-help payment-lock-hint">Marque o aceite para liberar o pagamento.</p>}
       <p role="alert" className="form-error">{error}</p>{termsChanged && <a className="inline-link" href="/pagamento">Recarregar e revisar os termos</a>}
-      {!canCheckout(cart) && !checkoutMock && <p>Revise os itens e os preços <Link className="inline-link" to="/carrinho">na sacola</Link> antes de continuar.</p>}
-      {accepted && secret && <div className="payment-reveal"><StripePayment clientSecret={secret} /></div>}
-      {accepted && demo && <div className="payment-reveal"><MockPayment cart={cart} /></div>}
+      {!canCheckout(cart) && !demo && <p>Revise os itens e os preços <Link className="inline-link" to="/carrinho">na sacola</Link> antes de continuar.</p>}
+      {!ready && !error && canCheckout(cart) && <p className="field-help" role="status">Preparando o pagamento…</p>}
+      {order && <StripePayment clientSecret={order.secret} locked={!accepted} partner={referral?.code && referral.name ? { code: referral.code, name: referral.name } : undefined} />}
+      {demo && <div className="payment-lock" inert={!accepted} data-locked={!accepted}><MockPayment cart={cart} /></div>}
     </section></div>
 }
 

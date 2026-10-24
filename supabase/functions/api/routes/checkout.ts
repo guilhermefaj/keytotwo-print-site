@@ -4,7 +4,7 @@ import { requireSessionUser } from '../../_shared/auth.ts'
 import { type ChargeableItem, orderItemCharge } from '../../_shared/cart-pricing.ts'
 import { env } from '../../_shared/env.ts'
 import { basePriceKey } from '../../_shared/fulfillment.ts'
-import { type ErrorCode, errorLabel, HttpError, json, readJsonObject } from '../../_shared/http.ts'
+import { type ErrorCode, errorLabel, HttpError, isUuid, json, readJsonObject } from '../../_shared/http.ts'
 import { primePrices, stripePriceProduct } from '../../_shared/prices.ts'
 import { isStripeError, livemode, stripe, STRIPE_UI_MODE, stripeErrorLabel } from '../../_shared/stripe.ts'
 
@@ -80,17 +80,19 @@ async function customerFor(userId: string, order: CheckoutOrder): Promise<string
   return await rpc<string>('set_stripe_customer', { p_user_id: userId, p_stripe_customer_id: customer.id, ...(stored ? { p_replaces: stored } : {}) })
 }
 
-// POST /checkout { cart_version, terms_accepted, terms_version } → { client_secret } do formulário embutido.
+const termsChanged = (termsVersion: string) =>
+  new HttpError(409, 'TERMS_CHANGED', 'Os termos foram atualizados. Leia e aceite a versão atual.', { details: { terms_version: termsVersion } })
+
+// POST /checkout { cart_version, terms_version, terms_accepted?, referral? } → { client_secret, order_id } do formulário
+// embutido. Desde 2026-10-24 o formulário abre com a página, travado até o aceite: o pedido nasce sem ele e
+// POST /checkout/terms grava quando a pessoa marca a caixa (terms_accepted = true, do site anterior, já grava aqui).
+// referral (2026-10-24): de onde veio quem compra (o parceiro do link e as marcas de campanha); o banco confere e
+// descarta o que não vale, e uma falha aqui não impede o pagamento.
 export async function checkout(req: Request): Promise<Response> {
   const user = await requireSessionUser(req)
   const body = await readJsonObject(req)
-  if (body.terms_accepted !== true) {
-    throw new HttpError(400, 'TERMS_NOT_ACCEPTED', 'Aceite os termos para continuar.')
-  }
   const termsVersion = env.termsVersion()
-  if (body.terms_version !== termsVersion) {
-    throw new HttpError(409, 'TERMS_CHANGED', 'Os termos foram atualizados. Leia e aceite a versão atual.', { details: { terms_version: termsVersion } })
-  }
+  if (body.terms_version !== termsVersion) throw termsChanged(termsVersion)
   const cartVersion = body.cart_version
   if (!Number.isInteger(cartVersion) || (cartVersion as number) < 0) {
     throw new HttpError(400, 'INVALID_REQUEST', 'Versão do carrinho inválida.')
@@ -101,7 +103,7 @@ export async function checkout(req: Request): Promise<Response> {
     p_livemode: livemode(),
     p_cart_version: cartVersion,
     p_terms_version: termsVersion,
-    p_terms_accepted: true,
+    p_terms_accepted: body.terms_accepted === true,
   })
   const refusal = REFUSALS[order.outcome]
   if (refusal) throw new HttpError(409, refusal[0], refusal[1], { details: order.detail ?? undefined })
@@ -109,6 +111,10 @@ export async function checkout(req: Request): Promise<Response> {
     throw new Error(`create_order_from_cart: resultado inesperado (${order.outcome})`)
   }
   const orderId = order.order_id
+  if (body.referral && typeof body.referral === 'object' && !Array.isArray(body.referral)) {
+    await rpc('set_order_referral', { p_user_id: user.id, p_order_id: orderId, p_referral: body.referral })
+      .catch((error) => console.error(`checkout: indicação não gravada (${errorLabel(error)})`))
+  }
   const customer = await customerFor(user.id, order)
   const { lines, metadata } = await lineItems(order.items)
 
@@ -144,5 +150,19 @@ export async function checkout(req: Request): Promise<Response> {
     // O webhook e a confirmação acham o pedido pelo client_reference_id.
     console.error(`checkout: attach_checkout_session falhou (${errorLabel(error)})`)
   }
-  return json({ client_secret: session.client_secret })
+  return json({ client_secret: session.client_secret, order_id: orderId })
+}
+
+// POST /checkout/terms { order_id, terms_version } → { accepted: true }: a pessoa marcou o "Li e aceito" acima do
+// formulário. Grava o momento no pedido aberto dela (uma vez); o site só destrava o formulário depois disto.
+export async function checkoutTerms(req: Request): Promise<Response> {
+  const user = await requireSessionUser(req)
+  const body = await readJsonObject(req)
+  if (!isUuid(body.order_id)) throw new HttpError(400, 'INVALID_REQUEST', 'Pedido inválido.')
+  const termsVersion = env.termsVersion()
+  if (body.terms_version !== termsVersion) throw termsChanged(termsVersion)
+  const outcome = await rpc<string>('accept_order_terms', { p_user_id: user.id, p_order_id: body.order_id, p_terms_version: termsVersion })
+  if (outcome === 'terms_changed') throw termsChanged(termsVersion)
+  if (outcome !== 'ok') throw new HttpError(404, 'NOT_FOUND', 'Este pagamento não está mais aberto. Volte à sacola.')
+  return json({ accepted: true })
 }

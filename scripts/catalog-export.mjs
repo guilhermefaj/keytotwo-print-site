@@ -1,5 +1,5 @@
 // Catálogo no banco (2026-10-24): antes do build, traz o catálogo à venda (GET /catalog da API: o preço da Stripe, o
-// riscado da promoção e os jogos de cada produto, na ordem do banco) para src/content/catalog-snapshot.ts. Só os builds
+// riscado da promoção e os jogos de cada produto, na ordem do banco, e a faixa do topo) para src/content/catalog-snapshot.ts. Só os builds
 // da VPS rodam isto (BLOG_SOURCE=api no Dockerfile); fora dela, o site usa o retrato do repositório. A versão vai
 // para /catalogo/versao.json: o vigia da VPS compara com a do banco, e o admin diz se a loja está em dia. A versão é lida
 // antes do catálogo: se ele mudar no meio, a versão gravada fica para trás e o vigia reconstrói de novo. Qualquer falha
@@ -12,6 +12,7 @@ const TIMEOUT_MS = 30_000
 const CODE = /^[A-Z][A-Z0-9-]{1,23}$/
 
 const isPrice = (value) => value === null || (Number.isInteger(value?.unit_amount) && value.unit_amount >= 0 && /^[a-z]{3}$/.test(value?.currency ?? ''))
+const isBanner = (value) => value === null || (/^[A-Z0-9]{3,30}$/.test(value?.code ?? '') && typeof value?.text === 'string' && value.text.trim().length >= 5 && value.text.length <= 140)
 const isListPrice = (value) => value === null || value === undefined || (Number.isInteger(value?.amount) && value.amount > 0 && typeof value?.label === 'string' && value.label.trim() !== '')
 
 export async function exportCatalog({ root, supabaseUrl, apiKey, fetch = globalThis.fetch }) {
@@ -24,8 +25,9 @@ export async function exportCatalog({ root, supabaseUrl, apiKey, fetch = globalT
 
   const response = await fetch(`${base}/functions/v1/api/catalog`, { headers: { apikey: apiKey }, signal: AbortSignal.timeout(TIMEOUT_MS) })
   if (!response.ok) throw new Error(`Catálogo: /catalog respondeu HTTP ${response.status}`)
-  const { products } = await response.json()
+  const { products, banner = null } = await response.json()
   if (!Array.isArray(products)) throw new Error('Catálogo: resposta inválida de /catalog')
+  if (!isBanner(banner)) throw new Error('Catálogo: faixa do topo inválida em /catalog')
   const entries = products.map((product) => {
     const games = Array.isArray(product?.games) ? product.games.map((game) => game?.code) : null
     if (!CODE.test(product?.code ?? '') || !isPrice(product.price) || !isListPrice(product.list_price) || !games?.every((code) => CODE.test(code ?? ''))) {
@@ -37,11 +39,13 @@ export async function exportCatalog({ root, supabaseUrl, apiKey, fetch = globalT
   await writeFile(path.join(root, 'src/content/catalog-snapshot.ts'), [
     '// Gerado por scripts/catalog-export.mjs no build da VPS, a partir do /catalog. No repositório (local e CI) fica o',
     '// retrato do catálogo do banco em 2026-10-24. Não edite à mão: o preço e os pacotes mudam no admin.',
-    "import type { CatalogEntry } from './catalog.ts'",
+    "import type { CatalogEntry, PromoBanner } from './catalog.ts'",
     '',
     'export const catalogSnapshot: readonly CatalogEntry[] = [',
     ...entries.map((entry) => `  ${JSON.stringify(entry)},`),
     ']',
+    '',
+    `export const promoBanner: PromoBanner | null = ${JSON.stringify(banner && { code: banner.code, text: banner.text })}`,
     '',
   ].join('\n'))
   await mkdir(path.join(root, 'public/catalogo'), { recursive: true })

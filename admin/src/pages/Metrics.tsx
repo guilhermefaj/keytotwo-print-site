@@ -19,6 +19,11 @@ type Metrics = {
   free_unlocks: number
   newsletter: { subscribed: number }
   daily: { date: string; orders: number; revenue: number; accounts: number }[]
+  marketing: {
+    codes: { code: string; orders: number; revenue: number; discount: number }[]
+    partners: { name: string; slug: string; orders: number; revenue: number }[]
+    campaigns: { source: string | null; campaign: string | null; orders: number; revenue: number }[]
+  }
 }
 
 const periods = [7, 30] as const
@@ -84,6 +89,7 @@ function Dashboard({ data }: { data: Metrics }) {
         <span className="funnel-bar" aria-hidden="true" />
       </li>)}</ol>
     </section>
+    <Marketing data={data} />
     <section className="section" aria-labelledby="metricas-contas">
       <h2 id="metricas-contas">Contas e e-mails</h2>
       <dl className="cards">
@@ -100,4 +106,24 @@ function Dashboard({ data }: { data: Metrics }) {
       </dl>
     </section>
   </>
+}
+
+// Cupons, parceiros e campanhas (2026-10-24): as vendas pagas do período que usaram um cupom, vieram de um parceiro
+// (pelo link ou pelo cupom) ou chegaram com marcas de campanha (utm_source, utm_campaign).
+function Marketing({ data }: { data: Metrics }) {
+  const { codes, partners, campaigns } = data.marketing
+  const currency = data.sales.currency
+  const table = (label: string, head: string, rows: { key: string; name: string; orders: number; revenue: number; extra?: string }[], extra?: string) => rows.length > 0 && <div className="table-wrap"><table aria-label={label}>
+    <thead><tr><th scope="col">{head}</th><th scope="col">Pedidos</th><th scope="col">Receita</th>{extra && <th scope="col">{extra}</th>}</tr></thead>
+    <tbody>{rows.map(row => <tr key={row.key}><th scope="row">{row.name}</th><td>{count(row.orders)}</td><td>{money(row.revenue, currency)}</td>{extra && <td>{row.extra}</td>}</tr>)}</tbody>
+  </table></div>
+  return <section className="section" aria-labelledby="metricas-cupons">
+    <h2 id="metricas-cupons">Cupons e parceiros</h2>
+    {!codes.length && !partners.length && !campaigns.length ? <p className="note">Nenhuma venda com cupom, parceiro ou campanha no período.</p> : <>
+      {table('Vendas por cupom', 'Cupom', codes.map(row => ({ key: row.code, name: row.code, orders: row.orders, revenue: row.revenue, extra: money(row.discount, currency) })), 'Desconto')}
+      {table('Vendas por parceiro', 'Parceiro', partners.map(row => ({ key: row.slug, name: row.name, orders: row.orders, revenue: row.revenue })))}
+      {table('Vendas por campanha', 'Origem e campanha', campaigns.map(row => ({ key: `${row.source}:${row.campaign}`, name: [row.source, row.campaign].filter(Boolean).join(' · '), orders: row.orders, revenue: row.revenue })))}
+    </>}
+    <p className="note"><Link className="text-link" to="/cupons">Ver os cupons e os parceiros</Link></p>
+  </section>
 }

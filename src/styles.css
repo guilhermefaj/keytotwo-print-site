@@ -436,6 +436,11 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .payment-items li > span { flex: 1 1 130px; overflow-wrap: anywhere; }
 .payment-terms { margin-bottom: 20px; font-size: var(--text-small); line-height: 1.65; }
 .payment-terms input { flex-shrink: 0; }
+/* Aceite no pagamento (2026-10-24): o formulário aparece com a página, apagado e travado até a caixa ser marcada. */
+.payment-lock-hint { margin: -12px 0 16px; }
+.payment-lock { transition: opacity .2s ease; }
+.payment-lock[data-locked="true"] { opacity: .45; }
+@media (prefers-reduced-motion: reduce) { .payment-lock { transition: none; } }
 .payment-card .button { max-width: 100%; }
 .checkout-demo { margin-block: var(--space-md); }
 .stripe-payment, .mock-payment { margin-top: 24px; }
