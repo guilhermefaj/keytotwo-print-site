@@ -366,11 +366,12 @@ Ordem fixa, com dados de `src/content/games.ts` e `products.ts`:
 
 1. **Voltar** ("Loja"), H1 com o nome e a chamada.
 2. **Ficha no topo** (`.product-facts`, só no avulso): os fatos genéricos do jogo (pessoas, jeito de jogar, o que está em jogo, formato), sem contar páginas, cartas ou peças, lado a lado, cada um com o rótulo em Caption Tinta suave e o valor em 600, separados por régua de Tinta e com régua em cima e embaixo (até 2026-10-23, tracejadas); duas colunas no celular.
-3. **Galeria e compra**: à esquerda a galeria (`ProductGallery`), à direita o card "O que está incluído" com preço e compra. A galeria abre na capa (16:9, no fio de Tinta dos cards, sem faixa de cor) e troca pelas miniaturas (botões de 88 px, `aria-pressed`, a escolhida com borda de 2 px Turquesa profundo). Só capas oficiais: no avulso, a capa do jogo sozinha (sem miniaturas); no pacote, a capa dele e as de cada jogo.
+3. **Galeria e compra**: à esquerda a galeria (`ProductGallery`), à direita o card "O que está incluído" com preço e compra, e nada embaixo do botão (a entrega e o reembolso ficam no fim, item 7). A galeria abre na capa (16:9, no fio de Tinta dos cards, sem faixa de cor) e troca pelas miniaturas (botões de 88 px, `aria-pressed`, a escolhida com borda de 2 px Turquesa profundo). Só capas oficiais: no avulso, a capa do jogo sozinha (sem miniaturas); no pacote, a capa dele e as de cada jogo.
 4. **Como é jogar** (só no avulso): a descrição do jogo e três momentos da experiência do casal (`moments`: título e uma frase), em cartas separadas por régua de Tinta, sem números. Fala do que a dupla vive (conversa, risada, desafio, mistério), nunca das regras, das soluções ou do conteúdo das páginas.
 5. **Jogos do pacote** (só no pacote): a grade na variante "incluído".
 6. **O que vocês precisam** (`needs`): ícone Tabler de 24 px em Turquesa profundo e o rótulo de `needLabels`, com régua de Tinta. No pacote, a lista junta o que todos os jogos pedem.
-7. **Também está no pacote** (só no avulso que faz parte de um pacote à venda): card no fio de Tinta com o argumento real, "todos num só pedido", as miniaturas dos jogos e "Ver o pacote". Nunca compara preços nem anuncia economia.
+7. **Entrega e reembolso** (`delivery` e `refundNotice`): como o PDF chega, que dá para baixar de novo e o aviso de reembolso com o link da política, em parágrafos de Tinta suave. Fica no fim da descrição desde 2026-10-24: o responsável não quer regra de negócio colada no botão de compra. Na sacola, o mesmo aviso fica no pé da página (`.cart-legal`), fora do resumo; o aceite que vale continua no pagamento.
+8. **Também está no pacote** (só no avulso que faz parte de um pacote à venda): card no fio de Tinta com o argumento real, "todos num só pedido", as miniaturas dos jogos e "Ver o pacote". Nunca compara preços nem anuncia economia.
 
 ### Ajuda (`/ajuda`)
 

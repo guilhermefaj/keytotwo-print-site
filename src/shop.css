@@ -88,11 +88,10 @@
 .shop-purchase .shop-availability { margin-top: var(--space-lg); }
 .shop-purchase .offer-cart-action { margin-top: var(--space-lg); }
 .shop-purchase .form-error:empty, .shop-availability .form-error:empty { display: none; }
-.shop-delivery { margin-top: var(--space-lg); font-size: var(--text-small); color: var(--color-ink-soft); }
-.shop-delivery p { margin: 0; }
 .product-section { margin-top: var(--space-3xl); }
 .product-section > h2 { font-size: var(--text-headline-sm); margin: 0 0 var(--space-md); }
 .product-section > p { color: var(--color-ink-soft); max-width: 65ch; margin: 0 0 var(--space-lg); }
+.product-delivery > p { margin-bottom: var(--space-sm); }
 .moments-list { list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0; margin: 0; border: var(--line-card-quiet); border-radius: var(--radius-md); }
 .moments-list li { padding: var(--space-lg); min-width: 0; }
 .moments-list li + li { border-left: var(--line-rule); }

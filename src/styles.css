@@ -467,6 +467,8 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .cart-summary { background: var(--color-paper); border: var(--line-card); border-radius: var(--radius-lg); padding: 28px; }
 .cart-summary > p { margin-bottom: 18px; }
 .cart-summary .refund-notice { margin-block: 24px; }
+/* Aviso de reembolso no pé da sacola, longe de Finalizar compra (responsável, 2026-10-24). */
+.cart-legal { max-width: 65ch; margin: 40px 0 0; font-size: var(--text-label); color: var(--color-ink-soft); }
 .cart-summary .button { width: 100%; }
 .cart-summary #checkout-pending { font-size: var(--text-label); color: var(--color-ink-soft); }
 .cart-subtotal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }

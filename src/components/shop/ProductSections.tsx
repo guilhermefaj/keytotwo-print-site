@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { IconBallpen, IconBandage, IconBlade, IconBottle, IconBulb, IconCalendarEvent, IconCup, IconDeviceMobile, IconFile, IconHourglass, IconPencil, IconPrinter, IconScissors, type TablerIcon } from '@tabler/icons-react'
 import { needLabels, type Game, type Need } from '../../content/games'
 import type { Product } from '../../content/products'
+import { refundNotice } from '../../content/legal'
 import { GameCover } from '../account/GameCover'
 import { Icon } from '../ui/Icon'
 
@@ -35,6 +36,16 @@ export function ProductMoments({ game }: { game: Game }) {
     <h2 id="moments-title">Como é jogar</h2>
     <p>{game.description}</p>
     <ul className="moments-list">{game.moments.map(moment => <li key={moment.title}><h3>{moment.title}</h3><p>{moment.text}</p></li>)}</ul>
+  </section>
+}
+
+// Entrega e reembolso: regra de negócio, no fim da descrição e longe do botão de compra (responsável, 2026-10-24).
+// O aceite que vale continua no pagamento.
+export function ProductDelivery({ product }: { product: Product }) {
+  return <section className="product-section product-delivery" aria-labelledby="delivery-title">
+    <h2 id="delivery-title">Entrega e reembolso</h2>
+    {product.delivery.map(line => <p key={line}>{line}</p>)}
+    <p>{refundNotice} <Link className="inline-link" to="/reembolsos">Política de reembolso</Link></p>
   </section>
 }
 

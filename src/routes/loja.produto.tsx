@@ -1,12 +1,11 @@
 import { useEffect } from 'react'
 import { Link, isRouteErrorResponse, useLoaderData, useRouteError, type ClientLoaderFunctionArgs, type LoaderFunctionArgs } from 'react-router'
 import { productPages, products, type Product } from '../content/products'
-import { refundNotice } from '../content/legal'
 import type { Game } from '../content/games'
 import { ProductAvailability } from '../components/shop/ProductAvailability'
 import { GameGrid } from '../components/shop/GameGrid'
 import { ProductGallery, type GalleryImage } from '../components/shop/ProductGallery'
-import { ProductFacts, ProductMoments, ProductNeeds, ProductPackage } from '../components/shop/ProductSections'
+import { ProductDelivery, ProductFacts, ProductMoments, ProductNeeds, ProductPackage } from '../components/shop/ProductSections'
 import { BackLink } from '../components/ui/BackLink'
 import NotFound from './not-found'
 import { offerValue, track } from '../lib/analytics'
@@ -37,7 +36,7 @@ function galleryOf(product: Product, game?: Game): GalleryImage[] {
 }
 
 // Página de produto (DESIGN.md › Página de produto): ficha no topo, galeria e compra, como é jogar,
-// o que vocês precisam e o pacote como alternativa. O pacote mostra os jogos com a ficha de cada um.
+// o que vocês precisam, entrega e reembolso e o pacote como alternativa. O pacote mostra os jogos com a ficha de cada um.
 export default function ShopProduct() {
   const { product } = useLoaderData<typeof loader>()
   const game = product.kind === 'single' ? product.games[0] : undefined
@@ -56,12 +55,12 @@ export default function ShopProduct() {
         <h2 id="shop-includes-title">O que está incluído</h2>
         <ul className="shop-includes">{product.contents.map(line => <li key={line}>{line}</li>)}</ul>
         <ProductAvailability product={product} detail />
-        <div className="shop-delivery">{product.delivery.map(line => <p key={line}>{line}</p>)}<p>{refundNotice} <Link className="inline-link" to="/reembolsos">Política de reembolso</Link></p></div>
       </section>
     </div>
     {game && <ProductMoments game={game} />}
     {product.kind === 'bundle' && <section className="product-section shop-games" aria-labelledby="shop-games-title"><h2 id="shop-games-title">Jogos do pacote</h2><GameGrid games={product.games} variant="included" /></section>}
     <ProductNeeds games={product.games} bundle={product.kind === 'bundle'} />
+    <ProductDelivery product={product} />
     {game && bundle && <ProductPackage game={game} bundle={bundle} />}
   </main>
 }
