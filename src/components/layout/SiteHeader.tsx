@@ -18,7 +18,7 @@ const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: 
 // as abas do Portal já levam a Meus jogos, Pedidos e Minha conta, então o cabeçalho fica com logo, Portal e a
 // conta. O menu móvel mantém os três links. No desktop, quem entrou vê "Portal" e quem não entrou vê só
 // "Entrar"; a Ajuda fica no rodapé e no menu móvel (responsável, 2026-10-21).
-const privateRoutes = ['/meus-jogos', '/pedidos', '/conta']
+export const privateRoutes = ['/meus-jogos', '/pedidos', '/conta']
 const privateNavigation = [
   { label: 'Meus jogos', href: '/meus-jogos' },
   { label: 'Minha conta', href: '/conta' },

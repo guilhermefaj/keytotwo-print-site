@@ -27,7 +27,8 @@ test('desktop: persegue o cursor pelo chão, vai no colo e volta ao chão', asyn
   const hitbox = (await page.locator('.kito-hitbox').boundingBox())!
   await page.mouse.move(hitbox.x + hitbox.width / 2, hitbox.y + hitbox.height / 3)
   await page.mouse.down()
-  await page.mouse.move(700, 320, { steps: 12 })
+  // Solto à direita do título: embaixo de x = 700 há palavra (o Kito pararia nela, e a barrinha do cupom mexe a altura).
+  await page.mouse.move(1300, 320, { steps: 12 })
   await expect(sprite(page)).toHaveAttribute('data-mode', 'carried')
   await expect(page.locator('html')).toHaveAttribute('data-kito-carrying', 'true')
   expect(await aboveGround(page)).toBeLessThan(-100)

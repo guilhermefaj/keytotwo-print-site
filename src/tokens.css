@@ -57,6 +57,9 @@
   --line-card: 2px solid var(--color-line);
   --line-dot: 2px dotted var(--color-line);
   --line-rule: 1px solid var(--color-ink-rule);
+  /* Cards de jogo (2026-10-23): fio de Tinta no lugar da linha turquesa; escurece no hover. */
+  --line-card-quiet: 1px solid var(--color-ink-rule);
+  --color-card-hover: rgb(18 58 61 / .42);
   /* Sombras: só painéis que saem da folha. */
   --shadow-panel: -12px 0 48px rgb(18 58 61 / .12);
   --shadow-menu: 0 12px 40px rgb(18 58 61 / .16);

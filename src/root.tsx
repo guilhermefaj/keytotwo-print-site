@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { isRouteErrorResponse, Link, Links, Outlet, Scripts, ScrollRestoration, useLocation, useMatches, useRouteError } from 'react-router'
 import { SiteHeader } from './components/layout/SiteHeader'
+import { PromoBar } from './components/layout/PromoBar'
 import { SiteFooter } from './components/layout/SiteFooter'
 import { blogPostingJsonLd, homeJsonLd, pageSeo, productForPath, productJsonLd, serializeJsonLd, shareImage, shareImageSize, siteConfig } from './lib/seo'
 import type { BlogPostSummary } from './lib/blog'
@@ -94,6 +95,7 @@ export default function Root() {
     <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
     {siteConfig.stage === 'test' && <aside aria-label="Aviso de ambiente"><p className="stage-banner">Ambiente de teste — sem cobranças reais.</p></aside>}
     <CookieNotice />
+    <PromoBar />
     <SiteHeader onMenuOpenChange={setMenuOpen} />
     <Outlet context={{ menuOpen }} />
     <SiteFooter />

@@ -4,7 +4,6 @@ import { IconArchive, IconFile, IconFiles, IconMail, IconPrinter, IconRuler2, Ic
 import { BackLink } from '../components/ui/BackLink'
 import { Icon } from '../components/ui/Icon'
 import { GameCover } from '../components/account/GameCover'
-import { accentStyle } from '../components/shop/GameGrid'
 import { help, printGuide, supportEmail, type HelpIcon } from '../content/help'
 import { needLabels, packageGames } from '../content/games'
 
@@ -19,7 +18,7 @@ function PrintGuide() {
   return <>
     <ul className="print-guide">{printGuide.map(tip => <li key={tip.title}><Icon component={icons[tip.icon]} size={24} /><div><h3>{tip.title}</h3><p>{tip.text}</p></div></li>)}</ul>
     <h3 className="help-subtitle">O que cada jogo pede</h3>
-    <ul className="help-game-needs">{gamesWithNeeds.map(game => <li key={game.id} style={accentStyle(game.accent)}>
+    <ul className="help-game-needs">{gamesWithNeeds.map(game => <li key={game.id}>
       <GameCover code={game.code} name={game.name} sizes="112px" />
       <div><h4>{game.name}</h4><p>{game.needs!.map(need => needLabels[need]).join(' · ')}</p></div>
     </li>)}</ul>

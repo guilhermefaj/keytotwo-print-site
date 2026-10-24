@@ -20,8 +20,17 @@ async function builtFile(name: string) {
 const isLive = async () => /^Sitemap:/m.test(await builtFile('robots.txt'))
 const isPreview = async () => !(await isLive()) && !(await builtFile('index.html')).includes('Ambiente de teste')
 
+// Sem a barrinha do cupom: ela é a única promoção do site, pedida pelo responsável (2026-10-23), e tem teste próprio.
 async function visibleText(page: Page) {
-  return page.evaluate(() => document.body.innerText)
+  return page.evaluate(() => {
+    const body = document.body.cloneNode(true) as HTMLElement
+    body.querySelector('.promo-bar')?.remove()
+    document.body.append(body)
+    body.style.cssText = 'position:absolute;left:-99999px;top:0;width:100%'
+    const text = body.innerText
+    body.remove()
+    return text
+  })
 }
 
 test.describe('links e botões', () => {
