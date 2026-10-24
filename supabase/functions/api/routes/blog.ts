@@ -5,7 +5,8 @@ import { requireAdminSession } from '../../_shared/auth.ts'
 import { blogConfig, blogMediaBase, deleteObject, listObjects, putObject } from '../../_shared/b2.ts'
 import { blogProblems, isBlogImagePath, markdownImages, readBlogPostInput, slugify, type BlogPostInput, type MarkdownToken } from '../../_shared/blog-rules.ts'
 import { ConfigError } from '../../_shared/env.ts'
-import { HttpError, json, readBytes, readJsonObject } from '../../_shared/http.ts'
+import { HttpError, isUuid, json, readBytes, readJsonObject } from '../../_shared/http.ts'
+import { settle } from './outcome.ts'
 
 // Blog (2026-10-23): o admin lista, cria, edita e exclui posts; o build do site lê os publicados e a VPS confere a
 // versão para reconstruir. Rotas /admin/* pedem sessão com o segundo fator, e o banco confere o admin em cada chamada.
@@ -13,7 +14,6 @@ import { HttpError, json, readBytes, readJsonObject } from '../../_shared/http.t
 const markdown = new MarkdownIt({ html: false, linkify: false, typographer: false })
 const POST_BYTES = 512 * 1024
 const IMAGE_BYTES = 5 * 1024 * 1024
-const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // Tipo declarado → extensão e o começo do arquivo de verdade (o bucket é público: nada que não seja imagem entra).
 const IMAGE_TYPES: Record<string, { ext: string; magic: (bytes: Uint8Array) => boolean }> = {
@@ -25,7 +25,6 @@ const IMAGE_TYPES: Record<string, { ext: string; magic: (bytes: Uint8Array) => b
 }
 const ascii = (bytes: Uint8Array, start: number, end: number) => String.fromCharCode(...bytes.subarray(start, end))
 
-const notAdmin = () => new HttpError(403, 'NOT_ADMIN', 'Esta área é só para a equipe da KeyToTwo.')
 const notFound = () => new HttpError(404, 'NOT_FOUND', 'Post não encontrado.')
 
 // Sem o bucket configurado o admin ainda lista e edita; só o envio de imagem fica indisponível.
@@ -39,7 +38,7 @@ function mediaBase(): string | null {
 }
 
 function postId(params: Record<string, string>): string {
-  if (!ID.test(params.id ?? '')) throw notFound()
+  if (!isUuid(params.id)) throw notFound()
   return params.id
 }
 
@@ -56,29 +55,20 @@ type Saved = { outcome: string; post: Record<string, unknown> | null }
 
 // Com a versão do que está publicado depois de salvar: o editor acompanha quando o site fica com ela.
 async function savedPost(result: Saved, status = 200): Promise<Response> {
-  switch (result.outcome) {
-    case 'ok':
-      return json({ post: result.post, version: await rpc<string>('get_blog_version') }, status)
-    case 'forbidden':
-      throw notAdmin()
-    case 'not_found':
-      throw notFound()
-    case 'conflict':
-      throw new HttpError(409, 'EDIT_CONFLICT', 'Este post foi salvo em outro lugar depois que você abriu. Copie o que mudou, recarregue e salve de novo.', { details: { post: result.post } })
-    case 'slug_taken':
-      throw new HttpError(409, 'SLUG_TAKEN', 'Já existe um post com este endereço. Escolha outro.')
-    case 'slug_locked':
-      throw new HttpError(409, 'SLUG_LOCKED', 'O endereço não muda depois que o post foi publicado.')
-    default:
-      throw new Error(`admin_save_blog_post: outcome inesperado (${result.outcome})`)
-  }
+  settle(result.outcome, {
+    not_found: notFound,
+    conflict: () => new HttpError(409, 'EDIT_CONFLICT', 'Este post foi salvo em outro lugar depois que você abriu. Copie o que mudou, recarregue e salve de novo.', { details: { post: result.post } }),
+    slug_taken: () => new HttpError(409, 'SLUG_TAKEN', 'Já existe um post com este endereço. Escolha outro.'),
+    slug_locked: () => new HttpError(409, 'SLUG_LOCKED', 'O endereço não muda depois que o post foi publicado.'),
+  })
+  return json({ post: result.post, version: await rpc<string>('get_blog_version') }, status)
 }
 
 // GET /admin/blog/posts: todos os posts, sem o texto, com a versão publicada e a base das imagens.
 export async function adminBlogPosts(req: Request): Promise<Response> {
   const user = await requireAdminSession(req)
   const result = await rpcRow<{ outcome: string; result: Record<string, unknown> }>('admin_list_blog_posts', { p_user_id: user.id })
-  if (result.outcome !== 'ok') throw notAdmin()
+  settle(result.outcome)
   return json({ ...result.result, media_base: mediaBase() })
 }
 
@@ -95,8 +85,7 @@ export async function adminBlogPost(req: Request, _url: URL, params: Record<stri
   const user = await requireAdminSession(req)
   const id = postId(params)
   const result = await rpcRow<{ outcome: string; post: Record<string, unknown> | null }>('admin_get_blog_post', { p_user_id: user.id, p_post_id: id })
-  if (result.outcome === 'forbidden') throw notAdmin()
-  if (result.outcome !== 'ok') throw notFound()
+  settle(result.outcome, { not_found: notFound })
   return json({ post: result.post, media_base: mediaBase() })
 }
 
@@ -118,8 +107,7 @@ export async function adminDeleteBlogPost(req: Request, _url: URL, params: Recor
   const user = await requireAdminSession(req)
   const id = postId(params)
   const result = await rpcRow<{ outcome: string }>('admin_delete_blog_post', { p_user_id: user.id, p_post_id: id })
-  if (result.outcome === 'forbidden') throw notAdmin()
-  if (result.outcome !== 'ok') throw notFound()
+  settle(result.outcome, { not_found: notFound })
   return json({ deleted: true, version: await rpc<string>('get_blog_version') })
 }
 
@@ -140,8 +128,7 @@ export async function adminBlogImage(req: Request, url: URL): Promise<Response> 
   const key = `${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${random}-${name}.${kind.ext}`
   const path = `/images/blog/${key}`
 
-  const allowed = await rpcRow<{ outcome: string }>('admin_register_blog_image', { p_user_id: user.id, p_path: path })
-  if (allowed.outcome !== 'ok') throw notAdmin()
+  settle((await rpcRow<{ outcome: string }>('admin_register_blog_image', { p_user_id: user.id, p_path: path })).outcome)
   await putObject(config, key, bytes, type)
   return json({ path, url: `${blogMediaBase()}/${key}` }, 201)
 }
@@ -152,7 +139,7 @@ export async function adminBlogImage(req: Request, url: URL): Promise<Response> 
 export async function adminBlogImages(req: Request): Promise<Response> {
   const user = await requireAdminSession(req)
   const result = await rpcRow<{ outcome: string; usage: Record<string, unknown[]> | null }>('admin_blog_image_usage', { p_user_id: user.id })
-  if (result.outcome !== 'ok') throw notAdmin()
+  settle(result.outcome)
   const usage = result.usage ?? {}
   const base = blogMediaBase()
   const { objects, truncated } = await listObjects(blogConfig())
@@ -173,11 +160,10 @@ export async function adminDeleteBlogImage(req: Request, url: URL): Promise<Resp
   const path = url.searchParams.get('path') ?? ''
   if (!isBlogImagePath(path)) throw new HttpError(400, 'INVALID_REQUEST', 'Imagem inválida.')
   const result = await rpcRow<{ outcome: string; used_by: { title: string }[] | null }>('admin_delete_blog_image', { p_user_id: user.id, p_path: path })
-  if (result.outcome === 'forbidden') throw notAdmin()
-  if (result.outcome === 'in_use') {
-    const titles = (result.used_by ?? []).map((post) => `“${post.title}”`).join(', ')
-    throw new HttpError(409, 'IMAGE_IN_USE', `Esta imagem está em uso em ${titles}. Tire-a do post antes de apagar.`, { details: { used_by: result.used_by } })
-  }
+  const titles = (result.used_by ?? []).map((post) => `“${post.title}”`).join(', ')
+  settle(result.outcome, {
+    in_use: () => new HttpError(409, 'IMAGE_IN_USE', `Esta imagem está em uso em ${titles}. Tire-a do post antes de apagar.`, { details: { used_by: result.used_by } }),
+  })
   await deleteObject(blogConfig(), path.slice('/images/blog/'.length))
   return json({ deleted: true })
 }

@@ -2,14 +2,12 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assert, assertEquals, assertMatch } from '@std/assert'
-import { BREVO_WEBHOOK_SECRET, captureErrors, externalCalls, onExternal, onRpc, request, rpcCalls, SECRET_KEY, contractTest, tampered } from './contract-helpers.ts'
+import { BREVO_WEBHOOK_SECRET, captureErrors, externalCalls, onExternal, onRpc, request, rpcCalls, SECRET_KEY, contractTest, tampered, dispatchRpc, ok, row } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { handleBrevoWebhook } from '../brevo-webhook/handler.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
 import { signDeliveryToken, signUnsubscribeToken, verifyUnsubscribeToken } from '../_shared/tokens.ts'
 
-const ok = (body: unknown) => ({ status: 200, body })
-const row = (body: Record<string, unknown>) => ok([body])
 const USER = '66666666-6666-4666-8666-666666666666'
 const OUTBOX = '77777777-7777-4777-8777-777777777777'
 const SITE = 'http://127.0.0.1:5176'
@@ -75,10 +73,6 @@ const CART_ROW = {
 const POST_ROW = {
   id: OUTBOX, kind: 'post_purchase', category: 'marketing', user_id: USER, order_id: 'o', to_email: 'casal@example.com', attempts: 0,
   payload: { order_ref: 'A1B2C3D4', games: [{ code: 'J1', name: 'Jogo Um' }, { code: 'J2', name: 'Jogo Dois' }, { code: 'J3', name: null }] },
-}
-
-function dispatchRpc(rows: unknown[]) {
-  onRpc((fn) => (fn === 'claim_email_batch' ? ok(rows) : row({ outcome: 'applied', status: 'sent', next_attempt_at: null })))
 }
 
 const dispatch = async () =>
@@ -199,6 +193,11 @@ contractTest('brevo-webhook: evento único e lote mapeiam para record_email_even
   assertEquals(rpcCalls.map((c) => c.args.p_event), ['complaint', 'unsubscribe', 'hard_bounce', 'hard_bounce'])
   assertEquals(rpcCalls[0].args.p_occurred_at, undefined)
   assertEquals(rpcCalls[1].args.p_occurred_at, new Date(1_790_000_100_000).toISOString())
+
+  // Data fora do que o Date aceita: o evento entra sem data (o banco usa a hora do registro), sem 500 em loop.
+  onRpc(() => row({ outcome: 'applied', user_id: null }))
+  const absurd = await webhook({ ...EVENT, ts_event: 1e20 })
+  assertEquals([absurd.status, (await absurd.json()).recorded, rpcCalls[0].args.p_occurred_at], [200, 1, undefined])
 })
 
 contractTest('brevo-webhook: KT001 é ignorado; falha do banco vira 500 para a Brevo reenviar, sem e-mail no log', async () => {

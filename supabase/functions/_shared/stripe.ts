@@ -1,16 +1,17 @@
 import Stripe from 'stripe'
 import { ConfigError, env } from './env.ts'
 
-// SDK fixo em npm:stripe@22.0.2 (deno.json); a API padrão dele é a 2026-03-25.dahlia.
+// SDK fixo em npm:stripe@22.0.2 (deno.json); a API padrão dele é a 2026-03-25.dahlia, a mesma da leitura de preços.
 // A API do formulário embutido está em PREVIEW (docs/api-contract.md 6.5.1): versão e SDK não mudam sem teste.
-export const STRIPE_API_VERSION = '2026-03-25.dahlia; custom_checkout_payment_form_preview=v1'
+export const STRIPE_BASE_API_VERSION = '2026-03-25.dahlia'
+const STRIPE_API_VERSION = `${STRIPE_BASE_API_VERSION}; custom_checkout_payment_form_preview=v1`
 // Regra da nota "Stripe Checkout Studio": 'form' com SDK >= 21.0.0; abaixo disso, 'custom'.
 export const STRIPE_UI_MODE = 'form'
 
 export const cryptoProvider = Stripe.createSubtleCryptoProvider()
 
 type StripeConfig = NonNullable<ConstructorParameters<typeof Stripe>[1]>
-export type StripeError = InstanceType<typeof Stripe.errors.StripeError>
+type StripeError = InstanceType<typeof Stripe.errors.StripeError>
 
 let client: Stripe | undefined
 

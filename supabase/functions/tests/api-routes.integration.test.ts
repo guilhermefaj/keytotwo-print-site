@@ -65,17 +65,6 @@ Deno.test({
         assertEquals([revoked.status, revoked.body.marketing.opted_in], [200, false])
       })
 
-      await t.step('convite pós-login: prompted_at nulo, gravado ao dispensar e mantido na repetição', async () => {
-        const before = await call('/account', tokenB)
-        assertEquals(before.body.marketing.prompted_at, null)
-        const first = await call('/account/marketing/prompt', tokenB, 'POST')
-        assertEquals(first.status, 200)
-        assertEquals(typeof first.body.marketing.prompted_at, 'string')
-        assertEquals(first.body.marketing.opted_in, false)
-        const second = await call('/account/marketing/prompt', tokenB, 'POST')
-        assertEquals(second.body.marketing.prompted_at, first.body.marketing.prompted_at)
-      })
-
       await t.step('GET /library de conta sem compras', async () => {
         const { status, body } = await call('/library', tokenA)
         assertEquals([status, body], [200, { games: [], pending: [] }])

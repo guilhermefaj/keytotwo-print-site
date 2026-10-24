@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assertEquals } from '@std/assert'
-import { captureErrors, onPrice, onRpc, onStripe, request, rpcCalls, sessionToken, type StripeCall, stripeCalls, TERMS_VERSION, userId, WEBHOOK_SECRET, contractTest } from './contract-helpers.ts'
+import { captureErrors, onPrice, onRpc, onStripe, request, rpcCalls, sessionToken, type StripeCall, stripeCalls, TERMS_VERSION, userId, WEBHOOK_SECRET, contractTest, ok, row } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { handleStripeWebhook } from '../stripe-webhook/handler.ts'
 import { cryptoProvider, stripe } from '../_shared/stripe.ts'
@@ -11,8 +11,6 @@ const ORDER_ID = '11111111-1111-4111-8111-111111111111'
 const SESSION_ID = 'cs_test_sessao1'
 const PRICE = 'price_teste_p001'
 const CLIENT_SECRET = 'segredo-do-cliente-de-teste'
-const ok = (body: unknown) => ({ status: 200, body })
-const row = (body: Record<string, unknown>) => ok([body])
 
 function session(over: Record<string, unknown> = {}) {
   return {
@@ -198,6 +196,31 @@ contractTest('checkout: pacote de completar a coleção sem Price na Stripe vira
   assertEquals([result.status, (await result.json()).error.code], [502, 'PAYMENT_PROVIDER_ERROR'])
   assertEquals(stripeCalls.some((c) => c.path === '/v1/checkout/sessions'), false)
   assertEquals(rpcCalls.map((c) => c.fn).filter((fn) => !fn.endsWith('_stripe_prices')), ['create_order_from_cart'])
+})
+
+contractTest('checkout: Customer apagado no painel da Stripe é trocado por um novo e a compra segue', async () => {
+  const token = await sessionToken()
+  const uid = userId(token)
+  onRpc((fn) => {
+    if (fn === 'create_order_from_cart') {
+      return row({ outcome: 'ok', order_id: ORDER_ID, email: 'teste@example.com', stripe_customer_id: 'cus_apagado', items: [{ product_code: 'P001', stripe_price_id: PRICE }], reused: false, detail: null })
+    }
+    if (fn === 'set_stripe_customer') return ok('cus_novo')
+    return ok('applied')
+  })
+  onStripe((call) => {
+    if (call.path === '/v1/customers/cus_apagado') return { status: 404, body: { error: { type: 'invalid_request_error', code: 'resource_missing', param: 'customer' } } }
+    if (call.method === 'POST' && call.path === '/v1/customers') return ok({ id: 'cus_novo', object: 'customer' })
+    if (call.method === 'POST' && call.path === '/v1/checkout/sessions') return ok(session({ status: 'open', payment_status: 'unpaid', customer: 'cus_novo' }))
+    return { status: 500, body: {} }
+  })
+  const res = await handleRequest(request('/checkout', { method: 'POST', token, body: checkoutBody }))
+  assertEquals([res.status, (await res.json()).client_secret], [200, CLIENT_SECRET])
+  assertEquals(stripeCalls.map((c) => [c.method, c.path]), [['POST', '/v1/customers/cus_apagado'], ['POST', '/v1/customers'], ['POST', '/v1/checkout/sessions']])
+  // A chave da troca é própria: a do 1º checkout devolveria o Customer apagado.
+  assertEquals(stripeCalls[1].idempotencyKey, `customer:${uid}:cus_apagado`)
+  assertEquals(rpcCalls.find((c) => c.fn === 'set_stripe_customer')!.args, { p_user_id: uid, p_stripe_customer_id: 'cus_novo', p_replaces: 'cus_apagado' })
+  assertEquals(stripeCalls[2].params.get('customer'), 'cus_novo')
 })
 
 contractTest('checkout: Customer existente é atualizado; falha da Stripe vira 502 sem gravar a sessão', async () => {

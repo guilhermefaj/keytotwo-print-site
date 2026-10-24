@@ -1,9 +1,10 @@
 import { rpc } from './admin.ts'
 import { runInBackground } from './background.ts'
 import { env } from './env.ts'
+import { errorLabel } from './http.ts'
+import { STRIPE_BASE_API_VERSION } from './stripe.ts'
 
-// Versão base da API Stripe do projeto (docs/api-contract.md 6.5.1). Só leitura de Price aqui; o SDK entra no I3.
-const STRIPE_API_VERSION = '2026-03-25.dahlia'
+// Leitura de Price direto na API (sem o SDK), na versão base do projeto (docs/api-contract.md 6.5.1).
 const TTL_MS = 5 * 60_000
 // O valor e a moeda de um Price nunca mudam na Stripe; só o "ativo" muda. Guardado no banco, ele é conferido de novo
 // em segundo plano depois de uma hora (data-contract 6.13).
@@ -40,7 +41,7 @@ async function fromStripe(priceId: string): Promise<{ entry: Entry; stored: Stor
   if (!key) return { entry: { price: null, product: null }, stored: null }
   try {
     const response = await fetch(`https://api.stripe.com/v1/prices/${encodeURIComponent(priceId)}`, {
-      headers: { Authorization: `Bearer ${key}`, 'Stripe-Version': STRIPE_API_VERSION },
+      headers: { Authorization: `Bearer ${key}`, 'Stripe-Version': STRIPE_BASE_API_VERSION },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
     if (response.status === 404) return { entry: { price: null, product: null }, stored: null }
@@ -54,7 +55,7 @@ async function fromStripe(priceId: string): Promise<{ entry: Entry; stored: Stor
     const stored = { price_id: priceId, unit_amount: body.unit_amount as number, currency: body.currency as string, product, active: body.active === true }
     return { entry: entryOf(stored), stored }
   } catch (error) {
-    console.error(`stripe: preço não lido (${error instanceof Error ? error.name : 'erro'})`)
+    console.error(`stripe: preço não lido (${errorLabel(error)})`)
     return undefined
   }
 }
@@ -81,7 +82,7 @@ export async function primePrices(ids: (string | null | undefined)[]): Promise<v
     const result = await rpc<Stored[] | null>('get_stripe_prices', { p_price_ids: wanted })
     if (Array.isArray(result)) rows = result
   } catch (error) {
-    console.error(`stripe: preços guardados não lidos (${error instanceof Error ? error.message : 'erro'})`)
+    console.error(`stripe: preços guardados não lidos (${errorLabel(error)})`)
   }
   const missing: string[] = []
   const stale: string[] = []
@@ -94,7 +95,7 @@ export async function primePrices(ids: (string | null | undefined)[]): Promise<v
   if (stale.length) runInBackground('prices', () => refresh(stale))
   if (missing.length) {
     try { await refresh(missing) } catch (error) {
-      console.error(`stripe: preços não guardados (${error instanceof Error ? error.message : 'erro'})`)
+      console.error(`stripe: preços não guardados (${errorLabel(error)})`)
     }
   }
 }

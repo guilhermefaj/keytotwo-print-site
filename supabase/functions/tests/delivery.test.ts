@@ -2,9 +2,9 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assert, assertEquals, assertMatch } from '@std/assert'
-import { captureErrors, externalCalls, LINK_SECRET, onExternal, onRpc, onStripe, request, rpcCalls, SECRET_KEY, sessionToken, tampered, userId, WEBHOOK_SECRET, contractTest } from './contract-helpers.ts'
+import { captureErrors, externalCalls, LINK_SECRET, onExternal, onRpc, onStripe, request, rpcCalls, SECRET_KEY, sessionToken, tampered, userId, WEBHOOK_SECRET, contractTest, dispatchRpc, ok, row } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
-import { attachment } from '../api/routes/downloads.ts'
+import { attachment } from '../_shared/b2.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
 import { handleStripeWebhook } from '../stripe-webhook/handler.ts'
 import { presignUrl } from '../_shared/b2.ts'
@@ -12,8 +12,6 @@ import { setBackgroundRunner } from '../_shared/background.ts'
 import { cryptoProvider, stripe } from '../_shared/stripe.ts'
 import { signDeliveryToken, verifyDeliveryToken } from '../_shared/tokens.ts'
 
-const ok = (body: unknown) => ({ status: 200, body })
-const row = (body: Record<string, unknown>) => ok([body])
 const ENTITLEMENT = '33333333-3333-4333-8333-333333333333'
 const FILE_ID = '44444444-4444-4444-8444-444444444444'
 const OUTBOX_ID = '55555555-5555-4555-8555-555555555555'
@@ -95,6 +93,9 @@ contractTest('link do e-mail: válido redireciona ao B2; adulterado 401; vencido
   onRpc(() => row(FILE_OK))
   const tampered = await handleRequest(request(`/d/${token.slice(0, -3)}abc`))
   assertEquals([tampered.status, (await tampered.json()).error.code, rpcCalls.length], [401, 'INVALID_TOKEN', 0])
+  // Link cortado pelo leitor de e-mail (assinatura com 41 caracteres): inválido, não erro interno.
+  const cut = await handleRequest(request(`/d/${token.slice(0, -2)}`))
+  assertEquals([cut.status, (await cut.json()).error.code, rpcCalls.length], [401, 'INVALID_TOKEN', 0])
 
   const old = await signDeliveryToken(ENTITLEMENT, 7, Date.now() - 31 * 24 * 3600 * 1000)
   const expired = await handleRequest(request(`/d/${old}`))
@@ -140,10 +141,6 @@ const DELIVERY_ROW = {
   payload: { order_ref: 'A1B2C3D4', items: [{ code: 'P001', name: 'Pacote' }], games: [{ entitlement_id: ENTITLEMENT, game_id: 7, code: 'TESTE-J01', name: 'Jogo <Um>' }, { entitlement_id: ENTITLEMENT, game_id: 8, code: 'TESTE-J02', name: null }] },
 }
 
-function dispatchRpc(rows: unknown[]) {
-  onRpc((fn) => (fn === 'claim_email_batch' ? ok(rows) : row({ outcome: 'applied', status: 'sent', next_attempt_at: null })))
-}
-
 const dispatchRequest = (body: unknown, apikey: string | null = SECRET_KEY, method = 'POST') =>
   handleEmailDispatch(new Request('http://localhost/email-dispatch', { method, headers: apikey ? { apikey } : {}, body: method === 'POST' ? JSON.stringify(body) : undefined }))
 
@@ -154,6 +151,7 @@ contractTest('email-dispatch: chave obrigatória e validação do corpo', async 
   assertEquals((await dispatchRequest({}, SECRET_KEY, 'GET')).status, 405)
   assertEquals((await dispatchRequest({ limit: 0 })).status, 400)
   assertEquals((await dispatchRequest({ outbox_id: 'x' })).status, 400)
+  for (const body of [null, [], 5]) assertEquals((await dispatchRequest(body)).status, 400, JSON.stringify(body))
   assertEquals(rpcCalls.length, 0)
   const res = await dispatchRequest({ limit: 5 })
   assertEquals(await res.json(), { claimed: 0, sent: 0, failed: 0, rejected: 0 })

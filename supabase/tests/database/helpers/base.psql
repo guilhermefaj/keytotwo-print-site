@@ -1,0 +1,23 @@
+-- Incluído com \ir pelos testes pgTAP (um arquivo .psql não roda sozinho no pg_prove, que só pega .sql e .pg).
+-- ===== helpers (só existem nesta transação; pg_temp) ============================================
+-- expect: executa o SQL e compara o SQLSTATE obtido ('OK' = sem erro) com o esperado.
+create function pg_temp.expect(p_label text, p_sql text, p_state text) returns text language plpgsql as $$
+declare st text := 'OK';
+begin
+  begin execute p_sql; exception when others then get stacked diagnostics st = returned_sqlstate; end;
+  return extensions.is(st, p_state, p_label);
+end $$;
+
+-- expect_as: o mesmo, mas com o papel trocado (o pgTAP roda de volta como dono).
+create function pg_temp.expect_as(p_label text, p_role text, p_sql text, p_state text) returns text language plpgsql as $$
+declare st text := 'OK';
+begin
+  execute format('set local role %I', p_role);
+  begin execute p_sql; exception when others then get stacked diagnostics st = returned_sqlstate; end;
+  reset role;
+  return extensions.is(st, p_state, p_label);
+end $$;
+
+create function pg_temp.assert(p_label text, p_cond boolean) returns text language sql as $$
+  select extensions.ok(coalesce(p_cond, false), p_label)
+$$;

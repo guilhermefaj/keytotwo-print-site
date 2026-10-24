@@ -3,7 +3,8 @@
 //   npx deno@2.9.6 run --no-lock --config supabase/functions/deno.json --allow-read --allow-net \
 //     supabase/functions/tests/upload-test-pdfs.ts <caminho do modelo de segredos .env>
 // A chave de ESCRITA é lida do modelo de segredos só aqui; nada é impresso além de chave, tamanho e sha256.
-import { type B2Config, presignUrl } from '../_shared/b2.ts'
+import { presignUrl } from '../_shared/b2.ts'
+import { bucketKeys, sha256 as sha256Of } from './upload-config.ts'
 
 const GAMES = ['TESTE-J01', 'TESTE-J02', 'TESTE-J03', 'TESTE-J04', 'TESTE-J05']
 
@@ -31,27 +32,14 @@ function testPdf(code: string): ArrayBuffer {
   return new TextEncoder().encode(body).buffer as ArrayBuffer
 }
 
-const hex = (bytes: ArrayBuffer) => Array.from(new Uint8Array(bytes), (b) => b.toString(16).padStart(2, '0')).join('')
-
-const secrets: Record<string, string> = {}
-for (const line of (await Deno.readTextFile(Deno.args[0])).split(/\r?\n/)) {
-  const m = /^([A-Z0-9_]+)=(.*)$/.exec(line)
-  if (m) secrets[m[1]] = m[2].trim().replace(/^["']|["']$/g, '')
-}
-const base = {
-  endpoint: secrets.B2_ENDPOINT.replace(/^https?:\/\//, ''),
-  region: secrets.B2_REGION,
-  bucket: secrets.B2_BUCKET,
-}
-const write: B2Config = { ...base, keyId: secrets.B2_WRITE_KEY_ID, secret: secrets.B2_WRITE_APPLICATION_KEY }
-const read: B2Config = { ...base, keyId: secrets.B2_READ_KEY_ID, secret: secrets.B2_READ_APPLICATION_KEY }
+const { write, read } = await bucketKeys(Deno.args[0])
 
 const result = []
 for (const code of GAMES) {
   const filename = `${code}-v1.0.pdf`
   const key = `paid/${code}/1.0/${filename}`
   const bytes = testPdf(code)
-  const sha256 = hex(await crypto.subtle.digest('SHA-256', bytes))
+  const sha256 = await sha256Of(bytes)
 
   const put = await presignUrl(write, { method: 'PUT', key, expiresIn: 300 })
   const upload = await fetch(put.url, {
@@ -70,7 +58,7 @@ for (const code of GAMES) {
     filename,
     size_bytes: bytes.byteLength,
     sha256,
-    leitura_ok: get.status === 200 && hex(await crypto.subtle.digest('SHA-256', back)) === sha256,
+    leitura_ok: get.status === 200 && await sha256Of(back) === sha256,
     content_type: get.headers.get('content-type'),
     content_disposition: get.headers.get('content-disposition'),
   })

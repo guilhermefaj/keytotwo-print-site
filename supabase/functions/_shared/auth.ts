@@ -2,7 +2,7 @@ import { GoTrueClient, isAuthRetryableFetchError } from '@supabase/auth-js'
 import { env } from './env.ts'
 import { HttpError } from './http.ts'
 
-export interface SessionUser {
+interface SessionUser {
   id: string
   email: string | null
   accessToken: string
@@ -32,7 +32,7 @@ function bearerToken(req: Request): string | null {
 }
 
 // Sessão opcional: null sem token ou com token inválido, expirado, anônimo ou de outro papel.
-export async function getSessionUser(req: Request): Promise<SessionUser | null> {
+async function getSessionUser(req: Request): Promise<SessionUser | null> {
   const token = bearerToken(req)
   if (!token) return null
   const auth = authClient()

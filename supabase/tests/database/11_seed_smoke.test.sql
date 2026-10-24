@@ -4,125 +4,9 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select * from no_plan();
 
--- ===== helpers (só existem nesta transação; pg_temp) ============================================
--- expect: executa o SQL e compara o SQLSTATE obtido ('OK' = sem erro) com o esperado.
-create function pg_temp.expect(p_label text, p_sql text, p_state text) returns text language plpgsql as $$
-declare st text := 'OK';
-begin
-  begin execute p_sql; exception when others then get stacked diagnostics st = returned_sqlstate; end;
-  return extensions.is(st, p_state, p_label);
-end $$;
-
--- expect_as: o mesmo, mas com o papel trocado (o pgTAP roda de volta como dono).
-create function pg_temp.expect_as(p_label text, p_role text, p_sql text, p_state text) returns text language plpgsql as $$
-declare st text := 'OK';
-begin
-  execute format('set local role %I', p_role);
-  begin execute p_sql; exception when others then get stacked diagnostics st = returned_sqlstate; end;
-  reset role;
-  return extensions.is(st, p_state, p_label);
-end $$;
-
-create function pg_temp.assert(p_label text, p_cond boolean) returns text language sql as $$
-  select extensions.ok(coalesce(p_cond, false), p_label)
-$$;
-
-create temp table ids (name text primary key, id uuid);
-create function pg_temp.uid(p_name text) returns uuid language sql as $$ select id from pg_temp.ids where name = p_name $$;
-
--- usuário do Auth (as triggers criam o perfil e o account_confirmed)
-create function pg_temp.mk_user(p_name text, p_confirmed boolean default true, p_password text default null) returns uuid
-language plpgsql as $$
-declare v_id uuid := gen_random_uuid();
-begin
-  insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-                          confirmation_token, recovery_token, email_change_token_new, email_change, created_at, updated_at)
-  values ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', p_name || '@pgtap.test', p_password,
-          case when p_confirmed then now() end, '', '', '', '', now(), now());
-  insert into pg_temp.ids values (p_name, v_id);
-  return v_id;
-end $$;
-
--- produto ativo com N jogos publicados (PDF pago publicado + objeto no B2)
-create function pg_temp.mk_product(p_code text, p_kind text, p_games int) returns bigint
-language plpgsql as $$
-declare v_pid bigint; v_gid bigint; v_fid uuid; i int; v_gcode text;
-begin
-  insert into public.products (code, slug, kind, name, status, stripe_price_id, games_expected)
-  values (p_code, lower(p_code), p_kind, 'Produto ' || p_code || ' [TESTE]', 'active', 'price_PGTAP_' || p_code, p_games)
-  returning id into v_pid;
-  for i in 1..p_games loop
-    v_gcode := 'GM-' || p_code || '-' || i;
-    insert into public.games (code, slug, name, status) values (v_gcode, lower(v_gcode), 'Jogo ' || v_gcode || ' [TESTE]', 'published')
-    returning id into v_gid;
-    insert into public.product_games (product_id, game_id, position) values (v_pid, v_gid, i);
-    insert into public.files (game_id, kind, access, version, filename, size_bytes, sha256, status, published_at)
-    values (v_gid, 'pdf', 'paid', '1.0', v_gcode || '-v1.0.pdf', 1000 + i, repeat('0', 64), 'published', now())
-    returning id into v_fid;
-    insert into public.file_objects (file_id, access, bucket, object_key)
-    values (v_fid, 'paid', 'bucket-pgtap-teste', 'paid/' || v_gcode || '/1.0/' || v_gcode || '-v1.0.pdf');
-  end loop;
-  return v_pid;
-end $$;
-
--- um passo da máquina de estados do pedido, com os campos que o estado exige
-create function pg_temp.mv(p_order uuid, p_to text) returns void language plpgsql as $$
-declare v_paid boolean := p_to in ('paid','disputed','dispute_lost','refunded');
-        v_money boolean := p_to in ('pending_payment','paid','disputed','dispute_lost','refunded');
-begin
-  if p_to in ('pending_payment', 'paid') then
-    update public.order_items set unit_amount = 0, currency = 'brl' where order_id = p_order and unit_amount is null;
-  end if;
-  update public.orders o set
-     status = p_to,
-     amount_total = case when v_money then 0 else o.amount_total end,
-     amount_subtotal = case when v_money then 0 else o.amount_subtotal end,
-     amount_discount = case when v_money then 0 else o.amount_discount end,
-     currency = case when v_money then 'brl' else o.currency end,
-     paid_at = case when v_paid then coalesce(o.paid_at, now()) else o.paid_at end,
-     stripe_payment_intent_id = case when v_paid then coalesce(o.stripe_payment_intent_id, 'pi_PGTAP_' || replace(o.id::text, '-', '')) else o.stripe_payment_intent_id end,
-     refunded_at = case when p_to = 'refunded' then now() else o.refunded_at end
-   where o.id = p_order;
-end $$;
-
--- pedido no estado alvo, chegando por arestas legais
-create function pg_temp.mk_order(p_user uuid, p_status text, p_products bigint[], p_tag text, p_created timestamptz default now()) returns uuid
-language plpgsql as $$
-declare v_id uuid := gen_random_uuid(); i int; v_path text[];
-begin
-  insert into public.orders (id, user_id, email, status, cart_version, terms_version, terms_accepted_at,
-                             stripe_checkout_session_id, livemode, created_at)
-  values (v_id, p_user, (select lower(email) from auth.users where id = p_user), 'open', 0, 'v-pgtap', now(),
-          'cs_test_PGTAP_' || p_tag, false, p_created);
-  for i in 1..cardinality(p_products) loop
-    insert into public.order_items (order_id, product_id, position, stripe_price_id)
-    select v_id, p.id, i, p.stripe_price_id from public.products p where p.id = p_products[i];
-  end loop;
-  v_path := case p_status
-    when 'open' then '{}' when 'pending_payment' then '{pending_payment}' when 'paid' then '{paid}'
-    when 'failed' then '{failed}' when 'expired' then '{expired}'
-    when 'disputed' then '{paid,disputed}' when 'dispute_lost' then '{paid,disputed,dispute_lost}'
-    when 'refunded' then '{paid,refunded}' end::text[];
-  for i in 1..coalesce(cardinality(v_path), 0) loop
-    perform pg_temp.mv(v_id, v_path[i]);
-  end loop;
-  return v_id;
-end $$;
-
--- direitos (um por item) com a fotografia da composição
-create function pg_temp.mk_ents(p_order uuid, p_status text default 'active', p_reason text default null) returns void
-language plpgsql as $$
-declare r record; v_ent uuid;
-begin
-  for r in select i.product_id, o.user_id from public.order_items i join public.orders o on o.id = i.order_id
-           where i.order_id = p_order order by i.position loop
-    insert into public.entitlements (order_id, product_id, user_id, status, revoked_at, revoke_reason)
-    values (p_order, r.product_id, r.user_id, p_status, case when p_status = 'revoked' then now() end, p_reason)
-    returning id into v_ent;
-    insert into public.entitlement_games (entitlement_id, game_id, position)
-    select v_ent, pg.game_id, pg.position from public.product_games pg where pg.product_id = r.product_id;
-  end loop;
-end $$;
+-- ===== helpers (só existem nesta transação; pg_temp): supabase/tests/database/helpers ===========
+\ir helpers/base.psql
+\ir helpers/fixtures.psql
 
 -- Este é o único arquivo que depende do seed. Roda sobre a base semeada, sem criar dados.
 -- Robusto à stack compartilhada: toda asserção conta só o que o SEED criou (por e-mail ou código conhecido), nunca o
@@ -131,7 +15,7 @@ end $$;
 create temp view seed_users as select id, email from auth.users where email like 'teste-%@keytotwo.test';
 create temp view seed_products as select * from public.products where code in ('P001', 'J001', 'TESTE-AV2');
 create temp view seed_games as select * from public.games where code in ('TESTE-J01', 'TESTE-J02', 'TESTE-J03', 'TESTE-J04', 'TESTE-J05', 'TESTE-GRATIS');
-create temp view seed_files as select * from public.files where game_id in (select id from seed_games) or product_id in (select id from seed_products);
+create temp view seed_files as select * from public.files where game_id in (select id from seed_games);
 create temp view seed_orders as select * from public.orders where user_id in (select id from seed_users);
 
 -- ===== conteúdo e rótulos ==========================================================================
@@ -156,14 +40,15 @@ select pg_temp.assert('avulso J001: single ativo, 1 jogo esperado, ligado só ao
 select pg_temp.assert('6 jogos: 5 pagos publicados + 1 grátis em draft', (select count(*) = 6 and count(*) filter (where access = 'paid' and status = 'published') = 5 and count(*) filter (where access = 'free' and status = 'draft') = 1 from seed_games));
 select pg_temp.assert('composição: P001 = 5 jogos; cada avulso = 1 (e os avulsos repetem jogos do P001)', (select count(*) = 7 from public.product_games pg where pg.product_id in (select id from seed_products))
   and (select count(*) = 5 from public.product_games pg join seed_products p on p.id = pg.product_id where p.code = 'P001'));
-select pg_temp.assert('7 arquivos e 7 objetos do B2, todos fictícios, sem URL', (select count(*) = 7 from seed_files) and (select count(*) = 7 from public.file_objects where file_id in (select id from seed_files))
+select pg_temp.assert('6 arquivos e 6 objetos do B2 (5 PDFs pagos e o grátis), todos fictícios, sem URL', (select count(*) = 6 from seed_files) and (select count(*) = 6 from public.file_objects where file_id in (select id from seed_files))
   and (select bool_and(case when status = 'published' then size_bytes = 699 and sha256 ~ '^[0-9a-f]{64}$' and sha256 <> repeat('0', 64)
                             else size_bytes = 1024 and sha256 = repeat('0', 64) end) from seed_files)
   and (select bool_and(object_key !~ '(:|\?|\s)' and bucket = 'bucket-teste-pendente') from public.file_objects where file_id in (select id from seed_files)));
-select pg_temp.assert('ZIP do P001 e arquivo grátis em draft', (select count(*) = 2 from seed_files where status = 'draft' and (kind = 'zip' or access = 'free')));
+select pg_temp.assert('arquivo grátis em draft; todo arquivo é PDF', (select count(*) = 1 from seed_files where status = 'draft' and access = 'free')
+  and (select bool_and(kind = 'pdf') from seed_files));
 select pg_temp.assert('nenhum preço: valores 0 (e subtotal e desconto 0) nos pedidos do seed', (select bool_and(amount_total = 0 and amount_subtotal = 0 and amount_discount = 0 and promotion_code is null) from seed_orders where amount_total is not null));
-select pg_temp.assert('Prices: formato da Stripe em todos; o TESTE-AV2 é price_TESTE_*; o P001 e o J001 são price_TESTE_<código> ou o Price real de TESTE aplicado localmente (aplicar-price-teste)',
-  (select bool_and(stripe_price_id ~ '^price_[A-Za-z0-9_]+$') from seed_products) and (select bool_and(stripe_price_id like 'price_TESTE_%') from seed_products where code not in ('P001', 'J001')));
+select pg_temp.assert('Prices: todos fictícios, price_TESTE_*',
+  (select bool_and(stripe_price_id ~ '^price_TESTE_[A-Za-z0-9_]+$') from seed_products));
 select pg_temp.assert('e-mails, ids da Stripe e termos rotulados como teste', (select count(*) = 8 and bool_and(email like '%@keytotwo.test' and terms_version = 'v1-TESTE') from seed_orders)
   and (select bool_and(coalesce(stripe_checkout_session_id, 'cs_test_TESTE_x') ~ 'TESTE' and coalesce(stripe_payment_intent_id, 'pi_TESTE_x') ~ 'TESTE') from seed_orders)
   and (select bool_and(stripe_customer_id ~ 'TESTE') from public.profiles where user_id in (select id from seed_users) and stripe_customer_id is not null));

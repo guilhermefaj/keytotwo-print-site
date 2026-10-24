@@ -44,7 +44,7 @@ O teste de entrega lê o bucket de TESTE do B2 com os segredos do repositório `
 ## Requisitos da integração
 
 - `supabase/functions/.env` local com `B2_*` (chave só leitura), `EMAIL_LINK_SECRET`, `API_PUBLIC_URL`, `EMAIL_FROM*` e `BREVO_WEBHOOK_SECRET`. Os testes leem só esses nomes e não imprimem valores.
-- Depois de cada `db reset`: o passo do Price (`node supabase/local/aplicar-price-teste.mjs`) e o do Vault (`node supabase/local/aplicar-dispatch-vault.mjs`).
+- Depois de cada `db reset`: o passo do Vault (`node supabase/local/aplicar-dispatch-vault.mjs`). Os Prices do seed são `price_TESTE_*`: o `checkout.integration` com `KT_STRIPE=1` precisa de um Price de teste real gravado à mão em `products.stripe_price_id`.
 - `followups.integration.test.ts` usa o `psql` do contêiner do banco local (`--allow-run=docker`) para simular o tempo do enfileirador e pausa o job `email-dispatch-tick` durante o teste, religando no fim.
 - As chamadas ao B2 têm uma nova tentativa curta se a conexão falhar (`fetchRetry`, só nos testes).
 - Usuários de teste usam `teste-*@example.com`. Os que ficam com pedido ou consentimento continuam no banco local (FK `RESTRICT`, D-23); o `db reset` limpa.

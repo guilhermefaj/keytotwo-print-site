@@ -1,10 +1,9 @@
 import type Stripe from 'stripe'
 import { RpcError } from '../_shared/admin.ts'
-import { runInBackground } from '../_shared/background.ts'
-import { dispatchEmails } from '../_shared/email.ts'
+import { dispatchSoon } from '../_shared/email.ts'
 import { ConfigError, env } from '../_shared/env.ts'
-import { fulfill, isUuid, loadSession, orderIdFromSession, type OrderOutcome, pendingPaymentArgs, setStatus } from '../_shared/fulfillment.ts'
-import { errorResponse, HttpError, json } from '../_shared/http.ts'
+import { applySession, idOf, loadSession, orderIdFromSession, type OrderOutcome, setStatus } from '../_shared/fulfillment.ts'
+import { errorLabel, errorResponse, HttpError, isUuid, json, postOnly } from '../_shared/http.ts'
 import { cryptoProvider, isStripeError, stripe, stripeErrorLabel } from '../_shared/stripe.ts'
 
 // Erros de contrato que um reenvio da Stripe não resolve: 200 com log (docs/api-contract.md 9).
@@ -14,7 +13,7 @@ const ignored: OrderOutcome = { outcome: 'ignored' }
 
 // Contestações e reembolsos trazem o PaymentIntent: o pedido vem do metadata dele, com recurso à sessão.
 async function orderIdFromPaymentIntent(paymentIntent: string | Stripe.PaymentIntent | null): Promise<string | null> {
-  const id = typeof paymentIntent === 'string' ? paymentIntent : paymentIntent?.id
+  const id = idOf(paymentIntent)
   if (!id) return null
   const intent = await stripe().paymentIntents.retrieve(id)
   if (isUuid(intent.metadata?.order_id)) return intent.metadata.order_id
@@ -23,7 +22,7 @@ async function orderIdFromPaymentIntent(paymentIntent: string | Stripe.PaymentIn
 }
 
 // Um evento → no máximo uma RPC. null = evento de sessão ou cobrança que não é nossa.
-export async function processEvent(event: Stripe.Event): Promise<OrderOutcome | null> {
+async function processEvent(event: Stripe.Event): Promise<OrderOutcome | null> {
   const ref = { id: event.id, type: event.type }
   switch (event.type) {
     case 'checkout.session.completed':
@@ -31,8 +30,7 @@ export async function processEvent(event: Stripe.Event): Promise<OrderOutcome | 
       const orderId = orderIdFromSession(event.data.object)
       if (!orderId) return null
       const { session, items } = await loadSession(event.data.object.id)
-      if (session.payment_status === 'unpaid') return await setStatus(orderId, 'pending_payment', 'webhook', pendingPaymentArgs(session), ref)
-      return await fulfill(session, items, 'webhook', ref)
+      return await applySession(orderId, session, items, 'webhook', ref) ?? ignored
     }
     case 'checkout.session.async_payment_failed':
     case 'checkout.session.expired': {
@@ -73,9 +71,7 @@ function codeOf(error: unknown): string | null {
 }
 
 export async function handleStripeWebhook(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return errorResponse(405, 'METHOD_NOT_ALLOWED', 'Método não permitido.', { headers: { Allow: 'POST' } })
-  }
+  if (req.method !== 'POST') return postOnly()
   const signature = req.headers.get('Stripe-Signature')
   const payload = await req.text()
   let event: Stripe.Event
@@ -100,8 +96,7 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
     // Evento que só vale depois de outro (ex.: contestação antes da liberação): a Stripe reenvia.
     if (result.outcome === 'deferred') return json({ received: false, outcome: 'deferred' }, 500)
     // Entrega por e-mail depois do commit, em segundo plano; se falhar, a agenda reenvia.
-    const outboxId = result.outbox_id
-    if (result.send_delivery && outboxId) runInBackground('stripe-webhook: entrega', () => dispatchEmails({ outboxId }))
+    if (result.send_delivery) dispatchSoon('stripe-webhook: entrega', result.outbox_id)
     return json({ received: true, outcome: result.outcome })
   } catch (error) {
     const code = codeOf(error)
@@ -110,7 +105,7 @@ export async function handleStripeWebhook(req: Request): Promise<Response> {
       return json({ received: true, outcome: 'rejected', code })
     }
     // KT003, KT010, KT011, rede, banco ou Stripe: transitório ou defeito corrigível; a Stripe reenvia.
-    const label = isStripeError(error) ? stripeErrorLabel(error) : code ?? (error instanceof Error ? error.name : 'erro')
+    const label = isStripeError(error) ? stripeErrorLabel(error) : errorLabel(error)
     console.error(`stripe-webhook: ${event.type} ${event.id} falhou (${label})`)
     return json({ received: false }, 500)
   }

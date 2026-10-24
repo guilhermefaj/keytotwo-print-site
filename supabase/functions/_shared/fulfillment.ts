@@ -1,12 +1,11 @@
 import type Stripe from 'stripe'
 import { rpcRow } from './admin.ts'
+import { isUuid } from './http.ts'
 import { stripe } from './stripe.ts'
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+type Source = 'webhook' | 'return_page'
 
-export type Source = 'webhook' | 'return_page'
-
-export interface EventRef {
+interface EventRef {
   id: string
   type: string
 }
@@ -20,16 +19,12 @@ export interface OrderOutcome {
   send_delivery?: boolean | null
 }
 
-export function isUuid(value: unknown): value is string {
-  return typeof value === 'string' && UUID.test(value)
-}
-
 // Pedido nosso: client_reference_id com UUID. Sessões criadas fora da api não têm.
 export function orderIdFromSession(session: { client_reference_id: string | null }): string | null {
   return isUuid(session.client_reference_id) ? session.client_reference_id : null
 }
 
-const idOf = (value: string | { id: string } | null | undefined) => (typeof value === 'string' ? value : value?.id ?? null)
+export const idOf = (value: string | { id: string } | null | undefined) => (typeof value === 'string' ? value : value?.id ?? null)
 
 // Chave da metadata da sessão com o Price de tabela de um produto cobrado com price_data ("completar a coleção").
 export const basePriceKey = (product: string) => `base_price_${product}`
@@ -67,12 +62,12 @@ function amounts(session: Stripe.Checkout.Session) {
   }
 }
 
-export function pendingPaymentArgs(session: Stripe.Checkout.Session): Record<string, unknown> {
+function pendingPaymentArgs(session: Stripe.Checkout.Session): Record<string, unknown> {
   return { ...amounts(session), p_payment_intent_id: idOf(session.payment_intent) }
 }
 
 // Liberação idempotente (webhook e página de confirmação chamam a mesma RPC).
-export async function fulfill(session: Stripe.Checkout.Session, items: Stripe.LineItem[], source: Source, event?: EventRef): Promise<OrderOutcome> {
+async function fulfill(session: Stripe.Checkout.Session, items: Stripe.LineItem[], source: Source, event?: EventRef): Promise<OrderOutcome> {
   return await rpcRow<OrderOutcome>('fulfill_order', {
     p_order_id: orderIdFromSession(session),
     p_checkout_session_id: session.id,
@@ -103,4 +98,16 @@ export async function setStatus(orderId: string, newStatus: string, source: Sour
     p_event_type: event?.type ?? null,
     ...extra,
   })
+}
+
+// Sessão paga: completa e com o pagamento confirmado (cartão, ou Pix já compensado).
+export const sessionPaid = (session: Stripe.Checkout.Session) => session.status === 'complete' && session.payment_status !== 'unpaid'
+
+// O que o estado da sessão diz do pedido, igual no webhook e na página de confirmação: paga libera; completa sem
+// pagamento fica pendente (Pix gerado e não pago); expirada expira. Aberta não muda nada (null).
+export async function applySession(orderId: string, session: Stripe.Checkout.Session, items: Stripe.LineItem[], source: Source, event?: EventRef): Promise<OrderOutcome | null> {
+  if (sessionPaid(session)) return await fulfill(session, items, source, event)
+  if (session.status === 'complete') return await setStatus(orderId, 'pending_payment', source, pendingPaymentArgs(session), event)
+  if (session.status === 'expired') return await setStatus(orderId, 'expired', source, {}, event)
+  return null
 }

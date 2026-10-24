@@ -1,11 +1,9 @@
 import { rpcRow } from '../../_shared/admin.ts'
 import { requireSessionUser } from '../../_shared/auth.ts'
-import { presignUrl, readOnlyConfig } from '../../_shared/b2.ts'
+import { attachment, presignUrl, readOnlyConfig } from '../../_shared/b2.ts'
 import { env } from '../../_shared/env.ts'
-import { errorResponse, HttpError, json, readJsonObject } from '../../_shared/http.ts'
+import { errorResponse, HttpError, isUuid, json, readJsonObject, redirect } from '../../_shared/http.ts'
 import { verifyDeliveryToken } from '../../_shared/tokens.ts'
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // Retorno de resolve_download, resolve_delivery e resolve_free_download (data-contract 6.8).
 export interface ResolvedFile {
@@ -18,14 +16,8 @@ export interface ResolvedFile {
 }
 
 export function fileId(body: Record<string, unknown>): string {
-  if (typeof body.file_id !== 'string' || !UUID.test(body.file_id)) throw new HttpError(400, 'INVALID_REQUEST', 'Arquivo inválido.')
+  if (!isUuid(body.file_id)) throw new HttpError(400, 'INVALID_REQUEST', 'Arquivo inválido.')
   return body.file_id
-}
-
-// Content-Disposition (RFC 6266): nome ASCII seguro e filename* em UTF-8.
-export function attachment(filename: string): string {
-  const ascii = filename.normalize('NFKD').replace(/[^\x20-\x7e]/g, '').replace(/["\\]/g, '_').trim() || 'arquivo.pdf'
-  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`
 }
 
 // URL assinada no bucket configurado (chave só leitura, restrita a ele); vale cerca de 300 s.
@@ -56,10 +48,6 @@ export async function downloadUrl(req: Request): Promise<Response> {
     default:
       throw new HttpError(404, 'FILE_NOT_FOUND', 'Arquivo não encontrado. Recarregue Meus jogos.')
   }
-}
-
-function redirect(location: string): Response {
-  return new Response(null, { status: 302, headers: { Location: location, 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' } })
 }
 
 // GET /d/{token}: link do e-mail de entrega. O direito é conferido de novo no clique.

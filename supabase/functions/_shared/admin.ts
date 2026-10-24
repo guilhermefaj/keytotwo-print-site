@@ -66,7 +66,7 @@ export async function setAuthUserBan(userId: string, banned: boolean): Promise<v
   if (!response.ok) throw new AuthAdminError(response.status)
 }
 
-export class AuthAdminError extends Error {
+class AuthAdminError extends Error {
   constructor(readonly status: number) {
     super(`Auth admin falhou (HTTP ${status})`)
     this.name = 'AuthAdminError'

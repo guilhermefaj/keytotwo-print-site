@@ -1,4 +1,4 @@
-import { ConfigError } from './env.ts'
+import { required as get } from './env.ts'
 
 // URL pré-assinada S3 (SigV4, autenticação por query) para o Backblaze B2, sem SDK.
 // Estilo virtual-hosted: https://<bucket>.<endpoint>/<chave>. Só o header host é assinado; corpo UNSIGNED-PAYLOAD.
@@ -11,13 +11,8 @@ export interface B2Config {
   secret: string
 }
 
-export const DOWNLOAD_TTL_SECONDS = 300
+const DOWNLOAD_TTL_SECONDS = 300
 
-const get = (name: string) => {
-  const value = Deno.env.get(name)?.trim()
-  if (!value) throw new ConfigError(`Variável de ambiente ausente: ${name}`)
-  return value
-}
 const endpoint = () => get('B2_ENDPOINT').replace(/^https?:\/\//, '').replace(/\/+$/, '')
 
 // Chave SÓ LEITURA do bucket dos jogos (as funções nunca recebem a de escrita dele).
@@ -69,7 +64,7 @@ function encodeRfc3986(value: string): string {
 
 const amzDate = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 
-export interface PresignOptions {
+interface PresignOptions {
   method?: 'GET' | 'HEAD' | 'PUT' | 'DELETE'
   key: string
   expiresIn?: number
@@ -109,10 +104,16 @@ export async function presignUrl(config: B2Config, options: PresignOptions): Pro
   }
 }
 
-export interface StoredObject {
+interface StoredObject {
   key: string
   size: number
   lastModified: string
+}
+
+// Content-Disposition (RFC 6266): nome ASCII seguro e filename* em UTF-8. Vale para o download e para o upload dos PDFs.
+export function attachment(filename: string): string {
+  const ascii = filename.normalize('NFKD').replace(/[^\x20-\x7e]/g, '').replace(/["\\]/g, '_').trim() || 'arquivo.pdf'
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`
 }
 
 const entities: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }

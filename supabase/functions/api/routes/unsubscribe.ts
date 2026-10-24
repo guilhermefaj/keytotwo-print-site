@@ -1,6 +1,6 @@
 import { RpcError, rpcRow } from '../../_shared/admin.ts'
 import { env } from '../../_shared/env.ts'
-import { HttpError, isContentType, json, readJsonObject, readText } from '../../_shared/http.ts'
+import { HttpError, isContentType, json, readJsonObject, readText, redirect } from '../../_shared/http.ts'
 import { verifyUnsubscribeToken } from '../../_shared/tokens.ts'
 
 // Descadastro em 1 clique (RFC 8058), autenticado pelo token de propósito u (docs/api-contract.md 6.10).
@@ -10,8 +10,7 @@ const invalid = () => new HttpError(400, 'INVALID_TOKEN', 'Link de descadastro i
 // GET não muda nada (leitores de e-mail abrem links): leva à página pública de preferências, que confirma e chama o POST.
 export function unsubscribePage(_req: Request, url: URL): Response {
   const token = url.searchParams.get('token') ?? ''
-  const target = `${env.siteUrl()}/email/preferencias?token=${encodeURIComponent(token)}`
-  return new Response(null, { status: 302, headers: { Location: target, 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' } })
+  return redirect(`${env.siteUrl()}/email/preferencias?token=${encodeURIComponent(token)}`)
 }
 
 // Token na query (List-Unsubscribe-Post) ou no corpo: JSON { token } ou formulário (token=...).

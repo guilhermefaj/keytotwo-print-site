@@ -64,7 +64,7 @@ contractTest('rotas privadas recusam sem sessão, sessão vencida e papel errado
   onRpc(() => ({ status: 200, body: null }))
   const expired = await sessionToken({ exp: Math.floor(Date.now() / 1000) - 60 })
   const anon = await sessionToken({ role: 'anon' })
-  for (const [path, method] of [['/cart', 'GET'], ['/cart/items', 'POST'], ['/cart/items/P001', 'DELETE'], ['/cart/merge', 'POST'], ['/account', 'GET'], ['/account/marketing', 'PUT'], ['/account/marketing/prompt', 'POST'], ['/library', 'GET'], ['/free-download', 'POST'], ['/admin/metrics', 'GET']]) {
+  for (const [path, method] of [['/cart', 'GET'], ['/cart/items', 'POST'], ['/cart/items/P001', 'DELETE'], ['/cart/merge', 'POST'], ['/account', 'GET'], ['/account/marketing', 'PUT'], ['/library', 'GET'], ['/free-download', 'POST'], ['/admin/metrics', 'GET']]) {
     for (const token of [undefined, expired, anon, 'lixo.lixo.lixo']) {
       const res = await handleRequest(request(path, { method, token, body: method === 'GET' || method === 'DELETE' ? undefined : {} }))
       assertEquals(res.status, 401, `${method} ${path}`)
@@ -241,10 +241,10 @@ contractTest('GET /account e GET /library repassam as RPCs', async () => {
 contractTest('PUT /account/marketing grava o consentimento e devolve a preferência', async () => {
   const token = await sessionToken()
   onRpc((fn) => (fn === 'set_marketing_consent' ? { status: 200, body: [{ outcome: 'applied', opted_in: true }] } : { status: 200, body: ACCOUNT }))
-  const res = await handleRequest(request('/account/marketing', { method: 'PUT', token, body: { granted: true, source: 'cart', text_version: 'mkt-1' } }))
+  const res = await handleRequest(request('/account/marketing', { method: 'PUT', token, body: { granted: true, source: 'signup_prompt', text_version: 'mkt-1' } }))
   assertEquals(res.status, 200)
   assertEquals(await res.json(), { marketing: ACCOUNT.marketing })
-  assertEquals(rpcCalls[0].args, { p_user_id: userId(token), p_granted: true, p_source: 'cart', p_text_version: 'mkt-1' })
+  assertEquals(rpcCalls[0].args, { p_user_id: userId(token), p_granted: true, p_source: 'signup_prompt', p_text_version: 'mkt-1' })
 
   const revoke = await handleRequest(request('/account/marketing', { method: 'PUT', token, body: { granted: false, source: 'account' } }))
   assertEquals(revoke.status, 200)
@@ -254,22 +254,15 @@ contractTest('PUT /account/marketing grava o consentimento e devolve a preferên
     { granted: true, source: 'account' },
     { granted: 'sim', source: 'account', text_version: 'v1' },
     { granted: true, source: 'brevo_webhook', text_version: 'v1' },
-    { granted: false, source: 'cart' },
+    { granted: false, source: 'signup_prompt' },
+    // 'cart' saiu em 2026-10-24: nenhuma tela do site pede o consentimento na sacola.
+    { granted: true, source: 'cart', text_version: 'v1' },
     { granted: false, source: 'free_games' },
     { granted: true, source: 'account', text_version: 'versão com espaço' },
   ]) {
     assertEquals((await handleRequest(request('/account/marketing', { method: 'PUT', token, body }))).status, 400, JSON.stringify(body))
   }
   assertEquals(rpcCalls.length, 0)
-})
-
-contractTest('POST /account/marketing/prompt registra o convite visto e devolve a preferência', async () => {
-  const token = await sessionToken()
-  onRpc((fn) => (fn === 'mark_marketing_prompt' ? { status: 200, body: '2026-10-08T12:00:00Z' } : { status: 200, body: ACCOUNT }))
-  const res = await handleRequest(request('/account/marketing/prompt', { method: 'POST', token }))
-  assertEquals(res.status, 200)
-  assertEquals(await res.json(), { marketing: ACCOUNT.marketing })
-  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['mark_marketing_prompt', { p_user_id: userId(token) }], ['get_account', { p_user_id: userId(token) }]])
 })
 
 contractTest('KT009 vira 403 EMAIL_NOT_CONFIRMED; outra falha de RPC vira 500 sem dado pessoal no log', async () => {
@@ -332,6 +325,4 @@ contractTest('router: 404, 405 com Allow e CORS com PUT e DELETE', async () => {
   assertEquals(preflight.status, 204)
   assertEquals(preflight.headers.get('Access-Control-Allow-Methods'), 'GET, POST, PUT, DELETE, OPTIONS')
   assertExists(preflight.headers.get('Access-Control-Allow-Origin'))
-  const health = await handleRequest(request('/health'))
-  assertEquals(await health.json(), { status: 'ok', service: 'api' })
 })

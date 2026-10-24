@@ -1,36 +1,24 @@
 import { deleteAuthUser, rpcRow, setAuthUserBan } from '../../_shared/admin.ts'
 import { requireAdminSession } from '../../_shared/auth.ts'
-import { runInBackground } from '../../_shared/background.ts'
-import { dispatchEmails } from '../../_shared/email.ts'
-import { HttpError, json, readJsonObject } from '../../_shared/http.ts'
+import { dispatchSoon } from '../../_shared/email.ts'
+import { HttpError, isUuid, json, readJsonObject } from '../../_shared/http.ts'
 import { livemode } from '../../_shared/stripe.ts'
-import { DELETION_BLOCKED } from './account.ts'
+import { deletionBlocked } from './account.ts'
+import { PRODUCT_CODE } from './cart.ts'
+import { settle } from './outcome.ts'
 
 // Usuários no admin (2026-10-23, Fase 4): buscar contas, ver a ficha de cada pessoa e agir. O banco confere o admin em
 // cada chamada e guarda cada ação, com o motivo, em private.admin_events. Bloquear, excluir e retirar jogo não valem
 // para a própria conta nem para a de outro admin (409 PROTECTED_ACCOUNT).
 
-const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const PRODUCT_CODE = /^[A-Z][A-Z0-9-]{1,23}$/
 const PAGE_SIZE = 50
 const FILTERS = ['all', 'buyers', 'newsletter', 'blocked', 'admins']
 
-const notAdmin = () => new HttpError(403, 'NOT_ADMIN', 'Esta área é só para a equipe da KeyToTwo.')
 const notFound = (message = 'Conta não encontrada. Ela pode ter sido excluída.') => new HttpError(404, 'NOT_FOUND', message)
 const notConfirmed = () => new HttpError(409, 'TARGET_NOT_CONFIRMED', 'Esta conta nunca confirmou o e-mail: não tem compras nem dados de conta para isso.')
 
-// O resultado de uma RPC de admin vira resposta: ok segue; os comuns a todas e os próprios de cada rota viram erro.
-function settle(outcome: string, own: Record<string, () => HttpError> = {}): void {
-  if (outcome === 'ok' || outcome === 'deleted') return
-  if (Object.hasOwn(own, outcome)) throw own[outcome]()
-  if (outcome === 'forbidden') throw notAdmin()
-  if (outcome === 'not_found') throw notFound()
-  if (outcome === 'protected') throw new HttpError(409, 'PROTECTED_ACCOUNT', 'Isso não vale para a sua própria conta nem para a de outro admin.')
-  throw new Error(`admin de usuários: outcome inesperado (${outcome})`)
-}
-
 function param(params: Record<string, string>, key: string, missing?: string): string {
-  if (!ID.test(params[key] ?? '')) throw notFound(missing)
+  if (!isUuid(params[key])) throw notFound(missing)
   return params[key]
 }
 
@@ -87,9 +75,8 @@ export async function adminGiftProduct(req: Request, _url: URL, params: Record<s
     already_owned: () => new HttpError(409, 'ALREADY_OWNED', `A pessoa já tem todos os jogos de: ${list}.`, { details: { products } }),
     overlap: () => new HttpError(409, 'GIFT_OVERLAP', `Estes têm jogo em comum (um pacote e um jogo que já vem nele): ${list}. Escolha só um.`, { details: { products } }),
   })
-  const outboxId = result.outbox_id
-  if (outboxId) runInBackground('admin: e-mail do presente', () => dispatchEmails({ outboxId }))
-  return json({ order_id: result.order_id, email_queued: Boolean(outboxId), products }, 201)
+  dispatchSoon('admin: e-mail do presente', result.outbox_id)
+  return json({ order_id: result.order_id, email_queued: Boolean(result.outbox_id), products }, 201)
 }
 
 // POST /admin/users/:id/admin { admin, reason }: promove a admin ou tira o admin. Vale no banco na hora; no admin da
@@ -148,8 +135,7 @@ export async function adminResendDelivery(req: Request, _url: URL, params: Recor
     not_deliverable: () => new HttpError(409, 'ORDER_NOT_DELIVERABLE', 'Este pedido não está pago ou tem jogo retirado: não há acesso para reenviar.'),
     already_queued: () => new HttpError(409, 'EMAIL_ALREADY_QUEUED', 'O e-mail de acesso deste pedido ainda está na fila de envio.'),
   })
-  const outboxId = result.outbox_id
-  if (outboxId) runInBackground('admin: reenvio do acesso', () => dispatchEmails({ outboxId }))
+  dispatchSoon('admin: reenvio do acesso', result.outbox_id)
   return json({ queued: true }, 202)
 }
 
@@ -190,7 +176,7 @@ export async function adminExportUser(req: Request, _url: URL, params: Record<st
   const target = param(params, 'id')
   const result = await rpcRow<{ outcome: string; data: Record<string, unknown> | null }>('admin_export_user', { p_user_id: user.id, p_target: target })
   settle(result.outcome, { not_confirmed: notConfirmed })
-  return json(result.data, 200, { 'Content-Disposition': `attachment; filename="keytotwo-dados-${target.slice(0, 8)}.json"` })
+  return json(result.data)
 }
 
 // POST /admin/users/:id/delete { reason, confirm_email }: a exclusão a pedido (LGPD), a mesma da própria pessoa: o banco
@@ -206,11 +192,10 @@ export async function adminDeleteUser(req: Request, _url: URL, params: Record<st
   const result = await rpcRow<{ outcome: string; reason: string | null; orders_anonymized: number | null }>('admin_delete_user', {
     p_user_id: user.id, p_target: target, p_reason: reason, p_confirm_email: body.confirm_email,
   })
-  const blockedReason = result.reason ?? 'payment_pending'
   settle(result.outcome, {
     confirmation_mismatch: () => new HttpError(400, 'INVALID_REQUEST', 'O e-mail digitado não é o desta conta.'),
     not_confirmed: notConfirmed,
-    blocked: () => new HttpError(409, 'ACCOUNT_DELETION_BLOCKED', DELETION_BLOCKED[blockedReason] ?? DELETION_BLOCKED.payment_pending, { details: { reason: blockedReason } }),
+    blocked: () => deletionBlocked(result.reason),
   })
   await deleteAuthUser(target)
   return json({ deleted: true, orders_anonymized: result.orders_anonymized ?? 0 })

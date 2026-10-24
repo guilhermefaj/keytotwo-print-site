@@ -16,7 +16,7 @@ export interface CartLine {
 
 // O que sai na API: sem os ids de Price da Stripe. price é o valor de tabela; charge é o que será cobrado
 // (só nos itens com status ok; menor que price no pacote de "completar a coleção").
-export type PricedLine = Omit<CartLine, 'stripe_price_id' | 'games'> & {
+type PricedLine = Omit<CartLine, 'stripe_price_id' | 'games'> & {
   games: { code: string; name: string }[]
   price: Price | null
   charge: Price | null
@@ -24,7 +24,7 @@ export type PricedLine = Omit<CartLine, 'stripe_price_id' | 'games'> & {
 
 // "Completar a coleção" (Steam): o pacote cobra só os jogos que faltam, com o mesmo desconto do pacote sobre os
 // avulsos. Sem o preço avulso de todos os jogos, o desconto é proporcional ao número de jogos.
-export function bundleCharge(price: Price, games: { code: string; single: Price | null }[], owned: string[]): number {
+function bundleCharge(price: Price, games: { code: string; single: Price | null }[], owned: string[]): number {
   const missing = games.filter((game) => !owned.includes(game.code))
   if (!games.length || missing.length === games.length) return price.unit_amount
   const singles = games.map((game) => game.single)
@@ -49,7 +49,7 @@ async function charged(price: Price, item: Pick<CartLine, 'kind' | 'games' | 'ow
 }
 
 // Valor de tabela e valor cobrado de um item da sacola. Erro da Stripe vira price/charge null (o site não deixa seguir).
-export async function priceLine(line: CartLine): Promise<{ price: Price | null; charge: Price | null }> {
+async function priceLine(line: CartLine): Promise<{ price: Price | null; charge: Price | null }> {
   const price = line.stripe_price_id ? await stripePrice(line.stripe_price_id) : null
   if (line.status !== 'ok' || !price) return { price, charge: null }
   return { price, charge: await charged(price, line) }
