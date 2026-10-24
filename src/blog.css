@@ -31,8 +31,10 @@
 /* Botão flutuante: aparece quando o atalho do topo sai da tela e some quando o texto acaba. */
 .blog-share-float { position: fixed; z-index: 40; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: flex-end; gap: 12px; visibility: hidden; opacity: 0; transform: translateY(8px); pointer-events: none; }
 .blog-share-float[data-visible] { visibility: visible; opacity: 1; transform: none; pointer-events: auto; }
-.blog-share-float-button { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; padding: 0; border: 1.5px solid var(--color-ink); border-radius: 50%; color: var(--color-ink); background: var(--color-paper); box-shadow: var(--shadow-menu); cursor: pointer; }
-.blog-share-float-button:hover { background: var(--color-ink-wash); }
+.blog-share-float-button { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; padding: 0; border: 1.5px solid var(--color-ink); border-radius: 50%; color: var(--color-ink); background: var(--color-paper); box-shadow: var(--shadow-menu); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+/* Sobre o texto, o fundo é sempre opaco: o Tinta a 6 % misturado no Papel (a mancha translúcida deixava ver o texto). */
+.blog-share-float-button:active { background: color-mix(in srgb, var(--color-ink) 6%, var(--color-paper)); }
+@media (hover: hover) { .blog-share-float-button:hover { background: color-mix(in srgb, var(--color-ink) 6%, var(--color-paper)); } }
 .blog-share-float-panel { display: grid; gap: 8px; width: min(240px, calc(100vw - 32px)); padding: 12px; border: var(--line-card-quiet); border-radius: var(--radius-md); background: var(--color-paper); box-shadow: var(--shadow-menu); font-size: var(--text-body); }
 .blog-share-float-panel .button { gap: 8px; justify-content: flex-start; }
 @media (prefers-reduced-motion: no-preference) {

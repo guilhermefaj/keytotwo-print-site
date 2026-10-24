@@ -142,11 +142,18 @@ test.describe('conteúdo', () => {
 
   test('condição de reembolso: avisada antes da compra e detalhada na política', async ({ page }) => {
     // Responsável, 2026-10-19: aviso claro no produto, na sacola e no pagamento; a home continua sem a linha.
+    // Desde 2026-10-24 fica no fim da descrição, em Entrega e reembolso, e não no card de compra.
     for (const route of ['/loja/colecao-fundadores', '/loja/rabisque-e-adivinhe']) {
       await page.goto(route)
       await page.waitForLoadState('networkidle')
-      expect(await visibleText(page), `aviso de reembolso em ${route}`).toMatch(refundNotice)
-      await expect(page.locator('.shop-delivery').getByRole('link', { name: 'Política de reembolso' })).toHaveAttribute('href', '/reembolsos')
+      const delivery = page.getByRole('region', { name: 'Entrega e reembolso' })
+      await expect(delivery).toContainText(refundNotice)
+      await expect(delivery).toContainText('Dá para baixar de novo quando precisar, sem prazo.')
+      await expect(delivery.getByRole('link', { name: 'Política de reembolso' })).toHaveAttribute('href', '/reembolsos')
+      await expect(page.locator('.shop-purchase')).not.toContainText(refundNotice)
+      await expect(page.locator('.shop-purchase')).not.toContainText('sem prazo')
+      const sections = await page.locator('main .product-section > h2').allTextContents()
+      expect(sections.indexOf('Entrega e reembolso'), `Entrega e reembolso depois de O que vocês precisam em ${route}`).toBe(sections.indexOf('O que vocês precisam') + 1)
     }
     await page.goto('/reembolsos')
     await page.waitForLoadState('networkidle')

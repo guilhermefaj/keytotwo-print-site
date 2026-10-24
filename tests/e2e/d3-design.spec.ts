@@ -60,9 +60,11 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await page.goto('/carrinho')
   await expect(page.locator('[data-cart-product]')).toBeVisible()
   await expect(page.locator('main')).not.toContainText(/Stripe|indisponível|nova aba/i)
-  // Aviso de reembolso antes do pagamento (responsável, 2026-10-19), com o link para a política.
-  await expect(page.locator('.cart-summary')).toContainText('Fora dos casos da Política de reembolso e da lei, não há reembolso depois da liberação')
-  await expect(page.locator('.cart-summary').getByRole('link', { name: 'Política de reembolso' })).toHaveAttribute('href', '/reembolsos')
+  // Aviso de reembolso antes do pagamento (responsável, 2026-10-19), com o link para a política; desde 2026-10-24 no pé
+  // da sacola, fora do resumo com o Finalizar compra.
+  await expect(page.locator('.cart-legal')).toContainText('Fora dos casos da Política de reembolso e da lei, não há reembolso depois da liberação')
+  await expect(page.locator('.cart-legal').getByRole('link', { name: 'Política de reembolso' })).toHaveAttribute('href', '/reembolsos')
+  await expect(page.locator('.cart-summary')).not.toContainText('não há reembolso')
   await capture(page, `carrinho-item-${width}`); await axe(page)
   await page.getByRole('button', { name: 'Finalizar compra', exact: true }).focus(); await page.keyboard.press('Enter')
   await expect(page.locator('main').getByRole('checkbox')).toHaveCount(1)
