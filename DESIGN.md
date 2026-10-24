@@ -229,7 +229,7 @@ Onde aparece: só no fundo da capa tipográfica (jogo ainda sem arte), misturado
 
 - **Display** (700, `{typography.display}`, entrelinha 1, tracking −0,04em): só o H1 da hero. No celular usa `{typography.display-mobile}` (42 px) e, em 320 px, `{typography.display-xs}` (36 px). Nunca em outra seção.
 - **Headline** (700, `{typography.headline}`, 1,05, −0,03em): H2 de cada folha e H1 das páginas internas, alinhado à esquerda, largura máxima de 18ch, `text-wrap: balance`. Regra de nível: H2 de **seção** (uma folha do Início, como Grátis ou Dúvidas) é Headline; H2 de **bloco** dentro de uma página que já tem H1 (Loja, produto) é Headline small.
-- **Headline small** (700, `{typography.headline-sm}`, 1,12): preço real na oferta, título do menu móvel e dos vazios, título da newsletter, H2 da lista do blog, links do menu móvel.
+- **Headline small** (700, `{typography.headline-sm}`, 1,12): preço real na oferta, título do menu móvel e dos vazios, H2 da lista do blog, links do menu móvel.
 - **Title large** (700, `{typography.title-lg}`, 1,2): H2 de cards e painéis (conta, carrinho, pagamento, gaveta), saudação da área privada, subtotal.
 - **Title** (700, `{typography.title}` e `{typography.title-sm}`, 1,15–1,2, −0,02em): nome do jogo na carta (22 px), H3 de legendas, de blocos e de itens de lista (19 px).
 - **Lead** (400, `{typography.lead}`, 1,55): apoio da hero, primeira frase de uma folha, total a pagar; largura máxima 560 px.

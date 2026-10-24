@@ -8,14 +8,12 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { DataStatus } from '../components/account/AccountUi'
 import { useAuth } from '../lib/auth-context'
-import { apiErrorMessage, type Cart } from '../lib/api'
+import { apiErrorMessage, type CartItem } from '../lib/api'
 import { money } from '../lib/format'
 import { useShop } from '../lib/shop-context'
 import { canCheckout, checkoutMock } from '../lib/checkout'
 import { isProductCode } from '../lib/guest-cart'
 import { loginDestination } from '../lib/supabase'
-
-type CartItem = Cart['items'][number]
 
 // Item da sacola (DESIGN.md › Item de compra): composição sempre a partir de item.games + conteúdo. Ninguém paga duas
 // vezes pelo mesmo jogo: o que já está no Portal e o avulso que já está num pacote da sacola aparecem riscados e
