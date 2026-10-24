@@ -92,7 +92,7 @@ export const orderStatusLabel = (order: Pick<UserOrder, 'kind' | 'status'>) => (
 const REVOKE_REASONS: Record<string, string> = { refund: 'reembolso', dispute: 'contestação do pagamento', manual: 'retirado pela equipe', account_deleted: 'conta excluída' }
 export const revokeReasonLabel = (reason: string | null) => label(REVOKE_REASONS, reason) || 'retirado'
 
-const EMAIL_KINDS: Record<string, string> = { delivery: 'Entrega', gift: 'Presente', refund: 'Aviso de reembolso', cart_reminder: 'Lembrete da sacola', post_purchase: 'Depois da compra' }
+const EMAIL_KINDS: Record<string, string> = { delivery: 'Entrega', gift: 'Presente', refund: 'Aviso de reembolso', admin_alert: 'Alerta do admin', cart_reminder: 'Lembrete da sacola', post_purchase: 'Depois da compra' }
 const EMAIL_STATUS: Record<string, string> = { queued: 'Na fila', sending: 'Enviando', sent: 'Enviado', failed: 'Falhou', skipped: 'Não enviado', canceled: 'Cancelado' }
 const SKIP_REASONS: Record<string, string> = {
   no_opt_in: 'sem aceite das novidades', suppressed: 'endereço bloqueado', already_purchased: 'já comprou', cart_changed: 'a sacola mudou',
@@ -114,7 +114,7 @@ const ACTIONS: Record<string, string> = {
   user_gift: 'Deu um jogo de presente', user_revoke: 'Retirou um jogo', user_resend: 'Reenviou o e-mail de acesso',
   user_newsletter_off: 'Tirou das novidades', user_block: 'Bloqueou o login', user_unblock: 'Desbloqueou o login', user_export: 'Exportou os dados',
   user_admin_grant: 'Tornou admin', user_admin_revoke: 'Tirou o admin',
-  order_refund: 'Reembolsou o pedido', order_reconcile: 'Conferiu o pedido com a Stripe',
+  order_refund: 'Reembolsou o pedido', order_reconcile: 'Conferiu o pedido com a Stripe', alert_resolve: 'Resolveu um alerta',
 }
 export const actionLabel = (action: string) => label(ACTIONS, action)
 

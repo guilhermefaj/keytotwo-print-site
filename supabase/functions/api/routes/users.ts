@@ -5,7 +5,7 @@ import { HttpError, isUuid, json, readJsonObject } from '../../_shared/http.ts'
 import { livemode } from '../../_shared/stripe.ts'
 import { deletionBlocked } from './account.ts'
 import { PRODUCT_CODE } from './cart.ts'
-import { settle } from './outcome.ts'
+import { reasonOf, settle } from './outcome.ts'
 
 // Usuários no admin (2026-10-23, Fase 4): buscar contas, ver a ficha de cada pessoa e agir. O banco confere o admin em
 // cada chamada e guarda cada ação, com o motivo, em private.admin_events. Bloquear, excluir e retirar jogo não valem
@@ -20,13 +20,6 @@ const notConfirmed = () => new HttpError(409, 'TARGET_NOT_CONFIRMED', 'Esta cont
 function param(params: Record<string, string>, key: string, missing?: string): string {
   if (!isUuid(params[key])) throw notFound(missing)
   return params[key]
-}
-
-// Motivo de toda ação que muda algo: de 3 a 300 caracteres (o banco confere de novo).
-function reasonOf(body: Record<string, unknown>): string {
-  const reason = typeof body.reason === 'string' ? body.reason.trim() : ''
-  if (reason.length < 3 || reason.length > 300) throw new HttpError(400, 'INVALID_REQUEST', 'Escreva o motivo, de 3 a 300 caracteres.')
-  return reason
 }
 
 // GET /admin/users?q=&filter=all|buyers|newsletter|blocked|admins&page=1: 50 contas por página, a mais nova primeiro.

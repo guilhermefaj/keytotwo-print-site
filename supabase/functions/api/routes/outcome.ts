@@ -11,6 +11,13 @@ const COMMON: Record<string, () => HttpError> = {
   protected: () => new HttpError(409, 'PROTECTED_ACCOUNT', 'Isso não vale para a sua própria conta nem para a de outro admin.'),
 }
 
+// Motivo de toda ação que muda algo: de 3 a 300 caracteres (o banco confere de novo).
+export function reasonOf(body: Record<string, unknown>): string {
+  const reason = typeof body.reason === 'string' ? body.reason.trim() : ''
+  if (reason.length < 3 || reason.length > 300) throw new HttpError(400, 'INVALID_REQUEST', 'Escreva o motivo, de 3 a 300 caracteres.')
+  return reason
+}
+
 export function settle(outcome: string, own: Record<string, () => HttpError> = {}): void {
   if (outcome === 'ok' || outcome === 'deleted') return
   if (Object.hasOwn(own, outcome)) throw own[outcome]()

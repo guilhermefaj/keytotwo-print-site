@@ -4,7 +4,7 @@ import { dispatchSoon } from '../../_shared/email.ts'
 import { applySession, loadSession, setStatus } from '../../_shared/fulfillment.ts'
 import { HttpError, isUuid, json, readJsonObject } from '../../_shared/http.ts'
 import { isStripeError, livemode, stripe, stripeErrorLabel } from '../../_shared/stripe.ts'
-import { settle } from './outcome.ts'
+import { reasonOf, settle } from './outcome.ts'
 
 // Pedidos e reembolsos no admin (2026-10-24, Fase 3): a lista e a ficha de cada pedido, o reembolso do pedido inteiro
 // pela Stripe e o "conferir com a Stripe" do pedido que ficou aberto aqui. O banco confere o admin em cada chamada; a
@@ -31,13 +31,6 @@ interface OrderStripe {
 function orderParam(params: Record<string, string>): string {
   if (!isUuid(params.id)) throw notFound()
   return params.id
-}
-
-// Motivo de toda ação que muda algo: de 3 a 300 caracteres (o banco confere de novo).
-function reasonOf(body: Record<string, unknown>): string {
-  const reason = typeof body.reason === 'string' ? body.reason.trim() : ''
-  if (reason.length < 3 || reason.length > 300) throw new HttpError(400, 'INVALID_REQUEST', 'Escreva o motivo, de 3 a 300 caracteres.')
-  return reason
 }
 
 async function orderStripe(adminId: string, orderId: string): Promise<OrderStripe> {

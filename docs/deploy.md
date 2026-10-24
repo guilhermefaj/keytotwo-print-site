@@ -138,6 +138,31 @@ App à parte (`admin/`), com imagem e contêiner próprios: mudar o admin não r
 - **Segundo fator:** na primeira entrada o admin cadastra o app autenticador. Perdeu o app: apague o fator em *Authentication > Users > a conta > MFA factors*; na próxima entrada o admin pede um cadastro novo.
 - **Local:** `npm run dev:admin` (porta 5179, com o `.env.local` da raiz). A 5179 precisa estar no `ALLOWED_ORIGINS` das funções locais.
 
+## Backup do banco
+
+O plano grátis do Supabase não guarda backup. Desde 2026-10-24 (decisões do responsável) a VPS tira uma cópia por noite:
+
+- **O que roda:** `deploy/backup/backup.sh`, no cron do `deploy` às 03:30 de Brasília (`30 6 * * * sh /opt/keytotwo-site/backup/backup.sh >> /opt/keytotwo-site/backup/backup.log 2>&1`). O deploy da produção copia o script para `/opt/keytotwo-site/backup/`. Num contêiner `postgres:17-alpine`, gera `roles.sql`, `schema.sql` e `data.sql` com os filtros do `supabase db dump`, confere que as tabelas da loja vieram, fecha num `.tar.gz.age` e envia para `diario/<data>.tar.gz.age` (no dia 1, também `mensal/`). No fim chama `private.record_backup`; sem cópia nova em 26 horas, o admin abre o alerta "Backup atrasado".
+- **Quem entra no banco:** o papel `backup_ro` (só leitura: `pg_read_all_data` e `BYPASSRLS`; só executa `private.record_backup`), pelo pooler de sessão (`backup_ro.<ref>@aws-1-sa-east-1.pooler.supabase.com:5432`). A senha foi definida direto no banco hospedado e não está no repositório.
+- **`/opt/keytotwo-site/backup/backup.env`** (600, só do `deploy`; formato do `docker --env-file`, sem aspas): `BACKUP_DB_URL`, `BACKUP_AGE_RECIPIENT` (a chave pública `age1…`), `B2_BACKUP_ENDPOINT`, `B2_BACKUP_REGION`, `B2_BACKUP_BUCKET`, `B2_BACKUP_KEY_ID` e `B2_BACKUP_APPLICATION_KEY`.
+- **Bucket:** privado, só para o backup, com a criptografia da B2 ligada e duas regras de validade: `diario/` some 30 dias depois do envio, `mensal/` em 365. A chave da VPS é restrita a esse bucket e só escreve: quem entrar na VPS não lê nem apaga as cópias.
+- **A chave secreta do `age`** fica só com o responsável (no arquivo de segredos e no gerenciador de senhas). Sem ela, nenhuma cópia abre.
+- **Fica de fora** (já tem cópia em outro lugar): os PDFs dos jogos e as imagens do blog (B2, com os originais no Drive), o código (GitHub) e os segredos (arquivo de segredos).
+
+**Recuperar** (num projeto Supabase novo; o mesmo vale para o ensaio, num banco descartável):
+
+1. Baixe a cópia no painel da B2 (ou com uma chave de leitura do bucket) e abra: `age -d -i <chave-secreta> <arquivo>.tar.gz.age | tar -xz`.
+2. Restaure como manda a Supabase (*Restore a Platform Project*): `psql --single-transaction -v ON_ERROR_STOP=1 -f roles.sql -f schema.sql -c 'SET session_replication_role = replica' -f data.sql --dbname "<conexão do projeto novo>"`.
+3. Refaça o que a cópia não leva: os gatilhos de evento (o `rls_auto_enable` do hospedado; a cópia não leva), as duas agendas do `pg_cron` (o `pg_dump` não leva as tabelas das extensões; rode os `cron.schedule` de `email-dispatch-tick` e `email-outbox-purge`, nas migrações `20261008190749` e `20261019120000`), os segredos do Vault do despacho de e-mail (`supabase/local/aplicar-dispatch-vault.mjs`), a senha do `backup_ro`, os segredos e o deploy das funções, a configuração do Auth (Google, URLs de retorno, TOTP) e o `SUPABASE_URL`/chaves no site, no admin e na VPS.
+4. Confira as contagens (`auth.users`, `public.orders`, `public.entitlements`) com as da última noite.
+
+**Ensaio (2026-10-24):** a cópia restaurada num Supabase local zerado (`supabase init` numa pasta à parte, sem as migrações, como um projeto novo), com o comando do passo 2, sem nenhuma edição. Contagens iguais às do banco, o catálogo responde e o `02_privileges_rls` passa no banco restaurado (só a lista exata de RPCs difere: o hospedado tem a `rls_auto_enable`, um gatilho de evento do painel). O ensaio achou e o `backup.sh` já corrige:
+- as RPCs voltavam abertas para `anon` (o projeto novo dá tudo em `public` por padrão e o `pg_dump` não tira): o `schema.sql` desliga esse padrão antes e o religa no fim;
+- os gatilhos da loja em `auth.users` (perfil e confirmação do e-mail) não vinham: entram no fim do `schema.sql`;
+- o Storage do Supabase (vazio; a loja usa a B2) e a permissão interna `ON PARAMETER` da plataforma travavam a restauração: saem da cópia.
+
+Repetir o ensaio a cada 3 meses, ou depois de mudar o `backup.sh`. Precisa do Docker Desktop; no Windows, as portas 54275 a 54474 podem estar reservadas (`netsh int ipv4 show excludedportrange protocol=tcp`): troque as do `config.toml` da pasta do ensaio.
+
 ## Blog (posts no banco, site reconstruído sozinho)
 
 Desde 2026-10-23 os posts são escritos no admin e ficam no banco. O site continua pré-renderizado, então publicar um post pede um build novo:

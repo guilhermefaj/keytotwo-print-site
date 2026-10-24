@@ -21,6 +21,7 @@ const contractEnv: Record<string, string> = {
   STRIPE_SECRET_KEY: 'stripe-chave-de-teste',
   STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
   SITE_URL: 'http://127.0.0.1:5176',
+  ADMIN_URL: 'http://127.0.0.1:5179',
   TERMS_VERSION,
   ALLOWED_ORIGINS: 'http://127.0.0.1:5173',
   // I4: B2, links HMAC e e-mail (valores fictícios).

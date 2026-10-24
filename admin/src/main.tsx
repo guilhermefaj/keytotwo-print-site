@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router'
 import { AuthGate } from './AuthGate'
 import { Layout } from './Layout'
 import { BlogPage } from './pages/Blog'
+import { AlertsPage } from './pages/Alerts'
 import { MetricsPage } from './pages/Metrics'
 import { NotFoundPage } from './pages/NotFound'
 import { OrdersPage } from './pages/Orders'
@@ -17,6 +18,7 @@ const router = createBrowserRouter([{
   element: <Layout />,
   children: [
     { index: true, element: <MetricsPage /> },
+    { path: 'atencao', element: <AlertsPage /> },
     { path: 'blog', element: <BlogPage /> },
     { path: 'blog/novo', lazy: async () => ({ Component: (await import('./pages/BlogEditor')).BlogEditorRoute }) },
     { path: 'blog/:id', lazy: async () => ({ Component: (await import('./pages/BlogEditor')).BlogEditorRoute }) },

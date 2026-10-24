@@ -210,6 +210,39 @@ contractTest('email-dispatch: aviso de reembolso (refund, 2026-10-24) com o pedi
   assertEquals([rpcCalls[1].args.p_status, rpcCalls[1].args.p_error], ['rejected', 'reembolso_sem_valor'])
 })
 
+contractTest('email-dispatch: alerta dos admins (admin_alert, 2026-10-24) com o que fazer e os links do admin e da Stripe', async () => {
+  Deno.env.set('EMAIL_MODE', 'log')
+  const ORDER = '9f8e7d6c-5b4a-4c3d-8e2f-1a0b9c8d7e6f'
+  const alerts = [
+    { kind: 'dispute', order_id: ORDER, order_ref: '9F8E7D6C', livemode: true, details: { dispute_id: 'dp_1', due_by: '2026-11-03T12:00:00+00:00', amount: 2990, currency: 'brl' } },
+    { kind: 'delivery_failed', order_id: ORDER, order_ref: '9F8E7D6C', livemode: false, details: { email_kind: 'gift', cause: 'bounced' } },
+    { kind: 'stripe_unmatched', order_id: null, order_ref: null, livemode: null, details: { event_id: 'evt_1', type: 'checkout.session.completed', livemode: false } },
+    { kind: 'backup_late', order_id: null, order_ref: null, livemode: null, details: {} },
+  ]
+  dispatchRpc([{ ...DELIVERY_ROW, kind: 'admin_alert', order_id: null, to_email: 'admin@example.com', payload: { alerts } }])
+  onExternal(() => ok({ ID: 'mailpit-4' }))
+  const { result } = await captureErrors(async () => await (await dispatchRequest({ outbox_id: OUTBOX_ID })).json())
+  assertEquals(result, { claimed: 1, sent: 1, failed: 0, rejected: 0 })
+  const mail = externalCalls[0].body as { Subject: string; HTML: string; Text: string; To: { Email: string }[] }
+  assertEquals([mail.Subject, mail.To[0].Email], ['Admin KeyToTwo: 4 alertas novos', 'admin@example.com'])
+  for (const line of [
+    '- Contestação no pedido 9F8E7D6C (R$ 29,90). Mande as provas na Stripe até 03/11/2026.',
+    `  Ver o pedido: http://127.0.0.1:5179/pedidos/${ORDER}`,
+    '  Abrir na Stripe: https://dashboard.stripe.com/disputes/dp_1',
+    '- O e-mail do presente do pedido 9F8E7D6C voltou: o endereço não recebe e-mails. Confira o e-mail da pessoa e use Reenviar na ficha do pedido.',
+    '- A Stripe avisou um pagamento (checkout.session.completed) de um pedido que não existe aqui. Confira o evento na Stripe.',
+    '  Abrir na Stripe: https://dashboard.stripe.com/test/events/evt_1',
+    '- A cópia de segurança do banco não roda há mais de 26 horas.',
+    'Abrir Atenção no admin: http://127.0.0.1:5179/atencao',
+  ]) assert(mail.Text.includes(line), line)
+  assert(mail.HTML.includes('href="http://127.0.0.1:5179/atencao"'))
+
+  // sem alertas na fotografia: recusa definitiva
+  dispatchRpc([{ ...DELIVERY_ROW, kind: 'admin_alert', order_id: null, payload: { alerts: [] } }])
+  await captureErrors(async () => await (await dispatchRequest({ outbox_id: OUTBOX_ID })).json())
+  assertEquals([rpcCalls[1].args.p_status, rpcCalls[1].args.p_error], ['rejected', 'alerta_sem_itens'])
+})
+
 contractTest('email-dispatch modo brevo: chave v3, lista de teste, recusa definitiva e falha transitória', async () => {
   Deno.env.set('EMAIL_MODE', 'brevo')
   const run = async () => {

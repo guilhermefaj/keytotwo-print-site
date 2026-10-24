@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { apiBase, publishableKey, supabase } from './supabase'
 
 // code: o código do contrato; message: o texto da API, quando ela explica o que fazer; details: problemas do post etc.
@@ -44,7 +44,8 @@ export function useResource<T>(path: string) {
     return () => controller.abort()
   }, [path, key])
   const current = state.key === key
+  const reload = useCallback(() => setRevision(value => value + 1), [])
   // previous: a última resposta, mesmo de outro caminho, para a tela não piscar enquanto busca de novo.
-  return { data: current ? state.data : undefined, previous: state.data, error: current ? state.error : undefined, loading: !current, reload: () => setRevision(value => value + 1) }
+  return { data: current ? state.data : undefined, previous: state.data, error: current ? state.error : undefined, loading: !current, reload }
 }
 

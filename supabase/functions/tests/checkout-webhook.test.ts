@@ -378,6 +378,29 @@ contractTest('webhook: contestação aberta, vencida, perdida e reembolso total;
   assertEquals(stripeCalls[1].params.get('payment_intent'), 'pi_teste')
 })
 
+contractTest('webhook: a contestação abre o alerta do admin com o prazo; adiada não abre; falha no alerta não derruba o webhook', async () => {
+  stripeWith(null, (call) => (call.path === '/v1/payment_intents/pi_teste' ? ok({ id: 'pi_teste', object: 'payment_intent', metadata: { order_id: ORDER_ID } }) : null))
+  const dispute = {
+    id: 'dp_teste', object: 'dispute', payment_intent: 'pi_teste', reason: 'fraudulent', status: 'needs_response',
+    amount: 2990, currency: 'brl', evidence_details: { due_by: 1793707200 },
+  }
+  onRpc(() => row({ outcome: 'applied' }))
+  assertEquals((await webhook(stripeEvent('charge.dispute.created', dispute))).status, 200)
+  assertEquals(rpcCalls.map((c) => c.fn), ['set_order_status', 'record_dispute_alert'])
+  assertEquals(rpcCalls[1].args, {
+    p_order_id: ORDER_ID, p_dispute_id: 'dp_teste', p_due_by: '2026-11-03T12:00:00.000Z', p_amount: 2990, p_currency: 'brl', p_reason: 'fraudulent',
+  })
+
+  onRpc(() => row({ outcome: 'deferred' }))
+  assertEquals((await webhook(stripeEvent('charge.dispute.created', dispute))).status, 500)
+  assertEquals(rpcCalls.map((c) => c.fn), ['set_order_status'])
+
+  onRpc((fn) => (fn === 'record_dispute_alert' ? { status: 500, body: {} } : row({ outcome: 'applied' })))
+  const { result, logs } = await captureErrors(() => webhook(stripeEvent('charge.dispute.created', dispute)))
+  assertEquals([result.status, result.body.outcome], [200, 'applied'])
+  assertEquals(logs.some((l) => l.includes('alerta da contestação dp_teste falhou')), true)
+})
+
 contractTest('webhook: deferred e defeitos corrigíveis respondem 500; erros finais respondem 200', async () => {
   stripeWith(null, (call) => (call.path === '/v1/payment_intents/pi_teste' ? ok({ id: 'pi_teste', object: 'payment_intent', metadata: { order_id: ORDER_ID } }) : null))
   onRpc(() => row({ outcome: 'deferred' }))

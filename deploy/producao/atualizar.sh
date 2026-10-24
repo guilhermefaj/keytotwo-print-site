@@ -41,6 +41,10 @@ main() {
   mkdir -p "$base/blog"
   cp "$base/repo/deploy/blog/vigiar.sh" "$base/blog/vigiar.sh.novo"
   mv -f "$base/blog/vigiar.sh.novo" "$base/blog/vigiar.sh"
+  # O backup noturno do banco (deploy/backup/backup.sh) também roda de uma cópia, pelo mesmo motivo.
+  mkdir -p "$base/backup"
+  cp "$base/repo/deploy/backup/backup.sh" "$base/backup/backup.sh.novo"
+  mv -f "$base/backup/backup.sh.novo" "$base/backup/backup.sh"
   echo "keytotwo.com.br no commit $sha"
 }
 
