@@ -68,8 +68,8 @@ async function fixture(page: Page, initial: Item[], { signedIn = true, owned = [
 }
 async function capture(page: Page, name: string) {
   if (process.env.I5_CAPTURE !== '1') return
-  await mkdir('design-review/sacola', { recursive: true })
-  await page.screenshot({ path: `design-review/sacola/${name}.webp`, fullPage: true, animations: 'disabled' })
+  await mkdir('.maestri/design-review/sacola', { recursive: true })
+  await page.screenshot({ path: `.maestri/design-review/sacola/${name}.webp`, fullPage: true, animations: 'disabled' })
 }
 
 test('sacola com pacote e avulso: composição por item, sem suposição de pacote único', async ({ page }) => {

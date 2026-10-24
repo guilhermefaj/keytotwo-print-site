@@ -12,6 +12,8 @@ const size = { width: 1200, height: 630 }
 await mkdir(output, { recursive: true })
 for (const file of (await readdir(covers)).filter(name => name.endsWith('-capa-800.webp')).sort()) {
   const code = file.replace('-capa-800.webp', '')
+  // /gratuitos compartilha a capa do F001 (src/lib/seo.ts); a dos outros gratuitos nunca vira og:image.
+  if (code.startsWith('f') && code !== 'f001') continue
   const source = path.join(covers, file)
   const { data } = await sharp(source).extract({ left: 0, top: 0, width: 1, height: 1 }).removeAlpha().raw().toBuffer({ resolveWithObject: true })
   const background = { r: data[0], g: data[1], b: data[2] }

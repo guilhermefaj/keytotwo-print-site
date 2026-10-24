@@ -1,26 +1,26 @@
-# I0 — CI e contêiner para a VPS Hostinger própria
+# CI, contêiner e deploy na VPS
 
-O ajuste 7 da nota **Plano do site P1** define uma VPS Hostinger própria com Docker. Publicar somente `build/client`, com um `index.html` por rota. `build/server` é intermediário de pré-render e não roda na VPS; backend, Auth e banco permanecem no Supabase. O site ainda é um protótipo com `noindex` e dados comerciais pendentes.
+O site é publicado numa VPS Hostinger própria, com Docker atrás do Traefik. Vai para o ar somente `build/client`, com um `index.html` por rota; `build/server` é intermediário de pré-render e não roda na VPS. Backend, Auth e banco ficam no Supabase hospedado.
 
 ## Imagem e execução local
 
 Na raiz do repositório, com Docker em modo Linux:
 
 ```powershell
-docker build --pull -t keytotwo-site:i0 .
-docker run -d --name keytotwo-site-i0 -p 127.0.0.1:18080:8080 keytotwo-site:i0
-docker exec keytotwo-site-i0 nginx -t
+docker build --pull -t keytotwo-site:local .
+docker run -d --name keytotwo-site-local -p 127.0.0.1:18080:8080 keytotwo-site:local
+docker exec keytotwo-site-local nginx -t
 curl.exe -I http://127.0.0.1:18080/
 curl.exe -I http://127.0.0.1:18080/meus-jogos
 curl.exe -I http://127.0.0.1:18080/pedido/confirmacao
 curl.exe -I http://127.0.0.1:18080/rota-inexistente
 ```
 
-Resultados esperados: 200 nas três rotas existentes, 404 na inexistente, com o HTML de `build/client/404/index.html`. Depois do teste, `docker stop keytotwo-site-i0` e `docker rm keytotwo-site-i0` removem somente este contêiner. Os servidores de desenvolvimento em 5173/5174 são independentes.
+Resultados esperados: 200 nas três rotas existentes, 404 na inexistente, com o HTML de `build/client/404/index.html`. Depois do teste, `docker stop keytotwo-site-local` e `docker rm keytotwo-site-local` removem somente este contêiner. O dev (5178) e o admin (5179) são independentes.
 
 Para um build que fala com o backend, passe as chaves públicas do projeto Supabase hospedado (`keytotwo-print-db`) e da Stripe como argumentos de build: `--build-arg VITE_SUPABASE_URL=https://<ref>.supabase.co --build-arg VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_… --build-arg VITE_STRIPE_PUBLISHABLE_KEY=pk_… --build-arg VITE_CHECKOUT_MODE=stripe`, além de `VITE_SITE_STAGE`, `VITE_SITE_URL` e, se mudar, `VITE_TERMS_VERSION` (igual ao segredo `TERMS_VERSION` das funções). Só chaves publicáveis: nunca `sb_secret_` nem `sk_`.
 
-O Dockerfile faz `npm ci` e `npm run build` com Node 24; a etapa final usa Nginx e copia somente a saída pública. O contexto exclui `.env*`, chaves, arte original, dependências e saídas locais. Não passar segredos em argumentos de build: variáveis incorporadas no JavaScript público são visíveis ao navegador. O I0 não exige credenciais de backend.
+O Dockerfile faz `npm ci` e `npm run build` com Node 24; a etapa final usa Nginx e copia somente a saída pública. O contexto exclui `.env*`, chaves, arte original, dependências e saídas locais. Não passar segredos em argumentos de build: variáveis incorporadas no JavaScript público são visíveis ao navegador.
 
 `nginx.conf` atende em HTTP na porta interna **8080**. `try_files` procura primeiro o HTML da rota; rotas privadas recebem sua própria casca pré-renderizada. URLs desconhecidas retornam HTTP 404, sem fallback 200 para a home. `/404` também responde 404. O arquivo interno de fallback SPA não é publicado como uma página navegável.
 
@@ -30,9 +30,9 @@ Headers: `nosniff`, bloqueio de frames, política de referrer e restrição de c
 
 `.github/workflows/ci.yml` roda em pull request, em push no `main` e por execução manual (`gh workflow run CI --ref <branch>`), com permissão somente de leitura. Em PR, um commit roda uma vez só e um commit novo cancela a execução anterior do mesmo PR. Os jobs de funções, banco e integração só rodam quando o diff toca `supabase/`, `src/lib/`, os specs `i*`/`smoke`, `playwright.config.ts`, `package*.json` ou `.github/`. No `main` e na execução manual roda tudo. O repositório é público desde 2026-10-17 (minutos grátis), e o foco é a espera: o Site roda o e2e com 4 workers, só o Chromium é instalado, a stack efêmera sobe sem Studio, Storage, Realtime, imgproxy, postgres-meta, logs e pooler, e a integração são dois jobs em paralelo (funções e e2e), cada um com a sua stack (`.github/actions/stack-efemera`).
 
-Antes de abrir PR, `npm run verificar` roda na máquina o que o job Site roda e também os specs do stage test (sacola, conta) com a API simulada, que o CI só exercita quando a integração roda. São dois builds: um igual ao do CI, para o smoke de console, e outro com o `.env.local`. Executa `npm ci`, lint, typecheck, build, instalação dos navegadores/dependências Playwright e `npm run test:e2e`. O build precede os testes que servem `build/client`. Os navegadores exercitados são os declarados pela configuração da Lupa; instalar os executáveis não amplia automaticamente a matriz de testes.
+Antes de abrir PR, `npm run verificar` roda na máquina o que o job Site roda e também os specs do stage test (sacola, conta) com a API simulada, que o CI só exercita quando a integração roda: lint, testes unitários, o build do admin, os dois builds do site (um igual ao do CI, para o smoke de console, e outro com o `.env.local`) e a suíte E2E numa porta própria (4181). Não roda `npm ci` nem instala navegadores; isso fica para quem prepara a máquina.
 
-Um job independente detecta `supabase/functions` e, quando existir, instala **Deno 2.9.x** e executa `deno check .` nesse diretório, usando a configuração Deno versionada pelo outro floor. Não conecta ao Supabase remoto nem aplica migrações. A execução real no GitHub fica para o próximo commit/PR; nenhum workflow de deploy existe nesta entrega.
+O job Funções instala **Deno 2.9.x** e roda `deno check .` e os testes de contrato em `supabase/functions`; o job Banco roda os testes pgTAP com o Supabase CLI. Nenhum dos dois conecta ao Supabase remoto nem aplica migrações; não existe workflow de deploy.
 
 ## Deploy na VPS
 
@@ -52,7 +52,7 @@ A VPS é a da Chalk Labs na Hostinger. O acesso é pelo usuário `deploy`, que e
 | `/opt/keytotwo-site/repo` | Clone raso do repositório; o script de atualização troca o commit |
 | `/opt/keytotwo-site/build.env` | Variáveis públicas do build (`VITE_*`): stage `test`, `VITE_SITE_URL` do teste e as chaves publicáveis |
 | `/opt/keytotwo-site/teste/compose.yaml` | Cópia de `deploy/teste/compose.yaml` |
-| `/opt/keytotwo-site/teste/.env` | `IMAGE_TAG` (o commit em uso) e `SITE_BASIC_AUTH_USERS` (hash apr1 do usuário `keytotwo`, entre aspas simples). A senha em texto fica no arquivo de segredos, em `TEST_BASIC_AUTH_PASSWORD` |
+| `/opt/keytotwo-site/teste/.env` | `IMAGE_TAG` (o commit em uso) e `SITE_BASIC_AUTH_USERS` (hash apr1 do usuário de teste, entre aspas simples). Usuário e senha em texto ficam no arquivo de segredos (`TEST_BASIC_AUTH_*`) |
 | `/opt/keytotwo-site/producao/build.env` | Variáveis públicas do build live: stage `live`, `VITE_SITE_URL=https://keytotwo.com.br`, as mesmas chaves do Supabase e a `pk_live_` da Stripe |
 | `/opt/keytotwo-site/producao/compose.yaml` e `.env` | Cópia de `deploy/producao/compose.yaml`; o `.env` tem só o `IMAGE_TAG` (`live-<commit>`) |
 
