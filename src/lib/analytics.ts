@@ -16,7 +16,7 @@ const VERSION = 1
 const MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000
 
 declare global {
-  interface Window { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void }
+  interface Window { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void; [gaDisable: `ga-disable-${string}`]: boolean | undefined }
 }
 
 // Medição de verdade só no host de produção do build live (o teste e o localhost nunca enviam dados).
@@ -64,9 +64,18 @@ export function onCookieNoticeReopen(listener: () => void) {
   return () => window.removeEventListener(REOPEN, listener)
 }
 
+// `loaded`: o gtag já está na página. `granted`: a escolha vale agora, nesta página. Recusar e aceitar de novo
+// sem recarregar reaproveita o gtag e só troca o consentimento (e o ga-disable, que o próprio GA respeita).
 let loaded = false
+let granted = false
 export function loadAnalytics() {
-  if (loaded || !analyticsAvailable() || snapshot() !== 'granted') return
+  if (!analyticsAvailable() || snapshot() !== 'granted') return
+  granted = true
+  window[`ga-disable-${gaMeasurementId}`] = false
+  if (loaded) {
+    window.gtag?.('consent', 'update', { analytics_storage: 'granted' })
+    return
+  }
   loaded = true
   window.dataLayer = window.dataLayer || []
   // O gtag precisa do objeto arguments, não de um array.
@@ -83,6 +92,8 @@ export function loadAnalytics() {
 
 // Recusa depois de ter aceitado: o GA4 para de gravar e os cookies dele (_ga, _ga_*) saem do navegador.
 function revokeAnalytics() {
+  granted = false
+  window[`ga-disable-${gaMeasurementId}`] = true
   window.gtag?.('consent', 'update', { analytics_storage: 'denied' })
   const domain = location.hostname.replace(/^www\./, '')
   for (const name of document.cookie.split(';').map(cookie => cookie.split('=')[0].trim()).filter(name => name === '_ga' || name.startsWith('_ga_'))) {
@@ -93,7 +104,7 @@ function revokeAnalytics() {
 // Eventos de loja do GA4 (view_item, add_to_cart, begin_checkout, purchase); sem aceite, nada sai.
 export type AnalyticsItem = { item_id: string; item_name: string; price?: number; quantity?: number }
 export function track(event: string, params: { currency?: string; value?: number; transaction_id?: string; items?: AnalyticsItem[] } = {}) {
-  if (loaded) window.gtag?.('event', event, params)
+  if (granted) window.gtag?.('event', event, params)
 }
 export const toReais = (cents: number) => Math.round(cents) / 100
 
