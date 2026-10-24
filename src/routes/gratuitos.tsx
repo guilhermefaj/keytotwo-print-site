@@ -32,7 +32,7 @@ export default function Gratuitos() {
     <ul className="shop-game-grid free-games">{freebies.filter(game => game.confirmed).map(game => {
       const file = game.code ? files.get(game.code) : undefined
       return <GameCard key={game.id} game={game}><div className="shop-availability">
-        {!unlocked ? <p className="shop-price">Grátis</p>
+        {!unlocked ? <span className="tag-solid">Grátis</span>
           : file || deliveryMock ? <><p className="file-meta">PDF{file && fileSize(file.size_bytes) && ` · ${fileSize(file.size_bytes)}`}</p><DownloadButton fileId={file?.id} isFree onRefresh={list.reload} /></>
           : !list.loading && !list.error && <p className="field-help">O PDF entra aqui em breve.</p>}
       </div></GameCard>

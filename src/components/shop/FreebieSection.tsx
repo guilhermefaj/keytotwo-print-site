@@ -9,7 +9,7 @@ export function FreebieSection() {
   return <section className="shop-freebies" aria-labelledby="freebies-title" data-shop-freebies>
     <div className="shop-freebies-heading"><h2 id="freebies-title">{title}</h2><p>{text}</p><Link className="button button-primary shop-freebie-cta" to={cta.href}>{cta.label}</Link></div>
     <ul className="shop-game-grid">{freebies.filter(game => game.confirmed).map(game => <GameCard key={game.id} game={game}>
-      <div className="shop-availability"><p className="shop-price">Grátis</p></div>
+      <div className="shop-in-package"><span className="tag-solid">Grátis</span><Link className="inline-link shop-details" to={cta.href} aria-label={`Como baixar: ${game.name}`}>Como baixar</Link></div>
     </GameCard>)}</ul>
   </section>
 }

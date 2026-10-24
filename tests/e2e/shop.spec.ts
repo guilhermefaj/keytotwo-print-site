@@ -25,7 +25,8 @@ test('loja: pacote fora do catálogo fica em breve; jogos do pacote sem avulso f
   await expect(page.getByRole('heading', { name: 'Loja', exact: true })).toBeVisible()
   const pack = page.locator('[data-shop-product="P001"]')
   await expect(pack).toContainText('Pacote de jogos')
-  await expect(pack.locator('.shop-bundle-games li')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura', 'A Rota da Fornalha', 'Retrospectiva a Dois'])
+  await expect(pack.locator('.shop-bundle-games .pack-game-name')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura', 'A Rota da Fornalha', 'Retrospectiva a Dois'])
+  await expect(pack.locator('.shop-bundle-games .pack-game-kind').first()).toHaveText('Desenho e adivinhação')
   await expect(pack).toContainText('Em breve')
   await expect(pack.getByRole('link')).toHaveCount(0)
   // Jogos do pacote: só os disponíveis; capas oficiais no lugar da prévia do PDF.
@@ -42,9 +43,9 @@ test('loja: pacote fora do catálogo fica em breve; jogos do pacote sem avulso f
     await expect(card.locator('.shop-game-kind')).not.toBeEmpty()
   }
   await expect(page.locator('[data-shop-game="a-rota-da-fornalha"] .shop-game-kind')).toHaveText('Escape room de papel')
-  await expect(page.locator('.shop-games .game-cover-art img')).toHaveCount(5)
+  await expect(page.locator('.shop-games [data-shop-game] .game-cover-art img')).toHaveCount(5)
   // Capas até 800 px: as folhas dos jogos pagos aparecem, mas não dão para usar.
-  expect(await page.locator('.shop-games .game-cover-art img').first().getAttribute('srcset')).toMatch(/-capa-800\.webp 800w$/)
+  expect(await page.locator('.shop-games [data-shop-game] .game-cover-art img').first().getAttribute('srcset')).toMatch(/-capa-800\.webp 800w$/)
   await expect(page.locator('[data-shop-game] img[src*="/media/experience/j001-page"]')).toHaveCount(0)
   // Gratuitos: os dois jogos com o selo e o atalho para a página Gratuitos, em todos os stages.
   const freebies = page.locator('[data-shop-freebies]')
@@ -93,8 +94,8 @@ test('produto: preço vem do catálogo, compra preserva escolha e ausência não
   await expect(included).toHaveCount(5)
   await expect(page.locator('.shop-games').getByRole('button')).toHaveCount(0)
   await expect(page.locator('.shop-games')).not.toContainText('Em breve')
-  await expect(page.locator('[data-shop-game="tabuleiro-da-sorte"] .ficha')).toContainText('Tabuleiro, perguntas e desafios')
-  await expect(page.locator('[data-shop-game="o-sumico-de-rapadura"] .ficha')).toContainText('Escape room de papel')
+  await expect(page.locator('[data-shop-game="tabuleiro-da-sorte"] .shop-game-facts')).toContainText('Tabuleiro, perguntas e desafios')
+  await expect(page.locator('[data-shop-game="o-sumico-de-rapadura"] .shop-game-facts')).toContainText('Escape room de papel')
 })
 
 test('página de produto: ficha no topo, capa, como é jogar, o que vocês precisam e o pacote', async ({ page }) => {
@@ -244,5 +245,66 @@ test('loja e detalhes sem rolagem horizontal em 320–1440 e texto 200%', async 
       await page.addStyleTag({ content: 'html { font-size: 200%; }' })
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${route} em ${width}`).toBe(true)
     }
+  }
+})
+
+test('loja: o pacote fecha a grade dos jogos como último card, com o preço de lançamento', async ({ page }) => {
+  test.skip(stage === 'preview', 'preview não mostra preço')
+  await catalog(page, [single, { ...bundle, price: { unit_amount: 2990, currency: 'brl' } }])
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/loja')
+  const cards = page.locator('.shop-games .shop-game-grid > li')
+  await expect(cards).toHaveCount(6)
+  const pack = cards.last()
+  await expect(pack).toHaveAttribute('data-pack-card', 'P001')
+  await expect(pack.locator('.shop-game-kind')).toHaveText('Pacote de jogos')
+  await expect(pack.locator('.shop-price')).toHaveText(/^De R\$\s39,90 por R\$\s29,90$/)
+  await expect(pack.getByRole('link', { name: 'Ver detalhes: Coleção KeyToTwo: Fundadores' })).toHaveAttribute('href', '/loja/colecao-fundadores')
+  // Três colunas: 5 jogos + o pacote fecham duas linhas inteiras.
+  const tops = await cards.evaluateAll(items => items.map(item => Math.round(item.getBoundingClientRect().top)))
+  expect(new Set(tops).size).toBe(2)
+})
+
+test('celular: card de jogo horizontal, com a capa ao lado do nome e a compra na largura toda', async ({ page }) => {
+  await catalog(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/loja')
+  const card = page.locator('[data-shop-game="rabisque-e-adivinhe"]')
+  const [cover, head, body] = await Promise.all(['.game-cover', '.shop-game-head', '.shop-game-body'].map(selector => card.locator(selector).boundingBox()))
+  expect(cover!.x + cover!.width).toBeLessThanOrEqual(head!.x + 1)
+  expect(Math.abs(cover!.y - head!.y)).toBeLessThan(cover!.height)
+  expect(body!.y).toBeGreaterThanOrEqual(cover!.y + cover!.height - 1)
+  expect(body!.width).toBeGreaterThan(cover!.width * 2)
+})
+
+test('gratuitos no Início e na Loja: selo Grátis e o caminho para a página Gratuitos', async ({ page }) => {
+  await catalog(page)
+  for (const route of ['/', '/loja']) {
+    await page.goto(route)
+    const card = page.locator('[data-shop-freebies] [data-shop-game="hora-dos-artistas"]')
+    await expect(card.locator('.tag-solid')).toHaveText('Grátis')
+    await expect(card.getByRole('link', { name: 'Como baixar: Hora dos Artistas' })).toHaveAttribute('href', '/gratuitos')
+    await expect(card.locator('.shop-price')).toHaveCount(0)
+  }
+})
+
+test('pacote: as miniaturas da galeria cabem numa linha só', async ({ page }) => {
+  await catalog(page, [bundle])
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/loja/colecao-fundadores')
+    const tops = await page.getByRole('list', { name: 'Imagens do produto' }).getByRole('button').evaluateAll(items => items.map(item => Math.round(item.getBoundingClientRect().top)))
+    expect(tops, `em ${width}`).toHaveLength(6)
+    expect(new Set(tops).size, `em ${width}`).toBe(1)
+  }
+})
+
+test('rodapé: a tesoura e o chão do Kito também em Entrar e na Sacola; a newsletter só nas páginas públicas', async ({ page }) => {
+  await catalog(page)
+  for (const route of ['/entrar', '/carrinho']) {
+    await page.goto(route)
+    await expect(page.locator('.site-footer .cut-line'), route).toHaveCount(1)
+    await expect(page.locator('.site-footer .footer-ground'), route).toHaveCount(1)
+    await expect(page.locator('.site-footer .footer-newsletter'), route).toHaveCount(0)
   }
 })

@@ -142,6 +142,8 @@ export const games: readonly Game[] = [
 ]
 
 export const packageGames = games.filter(game => !game.freebie)
+// O jeito de jogar da ficha: o rótulo curto que apresenta o jogo nos cards e nas listas do pacote.
+export const playStyle = (game: Game) => game.facts?.find(fact => fact.label === 'Jeito de jogar')?.value
 export const freebies = games.filter(game => game.freebie)
 
 export const j001 = {

@@ -132,7 +132,7 @@ test.describe('conteúdo', () => {
     await expect(page.locator('.shop-showcase')).toHaveCount(1)
     await expect(page.locator('.shop-showcase [data-shop-product]')).toHaveCount(1)
     await expect(page.locator('.shop-showcase [data-shop-product]')).toHaveAttribute('data-shop-product', 'P001')
-    await expect(page.locator('.shop-showcase .cover-tile')).toHaveCount(3)
+    await expect(page.locator('.shop-showcase .cover-tile')).toHaveCount(5)
     await expect(page.locator('section.offer-section')).toHaveCount(0)
     await expect(page.locator('.package-game')).toHaveCount(0)
     await expect(page.locator('.mobile-purchase-bar')).toHaveCount(0)
@@ -278,6 +278,12 @@ test('home: matriz responsiva, texto 200%, cena preservada e capturas', async ({
         // Cards outside a scroll-snap viewport (carousels, testimonial row) are intentional; text must still fit each card.
         // Folha de recortar: a carta inclinada passa alguns px da coluna de propósito; o texto é conferido na própria carta.
         if (el.matches('.steps-list > li')) return rect.left < -1 || rect.right > innerWidth + 1
+        // Capa de arte: a imagem vem aproximada de propósito (scale) e a capa a recorta; vale o retângulo da capa.
+        const cover = el.closest('.game-cover-art')
+        if (cover) {
+          const box = cover.getBoundingClientRect()
+          return !el.closest('.snap-track, .social-marquee') && (box.left < -1 || box.right > innerWidth + 1)
+        }
         const track = el.closest('.snap-track, .social-marquee')
         if (track && getComputedStyle(track).overflowX === 'auto') {
           return el === track ? rect.left < -1 || rect.right > innerWidth + 1 : el.scrollWidth > el.clientWidth + 2

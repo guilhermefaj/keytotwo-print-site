@@ -1,13 +1,14 @@
 import type { Product } from '../../content/products'
 import { ProductAvailability } from './ProductAvailability'
 import { GameCover } from '../account/GameCover'
+import { playStyle } from '../../content/games'
 
 // Banner do pacote (DESIGN.md › Banner do pacote), na Loja e no Início: a capa grande e, sob ela, os
-// jogos com a miniatura de cada um; ao lado, o nome, o que vem e a compra.
+// jogos com o jeito de jogar de cada um; ao lado, o nome, o que vem e a compra.
 export function BundleFeature({ product, priority = false }: { product: Product; priority?: boolean }) {
   return <article className="shop-bundle" aria-labelledby={`bundle-${product.slug}`} data-shop-product={product.code}>
     <div className="shop-bundle-side">{product.cover && <GameCover name={product.title} art={product.cover} sizes="(max-width: 767px) 100vw, 560px" priority={priority} />}
-      <ol className="shop-bundle-games" aria-label="Jogos do pacote">{product.games.map(game => <li key={game.id}><GameCover code={game.code} name={game.name} sizes="88px" /><span>{game.name}</span></li>)}</ol>
+      <ol className="shop-bundle-games" aria-label="Jogos do pacote">{product.games.map(game => <li key={game.id}><span className="pack-game-name">{game.name}</span>{playStyle(game) && <span className="pack-game-kind">{playStyle(game)}</span>}</li>)}</ol>
     </div>
     <div className="shop-bundle-intro"><h2 id={`bundle-${product.slug}`}>{product.shopHeadline || product.title}</h2><p className="shop-bundle-name">{product.title}</p>
       <ul className="shop-includes">{product.contents.map(line => <li key={line}>{line}</li>)}</ul>
