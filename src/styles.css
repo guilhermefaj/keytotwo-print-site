@@ -388,8 +388,7 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .reading-page .print-guide p { margin: 0; font-size: var(--text-small); color: var(--color-ink-soft); }
 .reading-page .help-subtitle { font-size: var(--text-title); margin: 36px 0 16px; }
 .help-game-needs { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-md); }
-.help-game-needs li { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: var(--space-md); align-items: center; padding-bottom: var(--space-md); border-bottom: var(--line-dot); }
-.help-game-needs .game-cover { padding: 0; border-width: 1.5px; border-radius: var(--radius-sm); }
+.help-game-needs li { padding-bottom: var(--space-md); border-bottom: var(--line-rule); }
 .help-game-needs h4 { font-family: var(--font-display); font-size: var(--text-title-sm); margin: 0 0 4px; }
 .reading-page .help-game-needs p { margin: 0; font-size: var(--text-small); color: var(--color-ink-soft); }
 .support-card { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: var(--space-md); padding: var(--space-lg); border: var(--line-card); border-radius: var(--radius-md); margin-top: var(--space-lg); }
@@ -400,7 +399,6 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .help-topics ul { grid-template-columns: minmax(0, 1fr); }
   .support-card { grid-template-columns: 24px minmax(0, 1fr); }
   .support-card .button { grid-column: 1 / -1; }
-  .help-game-needs li { grid-template-columns: 88px minmax(0, 1fr); }
 }
 .legal-pending { margin-block: var(--space-md); }
 

@@ -105,20 +105,21 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await capture(page, `carrinho-vazio-${width}`); await axe(page)
 })
 
-test('vitrine curta com três jogos na home; carrossel e relatos só por ação do usuário no celular', async ({ page }) => {
+test('vitrine com os jogos do pacote na home; carrossel e relatos só por ação do usuário no celular', async ({ page }) => {
   await page.goto('/')
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  // Vitrine (decisão 9): o pacote e até 3 jogos; a folha completa dos 5 ficou só na Loja.
+  // Vitrine: o pacote e os 5 jogos dele (responsável, 2026-10-24; antes, só os 3 primeiros). Os cards com compra ficam na Loja.
   // Fileira de capas clicáveis (Fase 2): cada jogo leva à própria página, sem card completo.
-  await expect(page.locator('.shop-showcase .cover-tile')).toHaveCount(3)
+  await expect(page.locator('.shop-showcase .cover-tile')).toHaveCount(5)
   // Capa oficial dos jogos confirmados (a tipográfica fica para quem não tem arte). Nunca a prévia do PDF.
-  await expect(page.locator('.shop-showcase .cover-tile-name')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura'])
-  await expect(page.locator('.shop-showcase .cover-tile .game-cover-art img')).toHaveCount(3)
-  expect(await page.locator('.shop-showcase .cover-tile a').evaluateAll(links => links.map(link => link.getAttribute('href')))).toEqual(['/loja/rabisque-e-adivinhe', '/loja/tabuleiro-da-sorte', '/loja/o-sumico-de-rapadura'])
+  await expect(page.locator('.shop-showcase .cover-tile-name')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura', 'A Rota da Fornalha', 'Retrospectiva a Dois'])
+  await expect(page.locator('.shop-showcase .cover-tile .game-cover-art img')).toHaveCount(5)
+  expect(await page.locator('.shop-showcase .cover-tile a').evaluateAll(links => links.map(link => link.getAttribute('href')))).toEqual(['/loja/rabisque-e-adivinhe', '/loja/tabuleiro-da-sorte', '/loja/o-sumico-de-rapadura', '/loja/a-rota-da-fornalha', '/loja/retrospectiva-a-dois'])
   // O pacote tem a capa própria (Coleção KeyToTwo: Fundadores).
   await expect(page.locator('.shop-showcase .shop-bundle-side > .game-cover-art img')).toHaveAttribute('src', '/media/games/p001-capa-640.webp')
-  // Sob a capa do pacote, as miniaturas dos 5 jogos dele, sem faixa de cor (2026-10-23: as capas já têm a identidade).
-  await expect(page.locator('.shop-showcase .shop-bundle-games .game-cover-art')).toHaveCount(5)
+  // Sob a capa do pacote, os 5 jogos dele com o jeito de jogar, sem miniatura (2026-10-24: a de 88 px não se lia).
+  await expect(page.locator('.shop-showcase .shop-bundle-games .pack-game-name')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura', 'A Rota da Fornalha', 'Retrospectiva a Dois'])
+  await expect(page.locator('.shop-showcase .shop-bundle-games .game-cover')).toHaveCount(0)
   await expect(page.locator('.shop-showcase .game-cover[data-accent]')).toHaveCount(0)
   await expect(page.locator('.shop-showcase .game-cover-type')).toHaveCount(0)
   await expect(page.locator('.shop-showcase img[src*="/media/experience/j001-page"]')).toHaveCount(0)

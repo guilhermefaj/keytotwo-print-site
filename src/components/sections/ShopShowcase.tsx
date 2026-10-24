@@ -11,7 +11,7 @@ import { SnapCarousel } from '../ui/SnapCarousel'
 
 // Vitrine do Início (decisão 9 do responsável): o pacote em destaque e uma fileira de capas clicáveis
 // que levam à página de cada jogo. Os cards completos, com compra, ficam na Loja.
-const showcaseGames = packageGames.filter(game => game.confirmed).slice(0, 3)
+const showcaseGames = packageGames.filter(game => game.confirmed)
 
 // Preço do avulso só quando o /catalog confirma; sem ele, o jogo se apresenta como parte do pacote.
 function TilePrice({ code }: { code: string }) {
@@ -27,7 +27,7 @@ function CoverTile({ game, order }: { game: Game; order: number }) {
   const page = single ?? bundle
   return <article className="cover-tile" data-shop-game={game.id} style={{ '--tile-order': order } as CSSProperties}>
     <Link className="cover-tile-link" to={page ? `/loja/${page.slug}` : '/loja'}>
-      <GameCover code={game.code} name={game.name} sizes="(max-width: 767px) 78vw, 360px" />
+      <GameCover code={game.code} name={game.name} sizes="(max-width: 767px) 78vw, (max-width: 1023px) 32vw, 220px" />
       <span className="cover-tile-name">{game.name}</span>
       <span className="cover-tile-summary">{game.summary}</span>
       {game.code && <TilePrice code={game.code} />}

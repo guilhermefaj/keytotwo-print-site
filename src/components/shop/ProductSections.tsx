@@ -1,9 +1,8 @@
 import { Link } from 'react-router'
 import { IconBallpen, IconBandage, IconBlade, IconBottle, IconBulb, IconCalendarEvent, IconCup, IconDeviceMobile, IconFile, IconHourglass, IconPencil, IconPrinter, IconScissors, type TablerIcon } from '@tabler/icons-react'
-import { needLabels, type Game, type Need } from '../../content/games'
+import { needLabels, playStyle, type Game, type Need } from '../../content/games'
 import type { Product } from '../../content/products'
 import { refundNotice } from '../../content/legal'
-import { GameCover } from '../account/GameCover'
 import { Icon } from '../ui/Icon'
 
 const needIcons: Record<Need, TablerIcon> = {
@@ -59,6 +58,6 @@ export function ProductPackage({ game, bundle }: { game: Game; bundle: Product }
       <p>A {bundle.title} traz {game.name}{list ? <> junto com {list}</> : null}, todos num só pedido.</p>
       <Link className="inline-link" to={`/loja/${bundle.slug}`} aria-label={`Ver o pacote: ${bundle.title}`}>Ver o pacote</Link>
     </div>
-    <ul className="product-package-covers" aria-label={`Jogos do pacote ${bundle.title}`}>{bundle.games.map(item => <li key={item.id}><GameCover code={item.code} name={item.name} sizes="88px" /><span>{item.name}</span></li>)}</ul>
+    <ul className="product-package-covers" aria-label={`Jogos do pacote ${bundle.title}`}>{bundle.games.map(item => <li key={item.id}><span className="pack-game-name">{item.name}</span>{playStyle(item) && <span className="pack-game-kind">{playStyle(item)}</span>}</li>)}</ul>
   </section>
 }
