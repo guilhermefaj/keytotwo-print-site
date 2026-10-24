@@ -33,7 +33,7 @@
 .game-acquired { margin: 12px 0 0; text-align: center; color: var(--color-ink-soft); font-size: var(--text-caption); line-height: 1.5; }
 .portal-pending { padding: 24px; margin-bottom: 32px; border: 1.5px solid var(--color-ink-soft); border-radius: var(--radius-md); }
 .portal-pending h2 { margin: 0 0 12px; }
-.portal-empty { display: flex; align-items: center; justify-content: center; gap: 48px; min-height: 360px; padding: 32px; border: var(--line-card); border-radius: var(--radius-lg); }
+.portal-empty { display: flex; align-items: center; justify-content: center; gap: 48px; min-height: 360px; padding: 32px; border: var(--line-card); border-radius: var(--radius-md); }
 .portal-empty > div { max-width: 360px; min-width: 0; }
 .portal-empty h2 { font-size: var(--text-headline-sm); margin: 0 0 16px; }
 .portal-empty p { margin: 0 0 24px; line-height: 1.6; }

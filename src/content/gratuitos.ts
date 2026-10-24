@@ -4,7 +4,6 @@ export const instagram = { handle: '@keytotwo', href: 'https://www.instagram.com
 export const tiktok = { handle: '@keytotwo', href: 'https://www.tiktok.com/@keytotwo' }
 
 export const gratuitos = {
-  tag: 'Gratuitos',
   title: 'Dois jogos de graça para começar.',
   lead: 'Imprimam em casa e joguem quantas vezes quiserem. É o jeito mais fácil de conhecer a KeyToTwo e de entrar para a comunidade que ajuda a escolher os próximos jogos.',
   // Nível 1 (conta e consentimento): "você", sem humor. O aviso de destaque atende ao art. 9º, § 3º, da LGPD.
@@ -17,7 +16,6 @@ export const gratuitos = {
     unlocked: 'Os jogos estão liberados na sua conta. É só baixar.',
   },
   community: {
-    tag: 'Comunidade',
     title: 'A KeyToTwo cresce com quem joga.',
     paragraphs: [
       'Cada jogo daqui existe para tirar duas pessoas do piloto automático. Quem diz se deu certo é quem joga.',

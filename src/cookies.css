@@ -1,6 +1,6 @@
 /* Aviso de cookies (DESIGN.md › Aviso de cookies): um recorte de papel com a borda tracejada, preso no canto da tela,
    com o Kito comendo o cookie dele. Só tokens da marca; as migalhas são Marca-texto. */
-.cookie-notice { position: fixed; z-index: 60; left: 12px; right: 12px; bottom: 12px; display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; max-width: 460px; margin-bottom: env(safe-area-inset-bottom); padding: 20px 20px 20px 14px; background: var(--color-paper); color: var(--color-ink); border: 2px dashed var(--color-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-menu); animation: cookie-notice-in 280ms steps(4) both; }
+.cookie-notice { position: fixed; z-index: 60; left: 12px; right: 12px; bottom: 12px; display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; max-width: 460px; margin-bottom: env(safe-area-inset-bottom); padding: 20px 20px 20px 14px; background: var(--color-paper); color: var(--color-ink); border: var(--line-card-quiet); border-radius: var(--radius-md); box-shadow: var(--shadow-menu); animation: cookie-notice-in 280ms steps(4) both; }
 .cookie-notice-art { position: relative; width: 94px; }
 .cookie-notice-art img { display: block; width: 94px; height: auto; image-rendering: pixelated; animation: kito-chew 900ms steps(1) infinite; }
 .cookie-crumbs i { position: absolute; top: 58px; width: 4px; height: 4px; background: var(--color-highlight); opacity: 0; animation: cookie-crumb 1800ms steps(6) infinite; }

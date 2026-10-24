@@ -12,7 +12,7 @@
 /* Folha de cartas: os jogos lado a lado com calhas tracejadas; carrossel só abaixo de 768 px. */
 .games-carousel .snap-track { grid-auto-flow: initial; grid-auto-columns: initial; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; overflow: visible; padding: 0; scroll-snap-type: none; }
 .games-carousel .carousel-controls { display: none; }
-.package-game { margin: 0; padding: 14px; min-width: 0; border-right: var(--line-cut); }
+.package-game { margin: 0; padding: 14px; min-width: 0; border-right: var(--line-rule); }
 .package-game:last-child { border-right: 0; }
 .package-game-copy { padding: 12px 0 0; }
 .package-game h3 { font-size: var(--text-title-sm); margin: 0 0 6px; }
@@ -31,8 +31,8 @@
 @media (max-width: 1050px) {
   .games-carousel .snap-track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .package-game { border-right: 0; }
-  .package-game:nth-child(-n+3) { border-bottom: var(--line-cut); }
-  .package-game:nth-child(even) { border-right: var(--line-cut); }
+  .package-game:nth-child(-n+3) { border-bottom: var(--line-rule); }
+  .package-game:nth-child(even) { border-right: var(--line-rule); }
   .package-game:first-child { grid-column: 1 / -1; display: grid; grid-template-columns: 40% minmax(0, 1fr); gap: 16px; align-items: center; }
   .package-game:first-child .package-game-copy { padding: 0; }
 }

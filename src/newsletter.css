@@ -1,5 +1,5 @@
 /* Bloco de newsletter (rodapé, confirmação, post). Tokens em styles.css. */
-.newsletter { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); gap: 64px; padding: clamp(24px, 4vw, 48px); border: var(--line-card); border-radius: var(--radius-lg); background: var(--color-paper); color: var(--color-ink); text-align: left; }
+.newsletter { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); gap: 64px; padding: clamp(24px, 4vw, 48px); border: var(--line-card); border-radius: var(--radius-md); background: var(--color-paper); color: var(--color-ink); text-align: left; }
 .newsletter h2, .site-footer .newsletter h2 { font-family: var(--font-display); font-size: var(--text-headline-sm); line-height: 1.12; letter-spacing: var(--tracking-headline); margin: 0 0 16px; max-width: 17ch; }
 .newsletter-intro > p:last-child { line-height: 1.6; margin: 0; max-width: 36ch; }
 .newsletter .eyebrow { margin: 0 0 12px; }
