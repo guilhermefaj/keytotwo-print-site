@@ -4,17 +4,13 @@ import { SignOut } from './Screen'
 import { useSession } from './session'
 import { siteUrl } from './supabase'
 
-// As seções do admin. As que ainda não existem ficam no grupo "Em breve" e levam a uma página que diz o que vem.
+// As seções do admin (as quatro fases do plano de 2026-10-23 existem desde a Fase 3, 2026-10-24).
 const sections = [
-  { to: '/', label: 'Métricas', icon: IconChartBar, ready: true },
-  { to: '/blog', label: 'Blog', icon: IconArticle, ready: true },
-  { to: '/pedidos', label: 'Pedidos e reembolsos', icon: IconReceipt2, ready: false },
-  { to: '/usuarios', label: 'Usuários', icon: IconUsers, ready: true },
+  { to: '/', label: 'Métricas', icon: IconChartBar },
+  { to: '/blog', label: 'Blog', icon: IconArticle },
+  { to: '/pedidos', label: 'Pedidos e reembolsos', icon: IconReceipt2 },
+  { to: '/usuarios', label: 'Usuários', icon: IconUsers },
 ] as const
-
-const items = (ready: boolean) => sections.filter(section => section.ready === ready).map(({ to, label, icon: Icon }) => <li key={to}>
-  <NavLink className="sidebar-item" to={to} end={to === '/'}><Icon aria-hidden="true" size={18} stroke={1.5} /><span>{label}</span></NavLink>
-</li>)
 
 export function Layout() {
   const session = useSession()
@@ -23,9 +19,9 @@ export function Layout() {
     <aside className="sidebar">
       <p className="sidebar-brand"><strong>KeyToTwo</strong><span>Admin</span></p>
       <nav aria-label="Seções do admin">
-        <ul>{items(true)}</ul>
-        <p className="sidebar-group" id="secoes-em-breve">Em breve</p>
-        <ul aria-labelledby="secoes-em-breve">{items(false)}</ul>
+        <ul>{sections.map(({ to, label, icon: Icon }) => <li key={to}>
+          <NavLink className="sidebar-item" to={to} end={to === '/'}><Icon aria-hidden="true" size={18} stroke={1.5} /><span>{label}</span></NavLink>
+        </li>)}</ul>
       </nav>
       <div className="sidebar-account">
         <p title={session.user.email}>{session.user.email}</p>

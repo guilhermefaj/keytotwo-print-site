@@ -605,8 +605,15 @@ select pg_temp.assert('reembolso: applied, direitos revogados por refund, refund
   and (select count(*) = 1 and bool_and(status = 'revoked' and revoke_reason = 'refund' and revoked_at is not null) from public.entitlements where order_id = pg_temp.oid('kref'))
   and (select status = 'refunded' and refunded_at is not null and paid_at is not null from public.orders where id = pg_temp.oid('kref'))
   and (select source = 'reconcile' and reason = 'reembolso manual' from public.order_events where order_id = pg_temp.oid('kref') order by id desc limit 1));
-select pg_temp.assert('reembolso: cancela a entrega da fila e a biblioteca fica vazia', (select status = 'canceled' and skip_reason = 'entitlement_revoked' from public.email_outbox where order_id = pg_temp.oid('kref'))
+select pg_temp.assert('reembolso: cancela a entrega da fila e a biblioteca fica vazia', (select status = 'canceled' and skip_reason = 'entitlement_revoked' from public.email_outbox where order_id = pg_temp.oid('kref') and kind = 'delivery')
   and (select public.get_library(pg_temp.uid('kref'))->'games' = '[]'::jsonb));
+-- Fase 3 (2026-10-24): o reembolso, por qualquer caminho, põe na fila um aviso transacional, um por pedido.
+select pg_temp.assert('reembolso: o aviso de reembolso entra na fila com o código, o valor e os produtos',
+  (select count(*) = 1 and bool_and(status = 'queued' and category = 'transactional' and dedupe_key = 'refund:' || pg_temp.oid('kref')
+                                    and payload->>'order_ref' = private.order_ref(pg_temp.oid('kref'))
+                                    and (payload->>'amount_total')::bigint = 1000 and payload->>'currency' = 'brl'
+                                    and jsonb_array_length(payload->'items') = 1)
+     from public.email_outbox where order_id = pg_temp.oid('kref') and kind = 'refund'));
 select pg_temp.assert('reembolso é terminal: pagar, contestar e liberar viram ignored',
   (select (select j->>'outcome' from res where k = 'r2') = 'ignored' and (select j->>'outcome' from res where k = 'r3') = 'ignored' and (select j->>'outcome' from res where k = 'r4') = 'ignored'));
 select pg_temp.i5('reembolso: I-5 vale');

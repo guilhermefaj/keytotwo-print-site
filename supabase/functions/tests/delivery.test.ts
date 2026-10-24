@@ -191,6 +191,25 @@ contractTest('email-dispatch: presente (gift, 2026-10-23) com os mesmos botões 
   assertEquals([...mail.Text.matchAll(/\/functions\/v1\/api\/d\/[A-Za-z0-9_.-]+/g)].length, 2)
 })
 
+contractTest('email-dispatch: aviso de reembolso (refund, 2026-10-24) com o pedido, os produtos e o valor, sem botão de baixar', async () => {
+  Deno.env.set('EMAIL_MODE', 'log')
+  dispatchRpc([{ ...DELIVERY_ROW, kind: 'refund', payload: { order_ref: 'A1B2C3D4', amount_total: 2990, currency: 'brl', items: [{ code: 'P001', name: 'Pacote <Um>' }] } }])
+  onExternal(() => ok({ ID: 'mailpit-3' }))
+  const { result } = await captureErrors(async () => await (await dispatchRequest({ outbox_id: OUTBOX_ID })).json())
+  assertEquals(result, { claimed: 1, sent: 1, failed: 0, rejected: 0 })
+  const mail = externalCalls[0].body as { Subject: string; HTML: string; Text: string }
+  assertEquals(mail.Subject, 'Reembolso do pedido A1B2C3D4')
+  assert(mail.Text.includes('Fizemos o reembolso do pedido A1B2C3D4 (Pacote <Um>). O valor de R$ 29,90 volta pelo mesmo meio de pagamento.'))
+  assert(mail.Text.includes('Os jogos deste pedido saíram de Meus jogos, e os links de baixar não funcionam mais.'))
+  assert(mail.HTML.includes('Pacote &lt;Um&gt;') && !mail.HTML.includes('Pacote <Um>'))
+  assert(!/\/d\//.test(mail.Text), 'o aviso não tem link de baixar')
+
+  // sem valor na fotografia: recusa definitiva, não tenta de novo
+  dispatchRpc([{ ...DELIVERY_ROW, kind: 'refund', payload: { order_ref: 'A1B2C3D4' } }])
+  await captureErrors(async () => await (await dispatchRequest({ outbox_id: OUTBOX_ID })).json())
+  assertEquals([rpcCalls[1].args.p_status, rpcCalls[1].args.p_error], ['rejected', 'reembolso_sem_valor'])
+})
+
 contractTest('email-dispatch modo brevo: chave v3, lista de teste, recusa definitiva e falha transitória', async () => {
   Deno.env.set('EMAIL_MODE', 'brevo')
   const run = async () => {

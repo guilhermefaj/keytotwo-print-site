@@ -25,7 +25,7 @@ export function TeamPage() {
     {team && <ul className="plain-list" aria-label="Admins">
       {team.users.map(user => <TeamRow key={user.id} user={user} self={user.id === session.user.id} onDone={done} />)}
     </ul>}
-    <section className="user-section" aria-labelledby="adicionar-titulo">
+    <section className="detail-section" aria-labelledby="adicionar-titulo">
       <h2 id="adicionar-titulo">Adicionar à equipe</h2>
       <AddAdmin onDone={done} />
     </section>
