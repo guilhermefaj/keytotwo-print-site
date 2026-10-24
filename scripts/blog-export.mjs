@@ -1,5 +1,5 @@
 // Blog no banco (2026-10-23): antes do build, traz os posts publicados (GET /blog/posts da API) para content/blog e as
-// imagens deles, do bucket público, para public/images/blog. Só os builds da VPS rodam isto (CONTENT_SOURCE=api no
+// imagens deles, do bucket público, para public/images/blog. Só os builds da VPS rodam isto (BLOG_SOURCE=api no
 // Dockerfile); fora dela, o site usa os arquivos do repositório. A versão do que veio vai para /blog/versao.json, que o
 // admin compara com a do banco. Qualquer falha (rede, post inválido, imagem ausente) para o build: o site no ar não muda.
 // Post com capa ganha a imagem de compartilhamento (JPEG 1200×630, recorte central, em /images/blog/og/<endereço>.jpg):

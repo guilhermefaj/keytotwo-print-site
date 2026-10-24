@@ -29,7 +29,7 @@ main() {
   docker build --pull --quiet -t "keytotwo-site:$sha" \
     --build-arg VITE_SITE_STAGE --build-arg VITE_SITE_URL --build-arg VITE_SUPABASE_URL \
     --build-arg VITE_SUPABASE_PUBLISHABLE_KEY --build-arg VITE_STRIPE_PUBLISHABLE_KEY --build-arg VITE_CHECKOUT_MODE \
-    --build-arg CONTENT_SOURCE=api --build-arg BLOG_VERSION="$blog" --build-arg CATALOG_VERSION="$catalog" \
+    --build-arg BLOG_SOURCE=api --build-arg BLOG_VERSION="$blog" --build-arg CATALOG_VERSION="$catalog" \
     "$base/repo" >/dev/null
 
   # O commit vira a tag em uso; para voltar, basta pôr um commit anterior no IMAGE_TAG e rodar o compose de novo.

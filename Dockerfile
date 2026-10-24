@@ -22,13 +22,14 @@ ARG VITE_SUPABASE_PUBLISHABLE_KEY
 ARG VITE_STRIPE_PUBLISHABLE_KEY
 ARG VITE_CHECKOUT_MODE
 ARG VITE_TERMS_VERSION
-# Content from the database (blog 2026-10-23, catalog 2026-10-24): on the VPS (CONTENT_SOURCE=api) the published posts and
+# Content from the database (blog 2026-10-23, catalog 2026-10-24): on the VPS (BLOG_SOURCE=api; the name predates the
+# catalog and stays, since the VPS rebuilds older commits with newer deploy scripts and vice versa) the published posts and
 # the catalog on sale come from the API and replace content/blog and src/content/catalog-snapshot.ts. The versions change
 # with every publish or catalog change, so only the steps below run again (deploy/blog/vigiar.sh).
-ARG CONTENT_SOURCE
+ARG BLOG_SOURCE
 ARG BLOG_VERSION
 ARG CATALOG_VERSION
-RUN if [ "$CONTENT_SOURCE" = api ]; then node scripts/blog-export.mjs && node scripts/catalog-export.mjs; fi \
+RUN if [ "$BLOG_SOURCE" = api ]; then node scripts/blog-export.mjs && node scripts/catalog-export.mjs; fi \
     && node scripts/check-release.mjs \
     && npm run build \
     && node scripts/check-release.mjs --built

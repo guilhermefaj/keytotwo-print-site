@@ -32,7 +32,7 @@ main() {
   docker build --pull --quiet -t "keytotwo-site:live-$sha" \
     --build-arg VITE_SITE_STAGE --build-arg VITE_SITE_URL --build-arg VITE_SUPABASE_URL \
     --build-arg VITE_SUPABASE_PUBLISHABLE_KEY --build-arg VITE_STRIPE_PUBLISHABLE_KEY --build-arg VITE_CHECKOUT_MODE \
-    --build-arg VITE_TERMS_VERSION --build-arg CONTENT_SOURCE=api --build-arg BLOG_VERSION="$blog" --build-arg CATALOG_VERSION="$catalog" \
+    --build-arg VITE_TERMS_VERSION --build-arg BLOG_SOURCE=api --build-arg BLOG_VERSION="$blog" --build-arg CATALOG_VERSION="$catalog" \
     "$base/repo" >/dev/null
 
   # Para voltar, basta pôr um live-<commit> anterior no IMAGE_TAG e rodar o compose de novo.

@@ -1,6 +1,6 @@
 // Catálogo no banco (2026-10-24): antes do build, traz o catálogo à venda (GET /catalog da API: o preço da Stripe, o
 // riscado da promoção e os jogos de cada produto, na ordem do banco) para src/content/catalog-snapshot.ts. Só os builds
-// da VPS rodam isto (CONTENT_SOURCE=api no Dockerfile); fora dela, o site usa o retrato do repositório. A versão vai
+// da VPS rodam isto (BLOG_SOURCE=api no Dockerfile); fora dela, o site usa o retrato do repositório. A versão vai
 // para /catalogo/versao.json: o vigia da VPS compara com a do banco, e o admin diz se a loja está em dia. A versão é lida
 // antes do catálogo: se ele mudar no meio, a versão gravada fica para trás e o vigia reconstrói de novo. Qualquer falha
 // para o build: a loja no ar não muda.

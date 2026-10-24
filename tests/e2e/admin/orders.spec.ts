@@ -88,7 +88,7 @@ test('pedidos: a seção está pronta na barra lateral, sem o grupo "Em breve"',
   await ordersApi(page)
   await page.goto('/pedidos')
   const nav = page.getByRole('navigation', { name: 'Seções do admin' })
-  await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Atenção', 'Blog', 'Pedidos e reembolsos', 'Catálogo', 'Usuários'])
+  await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Atenção', 'Pedidos e reembolsos', 'Catálogo', 'Usuários', 'Blog'])
   await expect(nav.getByText('Em breve')).toHaveCount(0)
   await expect(nav.getByRole('link', { name: 'Pedidos e reembolsos' })).toHaveAttribute('aria-current', 'page')
 })

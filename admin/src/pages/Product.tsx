@@ -58,8 +58,10 @@ function ProductPage({ code }: { code: string }) {
           <a className="text-link" href={stripePriceUrl(product.stripe_price_id, list.livemode)} target="_blank" rel="noopener">{product.stripe_price_id}<IconExternalLink aria-hidden="true" size={14} stroke={1.75} /><span className="sr-only"> (abre a Stripe em nova aba)</span></a>
         </Fact>}
       </dl>
-      {product.price && <PriceChange product={product} onDone={done} post={post} />}
-      <ListPrice product={product} onDone={done} post={post} />
+      <div className="action-row">
+        {product.price && <PriceChange product={product} onDone={done} post={post} />}
+        <ListPrice product={product} onDone={done} post={post} />
+      </div>
     </Section>
 
     {product.kind === 'bundle' && <PackGames product={product} list={list} onDone={done} post={post} />}

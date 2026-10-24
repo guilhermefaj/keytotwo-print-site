@@ -10,8 +10,8 @@ import { LoadError } from '../LoadError'
 import { Fact, Section } from '../Detail'
 
 // Ficha de um pedido (2026-10-24, Fase 3): valores, pessoa, itens, jogos, linha do tempo, e-mails e o histórico do
-// admin, com as ações: reenviar o acesso, conferir com a Stripe (pedido aberto aqui) e reembolsar o pedido inteiro.
-// Cada ação que muda algo pede o motivo; no fim, a ficha é buscada de novo.
+// admin, com as ações logo depois dos valores: reenviar o acesso, conferir com a Stripe (pedido aberto aqui) e
+// reembolsar o pedido inteiro. Cada ação que muda algo pede o motivo; no fim, a ficha é buscada de novo.
 export function OrderRoute() {
   const { id } = useParams()
   return <OrderPage key={id} id={id!} />
@@ -75,6 +75,16 @@ function OrderPage({ id }: { id: string }) {
       </dl>
     </Section>
 
+    {(order.deliverable || order.reconcilable || order.refundable) && <section className="danger-zone" aria-labelledby="acoes-pedido">
+      <h2 id="acoes-pedido">Ações</h2>
+      {order.deliverable && person.exists && person.id && <Resend order={order} userId={person.id} onDone={done} />}
+      {order.reconcilable && <ReasonAction label="Conferir com a Stripe" confirm="Conferir agora"
+        intro="Busca a sessão de pagamento na Stripe e aplica o que ela diz, como o aviso da Stripe faria: paga libera os jogos e manda o acesso; sem pagamento, nada muda."
+        onConfirm={reason => api<{ status: string }>(`/admin/orders/${order.id}/reconcile`, { method: 'POST', body: { reason } })
+          .then(result => done(`Conferido com a Stripe: o pedido está ${orderStatusLabel({ kind: order.kind, status: result.status }).toLowerCase()}.`))} />}
+      {order.refundable && <Refund order={order} onDone={done} />}
+    </section>}
+
     <Section id="itens" title="Itens" count={detail.items.length}>
       <ul className="plain-list">{detail.items.map(item => <li key={item.code} className="plain-row">
         <div className="plain-row-main"><strong>{item.name ?? item.code}</strong><span className="plain-row-sub">{item.kind === 'bundle' ? 'Pacote' : 'Jogo'} · {item.code}</span></div>
@@ -127,15 +137,6 @@ function OrderPage({ id }: { id: string }) {
         </li>)}</ul>}
     </Section>
 
-    {(order.deliverable || order.reconcilable || order.refundable) && <section className="danger-zone" aria-labelledby="acoes-pedido">
-      <h2 id="acoes-pedido">Ações</h2>
-      {order.deliverable && person.exists && person.id && <Resend order={order} userId={person.id} onDone={done} />}
-      {order.reconcilable && <ReasonAction label="Conferir com a Stripe" confirm="Conferir agora"
-        intro="Busca a sessão de pagamento na Stripe e aplica o que ela diz, como o aviso da Stripe faria: paga libera os jogos e manda o acesso; sem pagamento, nada muda."
-        onConfirm={reason => api<{ status: string }>(`/admin/orders/${order.id}/reconcile`, { method: 'POST', body: { reason } })
-          .then(result => done(`Conferido com a Stripe: o pedido está ${orderStatusLabel({ kind: order.kind, status: result.status }).toLowerCase()}.`))} />}
-      {order.refundable && <Refund order={order} onDone={done} />}
-    </section>}
   </>
 }
 
