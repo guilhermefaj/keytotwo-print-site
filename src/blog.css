@@ -76,7 +76,7 @@
 .blog-prose code { font-size: .875em; }
 .blog-prose table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-bottom: 24px; }
 .blog-prose :is(th, td) { padding: 8px; border: var(--line-rule); text-align: left; }
-.blog-package { margin-block: 48px 24px; padding: clamp(20px, 4vw, 32px); border: var(--line-card); border-radius: var(--radius-lg); }
+.blog-package { margin-block: 48px 24px; padding: clamp(20px, 4vw, 32px); border: var(--line-card); border-radius: var(--radius-md); }
 .blog-package h2 { margin: 0 0 12px; font-size: var(--text-title-lg); }
 .blog-package p { margin: 0 0 24px; }
 .blog-package .button { max-width: 100%; }

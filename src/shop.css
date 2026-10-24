@@ -9,7 +9,9 @@
 .shop-bundle { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--space-2xl); align-items: start; border: var(--line-card-quiet); border-radius: var(--radius-md); padding: var(--space-xl); background: var(--color-paper); }
 .shop-bundle h2 { font-size: var(--text-headline-sm); margin: 0 0 var(--space-xs); }
 .shop-bundle-name { color: var(--color-ink-soft); margin: 0 0 var(--space-lg); }
-.shop-includes { padding-left: var(--space-lg); margin: 0 0 var(--space-lg); }
+.shop-includes { list-style: none; padding: 0; margin: 0 0 var(--space-lg); }
+.shop-includes li { position: relative; padding-left: 28px; }
+.shop-includes li::before { content: ''; position: absolute; left: 0; top: .2em; width: 18px; height: 18px; background: var(--color-deep-teal); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5l10 -10'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5l10 -10'/%3E%3C/svg%3E") center / contain no-repeat; }
 .shop-includes li + li { margin-top: var(--space-xs); }
 .shop-bundle-side { display: grid; gap: var(--space-md); min-width: 0; }
 .shop-bundle-intro { align-self: center; }
@@ -44,10 +46,8 @@
 .shop-game-facts { margin: 0 0 var(--space-md); }
 .shop-game-facts > div { padding-block: 4px; }
 [data-variant="included"] .shop-game-body > .shop-details { margin: auto 0 0; }
-.shop-game .shop-soon { align-self: flex-start; margin: auto 0 0; padding: 6px 12px; border: var(--line-cut); border-radius: var(--radius-sm); font-size: var(--text-label); font-weight: 600; }
+.shop-game .shop-soon { align-self: flex-start; margin: auto 0 0; padding: 6px 12px; border: var(--line-card-quiet); border-radius: var(--radius-sm); font-size: var(--text-label); font-weight: 600; }
 /* Card de jogo indefinido (segundo freebie): o quadro tracejado diz "ainda não". */
-.shop-game-soon { border-style: dashed; }
-.shop-game-soon .game-cover { border-bottom-style: dashed; }
 /* Grátis: título à esquerda e cards à direita no desktop; empilha abaixo de 960 px. */
 .shop-freebies { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-xl); align-items: start; }
 .shop-page .shop-freebies { margin-top: var(--space-3xl); }
@@ -59,7 +59,6 @@
 /* Só a largura do texto, com 44 px de alvo pelo padding: o marca-texto acompanha a palavra e a linha. */
 .shop-details { display: block; width: fit-content; margin: var(--space-sm) auto 0; padding-block: 11px; font-size: var(--text-label); }
 /* Nos cards, o link fica com sublinhado contínuo e fino (o tracejado é da folha de recorte). */
-.shop-game .shop-details, .shop-bundle .shop-details { text-decoration-style: solid; text-decoration-thickness: 1px; }
 .shop-price { font-family: var(--font-display); font-size: var(--text-headline-sm); font-weight: 700; letter-spacing: var(--tracking-headline); font-variant-numeric: tabular-nums; margin: 0; }
 .shop-price-note { font-size: var(--text-caption); color: var(--color-ink-soft); margin: var(--space-xs) 0 var(--space-md); }
 /* Promoção (offer.listPrice): o preço de tabela riscado antes do cobrado e o rótulo em Marca-texto. */
@@ -158,14 +157,14 @@
 /* Título e a troca lado a lado no desktop; empilham abaixo de 960 px. */
 .free-top { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--space-2xl); align-items: start; margin-bottom: var(--space-2xl); }
 .free-top .shop-heading { margin-bottom: 0; }
-.free-access { padding: var(--space-xl); border: var(--line-cut); border-radius: var(--radius-lg); }
+.free-access { padding: var(--space-xl); border: var(--line-card-quiet); border-radius: var(--radius-md); }
 .free-access h2 { font-size: var(--text-title-lg); margin: 0 0 var(--space-md); }
 .free-access ol { list-style: decimal; margin: 0 0 var(--space-md); padding-left: var(--space-lg); }
 .free-access li + li { margin-top: var(--space-xs); }
 .free-access > .button, .free-access-action { margin-top: var(--space-md); }
 .free-access-done { margin: var(--space-md) 0 0; font-weight: 600; color: var(--color-deep-teal); }
 .free-games .file-meta { margin: 0 0 var(--space-sm); font-size: var(--text-caption); color: var(--color-ink-soft); }
-.free-community { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2xl); align-items: center; margin-top: var(--space-3xl); padding: var(--space-xl); border: var(--line-card); border-radius: var(--radius-lg); }
+.free-community { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2xl); align-items: center; margin-top: var(--space-3xl); padding: var(--space-xl); border: var(--line-card); border-radius: var(--radius-md); }
 .free-community h2 { font-size: var(--text-headline-sm); margin: var(--space-md) 0; }
 .free-community-copy > p:not(.tag) { max-width: 60ch; margin: 0 0 var(--space-sm); }
 .free-community-invite { font-weight: 600; }

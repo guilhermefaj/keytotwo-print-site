@@ -42,7 +42,7 @@
 .skeleton-item > span { height: 128px; }
 .skeleton-item > div, .skeleton-summary { display: grid; align-content: start; gap: 20px; }
 .skeleton-item > div > span:last-child { width: 60%; }
-.skeleton-summary { padding: 28px; border: var(--line-card); border-radius: var(--radius-lg); }
+.skeleton-summary { padding: 28px; border: var(--line-card); border-radius: var(--radius-md); }
 .skeleton-summary > span:last-child { height: 48px; }
 .purchase-page.confirmation-page { display: block; }
 .purchase-page .confirmation-card { width: 100%; border: 0; padding: 24px 0 56px; }

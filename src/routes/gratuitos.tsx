@@ -22,10 +22,10 @@ export default function Gratuitos() {
   const list = useApiResource<FreeGames>('/free-games', true, deliveryMock)
   const unlocked = deliveryMock || Boolean(session && account.data?.free_games_unlocked)
   const files = new Map(list.data?.games.map(game => [game.code, game.file]))
-  const { tag, title, lead, community } = gratuitos
+  const { title, lead, community } = gratuitos
   return <main id="conteudo" tabIndex={-1} className="free-page content-width">
     <div className="free-top">
-      <header className="shop-heading"><p className="tag">{tag}</p><h1>{title}</h1><p>{lead}</p></header>
+      <header className="shop-heading"><h1>{title}</h1><p>{lead}</p></header>
       <FreeAccess unlocked={unlocked} />
     </div>
     {unlocked && <DataStatus {...list} retry={list.reload} />}
@@ -39,7 +39,6 @@ export default function Gratuitos() {
     })}</ul>
     <section className="free-community" aria-labelledby="comunidade-titulo">
       <div className="free-community-copy">
-        <p className="tag">{community.tag}</p>
         <h2 id="comunidade-titulo">{community.title}</h2>
         {community.paragraphs.map(text => <p key={text}>{text}</p>)}
         <p className="free-community-invite">{community.invite}</p>

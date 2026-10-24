@@ -146,7 +146,6 @@
   /* Folha de recortar: as cartas aparecem empilhadas no meio, como um baralho, e são distribuídas (720 ms, com um
      leve passo além do lugar); as linhas de corte surgem quando elas assentam. */
   [data-reveal="visible"] .step-card { animation: deal-out 720ms cubic-bezier(.2, .9, .3, 1.12) both; animation-delay: calc(var(--reveal-delay, 0ms) + 420ms + var(--deck-order, 0) * 90ms); }
-  [data-reveal="visible"] .step-cut { animation: tile-deal var(--duration-ui) var(--ease-out) both; animation-delay: calc(var(--reveal-delay, 0ms) + 1180ms); }
 }
 @keyframes deal-out { from { transform: translate(var(--deck-x, 0px), var(--deck-y, 0px)) rotate(var(--deck-tilt, 0deg)); } to { transform: rotate(var(--tilt, 0deg)); } }
 @keyframes tile-deal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
