@@ -6,7 +6,7 @@ Pagamento com Checkout Session em `ui_mode: form` (formulário embutido no `/pag
 
 Nenhum valor neste repositório (ele é público). Ficam no arquivo de segredos do responsável e nos segredos das funções no Supabase:
 
-- `STRIPE_SECRET_KEY` (chave restrita `rk_live_…` às permissões usadas), `STRIPE_WEBHOOK_SECRET`, `TERMS_VERSION`, `SITE_URL`, `ALLOWED_ORIGINS` nas funções;
+- `STRIPE_SECRET_KEY` (chave restrita `rk_live_…` às permissões usadas; desde a Fase 3 do admin, 2026-10-24, inclui a **escrita em Reembolsos**, para o reembolso pelo admin), `STRIPE_WEBHOOK_SECRET`, `TERMS_VERSION`, `SITE_URL`, `ALLOWED_ORIGINS` nas funções;
 - `VITE_STRIPE_PUBLISHABLE_KEY` no build do site;
 - o Price de cada produto em `products.stripe_price_id` do banco, por ambiente, nunca versionado.
 

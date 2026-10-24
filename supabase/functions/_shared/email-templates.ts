@@ -15,6 +15,8 @@ export interface OutboxRow {
   payload: {
     order_ref?: string
     cart_version?: number
+    amount_total?: number
+    currency?: string
     items?: Named[]
     games?: (Named & { entitlement_id?: string; game_id?: number })[]
   }
@@ -225,9 +227,33 @@ async function postPurchase(row: OutboxRow): Promise<Message> {
   return { to: row.to_email, subject, html, text, tag: row.kind, headers }
 }
 
+// Reembolso (transacional, 2026-10-24, Fase 3): o pedido inteiro devolvido, pelo admin ou direto na Stripe. Diz o valor,
+// que volta pelo mesmo meio de pagamento, e que os jogos saíram de Meus jogos. O prazo é do banco ou do cartão.
+async function refund(row: OutboxRow): Promise<Message> {
+  const { order_ref: ref, amount_total: amount, currency } = row.payload
+  if (!ref || !Number.isSafeInteger(amount) || !currency) throw new PermanentEmailError('reembolso_sem_valor')
+  const value = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: currency.toUpperCase() }).format(amount! / 100)
+  const names = listNames((row.payload.items ?? []).map(displayName))
+  const help = `${env.siteUrl()}/ajuda`
+  const subject = `Reembolso do pedido ${ref}`
+  const heading = 'Reembolso feito'
+  const intro = `Fizemos o reembolso do pedido ${ref}${names ? ` (${names})` : ''}. O valor de ${value} volta pelo mesmo meio de pagamento.`
+  const timing = 'O prazo para aparecer no extrato ou na fatura depende do banco ou do cartão.'
+  const access = 'Os jogos deste pedido saíram de Meus jogos, e os links de baixar não funcionam mais.'
+  const html = layout(subject, heading, [
+    paragraph(escapeHtml(intro)),
+    paragraph(timing, true),
+    paragraph(access),
+    paragraph(`Precisa de ajuda? ${link(help, help)}`, true),
+  ].join('\n    '))
+  const text = ['KeyToTwo', '', heading, '', intro, '', timing, '', access, '', `Precisa de ajuda? ${help}`, ...textSignature(false)].join('\n')
+  return { to: row.to_email, subject, html, text, tag: row.kind }
+}
+
 const templates: Record<string, (row: OutboxRow) => Promise<Message>> = {
   delivery,
   gift,
+  refund,
   cart_reminder: cartReminder,
   post_purchase: postPurchase,
 }

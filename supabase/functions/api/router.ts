@@ -12,6 +12,7 @@ import { freeDownload, freeGames } from './routes/free.ts'
 import { orderStatus } from './routes/order-status.ts'
 import { unsubscribe, unsubscribePage } from './routes/unsubscribe.ts'
 import { library } from './routes/library.ts'
+import { adminOrder, adminOrders, adminReconcileOrder, adminRefundOrder } from './routes/orders.ts'
 
 type Params = Record<string, string>
 type Handler = (req: Request, url: URL, params: Params) => Response | Promise<Response>
@@ -69,6 +70,10 @@ const routes: Route[] = [
   route('/admin/users/:id/delete', { POST: adminDeleteUser }),
   route('/admin/users/:id/admin', { POST: adminSetAdmin }),
   route('/admin/follow-up', { GET: adminFollowUp }),
+  route('/admin/orders', { GET: adminOrders }),
+  route('/admin/orders/:id', { GET: adminOrder }),
+  route('/admin/orders/:id/refund', { POST: adminRefundOrder }),
+  route('/admin/orders/:id/reconcile', { POST: adminReconcileOrder }),
   route('/blog/posts', { GET: blogPublished }),
   route('/blog/version', { GET: blogVersion }),
 ]

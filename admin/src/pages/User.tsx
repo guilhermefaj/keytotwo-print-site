@@ -1,5 +1,5 @@
 import { IconArrowLeft, IconDownload, IconExternalLink } from '@tabler/icons-react'
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { api, ApiError, apiMessage, useResource } from '../api'
 import { count, formatMoment, money } from '../format'
@@ -9,6 +9,7 @@ import {
 } from '../users'
 import { ReasonAction } from '../ReasonAction'
 import { LoadError } from '../LoadError'
+import { Fact, Section } from '../Detail'
 import { saveJson } from '../../../src/lib/save-json'
 
 // Ficha de uma conta (2026-10-23, Fase 4): conta, jogos, pedidos, novidades, e-mails e o histórico do admin, com as
@@ -129,18 +130,10 @@ const BackToList = () => {
   return <Link className="back-link" to={back ? `/usuarios?${back}` : '/usuarios'}><IconArrowLeft aria-hidden="true" size={18} stroke={1.75} />Todos os usuários</Link>
 }
 
-function Section({ id, title, count: total, children }: { id: string; title: string; count?: number; children: ReactNode }) {
-  return <section className="user-section" aria-labelledby={`secao-${id}`}>
-    <h2 id={`secao-${id}`}>{title}{total !== undefined && <span className="count"> {total}</span>}</h2>
-    {children}
-  </section>
-}
-
-const Fact = ({ label, children }: { label: string; children: ReactNode }) => <div><dt>{label}</dt><dd>{children}</dd></div>
-
 function historyDetail(details: Record<string, unknown> | null) {
   if (!details) return null
-  const parts = [details.product, details.reason].filter((value): value is string => typeof value === 'string')
+  const order = typeof details.order_ref === 'string' ? `pedido ${details.order_ref}` : undefined
+  const parts = [details.product, order, details.reason].filter((value): value is string => typeof value === 'string')
   return parts.length ? <span>: {parts.join(' · ')}</span> : null
 }
 
@@ -180,7 +173,7 @@ function OrderRow({ order, userId, onDone }: { order: UserOrder; userId: string;
     <div className="plain-row-main">
       <strong>{order.items.map(item => item.name ?? item.code).join(', ') || 'Sem itens'}</strong>
       <span className="plain-row-sub">
-        Pedido {order.ref} · {formatMoment(order.created_at)}
+        <Link className="text-link" to={`/pedidos/${order.id}`}>Pedido {order.ref}</Link> · {formatMoment(order.created_at)}
         {order.promotion_code && ` · cupom ${order.promotion_code}`}
         {!order.livemode && ' · teste'}
       </span>

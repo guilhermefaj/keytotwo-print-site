@@ -4,7 +4,8 @@ import { AuthGate } from './AuthGate'
 import { Layout } from './Layout'
 import { BlogPage } from './pages/Blog'
 import { MetricsPage } from './pages/Metrics'
-import { NotFoundPage, SoonPage } from './pages/Soon'
+import { NotFoundPage } from './pages/NotFound'
+import { OrdersPage } from './pages/Orders'
 import { FollowUpPage } from './pages/FollowUp'
 import { TeamPage } from './pages/Team'
 import { UsersPage } from './pages/Users'
@@ -19,7 +20,8 @@ const router = createBrowserRouter([{
     { path: 'blog', element: <BlogPage /> },
     { path: 'blog/novo', lazy: async () => ({ Component: (await import('./pages/BlogEditor')).BlogEditorRoute }) },
     { path: 'blog/:id', lazy: async () => ({ Component: (await import('./pages/BlogEditor')).BlogEditorRoute }) },
-    { path: 'pedidos', element: <SoonPage section="pedidos" /> },
+    { path: 'pedidos', element: <OrdersPage /> },
+    { path: 'pedidos/:id', lazy: async () => ({ Component: (await import('./pages/Order')).OrderRoute }) },
     { path: 'usuarios', element: <UsersPage /> },
     { path: 'usuarios/acompanhamento', element: <FollowUpPage /> },
     { path: 'usuarios/equipe', element: <TeamPage /> },

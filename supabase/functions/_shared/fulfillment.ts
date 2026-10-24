@@ -3,7 +3,7 @@ import { rpcRow } from './admin.ts'
 import { isUuid } from './http.ts'
 import { stripe } from './stripe.ts'
 
-type Source = 'webhook' | 'return_page'
+type Source = 'webhook' | 'return_page' | 'reconcile' | 'admin'
 
 interface EventRef {
   id: string

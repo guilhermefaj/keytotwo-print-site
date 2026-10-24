@@ -60,7 +60,7 @@ export function FollowUpPage() {
 }
 
 function FollowSection<T extends { user_id: string }>({ id, title, hint, list, children }: { id: string; title: string; hint: string; list: FollowUpList<T>; children: (item: T) => ReactNode }) {
-  return <section className="user-section follow-section" id={id} aria-labelledby={`${id}-titulo`} tabIndex={-1}>
+  return <section className="detail-section follow-section" id={id} aria-labelledby={`${id}-titulo`} tabIndex={-1}>
     <h2 id={`${id}-titulo`}>{title}<span className="count"> {count(list.total)}</span></h2>
     <p className="field-help">{hint}</p>
     {list.items.length === 0 ? <p className="status">Ninguém aqui agora.</p>
