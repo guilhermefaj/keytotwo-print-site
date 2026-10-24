@@ -19,10 +19,11 @@ create function pg_temp.out(p_k text) returns text language sql as $$
 $$;
 create function pg_temp.partner(p_slug text) returns uuid language sql as $$ select id from private.partners where slug = p_slug $$;
 create function pg_temp.discount(p_code text) returns private.discounts language sql as $$ select * from private.discounts where code = p_code $$;
--- cupom criado como a API faz depois da Stripe
+-- cupom criado como a API faz depois da Stripe. Devolve "cupom <chave>: <resultado>", nunca "ok" sozinho: o pg_prove
+-- leria a linha como um teste.
 create function pg_temp.new_discount(p_k text, p_body jsonb) returns text language sql as $$
   insert into pg_temp.res select p_k, to_jsonb(r) from public.admin_create_discount(pg_temp.uid('dadm'),
-    p_body, 'coupon_' || lower(p_body->>'code'), 'promo_' || (p_body->>'code'), 'Campanha de teste') r returning j->>'outcome'
+    p_body, 'coupon_' || lower(p_body->>'code'), 'promo_' || (p_body->>'code'), 'Campanha de teste') r returning 'cupom ' || k || ': ' || (j->>'outcome')
 $$;
 
 -- ===== fixtures ====================================================================================
@@ -152,9 +153,9 @@ select pg_temp.assert('indicação: grava o parceiro e as campanhas, sem campo e
   and (select referral = '{"utm_source": "newsletter"}'::jsonb from public.orders where id = pg_temp.oid('velho')));
 
 -- pagamentos: a da Ana sem cupom; a da Bia com o cupom da Ana (vence o link do amigo); a velha do amigo... sem parceiro
-select * from pg_temp.fulfill(pg_temp.oid('link'), array[990]);
-select * from pg_temp.fulfill(pg_temp.oid('codigo'), array[990], '{"code": "ana10", "discount": 99}');
-select * from pg_temp.fulfill(pg_temp.oid('velho'), array[990], '{"code": "BLACK26", "discount": 297}');
+select 'pagamento: ' || f.outcome from pg_temp.fulfill(pg_temp.oid('link'), array[990]) f;
+select 'pagamento: ' || f.outcome from pg_temp.fulfill(pg_temp.oid('codigo'), array[990], '{"code": "ana10", "discount": 99}') f;
+select 'pagamento: ' || f.outcome from pg_temp.fulfill(pg_temp.oid('velho'), array[990], '{"code": "BLACK26", "discount": 297}') f;
 select pg_temp.assert('de quem é a venda: o código do parceiro vence o link; sem parceiro, ninguém',
   private.order_partner((select promotion_code from public.orders where id = pg_temp.oid('codigo')), (select referral from public.orders where id = pg_temp.oid('codigo'))) = pg_temp.partner('ana-souza')
   and private.order_partner(null, (select referral from public.orders where id = pg_temp.oid('link'))) = pg_temp.partner('ana-souza')
