@@ -10,7 +10,7 @@ import { gratuitos, instagram, tiktok } from '../content/gratuitos'
 import { api, apiErrorMessage } from '../lib/api'
 import { useAuth } from '../lib/auth-context'
 import { deliveryMock, fileSize, type FreeGames } from '../lib/downloads'
-import { siteConfig } from '../lib/seo'
+import { siteConfig } from '../lib/site-config'
 import { useShop } from '../lib/shop-context'
 import { useApiResource } from '../lib/use-api-resource'
 

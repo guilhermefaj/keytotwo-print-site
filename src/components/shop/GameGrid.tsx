@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { productPages, products, type Product } from '../../content/products'
+import { bundleFor, productPages, singleFor, type Product } from '../../content/products'
 import { playStyle, type Game } from '../../content/games'
 import { GameCover } from '../account/GameCover'
 import { ProductAvailability } from './ProductAvailability'
@@ -43,7 +43,7 @@ function InPackage({ bundle }: { bundle: Product }) {
 // Jogo ainda indefinido não vira card (decisão do responsável, 2026-10-16).
 export function GameGrid({ games, variant = 'shop', extra }: { games: readonly Game[]; variant?: 'shop' | 'included'; extra?: ReactNode }) {
   return <ul className="shop-game-grid" data-variant={variant}>{games.filter(game => game.confirmed).map(game => {
-    const single = game.code ? products.find(product => product.kind === 'single' && product.code === game.code) : undefined
+    const single = singleFor(game)
     if (variant === 'included') {
       const page = single && productPages.includes(single) ? single : undefined
       return <GameCard key={game.id} game={game} kind={false}>
@@ -51,7 +51,7 @@ export function GameGrid({ games, variant = 'shop', extra }: { games: readonly G
         {page && <Link className="inline-link shop-details" to={`/loja/${page.slug}`} aria-label={`Ver detalhes: ${page.title}`}>Ver detalhes</Link>}
       </GameCard>
     }
-    const bundle = products.find(product => product.kind === 'bundle' && product.availability === 'sale' && product.games.some(item => item.id === game.id))
+    const bundle = bundleFor(game)
     const inPackage = bundle ? <InPackage bundle={bundle} /> : undefined
     return <GameCard key={game.id} game={game}>{single ? <ProductAvailability product={single} fallback={inPackage} /> : inPackage ?? <p className="shop-soon">Em breve</p>}</GameCard>
   })}{extra}</ul>

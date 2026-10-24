@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import { siteConfig } from './seo'
+import { priceDecimal } from './format'
+import { siteConfig } from './site-config'
 
 // GA4 (responsável, 2026-10-22): só no domínio real, só depois do "Aceitar" no aviso de cookies (LGPD: consentimento,
 // Política de privacidade › Cookies). No stage test o aviso aparece para revisão, mas aceitar não carrega nada.
@@ -110,7 +111,7 @@ export const toReais = (cents: number) => Math.round(cents) / 100
 
 // Preço de tabela do conteúdo ("R$ 29,90") em reais.
 export function offerValue(price: string): number | undefined {
-  const value = Number(price.replace(/[^\d,]/g, '').replace(',', '.'))
+  const value = Number(priceDecimal(price))
   return Number.isFinite(value) && value > 0 ? value : undefined
 }
 

@@ -1,5 +1,7 @@
 import { useState, type CSSProperties } from 'react'
-import { apiMessage, count, money, useResource } from '../api'
+import { useResource } from '../api'
+import { count, money } from '../format'
+import { LoadError } from '../LoadError'
 
 // Métricas (GET /admin/metrics, migração 20261021120000): vendas, funil, contas e downloads em 7 ou 30 dias.
 // Veio do /painel da loja (2026-10-21) sem mudar o conteúdo.
@@ -34,7 +36,7 @@ export function MetricsPage() {
       {data && <p className="range">{day(data.since)} a {day(data.until)}, contando hoje{!data.livemode && <> · <strong>vendas do modo de teste da Stripe</strong></>}</p>}
     </div>
     {metrics.loading && <p className="status" role="status">Carregando…</p>}
-    {Boolean(metrics.error) && <div className="status-error" role="alert"><p>{apiMessage(metrics.error)}</p><button className="button button-secondary" type="button" onClick={metrics.reload}>Tentar de novo</button></div>}
+    {Boolean(metrics.error) && <LoadError error={metrics.error} retry={metrics.reload} />}
     {data && <Dashboard data={data} />}
   </>
 }

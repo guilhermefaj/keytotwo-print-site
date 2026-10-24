@@ -1,5 +1,6 @@
 import { IconBrandWhatsapp, IconCheck, IconLink, IconShare } from '@tabler/icons-react'
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type RefObject } from 'react'
+import { useDismiss } from '../../lib/use-dismiss'
 
 // Compartilhar o post (2026-10-23): WhatsApp (link do wa.me, sem script de terceiros), copiar o link e, no aparelho que
 // tem, o compartilhar do sistema. Nada é rastreado. No prerender o botão do sistema não aparece; só depois de carregar.
@@ -70,20 +71,7 @@ export function FloatingShare({ title, url, start, body }: { title: string; url:
     return () => observer.disconnect()
   }, [start, body])
 
-  useEffect(() => {
-    if (!open) return
-    function onKey(event: KeyboardEvent) {
-      if (event.key !== 'Escape') return
-      setOpen(false)
-      toggle.current?.focus()
-    }
-    function onPointer(event: PointerEvent) {
-      if (!root.current?.contains(event.target as Node)) setOpen(false)
-    }
-    document.addEventListener('keydown', onKey)
-    document.addEventListener('pointerdown', onPointer)
-    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onPointer) }
-  }, [open])
+  useDismiss(open, setOpen, root, toggle)
 
   return <div ref={root} className="blog-share-float" data-visible={visible || undefined}>
     {open && <div id={panelId} className="blog-share-float-panel" role="group" aria-label="Opções para compartilhar">

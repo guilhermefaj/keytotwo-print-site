@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { api, ApiError, apiErrorMessage } from '../../lib/api'
 import { supabase } from '../../lib/supabase'
+import { saveJson } from '../../lib/save-json'
 
 // Direitos do titular (Política de privacidade › Seus direitos): cópia dos dados e exclusão da conta, sem e-mail ao atendimento.
 
@@ -14,14 +15,7 @@ export function DataExport() {
     setBusy(true); setError(''); setMessage('')
     try {
       const data = await api<unknown>('/account/export')
-      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `keytotwo-meus-dados-${new Date().toISOString().slice(0, 10)}.json`
-      document.body.append(link)
-      link.click()
-      link.remove()
-      setTimeout(() => URL.revokeObjectURL(url), 10_000)
+      saveJson(data, `keytotwo-meus-dados-${new Date().toISOString().slice(0, 10)}.json`)
       setMessage('Pronto. O arquivo com seus dados foi baixado.')
     } catch (cause) { setError(apiErrorMessage(cause)) }
     finally { setBusy(false) }

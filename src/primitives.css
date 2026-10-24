@@ -1,0 +1,14 @@
+/* Primitivas do site e do admin (DESIGN.md › Buttons): pular para o conteúdo, texto só para leitor de tela, ajuda e
+   erro de campo e os botões primário e secundário. O site importa em app.css; o admin, em admin.css. */
+.skip-link { position: fixed; top: 12px; left: 20px; z-index: 100; padding: 12px 20px; border: 1.5px solid var(--color-ink); border-radius: var(--radius-sm); background: var(--color-paper); font-weight: 600; transform: translateY(-200%); }
+.skip-link:focus { transform: translateY(0); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.field-help { font-size: var(--text-caption); line-height: 1.5; color: var(--color-ink-soft); }
+.form-error { color: var(--color-error); font-weight: 600; }
+.form-error:empty { display: none; }
+.button { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1.5px solid transparent; border-radius: var(--radius-sm); padding: 12px 22px; font-weight: 600; font-size: var(--text-body); line-height: 1.5; text-decoration: none; box-shadow: none; }
+.button-primary { color: var(--color-paper); background: var(--color-deep-teal); }
+.button-primary:hover { background: var(--color-deep-teal-hover); }
+.button-primary:active { background: var(--color-deep-teal-active); }
+.button-secondary { color: var(--color-ink); background: var(--color-paper); border-color: var(--color-ink); }
+.button-secondary:hover { background: var(--color-ink-wash); }

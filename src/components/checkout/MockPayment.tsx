@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { money, type Cart } from '../../lib/api'
+import { type Cart } from '../../lib/api'
+import { money } from '../../lib/format'
 
 // Explicit local demonstration only. Never accepts card details, calls Stripe or grants games.
 export function MockPayment({ cart }: { cart: Cart }) {

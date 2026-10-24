@@ -46,5 +46,3 @@ export function apiErrorMessage(error: unknown) {
   return 'Não deu certo agora. Tente de novo em instantes.'
 }
 
-export const money = (amount: number, currency: string) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(amount / 100)
-export const dateLabel = (value: string) => new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeZone: 'America/Sao_Paulo' }).format(new Date(value))

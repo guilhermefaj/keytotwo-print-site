@@ -1,12 +1,13 @@
 import { CheckoutSteps } from '../components/checkout/CheckoutSteps'
 import { EmptyCart, ItemPrice, PurchaseSkeleton, PurchaseThumbnail } from '../components/checkout/PurchaseUi'
-import { productName, products } from '../content/products'
+import { productByCode, productName } from '../content/products'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { DataStatus } from '../components/account/AccountUi'
 import { StripePayment } from '../components/checkout/StripePayment'
 import { MockPayment } from '../components/checkout/MockPayment'
-import { api, ApiError, money, type Cart } from '../lib/api'
+import { api, ApiError, type Cart } from '../lib/api'
+import { money } from '../lib/format'
 import { checkoutMock, canCheckout, checkoutError, termsVersion } from '../lib/checkout'
 import { useShop } from '../lib/shop-context'
 import { useAuth } from '../lib/auth-context'
@@ -54,7 +55,7 @@ function Payment({ cart, refresh }: { cart: Cart; refresh: () => void }) {
     request.current?.abort(); request.current = null; setBusy(false); setAccepted(value); setSecret(''); setDemo(false); setError('')
     if (value) void start()
   }
-  return <div className="payment-layout"><aside className="cart-summary payment-summary" aria-labelledby="payment-summary-title"><h2 id="payment-summary-title">Resumo do pedido</h2><ul className="payment-items">{paid.map(item => { const product = products.find(entry => entry.code === item.code); return <li key={item.code}><PurchaseThumbnail code={item.code} name={item.name} /><div className="payment-item-copy"><span>{productName(item.code, item.name)}</span>{product?.tagline && <span className="payment-item-tagline">{product.tagline}</span>}<ItemPrice item={item} className="payment-item-price" /></div></li> })}</ul>{paid.length < cart.items.length && <p className="field-help">O que você já tem ou que já está num pacote da sacola não entra no pedido.</p>}{(() => { const delivery = paid.map(item => products.find(entry => entry.code === item.code)?.delivery).find(Boolean); return delivery ? <p className="payment-delivery">{delivery.map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</p> : null })()}<p className="cart-subtotal">Subtotal <strong>{cart.subtotal ? money(cart.subtotal.amount, cart.subtotal.currency) : 'A confirmar'}</strong></p><p className="field-help">O total com seu cupom aparece antes de pagar.</p></aside>
+  return <div className="payment-layout"><aside className="cart-summary payment-summary" aria-labelledby="payment-summary-title"><h2 id="payment-summary-title">Resumo do pedido</h2><ul className="payment-items">{paid.map(item => { const product = productByCode(item.code); return <li key={item.code}><PurchaseThumbnail code={item.code} name={item.name} /><div className="payment-item-copy"><span>{productName(item.code, item.name)}</span>{product?.tagline && <span className="payment-item-tagline">{product.tagline}</span>}<ItemPrice item={item} className="payment-item-price" /></div></li> })}</ul>{paid.length < cart.items.length && <p className="field-help">O que você já tem ou que já está num pacote da sacola não entra no pedido.</p>}{(() => { const delivery = paid.map(item => productByCode(item.code)?.delivery).find(Boolean); return delivery ? <p className="payment-delivery">{delivery.map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</p> : null })()}<p className="cart-subtotal">Subtotal <strong>{cart.subtotal ? money(cart.subtotal.amount, cart.subtotal.currency) : 'A confirmar'}</strong></p><p className="field-help">O total com seu cupom aparece antes de pagar.</p></aside>
     <section className="payment-card" aria-labelledby="payment-heading"><h2 id="payment-heading">Último passo</h2>
       {checkoutMock && <p className="checkout-demo">Demonstração: o pagamento real ainda não está conectado neste ambiente.</p>}
       <div><label className="checkbox-label payment-terms"><input type="checkbox" required disabled={termsChanged || (!checkoutMock && !canCheckout(cart))} checked={accepted} onChange={event => changeAcceptance(event.target.checked)} /><span>Li e aceito os <Link className="inline-link" to="/termos" target="_blank" rel="noopener">termos de uso</Link> e a <Link className="inline-link" to="/reembolsos" target="_blank" rel="noopener">política de reembolso</Link>. Estou ciente de que os jogos são conteúdo digital, liberado para download assim que o pagamento é confirmado, e peço essa entrega imediata.</span></label>

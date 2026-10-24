@@ -6,9 +6,11 @@ import { registerHooks } from 'node:module'
 // é o mínimo que o analytics.ts usa (window com eventos, localStorage, document com cookie e <head>).
 registerHooks({
   resolve(specifier, context, nextResolve) {
-    if (specifier === './seo' && context.parentURL?.endsWith('/src/lib/analytics.ts')) {
+    if (specifier === './site-config' && context.parentURL?.endsWith('/src/lib/analytics.ts')) {
       return { url: 'data:text/javascript,export const siteConfig = { stage: "live", origin: "https://keytotwo.com.br" }', shortCircuit: true }
     }
+    // Os módulos do site importam sem a extensão .ts.
+    if (specifier.startsWith('.') && context.parentURL?.endsWith('.ts') && !/\.\w+$/.test(specifier)) return nextResolve(`${specifier}.ts`, context)
     return nextResolve(specifier, context)
   },
 })

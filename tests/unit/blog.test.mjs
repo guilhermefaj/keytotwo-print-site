@@ -7,7 +7,8 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { readFile } from 'node:fs/promises'
 import { parseBlogPost, readBlogPosts, summarizeBlogPost } from '../../src/lib/blog.server.ts'
-import { formatBlogDate, relatedPosts } from '../../src/lib/blog.ts'
+import { relatedPosts } from '../../src/lib/blog.ts'
+import { formatDate } from '../../src/lib/format.ts'
 import { blogPostingJsonLd, pageSeo, serializeJsonLd } from '../../src/lib/seo.ts'
 
 function source(overrides = {}, body = '## Texto\n\nUm parágrafo para ler.\n\n> Uma citação.\n\n- Primeiro\n- Segundo') {
@@ -23,7 +24,7 @@ test('lê frontmatter, Markdown e data pt-BR sem deslocamento de fuso', () => {
   assert.match(post.html, /<h2>Texto<\/h2>/)
   assert.match(post.html, /<blockquote>/)
   assert.match(post.html, /<ul>/)
-  assert.equal(formatBlogDate(post.date), '9 de outubro de 2026')
+  assert.equal(formatDate(post.date), '9 de outubro de 2026')
   assert.equal(post.readingMinutes, 1)
   assert.equal('html' in summarizeBlogPost(post), false)
 })
@@ -34,6 +35,22 @@ test('aceita BOM e CRLF, conta palavras e promove H1 para H2', () => {
   assert.equal(post.readingMinutes, 3)
   assert.match(post.html, /<h2>Título<\/h2>/)
   assert.doesNotMatch(post.html, /<h1>/)
+})
+
+test('tempo de leitura: o site e a prévia do admin usam a mesma conta, sem endereço de link nem descrição de imagem', async () => {
+  // A prévia do admin (admin/src/blog-markdown.ts) faz readingMinutes(readingWords(tokens)) com o mesmo markdown-it.
+  const { readingMinutes, readingWords } = await import('../../supabase/functions/_shared/blog-rules.ts')
+  const { default: MarkdownIt } = await import('markdown-it')
+  // 190 palavras de texto, um link e uma imagem com descrição longa: dá 1 minuto (a descrição e os endereços não contam).
+  const body = `${'palavra '.repeat(189)}[link](https://keytotwo.com.br/loja/um-endereco-bem-longo)
+
+![${'descrição '.repeat(15)}](/images/blog/2026/10/ab12cd34-mesa.webp)`
+  const post = parseBlogPost(source({}, body), 'leitura.md')
+  assert.equal(post.wordCount, 190)
+  assert.equal(post.readingMinutes, 1)
+  const words = readingWords(new MarkdownIt({ html: false, linkify: false, typographer: false }).parse(body, {}))
+  assert.equal(words, 190)
+  assert.equal(readingMinutes(words), 1)
 })
 
 for (const filename of ['../fuga.md', 'Acentuação.md', 'Teste.md', 'com espaço.md', 'duplo--hifen.md', 'rss.xml.md', 'teste.txt']) {

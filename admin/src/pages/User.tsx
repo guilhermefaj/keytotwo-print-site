@@ -1,13 +1,15 @@
 import { IconArrowLeft, IconDownload, IconExternalLink } from '@tabler/icons-react'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
-import { api, ApiError, apiMessage, count, money, useResource } from '../api'
-import { formatMoment } from '../blog'
+import { api, ApiError, apiMessage, useResource } from '../api'
+import { count, formatMoment, money } from '../format'
 import {
   actionLabel, consentLabel, emailKindLabel, emailStatusLabel, orderStatusLabel, providersLabel, revokeReasonLabel, stripeCustomerUrl,
   suppressionLabel, type LibraryEntry, type UserDetail, type UserOrder,
 } from '../users'
 import { ReasonAction } from '../ReasonAction'
+import { LoadError } from '../LoadError'
+import { saveJson } from '../../../src/lib/save-json'
 
 // Ficha de uma conta (2026-10-23, Fase 4): conta, jogos, pedidos, novidades, e-mails e o histórico do admin, com as
 // ações. Cada ação pede o motivo (vai para o histórico) e, no fim, a ficha é buscada de novo. Bloquear, excluir e
@@ -26,15 +28,11 @@ function UserPage({ id }: { id: string }) {
   const done = (text: string) => { setNotice(text); reload() }
 
   if (!user) {
-    const missing = error instanceof ApiError && error.code === 'NOT_FOUND'
     return <>
       <title>Usuários — Admin KeyToTwo</title>
       <BackToList />
       {loading ? <p className="status" role="status">Abrindo a conta…</p>
-        : <div className="status-error" role="alert">
-          <p>{missing ? 'Esta conta não existe mais. Ela pode ter sido excluída.' : apiMessage(error)}</p>
-          {!missing && <button className="button button-secondary" type="button" onClick={reload}>Tentar de novo</button>}
-        </div>}
+        : <LoadError error={error} retry={reload} missing="Esta conta não existe mais. Ela pode ter sido excluída." />}
     </>
   }
 
@@ -264,10 +262,7 @@ function ExportButton({ userId, confirmed, onDone }: { userId: string; confirmed
     setState({ busy: true })
     try {
       const data = await api<unknown>(`/admin/users/${userId}/export`)
-      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
-      const anchor = Object.assign(document.createElement('a'), { href: url, download: `keytotwo-dados-${userId.slice(0, 8)}.json` })
-      anchor.click()
-      URL.revokeObjectURL(url)
+      saveJson(data, `keytotwo-dados-${userId.slice(0, 8)}.json`)
       setState({ busy: false })
       onDone()
     } catch (error) {

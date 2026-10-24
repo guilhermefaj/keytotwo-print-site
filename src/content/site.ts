@@ -8,6 +8,8 @@ export const navigation = [
   { label: 'Blog', href: '/blog' },
 ] as const
 
+export const emptyCart = { title: 'Sua sacola está vazia', text: 'Por enquanto só tem o Kito aqui dentro. Ele aceita companhia.' }
+
 export const site = {
   description: 'Jogos para casais imprimirem e jogarem juntos em casa.',
   closing: 'Da tela para a mesa.',

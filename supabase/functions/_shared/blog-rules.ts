@@ -43,6 +43,8 @@ const datePattern = /^\d{4}-\d{2}-\d{2}$/
 // A trava do build live recusa conteúdo publicado com esta marcação.
 const pendingMarker = /\bPENDENTE\b/i
 
+export const isBlogSlug = (value: string) => slugPattern.test(value)
+
 // Imagens só da pasta do blog (no site, /images/blog; no admin, a mesma chave no bucket público).
 export const isBlogImagePath = (value: string) =>
   /^\/images\/blog\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.(?:avif|webp|png|jpe?g|gif)$/i.test(value) && !value.includes('..')
@@ -101,6 +103,16 @@ export function prepareMarkdownTokens(tokens: MarkdownToken[], src?: (value: str
   }
   return tokens
 }
+
+// Tempo de leitura, o mesmo no site e na prévia do admin: só as palavras do texto e do código (sem os endereços dos
+// links nem as descrições das imagens), a 200 por minuto, com 1 minuto no mínimo.
+export function readingWords(tokens: MarkdownToken[]): number {
+  const text = tokens.filter(token => token.type === 'inline' || token.type === 'fence' || token.type === 'code_block')
+    .map(token => token.children?.filter(child => child.type === 'text' || child.type === 'code_inline').map(child => child.content).join(' ') ?? token.content)
+    .join(' ')
+  return text.match(/[\p{L}\p{N}]+/gu)?.length ?? 0
+}
+export const readingMinutes = (words: number) => Math.max(1, Math.ceil(words / 200))
 
 // Todos os problemas do post, na ordem dos campos do editor. Vazio = pode gravar.
 export function blogProblems(post: BlogPostInput, images: BlogImage[]): BlogProblem[] {

@@ -33,7 +33,7 @@ export function SignIn() {
 
   return <Screen title="Entrar no admin">
     <p>Use a conta da equipe da KeyToTwo. Depois de entrar, o admin pede o código do app autenticador.</p>
-    <button className="button button-google" type="button" disabled={busy} onClick={google}><img src={googleG} width="20" height="20" alt="" />Continuar com Google</button>
+    <button className="button button-secondary" type="button" disabled={busy} onClick={google}><img src={googleG} width="20" height="20" alt="" />Continuar com Google</button>
     <p className="gate-or"><span>ou</span></p>
     {!sentTo ? <form className="gate-form" onSubmit={requestCode}>
       <label className="field"><span>E-mail</span><input type="email" autoComplete="email" required value={email} onChange={event => setEmail(event.target.value)} /></label>

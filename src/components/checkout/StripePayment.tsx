@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { IconLock } from '@tabler/icons-react'
-import { money } from '../../lib/api'
+import { money } from '../../lib/format'
 import { stripePublishableKey } from '../../lib/checkout'
-import { siteConfig } from '../../lib/seo'
+import { siteConfig } from '../../lib/site-config'
 import { loadStripe, studioAppearance, studioFonts, type CheckoutActions, type CheckoutForm, type CheckoutSession } from '../../lib/stripe'
 import { Icon } from '../ui/Icon'
 

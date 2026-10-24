@@ -1,5 +1,5 @@
 import { type Cart, ApiError, apiErrorMessage } from './api'
-import { siteConfig } from './seo'
+import { siteConfig } from './site-config'
 import { termsVersion as publishedTermsVersion } from '../content/legal'
 
 // A versão dos termos publicados (legal.ts); o servidor precisa ter o mesmo TERMS_VERSION, senão TERMS_CHANGED.

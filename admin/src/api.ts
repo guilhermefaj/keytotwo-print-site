@@ -7,12 +7,14 @@ export class ApiError extends Error {
 }
 
 // Rotas /admin/* da API (Edge Function): sessão com o segundo fator; o banco confere o admin.
+// Um Blob (imagem do blog) vai como está, com o tipo dele; o resto vai em JSON.
 export async function api<T>(path: string, options: { method?: string; body?: unknown; signal?: AbortSignal } = {}): Promise<T> {
   const session = (await supabase?.auth.getSession())?.data.session
   if (!session) throw new ApiError('UNAUTHENTICATED')
   const headers: Record<string, string> = { apikey: publishableKey, Authorization: `Bearer ${session.access_token}` }
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
-  const response = await fetch(`${apiBase}${path}`, { method: options.method ?? 'GET', headers, body: options.body === undefined ? undefined : JSON.stringify(options.body), signal: options.signal })
+  const raw = options.body instanceof Blob ? options.body : undefined
+  if (options.body !== undefined) headers['Content-Type'] = raw ? raw.type : 'application/json'
+  const response = await fetch(`${apiBase}${path}`, { method: options.method ?? 'GET', headers, body: options.body === undefined ? undefined : raw ?? JSON.stringify(options.body), signal: options.signal })
   const result = await response.json().catch(() => ({}))
   if (!response.ok) throw new ApiError(result.error?.code || 'INTERNAL_ERROR', result.error?.message, result.error?.details)
   return result as T
@@ -46,5 +48,3 @@ export function useResource<T>(path: string) {
   return { data: current ? state.data : undefined, previous: state.data, error: current ? state.error : undefined, loading: !current, reload: () => setRevision(value => value + 1) }
 }
 
-export const money = (amount: number, currency: string) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(amount / 100)
-export const count = (value: number) => new Intl.NumberFormat('pt-BR').format(value)

@@ -3,7 +3,7 @@ import { authStorageKey } from '../fixtures/session'
 // Sessões do admin para os testes: JWT com o aal no payload (o admin só decodifica; a assinatura não é conferida aqui).
 export { authStorageKey }
 const base64url = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url')
-export const jwt = (claims: object) => `${base64url({ alg: 'ES256', typ: 'JWT' })}.${base64url({ sub: 'qa-admin', role: 'authenticated', aud: 'authenticated', exp: 4102444800, ...claims })}.assinatura`
+const jwt = (claims: object) => `${base64url({ alg: 'ES256', typ: 'JWT' })}.${base64url({ sub: 'qa-admin', role: 'authenticated', aud: 'authenticated', exp: 4102444800, ...claims })}.assinatura`
 export const verified = { id: 'fator-1', factor_type: 'totp', status: 'verified', friendly_name: 'Admin KeyToTwo', created_at: '2026-10-23T12:00:00Z', updated_at: '2026-10-23T12:00:00Z' }
 
 export function user({ admin = true, factors = [verified] as object[] } = {}) {

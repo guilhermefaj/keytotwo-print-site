@@ -2,8 +2,8 @@ import { Link } from 'react-router'
 import { ShareLinks } from '../components/blog/ShareLinks'
 import type { Route } from './+types/blog'
 import { readBlogPosts, summarizeBlogPost } from '../lib/blog.server'
-import { formatBlogDate } from '../lib/blog'
-import { siteConfig } from '../lib/seo'
+import { formatDate } from '../lib/format'
+import { siteConfig } from '../lib/site-config'
 
 export async function loader() {
   return { posts: (await readBlogPosts({ stage: siteConfig.stage })).map(summarizeBlogPost) }
@@ -22,7 +22,7 @@ export default function Blog({ loaderData }: Route.ComponentProps) {
           <div>
             <div className="blog-meta">
               {post.draft && <span className="blog-draft">Rascunho</span>}
-              <time dateTime={post.date}>{formatBlogDate(post.date)}</time>
+              <time dateTime={post.date}>{formatDate(post.date)}</time>
               <span>{post.readingMinutes} min de leitura</span>
             </div>
             <h2><Link to={`/blog/${post.slug}`}>{post.title}</Link></h2>

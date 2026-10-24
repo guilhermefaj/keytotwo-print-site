@@ -1,9 +1,9 @@
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router'
-import { products } from '../../content/products'
+import { bundleFor, products, singleFor } from '../../content/products'
 import { packageGames, type Game } from '../../content/games'
-import { money } from '../../lib/api'
-import { siteConfig } from '../../lib/seo'
+import { money } from '../../lib/format'
+import { siteConfig } from '../../lib/site-config'
 import { useShop } from '../../lib/shop-context'
 import { BundleFeature } from '../shop/BundleFeature'
 import { GameCover } from '../account/GameCover'
@@ -22,9 +22,7 @@ function TilePrice({ code }: { code: string }) {
 }
 
 function CoverTile({ game, order }: { game: Game; order: number }) {
-  const single = products.find(product => product.kind === 'single' && product.code === game.code)
-  const bundle = products.find(product => product.kind === 'bundle' && product.games.some(item => item.id === game.id))
-  const page = single ?? bundle
+  const page = singleFor(game) ?? bundleFor(game)
   return <article className="cover-tile" data-shop-game={game.id} style={{ '--tile-order': order } as CSSProperties}>
     <Link className="cover-tile-link" to={page ? `/loja/${page.slug}` : '/loja'}>
       <GameCover code={game.code} name={game.name} sizes="(max-width: 767px) 78vw, (max-width: 1023px) 32vw, 220px" />

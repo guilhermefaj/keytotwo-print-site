@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { siteConfig } from './seo'
+import { siteConfig } from './site-config'
+import { isProductCode } from './guest-cart'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined
@@ -26,7 +27,7 @@ export function safeNext(value: string | null) {
 
 export function loginDestination(next: string, add?: string) {
   const params = new URLSearchParams({ next: safeNext(next) })
-  if (add && /^[A-Z0-9_-]{1,40}$/.test(add)) params.set('add', add)
+  if (add && isProductCode(add)) params.set('add', add)
   return `/entrar?${params}`
 }
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { marketingConsent } from '../../content/account'
 import { api, apiErrorMessage, type Marketing } from '../../lib/api'
-import { siteConfig } from '../../lib/seo'
+import { siteConfig } from '../../lib/site-config'
 
 export function MarketingPreference({ marketing, onSaved }: { marketing: Marketing; onSaved: () => void }) {
   const [busy, setBusy] = useState(false)

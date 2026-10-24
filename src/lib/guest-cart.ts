@@ -4,7 +4,8 @@ import { useSyncExternalStore } from 'react'
 // regras vêm da API (POST /cart/quote). Ao entrar, ela se junta à sacola da conta (POST /cart/merge) e sai daqui.
 const KEY = 'keytotwo:sacola'
 const CHANGE = 'keytotwo:sacola-mudou'
-const CODE = /^[A-Z][A-Z0-9-]{1,23}$/
+// O mesmo formato de código de produto que a API aceita.
+export const isProductCode = (code: string) => /^[A-Z][A-Z0-9-]{1,23}$/.test(code)
 export const guestCartLimit = 20
 
 // Sem armazenamento (janela privada, dados bloqueados), a sacola dura enquanto a página estiver aberta.
@@ -16,7 +17,7 @@ const none: string[] = []
 function parse(raw: string | null): string[] {
   try {
     const value: unknown = JSON.parse(raw ?? '[]')
-    return Array.isArray(value) ? [...new Set(value.filter((code): code is string => typeof code === 'string' && CODE.test(code)))].slice(0, guestCartLimit) : []
+    return Array.isArray(value) ? [...new Set(value.filter((code): code is string => typeof code === 'string' && isProductCode(code)))].slice(0, guestCartLimit) : []
   } catch { return [] }
 }
 

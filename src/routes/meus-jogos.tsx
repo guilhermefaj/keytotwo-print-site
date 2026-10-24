@@ -1,6 +1,7 @@
 import { productName } from '../content/products'
 import { DataStatus } from '../components/account/AccountUi'
-import { dateLabel, type Library } from '../lib/api'
+import { type Library } from '../lib/api'
+import { dateLabel } from '../lib/format'
 import { useApiResource } from '../lib/use-api-resource'
 import { useEffect, type CSSProperties } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router'

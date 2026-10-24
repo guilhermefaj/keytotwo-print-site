@@ -9,6 +9,8 @@ COPY react-router.config.ts vite.config.ts tsconfig.json site.config.json ./
 # Scripts that `npm run build` calls, the release gate and the blog export; tests/unit/docker-build.test.mjs checks this list.
 COPY scripts/seo-files.mjs scripts/html-priorities.mjs scripts/check-release.mjs scripts/blog-export.mjs ./scripts/
 COPY src/ ./src/
+# As regras do post do blog, as mesmas da API e do admin (src/lib/blog.server.ts importa).
+COPY supabase/functions/_shared/blog-rules.ts ./supabase/functions/_shared/
 COPY content/ ./content/
 COPY public/ ./public/
 # Public build-time settings only; omitted values use site.config.json.

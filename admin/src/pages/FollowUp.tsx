@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { api, apiMessage, count, useResource } from '../api'
-import { formatMoment } from '../blog'
+import { api, apiMessage, useResource } from '../api'
+import { count, formatMoment } from '../format'
 import { suppressionLabel, type FollowUp, type FollowUpList } from '../users'
 import { UsersHeader } from './UsersHeader'
+import { LoadError } from '../LoadError'
 
 // Acompanhamento (2026-10-23): quem precisa de atenção agora, em quatro listas, cada pessoa com o motivo e o que dá para
 // fazer. Sai da lista sozinha quando a situação muda (pagou, baixou, confirmou, o e-mail saiu).
@@ -21,7 +22,7 @@ export function FollowUpPage() {
     <title>Acompanhamento — Admin KeyToTwo</title>
     <UsersHeader text="Quem precisa de atenção agora, com o motivo e o que fazer. Cada pessoa sai da lista quando a situação se resolve." />
     {loading && !follow && <p className="status" role="status">Carregando o acompanhamento…</p>}
-    {!loading && error !== undefined && <div className="status-error" role="alert"><p>{apiMessage(error)}</p><button className="button button-secondary" type="button" onClick={reload}>Tentar de novo</button></div>}
+    {!loading && error !== undefined && <LoadError error={error} retry={reload} />}
     {follow && <>
       <ul className="follow-summary" aria-label="Resumo">
         {sections.map(section => <li key={section.id}><a href={`#${section.id}`}><strong>{count(follow[section.key].total)}</strong><span>{section.title}</span></a></li>)}

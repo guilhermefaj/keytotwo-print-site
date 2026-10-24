@@ -1,4 +1,3 @@
-import { itemName } from '../components/checkout/purchase-names'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { api } from '../lib/api'
@@ -10,6 +9,7 @@ import { supabase } from '../lib/supabase'
 import { deliveryMock } from '../lib/downloads'
 import { CheckoutSteps } from '../components/checkout/CheckoutSteps'
 import { Celebration } from '../components/checkout/Celebration'
+import { productName } from '../content/products'
 
 const copy = {
   paid: { title: 'Pronto. Os jogos são de vocês.', text: 'Pagamento confirmado. Escolham um jogo e preparem a mesa.', cta: 'Abrir Meus jogos', to: '/meus-jogos' },
@@ -70,7 +70,7 @@ function Status({ sessionId }: { sessionId: string }) {
     {state === 'paid' && !demo && !deliveryMock && <p className="confirmation-email">Também enviamos para o seu e-mail.</p>}
     {checking && <p role="status">Conferindo seu pedido…</p>}
     <p role="alert" className="form-error">{error}</p>
-    {state === 'paid' && !demo && Boolean(result?.items?.length) && <ul className="confirmation-items">{result!.items!.map(item => <li key={item.code}>{itemName(item.code, item.name)}</li>)}</ul>}
+    {state === 'paid' && !demo && Boolean(result?.items?.length) && <ul className="confirmation-items">{result!.items!.map(item => <li key={item.code}>{productName(item.code, item.name)}</li>)}</ul>}
     <div className="form-actions">{content && (state === 'other_account' ? <button className="button button-primary" disabled={signingOut} onClick={switchAccount}>{content.cta}</button> : <Link className="button button-primary" to={content.to}>{content.cta}</Link>)}
       {(error || state === 'processing' || state === 'pending_payment') && <button className="button button-secondary" disabled={checking} onClick={() => { setChecking(true); setError(''); setRevision(value => value + 1) }}>Atualizar status</button>}
       <Link className="inline-link" to="/ajuda">Preciso de ajuda</Link>

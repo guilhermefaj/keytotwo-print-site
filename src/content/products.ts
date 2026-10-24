@@ -64,7 +64,17 @@ export const products: readonly Product[] = [
 // O prerender é editorial. A venda na tela exige também presença no /catalog em runtime.
 export const productPages = products.filter(product => product.availability === 'sale')
 
-// Nome de exibição do produto; código desconhecido ou de teste vira o genérico.
+export const productByCode = (code: string) => products.find(product => product.code === code)
+// O avulso do jogo e o pacote à venda que o traz.
+export const singleFor = (game: Game) => products.find(product => product.kind === 'single' && product.code === game.code)
+export const bundleFor = (game: Game) => products.find(product => product.kind === 'bundle' && product.availability === 'sale' && product.games.some(item => item.id === game.id))
+
+// Nome de exibição (sacola, pagamento, pedidos e Portal): o título do produto; sem produto, o nome vindo da API, a não
+// ser que traga marcador de pendência ou de teste; aí o nome de um jogo confirmado com esse código (avulsos usam o
+// código do jogo) ou o genérico.
 export function productName(code: string, fallback = '') {
-  return products.find(product => product.code === code)?.title || (/PENDENTE|\bTESTE\b/i.test(fallback) || !fallback ? 'Jogo para imprimir' : fallback)
+  const title = productByCode(code)?.title
+  if (title) return title
+  if (fallback && !/PENDENTE|\bTESTE\b/i.test(fallback)) return fallback
+  return games.find(entry => entry.code === code && entry.confirmed)?.name ?? 'Jogo para imprimir'
 }

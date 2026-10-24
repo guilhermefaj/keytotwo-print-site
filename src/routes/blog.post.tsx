@@ -1,9 +1,10 @@
 import { useRef } from 'react'
 import { Link, isRouteErrorResponse, useLoaderData, useRouteError, type ClientLoaderFunctionArgs, type LoaderFunctionArgs } from 'react-router'
 import { readBlogPosts, summarizeBlogPost } from '../lib/blog.server'
-import { formatBlogDate, relatedPosts } from '../lib/blog'
+import { relatedPosts } from '../lib/blog'
+import { PostHeader } from '../components/blog/PostHeader'
 import { FloatingShare, ShareLinks } from '../components/blog/ShareLinks'
-import { siteConfig } from '../lib/seo'
+import { siteConfig } from '../lib/site-config'
 import { site } from '../content/site'
 import { BackLink } from '../components/ui/BackLink'
 
@@ -37,18 +38,9 @@ export default function BlogPost() {
   return <main id="conteudo" tabIndex={-1} className="blog-page blog-post content-width">
     <BackLink to="/blog">Voltar ao blog</BackLink>
     <article>
-      <header className="blog-post-heading">
-        <div className="blog-meta">
-          {post.draft && <span className="blog-draft">Rascunho</span>}
-          <time dateTime={post.date}>{formatBlogDate(post.date)}</time>
-          <span>{post.readingMinutes} min de leitura</span>
-          {post.author && <span className="blog-author">Por {post.author}</span>}
-        </div>
-        <h1>{post.title}</h1>
-        <p className="blog-description">{post.description}</p>
-        {post.tags.length > 0 && <ul className="blog-tags" aria-label="Temas">{post.tags.map(tag => <li key={tag}>{tag}</li>)}</ul>}
+      <PostHeader draft={post.draft} date={post.date} readingMinutes={post.readingMinutes} author={post.author} title={<h1>{post.title}</h1>} description={post.description} tags={post.tags}>
         <ShareLinks ref={shareStart} title={post.title} url={url} label="Compartilhar" />
-      </header>
+      </PostHeader>
       {post.cover && <img className="blog-post-cover" src={post.cover} alt={post.coverAlt} width="1200" height="800" fetchPriority="high" />}
       {/* Only HTML produced by blog.server.ts with raw HTML disabled reaches here. */}
       <div ref={prose} className="blog-prose" dangerouslySetInnerHTML={{ __html: post.html }} />

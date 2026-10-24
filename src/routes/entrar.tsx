@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { CheckoutSteps } from '../components/checkout/CheckoutSteps'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useAuth } from '../lib/auth-context'
+import { isProductCode } from '../lib/guest-cart'
 import { authConfigured, authErrorMessage, loginDestination, safeNext, supabase } from '../lib/supabase'
 import { useHydrated } from '../lib/use-hydrated'
 
@@ -24,7 +25,7 @@ export default function Entrar() {
   const [cooldown, setCooldown] = useState(0)
   const next = safeNext(params.get('next'))
   const add = params.get('add')
-  const destination = add && /^[A-Z0-9_-]{1,40}$/.test(add) ? `/carrinho?${new URLSearchParams({ add })}` : next
+  const destination = add && isProductCode(add) ? `/carrinho?${new URLSearchParams({ add })}` : next
   // Quem chega no meio da compra já escolheu algo; quem só clicou em Entrar precisa saber que o código cria a conta.
   // O HTML pré-renderizado não conhece a URL: o aviso da compra entra depois da hidratação (recarregar no meio da compra).
   const buying = hydrated && (Boolean(add) || /^\/(carrinho|pagamento)(?:[/?#]|$)/.test(next))
