@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router'
 import { experience } from '../../content/experience'
-import { siteConfig } from '../../lib/seo'
+import { siteConfig } from '../../lib/site-config'
 import { SnapCarousel } from '../ui/SnapCarousel'
 import { CutLine } from '../ui/CutLine'
 

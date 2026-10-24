@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import type { Product } from '../../content/products'
-import { money } from '../../lib/api'
-import { siteConfig } from '../../lib/seo'
+import { money } from '../../lib/format'
+import { siteConfig } from '../../lib/site-config'
 import { useShop } from '../../lib/shop-context'
 import { ProductPurchaseAction } from '../sections/ProductPurchaseAction'
 

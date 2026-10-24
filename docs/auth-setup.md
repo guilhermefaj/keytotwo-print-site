@@ -1,6 +1,6 @@
 # Configurar o login no Supabase — passo a passo do responsável
 
-Projeto de teste: `keytotwo-print-db` (ref `oqizkhjosplnedddaakb`, sa-east-1). Este guia cobre o que só o painel faz: SMTP da Brevo, login com Google, URLs de retorno e templates. No local, tudo isso já vem do `supabase/config.toml`.
+Projeto: `keytotwo-print-db` (ref `oqizkhjosplnedddaakb`, sa-east-1), o backend de produção desde 2026-10-16 (o teste e o dev local usam o mesmo). Este guia cobre o que só o painel faz: SMTP da Brevo, login com Google, URLs de retorno e templates. No local, tudo isso já vem do `supabase/config.toml`.
 
 **Segredos:** os valores ficam só em `D:/Maestri/keytotwo-print-site-secrets/.env`, fora do repositório. Este guia cita apenas os nomes das variáveis. Nunca cole valores em arquivos do repositório, em issues ou no chat.
 
@@ -51,8 +51,8 @@ No painel do projeto `keytotwo-print-db`:
 
 **Authentication > URL Configuration:**
 
-- **Site URL:** `SITE_URL`, a URL do site de teste. Os templates usam esse valor no link de Ajuda.
-- **Redirect URLs:** `SITE_URL/**`. Para desenvolver o site localmente contra o projeto de teste, acrescente `http://127.0.0.1:5173/**` e `http://localhost:5173/**`, e remova esses dois antes da produção.
+- **Site URL:** `SITE_URL`, a URL do site. Os templates usam esse valor no link de Ajuda.
+- **Redirect URLs:** `SITE_URL/**`, o teste (`https://teste.keytotwo.com.br/**`), o admin (`https://admin.keytotwo.com.br/**`) e, para o dev local, `http://127.0.0.1:5178/**`.
 
 ## 4. Supabase: templates em pt-BR
 
@@ -76,7 +76,7 @@ No painel do projeto `keytotwo-print-db`:
 2. **Audience:** tipo *External*. No teste, deixe em *Testing* e adicione como *test users* as contas Google que vão testar. Para abrir a todos, publique o app. Com escopos básicos não há revisão de escopo; só a marca pode passar por verificação.
 3. **Data Access (Scopes):** `openid` (adicionar à mão), `.../auth/userinfo.email` e `.../auth/userinfo.profile`. Nenhum outro.
 4. **Clients > Create client**, tipo **Web application**, nome `KeyToTwo Supabase`:
-   - *Authorized JavaScript origins:* a origem de `SITE_URL` (sem caminho) e, para desenvolvimento, `http://localhost:5173`.
+   - *Authorized JavaScript origins:* a origem de `SITE_URL` (sem caminho) e, para desenvolvimento, `http://127.0.0.1:5178`.
    - *Authorized redirect URIs:*
      - `https://oqizkhjosplnedddaakb.supabase.co/auth/v1/callback`
      - `http://127.0.0.1:54321/auth/v1/callback` (Supabase local)

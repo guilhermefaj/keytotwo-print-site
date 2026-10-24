@@ -1,11 +1,12 @@
 import { useId, useState } from 'react'
 import { Link } from 'react-router'
-import { api, ApiError, apiMessage, useResource } from '../api'
-import { formatMoment } from '../blog'
+import { api, ApiError, useResource } from '../api'
+import { formatMoment } from '../format'
 import { ReasonAction } from '../ReasonAction'
 import { useSession } from '../session'
 import { providersLabel, type UserList, type UserSummary } from '../users'
 import { UsersHeader } from './UsersHeader'
+import { LoadError } from '../LoadError'
 
 // Equipe (2026-10-23): quem é admin, com Remover admin (menos na própria conta) e Adicionar à equipe pelo e-mail de uma
 // conta que já existe. Vale no banco na hora; a pessoa vê o admin quando entrar de novo e cadastra o segundo fator.
@@ -20,7 +21,7 @@ export function TeamPage() {
     <UsersHeader text="Quem é admin: vê e muda tudo aqui (contas, blog e métricas). Toda mudança na equipe fica no histórico da conta." />
     {notice && <p className="notice" role="status">{notice}</p>}
     {loading && !team && <p className="status" role="status">Carregando a equipe…</p>}
-    {!loading && error !== undefined && <div className="status-error" role="alert"><p>{apiMessage(error)}</p><button className="button button-secondary" type="button" onClick={reload}>Tentar de novo</button></div>}
+    {!loading && error !== undefined && <LoadError error={error} retry={reload} />}
     {team && <ul className="plain-list" aria-label="Admins">
       {team.users.map(user => <TeamRow key={user.id} user={user} self={user.id === session.user.id} onDone={done} />)}
     </ul>}

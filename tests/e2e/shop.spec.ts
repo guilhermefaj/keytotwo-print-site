@@ -230,8 +230,8 @@ for (const width of [375, 1280]) test(`loja e detalhes: axe e capturas em ${widt
     const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
     expect(result.violations.map(v => ({ id: v.id, targets: v.nodes.map(n => n.target) }))).toEqual([])
     if (process.env.SHOP_CAPTURE === '1') {
-      await mkdir('design-review/loja', { recursive: true })
-      await sharp(await page.screenshot({ fullPage: true, animations: 'disabled' })).webp({ quality: 85 }).toFile(`design-review/loja/${stage}-loja${slug.replace('/', '-')}-${width}.webp`)
+      await mkdir('.maestri/design-review/loja', { recursive: true })
+      await sharp(await page.screenshot({ fullPage: true, animations: 'disabled' })).webp({ quality: 85 }).toFile(`.maestri/design-review/loja/${stage}-loja${slug.replace('/', '-')}-${width}.webp`)
     }
   }
 })
@@ -299,12 +299,11 @@ test('pacote: as miniaturas da galeria cabem numa linha só', async ({ page }) =
   }
 })
 
-test('rodapé: a tesoura e o chão do Kito também em Entrar e na Sacola; a newsletter só nas páginas públicas', async ({ page }) => {
+test('rodapé: a tesoura e o chão do Kito também em Entrar e na Sacola', async ({ page }) => {
   await catalog(page)
   for (const route of ['/entrar', '/carrinho']) {
     await page.goto(route)
     await expect(page.locator('.site-footer .cut-line'), route).toHaveCount(1)
     await expect(page.locator('.site-footer .footer-ground'), route).toHaveCount(1)
-    await expect(page.locator('.site-footer .footer-newsletter'), route).toHaveCount(0)
   }
 })

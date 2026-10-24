@@ -4,12 +4,11 @@ import { api, ApiError, apiErrorMessage, type Account, type Cart, type CatalogPr
 import { useAuth } from '../../lib/auth-context'
 import { guestCartLimit, useGuestCartCodes, writeGuestCart } from '../../lib/guest-cart'
 import { toReais, track } from '../../lib/analytics'
-import { ShopContext } from '../../lib/shop-context'
+import { ShopContext, type Resource } from '../../lib/shop-context'
 import { authConfigured } from '../../lib/supabase'
 import { useApiResource } from '../../lib/use-api-resource'
 
 const emptyCart: Cart = { version: 0, items: [], subtotal: null, warnings: [] }
-type Resource<T> = { data?: T; error?: string; loading: boolean; reload: () => void }
 
 // Enquanto a API confirma uma mudança, a sacola já mostra o resultado esperado: o item novo entra com o preço do
 // catálogo e o total espera a confirmação (o riscado e o "completar a coleção" só a API sabe).

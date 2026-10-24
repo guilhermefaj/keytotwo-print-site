@@ -1,7 +1,9 @@
 import { IconX } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
 import { api, apiMessage, useResource } from '../api'
-import { formatMoment, formatSize, imageName, type BlogImage, type BlogImages } from '../blog'
+import { formatSize, imageName, type BlogImage, type BlogImages } from '../blog'
+import { formatMoment } from '../format'
+import { LoadError } from '../LoadError'
 
 // Galeria (2026-10-23): o que está no bucket público do blog (keytotwo-print-blog), da imagem mais nova à mais antiga,
 // para pôr no texto ou usar como capa sem enviar de novo. Abre como diálogo modal; Esc, Fechar ou um clique fora voltam.
@@ -41,7 +43,7 @@ export function ImageGallery({ purpose, postId, current, onPick, onClose }: { pu
       </header>
       {removed.notice && <p className="notice gallery-notice" role="status" ref={noticeRef} tabIndex={-1}>{removed.notice}</p>}
       {loading && <p className="status" role="status">Carregando as imagens do bucket…</p>}
-      {!loading && error !== undefined && <div className="status-error" role="alert"><p>{apiMessage(error)}</p><button className="button button-secondary" type="button" onClick={reload}>Tentar de novo</button></div>}
+      {!loading && error !== undefined && <LoadError error={error} retry={reload} />}
       {data && (all.length === 0
         ? <p className="status">Ainda não há imagens no bucket. Envie a primeira pelo botão {purpose === 'cover' ? 'Enviar capa' : 'Imagem'}.</p>
         : <>

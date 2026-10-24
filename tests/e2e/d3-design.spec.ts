@@ -84,8 +84,6 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await expect(page.getByRole('link', { name: 'Abrir Meus jogos', exact: true })).toHaveAttribute('href', '/meus-jogos')
   await expect(page.getByText('Também enviamos para o seu e-mail.')).toBeVisible()
   await expect(page.locator('.purchase-celebration')).toBeVisible()
-  // Newsletter escondida até existir o envio (responsável, 2026-10-16).
-  await expect(page.locator('.newsletter')).toHaveCount(0)
   await capture(page, `confirmacao-${width}`); await axe(page)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(page.locator('.purchase-celebration img')).toHaveCSS('animation-name', 'none')
@@ -153,12 +151,10 @@ test('vitrine com os jogos do pacote na home; carrossel e relatos só por ação
   await expect(page.locator('.social-metrics')).toHaveCount(0)
 })
 
-test('public newsletter stays hidden until sending exists; published posts alone enter home', async ({ page }) => {
+test('home sem escrita na API, com o chão do Kito no rodapé; só posts publicados entram', async ({ page }) => {
   const writes: string[] = []
   page.on('request', request => { if (['POST', 'PUT'].includes(request.method()) && request.url().includes('/api/')) writes.push(request.url()) })
   await page.goto('/')
-  // Escondida em todos os stages (responsável, 2026-10-16); o rodapé público fecha com o chão do Kito.
-  await expect(page.locator('.newsletter')).toHaveCount(0)
   await expect(page.locator('.footer-ground .footer-kito')).toHaveCount(1)
   expect(writes).toEqual([])
   // The build's real published feed is the source of truth, not the draft listing.
@@ -169,11 +165,10 @@ test('public newsletter stays hidden until sending exists; published posts alone
   for (const post of published.slice(0, 3)) await expect(page.locator('.home-posts').getByRole('link', { name: post.title })).toHaveAttribute('href', `/blog/${post.slug}`)
 })
 
-test('logged-in: newsletter hidden everywhere, Conta keeps the e-mail preference, payment footer stays minimal', async ({ page }) => {
+test('logged-in: Conta keeps the e-mail preference, payment footer stays minimal', async ({ page }) => {
   test.skip(!stageTest, 'Stage test fixture')
   await fixture(page)
-  await page.route('**/api/account', route => route.fulfill({ json: { email: 'qa@example.test', marketing: { opted_in: false, prompted_at: null }, orders: [] } }))
-  for (const path of ['/', '/carrinho', '/pagamento', '/blog/exemplo-como-publicar']) { await page.goto(path); await expect(page.locator('main')).toBeVisible(); await expect(page.locator('.newsletter')).toHaveCount(0) }
+  await page.route('**/api/account', route => route.fulfill({ json: { email: 'qa@example.test', marketing: { opted_in: false }, orders: [] } }))
   // Pagamento em modo foco: só a linha legal, sem o chão nem os convites do rodapé público.
   await page.goto('/pagamento')
   await expect(page.locator('footer .footer-ground')).toHaveCount(0)

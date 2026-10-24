@@ -30,9 +30,3 @@ export function relatedPosts<T extends BlogPostSummary>(post: BlogPostSummary, p
     .slice(0, limit)
     .map(item => item.other)
 }
-
-export function formatBlogDate(date: string) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
-  }).format(new Date(`${date}T00:00:00Z`))
-}

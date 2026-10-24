@@ -76,8 +76,6 @@ test('guest add → Mailpit code → persistent cart; marketing and private view
   const checkout = page.getByRole('button', { name: 'Finalizar compra', exact: true })
   if (await page.getByText('Não conseguimos carregar o preço.', { exact: true }).count()) await expect(checkout).toBeDisabled()
   else await expect(checkout).toBeEnabled()
-  await expect(page.locator('.refund-notice')).toHaveCount(0)
-  await expect(page.locator('.newsletter')).toHaveCount(0)
   await page.reload()
   await expect(page.locator('[data-cart-product="P001"]')).toBeVisible()
   await page.waitForLoadState('networkidle')

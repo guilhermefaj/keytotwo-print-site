@@ -3,20 +3,15 @@ import path from 'node:path'
 import MarkdownIt from 'markdown-it'
 import { parseDocument } from 'yaml'
 import type { BlogPost, BlogPostSummary } from './blog.ts'
+// As regras do post são as mesmas da API e do editor do admin.
+import { isBlogImagePath, isBlogSlug, isValidDate, markdownImages, prepareMarkdownTokens, readingMinutes, readingWords } from '../../supabase/functions/_shared/blog-rules.ts'
 
 type BlogStage = 'live' | 'preview' | 'test'
-const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-
-function imagePath(value: string) {
-  // Images belong to the public blog media directory, never an arbitrary URL.
-  return /^\/images\/blog\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.(?:avif|webp|png|jpe?g|gif)$/i.test(value)
-    && !value.includes('..')
-}
 
 export function parseBlogPost(source: string, filename: string): BlogPost {
   const fail = (message: string): never => { throw new Error(`Blog ${filename}: ${message}`) }
   const slug = filename.replace(/\.md$/, '')
-  if (!filename.endsWith('.md') || !slugPattern.test(slug)) fail('slug inválido; use letras minúsculas, números e hífens.')
+  if (!filename.endsWith('.md') || !isBlogSlug(slug)) fail('slug inválido; use letras minúsculas, números e hífens.')
   const match = source.replace(/^\uFEFF/, '').match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/)
   if (!match) return fail('frontmatter YAML obrigatório.')
   const document = parseDocument(match[1], { schema: 'core', uniqueKeys: true })
@@ -32,9 +27,7 @@ export function parseBlogPost(source: string, filename: string): BlogPost {
   const title = requiredText('title')
   const description = requiredText('description')
   const date = requiredText('date')
-  const timestamp = Date.parse(`${date}T00:00:00Z`)
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(timestamp)
-    || new Date(timestamp).toISOString().slice(0, 10) !== date) fail('date deve ser uma data válida no formato AAAA-MM-DD.')
+  if (!isValidDate(date)) fail('date deve ser uma data válida no formato AAAA-MM-DD.')
   if (typeof fields.draft !== 'boolean') fail('draft deve ser booleano (true ou false).')
   if (fields.coverAlt !== undefined && typeof fields.coverAlt !== 'string') fail('coverAlt deve ser texto.')
   if (fields.author !== undefined && typeof fields.author !== 'string') fail('author deve ser texto.')
@@ -50,7 +43,7 @@ export function parseBlogPost(source: string, filename: string): BlogPost {
   const coverAlt = ((fields.coverAlt ?? '') as string).trim()
   let cover: string | undefined
   if (fields.cover !== undefined && fields.cover !== '') {
-    if (typeof fields.cover !== 'string' || !imagePath(fields.cover)) fail('cover deve apontar para uma imagem em /images/blog.')
+    if (typeof fields.cover !== 'string' || !isBlogImagePath(fields.cover)) fail('cover deve apontar para uma imagem em /images/blog.')
     cover = fields.cover as string
     if (!coverAlt) fail('coverAlt é obrigatório quando há capa.')
   }
@@ -60,28 +53,17 @@ export function parseBlogPost(source: string, filename: string): BlogPost {
 
   const markdown = new MarkdownIt({ html: false, linkify: false, typographer: false })
   const tokens = markdown.parse(match[2], {})
-  const hasH1 = tokens.some(token => token.type === 'heading_open' && token.tag === 'h1')
-  for (const token of tokens) {
-    // The page owns the H1; Markdown headings start at H2.
-    if (hasH1 && (token.type === 'heading_open' || token.type === 'heading_close')) {
-      token.tag = `h${Math.min(6, Number(token.tag.slice(1)) + 1)}`
-    }
-    for (const child of token.children ?? []) {
-      if (child.type !== 'image') continue
-      if (!imagePath(child.attrGet('src') ?? '')) fail('imagens do texto devem estar em /images/blog.')
-      if (!child.content.trim()) fail('imagens do texto precisam de uma descrição alternativa.')
-      child.attrSet('loading', 'lazy')
-      child.attrSet('decoding', 'async')
-    }
+  for (const image of markdownImages(tokens)) {
+    if (!isBlogImagePath(image.src)) fail('imagens do texto devem estar em /images/blog.')
+    if (!image.alt) fail('imagens do texto precisam de uma descrição alternativa.')
   }
-  const text = tokens.filter(token => token.type === 'inline' || token.type === 'fence' || token.type === 'code_block')
-    .map(token => token.children?.filter(child => ['text', 'code_inline'].includes(child.type)).map(child => child.content).join(' ') ?? token.content)
-    .join(' ')
-  const wordCount = text.match(/[\p{L}\p{N}]+/gu)?.length ?? 0
+  // The page owns the H1; Markdown headings start at H2. Images load lazily.
+  prepareMarkdownTokens(tokens)
+  const wordCount = readingWords(tokens)
   return {
     slug, title, description, date, author, ...(cover ? { cover } : {}), coverAlt, seoTitle, seoDescription, ...(shareImage ? { shareImage } : {}),
     tags: (tags as string[]).map(tag => tag.trim()), draft: fields.draft as boolean,
-    wordCount, readingMinutes: Math.max(1, Math.ceil(wordCount / 200)),
+    wordCount, readingMinutes: readingMinutes(wordCount),
     html: markdown.renderer.render(tokens, markdown.options, {}),
   }
 }

@@ -11,9 +11,9 @@ const links = ['Início', 'Loja', 'Gratuitos', ...(hasBlogPosts ? ['Blog'] : [])
 
 async function capture(page: Page, name: string) {
   if (process.env.MENU_CAPTURE !== '1') return
-  await mkdir('design-review/menu', { recursive: true })
+  await mkdir('.maestri/design-review/menu', { recursive: true })
   await page.evaluate(() => document.fonts.ready)
-  await sharp(await page.screenshot({ animations: 'disabled' })).webp({ quality: 85 }).toFile(`design-review/menu/${stage}-${name}.webp`)
+  await sharp(await page.screenshot({ animations: 'disabled' })).webp({ quality: 85 }).toFile(`.maestri/design-review/menu/${stage}-${name}.webp`)
 }
 
 test('menu: Blog corresponde aos posts do build, inclusive no fallback e na navegação SPA', async ({ page }) => {

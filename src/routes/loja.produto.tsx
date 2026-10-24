@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link, isRouteErrorResponse, useLoaderData, useRouteError, type ClientLoaderFunctionArgs, type LoaderFunctionArgs } from 'react-router'
-import { productPages, products, type Product } from '../content/products'
+import { bundleFor, productPages, type Product } from '../content/products'
 import type { Game } from '../content/games'
 import { ProductAvailability } from '../components/shop/ProductAvailability'
 import { GameGrid } from '../components/shop/GameGrid'
@@ -40,7 +40,7 @@ function galleryOf(product: Product, game?: Game): GalleryImage[] {
 export default function ShopProduct() {
   const { product } = useLoaderData<typeof loader>()
   const game = product.kind === 'single' ? product.games[0] : undefined
-  const bundle = game && products.find(item => item.kind === 'bundle' && item.availability === 'sale' && item.games.some(included => included.id === game.id))
+  const bundle = game && bundleFor(game)
   useEffect(() => {
     const value = product.offer.price ? offerValue(product.offer.price) : undefined
     track('view_item', { currency: 'BRL', value, items: [{ item_id: product.code, item_name: product.title, price: value }] })

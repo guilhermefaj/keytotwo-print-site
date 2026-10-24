@@ -1,5 +1,5 @@
 import { api, ApiError, apiErrorMessage } from './api'
-import { siteConfig } from './seo'
+import { siteConfig } from './site-config'
 
 // I4 is integrated: test/live use the API; preview and an explicit local mock stay isolated.
 export const deliveryMock = siteConfig.stage === 'preview' || (siteConfig.stage !== 'live' && import.meta.env.VITE_DELIVERY_MODE === 'mock')

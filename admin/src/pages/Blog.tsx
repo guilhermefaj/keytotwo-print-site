@@ -2,9 +2,11 @@ import { IconExternalLink, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { api, apiMessage, useResource } from '../api'
-import { formatMoment, formatShortDate, type BlogList, type BlogPostSummary } from '../blog'
+import { deletedNotice, type BlogList, type BlogPostSummary } from '../blog'
+import { formatMoment, formatShortDate } from '../format'
 import { SiteStatus } from '../SiteStatus'
 import { siteUrl } from '../supabase'
+import { LoadError } from '../LoadError'
 
 type Filter = 'all' | 'published' | 'draft'
 const filters: { value: Filter; label: string }[] = [{ value: 'all', label: 'Todos' }, { value: 'published', label: 'Publicados' }, { value: 'draft', label: 'Rascunhos' }]
@@ -23,7 +25,7 @@ export function BlogPage() {
   const notice = deleted.notice ?? locationNotice
 
   function onDeleted(post: BlogPostSummary, version: string) {
-    const text = post.status === 'published' ? `“${post.title}” foi excluído e sai do site em 1 ou 2 minutos.` : `“${post.title}” foi excluído.`
+    const text = deletedNotice(post.title, post.status === 'published')
     setDeleted(current => ({ ids: [...current.ids, post.id], version, notice: text }))
   }
   // A linha some com o botão em foco: o foco vai para o aviso.
@@ -40,7 +42,7 @@ export function BlogPage() {
     </header>
     {notice && <p className="notice" role="status" ref={noticeRef} tabIndex={-1}>{notice}</p>}
     {loading && <p className="status" role="status">Carregando os posts…</p>}
-    {!loading && error !== undefined && <div className="status-error" role="alert"><p>{apiMessage(error)}</p><button className="button button-secondary" type="button" onClick={reload}>Tentar de novo</button></div>}
+    {!loading && error !== undefined && <LoadError error={error} retry={reload} />}
     {data && <>
       <SiteStatus version={deleted.version ?? data.version} hasPublished={posts.some(post => post.status === 'published')} />
       <div className="toolbar">

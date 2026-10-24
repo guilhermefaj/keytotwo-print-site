@@ -4,7 +4,7 @@ import { useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
 import { apiErrorMessage } from '../../lib/api'
 import { authConfigured } from '../../lib/supabase'
-import { products } from '../../content/products'
+import { productByCode } from '../../content/products'
 
 // `name` diferencia os botões quando há vários na mesma página (cards da Loja). A sacola funciona sem login;
 // quem já tem o produto vê o atalho para o Portal no lugar do botão.
@@ -12,7 +12,7 @@ export function ProductPurchaseAction({ code, name, compact = false }: { code: s
   const { session, ready } = useAuth()
   const { cart, catalog, add, busy } = useShop()
   const [error, setError] = useState('')
-  const product = products.find(item => item.code === code)
+  const product = productByCode(code)
   const canPurchase = product?.availability === 'sale' && product.offer.purchaseAction === 'cart'
   const listed = catalog.data?.products.find(item => item.code === code)
   const owned = Boolean(session && cart.data?.owned_products?.includes(code))

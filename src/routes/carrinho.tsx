@@ -1,35 +1,35 @@
 import { CheckoutSteps } from '../components/checkout/CheckoutSteps'
 import { EmptyCart, ItemPrice, PurchaseSkeleton, PurchaseThumbnail } from '../components/checkout/PurchaseUi'
 import { Summary } from '../components/ui/Summary'
-import { itemName, itemNote } from '../components/checkout/purchase-names'
-import { products } from '../content/products'
+import { itemNote } from '../components/checkout/purchase-names'
+import { productByCode, productName } from '../content/products'
 import { refundNotice } from '../content/legal'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { DataStatus } from '../components/account/AccountUi'
 import { useAuth } from '../lib/auth-context'
-import { apiErrorMessage, money, type Cart } from '../lib/api'
+import { apiErrorMessage, type CartItem } from '../lib/api'
+import { money } from '../lib/format'
 import { useShop } from '../lib/shop-context'
 import { canCheckout, checkoutMock } from '../lib/checkout'
+import { isProductCode } from '../lib/guest-cart'
 import { loginDestination } from '../lib/supabase'
-
-type CartItem = Cart['items'][number]
 
 // Item da sacola (DESIGN.md › Item de compra): composição sempre a partir de item.games + conteúdo. Ninguém paga duas
 // vezes pelo mesmo jogo: o que já está no Portal e o avulso que já está num pacote da sacola aparecem riscados e
 // ficam fora do pedido; o pacote com jogos que a pessoa já tem cobra só o que falta.
 function CartItemRow({ item, items, busy, onRemove }: { item: CartItem; items: CartItem[]; busy: boolean; onRemove: (code: string) => void }) {
-  const product = products.find(entry => entry.code === item.code)
+  const product = productByCode(item.code)
   const note = itemNote(item, items)
   return <li data-cart-product={item.code} data-cart-status={item.status}>
     <PurchaseThumbnail code={item.code} name={item.name} />
     <div>
-      <h3>{itemName(item.code, item.name)}</h3>
+      <h3>{productName(item.code, item.name)}</h3>
       {product?.tagline && <p className="cart-item-tagline">{product.tagline}</p>}
       <ItemPrice item={item} className="cart-item-price" />
       <details className="cart-composition"><Summary>O que está incluído</Summary><ul>{item.games.map(game => <li key={game.code}>{game.name}</li>)}{product?.contents.map(text => <li key={text}>{text}</li>)}</ul></details>
       {note && <p className={item.status === 'unavailable' ? 'form-error' : 'cart-overlap'}>{note}{item.status === 'already_owned' && <> <Link className="inline-link" to="/meus-jogos">Ver no Portal</Link></>}</p>}
-      <button className="text-button" disabled={busy} onClick={() => onRemove(item.code)} aria-label={`Remover ${itemName(item.code, item.name)}`}>Remover</button>
+      <button className="text-button" disabled={busy} onClick={() => onRemove(item.code)} aria-label={`Remover ${productName(item.code, item.name)}`}>Remover</button>
     </div>
   </li>
 }
@@ -54,7 +54,7 @@ export default function Carrinho() {
   }
   useEffect(() => {
     // Espera a sessão ser lida: com ela o item vai para a sacola da conta; sem ela, para a do navegador.
-    if (ready && pending && /^[A-Z0-9_-]{1,40}$/.test(pending) && attempted.current !== pending) {
+    if (ready && pending && isProductCode(pending) && attempted.current !== pending) {
       attempted.current = pending
       void addPending(pending)
     }

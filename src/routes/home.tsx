@@ -23,7 +23,7 @@ export default function Home() {
   const main = useRef<HTMLElement>(null)
   // The highlight is the tail of the second headline line; the mark never changes the words.
   const headlineRest = experience.headline[1].endsWith(experience.highlight) ? experience.headline[1].slice(0, -experience.highlight.length) : `${experience.headline[1]} `
-  // Plano 001: o reveal anima o conteúdo de cada folha, nunca o fundo da seção.
+  // O reveal anima o conteúdo de cada folha, nunca o fundo da seção.
   useScrollReveal(main, '.page-section > .content-width')
   return <main id="conteudo" tabIndex={-1} ref={main}>
     <div className="hero">

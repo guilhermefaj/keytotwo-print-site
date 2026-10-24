@@ -10,8 +10,8 @@ Medido com o catálogo real, numa origem liberada pelo CORS das functions (5178)
 |---|---|---|---|---|
 | Início | 99 | 1,06 s | 1,66 s | 0,017 |
 | Loja | 97 | 1,06 s | 2,56 s | 0,019 |
-| Pacote (`/loja/p001`) | 96 | 1,06 s | 2,71 s | 0 |
-| Rabisque (`/loja/j001`) | 100 | 1,06 s | 1,81 s | 0 |
+| Pacote (`/loja/colecao-fundadores`) | 96 | 1,06 s | 2,71 s | 0 |
+| Rabisque (`/loja/rabisque-e-adivinhe`) | 100 | 1,06 s | 1,81 s | 0 |
 
 Na origem 4176, sem catálogo, Ajuda, Entrar e Blog deram 100, Tabuleiro 99 e Rapadura 98.
 
@@ -31,14 +31,14 @@ O Lighthouse móvel simula 4G lento. No LCP, ele conta tudo o que foi pedido ant
 4. **Hidratação depois do primeiro quadro** (`src/entry.client.tsx`).
 5. **Prioridades das imagens:**
    - o logo e a cena da hero usam `fetchpriority="low"`;
-   - o atlas do Kito tem preload com prioridade baixa;
+   - o atlas do Kito só desce quando a cena roda pela primeira vez, com prioridade baixa (`HeroScene.tsx`);
    - a capa principal (galeria do produto e banner da Loja) usa `fetchpriority="high"`, sem lazy.
-6. **Capas em 960 px** (`scripts/prepare-game-covers.mjs`): o celular com tela densa deixa de baixar a de 1280 px.
+6. **Capas em 640 e 800 px** (`scripts/prepare-game-covers.mjs`; o teto de 800 px é também o limite para as folhas dos jogos pagos não darem para usar).
 7. **Fontes do título** com preload e `preconnect` ao Supabase.
 8. **Loja:** o "Consultando disponibilidade…" do topo fica só para leitor de tela, porque empurrava o banner (CLS).
 
 **O que não mudou:**
-- **Atlas do Kito (482 KB, sem perdas):** é arte em resolução nativa e o AVIF sem perdas fica 2,7 vezes maior. É a exceção do Portão 2.
+- **Atlas do Kito (`kito-pixel-atlas.webp`, 290 KB, sem perdas):** é arte em resolução nativa e o AVIF sem perdas fica 2,7 vezes maior.
 - **supabase-js (59 KB com gzip):** continua no boot, mas agora depois da pintura.
 
 ## Custo conhecido
@@ -63,4 +63,4 @@ Com o JS começando depois da primeira pintura, um teste podia clicar ou teclar 
 3. Rodar o Lighthouse 12 com Chrome do Playwright:
    - `CHROME_PATH=<chromium do Playwright> npx lighthouse@12.8.2 <url> --only-categories=performance --chrome-flags="--headless=new"`;
    - 3 rodadas por página, usando a mediana.
-4. Para medir a Loja e os produtos com o catálogo real, a origem precisa estar no `ALLOWED_ORIGINS` das functions hospedadas. Hoje só a 5178 está. Em outra origem, o catálogo falha por CORS e aparece um erro que gera CLS artificial.
+4. Para medir a Loja e os produtos com o catálogo real, a origem precisa estar no `ALLOWED_ORIGINS` das functions hospedadas (hoje: o domínio, o teste, o admin e a 5178). Em outra origem, o catálogo falha por CORS e aparece um erro que gera CLS artificial.

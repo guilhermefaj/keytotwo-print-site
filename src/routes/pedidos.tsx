@@ -3,7 +3,7 @@ import { DataStatus } from '../components/account/AccountUi'
 import { Summary } from '../components/ui/Summary'
 import { giftStatus, orderStatus } from '../content/account'
 import { productName } from '../content/products'
-import { dateLabel, money } from '../lib/api'
+import { dateLabel, money } from '../lib/format'
 import { useShop } from '../lib/shop-context'
 
 export default function Pedidos() {

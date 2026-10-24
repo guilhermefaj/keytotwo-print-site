@@ -1,9 +1,8 @@
 import { expect, test, type Page } from './fixtures/test'
 
-// The 16 routes pre-rendered into build/client/<route>/index.html.
+// The 15 routes pre-rendered into build/client/<route>/index.html.
 const routes = [
   '/',
-  '/preview/hero',
   '/entrar',
   '/carrinho', '/pagamento',
   '/meus-jogos', '/pedidos',

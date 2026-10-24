@@ -2,14 +2,15 @@ import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from 
 import { Link, useLocation, useNavigate, useRouteLoaderData } from 'react-router'
 import type { loader as rootLoader } from '../../root'
 import { IconChevronDown, IconLock, IconMenu2, IconShoppingBag } from '@tabler/icons-react'
-import { navigation } from '../../content/site'
-import { siteConfig } from '../../lib/seo'
+import { navigation, privateRoutes } from '../../content/site'
+import { siteConfig } from '../../lib/site-config'
 import { adminUrl, isAdmin, useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
 import { reloadOnStaleChunk } from '../../lib/stale-chunk'
 import { authErrorMessage, supabase } from '../../lib/supabase'
 import { Icon } from '../ui/Icon'
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '../ui/sheet'
+import { useDismiss } from '../../lib/use-dismiss'
 
 // Uma aba aberta antes de uma publicação recarrega na versão nova em vez de cair na página de erro.
 const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: module.CartDrawer }), reloadOnStaleChunk))
@@ -18,7 +19,6 @@ const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: 
 // as abas do Portal já levam a Meus jogos, Pedidos e Minha conta, então o cabeçalho fica com logo, Portal e a
 // conta. O menu móvel mantém os três links. No desktop, quem entrou vê "Portal" e quem não entrou vê só
 // "Entrar"; a Ajuda fica no rodapé e no menu móvel (responsável, 2026-10-21).
-export const privateRoutes = ['/meus-jogos', '/pedidos', '/conta']
 const privateNavigation = [
   { label: 'Meus jogos', href: '/meus-jogos' },
   { label: 'Minha conta', href: '/conta' },
@@ -70,14 +70,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(frame) }
   }, [])
-  useEffect(() => {
-    if (!accountOpen) return
-    const outside = (event: PointerEvent) => { if (!accountMenu.current?.contains(event.target as Node)) setAccountOpen(false) }
-    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setAccountOpen(false); accountTrigger.current?.focus() } }
-    document.addEventListener('pointerdown', outside)
-    document.addEventListener('keydown', escape)
-    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape) }
-  }, [accountOpen])
+  useDismiss(accountOpen, setAccountOpen, accountMenu, accountTrigger)
 
   async function signOut() {
     setSigningOut(true); setError('')

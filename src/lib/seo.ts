@@ -2,22 +2,9 @@ import { otherPages, publicPages } from '../content/site.ts'
 import { productPages, type Product } from '../content/products.ts'
 import { supportEmail } from '../content/help.ts'
 import { instagram, tiktok } from '../content/gratuitos.ts'
-import defaults from '../../site.config.json' with { type: 'json' }
 import type { BlogPostSummary } from './blog.ts'
-
-type PublicEnv = { VITE_SITE_STAGE?: string; VITE_SITE_URL?: string }
-export function resolveSiteConfig(env: PublicEnv) {
-  const stage = env.VITE_SITE_STAGE || defaults.stage
-  if (!['preview', 'test', 'live'].includes(stage)) throw new Error('VITE_SITE_STAGE must be preview, test or live.')
-  const url = new URL(env.VITE_SITE_URL || defaults.url)
-  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
-    throw new Error('VITE_SITE_URL must be an HTTP(S) origin without credentials, path, query or fragment.')
-  }
-  if (stage === 'live' && url.protocol !== 'https:') throw new Error('Live VITE_SITE_URL must use HTTPS.')
-  return { stage, origin: url.origin, showCartAccess: stage !== 'preview' }
-}
-
-export const siteConfig = resolveSiteConfig({ VITE_SITE_STAGE: import.meta.env?.VITE_SITE_STAGE, VITE_SITE_URL: import.meta.env?.VITE_SITE_URL })
+import { priceDecimal } from './format.ts'
+import { siteConfig } from './site-config.ts'
 
 export function pageSeo(pathname: string, post?: BlogPostSummary) {
   const path = pathname.replace(/\/+$/, '') || '/'
@@ -71,7 +58,7 @@ export function homeJsonLd() {
 // Página do produto: o produto com o preço aprovado (o mesmo do Price da Stripe) e a trilha Início › Loja › produto.
 export function productJsonLd(product: Product) {
   const url = new URL(`/loja/${product.slug}`, siteConfig.origin).href
-  const price = product.offer.priceApproved && product.offer.price ? product.offer.price.replace(/[^\d,]/g, '').replace(',', '.') : null
+  const price = product.offer.priceApproved && product.offer.price ? priceDecimal(product.offer.price) : null
   return {
     '@context': 'https://schema.org',
     '@graph': [

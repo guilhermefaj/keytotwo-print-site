@@ -34,7 +34,7 @@ const escapeHtml = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').rep
 
 async function check(root, built) {
   const config = JSON.parse(readFileSync(path.join(root, 'site.config.json'), 'utf8'))
-  const env = loadEnv(process.env.SEO_MODE || 'production', root, 'VITE_SITE_')
+  const env = loadEnv('production', root, 'VITE_SITE_')
   const stage = process.env.VITE_SITE_STAGE || env.VITE_SITE_STAGE || config.stage
   if (!['preview', 'test', 'live'].includes(stage)) throw new Error('VITE_SITE_STAGE inválido')
   if (stage !== 'live') {

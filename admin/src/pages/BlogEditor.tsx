@@ -2,12 +2,14 @@ import { IconArrowLeft, IconExternalLink, IconLibraryPhoto, IconPhoto } from '@t
 import { useDeferredValue, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Link, useBlocker, useNavigate, useParams } from 'react-router'
 import { api, ApiError, apiMessage, useResource } from '../api'
-import { acceptedImages, BLOG_LIMITS, formatDate, imagePathsIn, mediaUrl, readingMinutes, SEO_IDEAL, slugify, today, uploadImage, type BlogList, type BlogPost, type BlogPostInput, type BlogProblem } from '../blog'
-import { problemsOf, renderMarkdown } from '../blog-markdown'
+import { acceptedImages, BLOG_LIMITS, deletedNotice, imagePathsIn, mediaUrl, SEO_IDEAL, slugify, today, uploadImage, type BlogList, type BlogPost, type BlogPostInput, type BlogProblem } from '../blog'
+import { PostHeader } from '../../../src/components/blog/PostHeader'
+import { problemsOf, readingMinutesOf, renderMarkdown } from '../blog-markdown'
 import { SiteStatus } from '../SiteStatus'
 import { siteUrl } from '../supabase'
 import { ImageGallery } from './ImageGallery'
 import { TextEditor } from './TextEditor'
+import { LoadError } from '../LoadError'
 
 // Editor do blog (2026-10-23): /blog/novo cria, /blog/:id edita. Rascunho guarda o que estiver pronto; publicar confere
 // o post inteiro com as regras do build do site. O endereço sai do título até a primeira publicação e depois fica fixo.
@@ -46,7 +48,7 @@ function BlogEditorPage({ id }: { id?: string }) {
 function NewPost() {
   const { data, error, loading, reload } = useResource<BlogList>('/admin/blog/posts')
   if (loading) return <Loading />
-  if (error !== undefined) return <LoadError error={error} reload={reload} />
+  if (error !== undefined) return <PostLoadError error={error} reload={reload} />
   // O autor do último post editado já vem preenchido.
   return <Editor initial={null} mediaBase={data!.media_base} defaultAuthor={data!.posts.find(post => post.author)?.author ?? ''} />
 }
@@ -54,21 +56,17 @@ function NewPost() {
 function ExistingPost({ id }: { id: string }) {
   const { data, error, loading, reload } = useResource<{ post: BlogPost; media_base: string | null }>(`/admin/blog/posts/${id}`)
   if (loading) return <Loading />
-  if (error !== undefined) return <LoadError error={error} reload={reload} />
+  if (error !== undefined) return <PostLoadError error={error} reload={reload} />
   return <Editor key={data!.post.id} initial={data!.post} mediaBase={data!.media_base} />
 }
 
 const Loading = () => <><title>Blog — Admin KeyToTwo</title><BackToList /><p className="status" role="status">Abrindo o post…</p></>
 
-function LoadError({ error, reload }: { error: unknown; reload: () => void }) {
-  const missing = error instanceof ApiError && error.code === 'NOT_FOUND'
+function PostLoadError({ error, reload }: { error: unknown; reload: () => void }) {
   return <>
     <title>Blog — Admin KeyToTwo</title>
     <BackToList />
-    <div className="status-error" role="alert">
-      <p>{missing ? 'Este post não existe mais. Ele pode ter sido excluído.' : apiMessage(error)}</p>
-      {!missing && <button className="button button-secondary" type="button" onClick={reload}>Tentar de novo</button>}
-    </div>
+    <LoadError error={error} retry={reload} missing="Este post não existe mais. Ele pode ter sido excluído." />
   </>
 }
 
@@ -188,7 +186,7 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice, 
     try {
       await api(`/admin/blog/posts/${saved.id}`, { method: 'DELETE' })
       leaving.current = true
-      navigate('/blog', { state: { notice: published ? `“${saved.title}” foi excluído e sai do site em 1 ou 2 minutos.` : `“${saved.title}” foi excluído.` } })
+      navigate('/blog', { state: { notice: deletedNotice(saved.title, published) } })
     } catch (error) {
       setMessage({ kind: 'error', text: apiMessage(error) })
       setBusy(null)
@@ -422,17 +420,8 @@ function Preview({ form, status, mediaBase }: { form: Form; status: Status; medi
   // tabIndex: a prévia rola sozinha, então precisa receber foco para rolar pelo teclado.
   return <section className="preview" aria-label="Prévia do post" tabIndex={0}>
     <article className="blog-post">
-      <header className="blog-post-heading">
-        <div className="blog-meta">
-          {status === 'draft' && <span className="blog-draft">Rascunho</span>}
-          {form.date && /^\d{4}-\d{2}-\d{2}$/.test(form.date) && <time dateTime={form.date}>{formatDate(form.date)}</time>}
-          <span>{readingMinutes(body)} min de leitura</span>
-          {form.author.trim() && <span className="blog-author">Por {form.author.trim()}</span>}
-        </div>
-        <p className="preview-title">{form.title || 'Sem título'}</p>
-        {form.description && <p className="blog-description">{form.description}</p>}
-        {tags.length > 0 && <ul className="blog-tags" aria-label="Temas">{tags.map(tag => <li key={tag}>{tag}</li>)}</ul>}
-      </header>
+      <PostHeader draft={status === 'draft'} date={/^\d{4}-\d{2}-\d{2}$/.test(form.date) ? form.date : undefined} readingMinutes={readingMinutesOf(body)}
+        author={form.author.trim()} title={<p className="preview-title">{form.title || 'Sem título'}</p>} description={form.description} tags={tags} />
       {form.cover && <img className="blog-post-cover" src={mediaUrl(form.cover, mediaBase)} alt={form.cover_alt} width="1200" height="800" />}
       {/* Só o HTML do markdown-it com HTML cru desligado, como no site. */}
       {body.trim() ? <div className="blog-prose" dangerouslySetInnerHTML={{ __html: renderMarkdown(body, mediaBase) }} /> : <p className="preview-empty">O texto aparece aqui enquanto você escreve.</p>}

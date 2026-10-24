@@ -4,13 +4,13 @@
 @import '@fontsource/bricolage-grotesque/latin-700.css';
 @import '@fontsource/dm-sans/latin-400.css';
 @import '@fontsource/dm-sans/latin-600.css';
+@import './primitives.css';
 @import './styles.css';
 @import './navigation.css';
 @import './cookies.css';
 @import './components/account/game-cover.css';
 @import './carousels.css';
 @import './shop.css';
-@import './newsletter.css';
 @import './purchase.css';
 @import './portal.css';
 @import './blog.css';

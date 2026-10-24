@@ -1,10 +1,11 @@
 import { IconSearch } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router'
-import { apiMessage, count, useResource } from '../api'
-import { formatMoment, formatShortDate } from '../blog'
+import { useResource } from '../api'
+import { count, formatMoment, formatShortDate } from '../format'
 import { providersLabel, type UserFilter, type UserList, type UserSummary } from '../users'
 import { UsersHeader } from './UsersHeader'
+import { LoadError } from '../LoadError'
 
 const filters: { value: UserFilter; label: string }[] = [
   { value: 'all', label: 'Todas' }, { value: 'buyers', label: 'Com compra' }, { value: 'newsletter', label: 'Nas novidades' }, { value: 'blocked', label: 'Bloqueadas' },
@@ -59,7 +60,7 @@ export function UsersPage() {
     </div>
     {notice && <p className="notice" role="status">{notice}</p>}
     {loading && !list && <p className="status" role="status">Carregando as contas…</p>}
-    {!loading && error !== undefined && <div className="status-error" role="alert"><p>{apiMessage(error)}</p><button className="button button-secondary" type="button" onClick={reload}>Tentar de novo</button></div>}
+    {!loading && error !== undefined && <LoadError error={error} retry={reload} />}
     {list && (list.users.length === 0
       ? <p className="status" role="status">{query ? 'Nenhuma conta com esse e-mail.' : 'Nenhuma conta neste filtro.'}</p>
       : <>

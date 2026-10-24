@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from 'react'
-import { siteConfig } from './seo'
+import { priceDecimal } from './format'
+import { siteConfig } from './site-config'
 
 // GA4 (responsável, 2026-10-22): só no domínio real, só depois do "Aceitar" no aviso de cookies (LGPD: consentimento,
 // Política de privacidade › Cookies). No stage test o aviso aparece para revisão, mas aceitar não carrega nada.
-export const gaMeasurementId = 'G-9NVMZZS65E'
+const gaMeasurementId = 'G-9NVMZZS65E'
 
 type Choice = 'granted' | 'denied'
 type Stored = { value: Choice; at: string; version: number }
@@ -16,11 +17,11 @@ const VERSION = 1
 const MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000
 
 declare global {
-  interface Window { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void }
+  interface Window { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void; [gaDisable: `ga-disable-${string}`]: boolean | undefined }
 }
 
 // Medição de verdade só no host de produção do build live (o teste e o localhost nunca enviam dados).
-export function analyticsAvailable() {
+function analyticsAvailable() {
   return siteConfig.stage === 'live' && typeof location !== 'undefined' && location.hostname === new URL(siteConfig.origin).hostname
 }
 export const cookieNoticeEnabled = () => analyticsAvailable() || siteConfig.stage === 'test'
@@ -64,9 +65,18 @@ export function onCookieNoticeReopen(listener: () => void) {
   return () => window.removeEventListener(REOPEN, listener)
 }
 
+// `loaded`: o gtag já está na página. `granted`: a escolha vale agora, nesta página. Recusar e aceitar de novo
+// sem recarregar reaproveita o gtag e só troca o consentimento (e o ga-disable, que o próprio GA respeita).
 let loaded = false
+let granted = false
 export function loadAnalytics() {
-  if (loaded || !analyticsAvailable() || snapshot() !== 'granted') return
+  if (!analyticsAvailable() || snapshot() !== 'granted') return
+  granted = true
+  window[`ga-disable-${gaMeasurementId}`] = false
+  if (loaded) {
+    window.gtag?.('consent', 'update', { analytics_storage: 'granted' })
+    return
+  }
   loaded = true
   window.dataLayer = window.dataLayer || []
   // O gtag precisa do objeto arguments, não de um array.
@@ -83,6 +93,8 @@ export function loadAnalytics() {
 
 // Recusa depois de ter aceitado: o GA4 para de gravar e os cookies dele (_ga, _ga_*) saem do navegador.
 function revokeAnalytics() {
+  granted = false
+  window[`ga-disable-${gaMeasurementId}`] = true
   window.gtag?.('consent', 'update', { analytics_storage: 'denied' })
   const domain = location.hostname.replace(/^www\./, '')
   for (const name of document.cookie.split(';').map(cookie => cookie.split('=')[0].trim()).filter(name => name === '_ga' || name.startsWith('_ga_'))) {
@@ -93,13 +105,13 @@ function revokeAnalytics() {
 // Eventos de loja do GA4 (view_item, add_to_cart, begin_checkout, purchase); sem aceite, nada sai.
 export type AnalyticsItem = { item_id: string; item_name: string; price?: number; quantity?: number }
 export function track(event: string, params: { currency?: string; value?: number; transaction_id?: string; items?: AnalyticsItem[] } = {}) {
-  if (loaded) window.gtag?.('event', event, params)
+  if (granted) window.gtag?.('event', event, params)
 }
 export const toReais = (cents: number) => Math.round(cents) / 100
 
 // Preço de tabela do conteúdo ("R$ 29,90") em reais.
 export function offerValue(price: string): number | undefined {
-  const value = Number(price.replace(/[^\d,]/g, '').replace(',', '.'))
+  const value = Number(priceDecimal(price))
   return Number.isFinite(value) && value > 0 ? value : undefined
 }
 

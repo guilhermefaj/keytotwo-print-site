@@ -1,14 +1,17 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { apiErrorMessage, money } from '../../lib/api'
+import { apiErrorMessage } from '../../lib/api'
+import { money } from '../../lib/format'
 import { canCheckout } from '../../lib/checkout'
 import { useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
 import { KitoEmpty } from '../ui/KitoEmpty'
 import { ItemPrice, PurchaseThumbnail } from '../checkout/PurchaseUi'
-import { itemName, itemNote } from '../checkout/purchase-names'
+import { itemNote } from '../checkout/purchase-names'
+import { productName } from '../../content/products'
 import { loginDestination } from '../../lib/supabase'
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from '../ui/sheet'
+import { emptyCart } from '../../content/site'
 
 export function CartDrawer() {
   const { session } = useAuth()
@@ -36,11 +39,11 @@ export function CartDrawer() {
           : cart.error ? <div className="drawer-feedback"><p role="alert">{cart.error}</p><button className="button button-secondary" onClick={cart.reload}>Tentar novamente</button></div>
           : items.length ? <ul className="drawer-items">{items.map(item => <li key={item.code}>
             <PurchaseThumbnail code={item.code} name={item.name} className="drawer-thumbnail" />
-            <div><h3>{itemName(item.code, item.name)}</h3><p>{item.games.length === 1 ? '1 jogo para imprimir' : `${item.games.length} jogos para imprimir`}</p><ItemPrice item={item} className="drawer-price" />
+            <div><h3>{productName(item.code, item.name)}</h3><p>{item.games.length === 1 ? '1 jogo para imprimir' : `${item.games.length} jogos para imprimir`}</p><ItemPrice item={item} className="drawer-price" />
               {itemNote(item, items) && <p className="field-help">{itemNote(item, items)}</p>}
-              <button className="text-button drawer-remove" disabled={busy} onClick={() => removeItem(item.code)} aria-label={`Remover ${itemName(item.code, item.name)}`}>Remover</button>
+              <button className="text-button drawer-remove" disabled={busy} onClick={() => removeItem(item.code)} aria-label={`Remover ${productName(item.code, item.name)}`}>Remover</button>
             </div>
-          </li>)}</ul> : <div className="drawer-empty"><KitoEmpty /><h3>Sua sacola está vazia</h3><p>Por enquanto só tem o Kito aqui dentro. Ele aceita companhia.</p>
+          </li>)}</ul> : <div className="drawer-empty"><KitoEmpty /><h3>{emptyCart.title}</h3><p>{emptyCart.text}</p>
             <SheetClose asChild><Link className="button button-primary" to="/loja" onClick={navigateAway}>Ver os jogos</Link></SheetClose>
             {!session && <SheetClose asChild><Link className="inline-link" to="/entrar?next=%2Fcarrinho" onClick={navigateAway}>Entrar para ver a sacola da sua conta</Link></SheetClose>}
           </div>}
