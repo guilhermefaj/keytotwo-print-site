@@ -24,7 +24,9 @@ stamp=$(date -u +%Y-%m-%dT%H%MZ)
 # Os mesmos filtros do `supabase db dump` (CLI 2.118.0: pkg/migration/dump.go e scripts/dump_*.sh), sem o
 # `--role postgres`: o papel do backup não vira postgres. As listas e os sed são os da CLI.
 internal='information_schema|pg_*|_analytics|_realtime|_supavisor|auth|etl|extensions|pgbouncer|realtime|storage|supabase_functions|supabase_migrations|cron|dbdev|graphql|graphql_public|net|pgmq|pgsodium|pgsodium_masks|pgtle|repack|tiger|tiger_data|timescaledb_*|_timescaledb_*|topology|vault'
-excluded='information_schema|pg_*|graphql|graphql_public|pgsodium|pgsodium_masks|pgtle|repack|tiger|tiger_data|timescaledb_*|_timescaledb_*|topology|vault|etl|extensions|pgbouncer|realtime|supabase_migrations|_analytics|_realtime|_supavisor'
+# Nos dados sai também o storage: a loja não usa o Storage do Supabase (os arquivos ficam na B2), e num projeto novo o
+# postgres não grava nas tabelas dele (o ensaio de 2026-10-24 parou ali).
+excluded='information_schema|pg_*|graphql|graphql_public|pgsodium|pgsodium_masks|pgtle|repack|tiger|tiger_data|timescaledb_*|_timescaledb_*|topology|vault|etl|extensions|pgbouncer|realtime|supabase_migrations|_analytics|_realtime|_supavisor|storage'
 reserved='anon|authenticated|authenticator|cli_login_.*|dashboard_user|pgbouncer|postgres|service_role|supabase_.*|pgsodium_keyholder|pgsodium_keyiduser|pgsodium_keymaker|pgtle_admin'
 configs='pgaudit.*|pgrst.*|session_replication_role|statement_timeout|track_io_timing'
 
@@ -35,10 +37,18 @@ pg_dumpall --dbname="$BACKUP_DB_URL" --roles-only --quote-all-identifier --no-ro
 | sed -E "s/ (NOSUPERUSER|NOREPLICATION)//g" \
 | sed -E "s/^-- (.* SET \"($configs)\" .*)/\1/" \
 | sed -E "s/GRANT \".*\" TO \"($reserved)\"/-- &/" \
+| sed -E "s/^GRANT .* ON PARAMETER .* TO \"($reserved)\"/-- &/" \
 | sed -E '/^--/d' \
 | uniq > roles.sql
 
-pg_dump "$BACKUP_DB_URL" --schema-only --quote-all-identifier --exclude-schema="$internal" \
+# O pg_dump grava as permissões como diferença do padrão do Postgres, e um projeto novo da Supabase dá tudo a anon,
+# authenticated e service_role no que nasce em public: sem desligar isso antes, as RPCs voltariam abertas para
+# qualquer um (visto no ensaio de 2026-10-24). O padrão de origem volta no fim do próprio dump.
+{
+  echo 'ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" REVOKE ALL ON FUNCTIONS FROM "anon", "authenticated", "service_role";'
+  echo 'ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" REVOKE ALL ON TABLES FROM "anon", "authenticated", "service_role";'
+  echo 'ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" REVOKE ALL ON SEQUENCES FROM "anon", "authenticated", "service_role";'
+  pg_dump "$BACKUP_DB_URL" --schema-only --quote-all-identifier --exclude-schema="$internal" \
 | sed -E 's/^\\(un)?restrict .*$/-- &/' \
 | sed -E 's/^CREATE SCHEMA "/CREATE SCHEMA IF NOT EXISTS "/' \
 | sed -E 's/^CREATE TABLE "/CREATE TABLE IF NOT EXISTS "/' \
@@ -64,7 +74,14 @@ pg_dump "$BACKUP_DB_URL" --schema-only --quote-all-identifier --exclude-schema="
 | sed -E 's/^CREATE POLICY "cron_job_/-- &/' \
 | sed -E 's/^ALTER TABLE "cron"/-- &/' \
 | sed -E 's/^SET transaction_timeout = 0;/-- &/' \
-| sed -E '/^--/d' > schema.sql
+| sed -E '/^--/d'
+  # Os gatilhos da loja nas tabelas do Auth (o perfil de quem se cadastra, a confirmação do e-mail) ficam fora do dump,
+  # que não leva o schema auth: entram no fim, depois das funções que eles chamam (visto no ensaio de 2026-10-24).
+  psql "$BACKUP_DB_URL" --no-psqlrc -At -v ON_ERROR_STOP=1 -c "select pg_get_triggerdef(t.oid) || ';' from pg_trigger t
+    join pg_class c on c.oid = t.tgrelid join pg_proc p on p.oid = t.tgfoid
+    where c.relnamespace = 'auth'::regnamespace and not t.tgisinternal
+      and p.pronamespace in ('public'::regnamespace, 'private'::regnamespace) order by t.tgname"
+} > schema.sql
 
 {
   echo 'SET session_replication_role = replica;'
@@ -74,8 +91,12 @@ pg_dump "$BACKUP_DB_URL" --schema-only --quote-all-identifier --exclude-schema="
   echo 'RESET ALL;'
 } > data.sql
 
-# Uma cópia sem as tabelas da loja não vale: confere antes de enviar.
+# Uma cópia sem as tabelas da loja não vale: confere antes de enviar (o sed no fim de cada pipe esconde a falha do
+# pg_dump; a conferência não).
+grep -q '^CREATE ROLE "backup_ro"' roles.sql
 grep -q '^CREATE TABLE IF NOT EXISTS "public"."orders"' schema.sql
+grep -q '^ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "anon"' schema.sql
+grep -q '^CREATE TRIGGER on_auth_user_created ' schema.sql
 grep -q '^COPY "public"."orders"' data.sql
 grep -q '^COPY "auth"."users"' data.sql
 tar -czf - roles.sql schema.sql data.sql | age -r "$BACKUP_AGE_RECIPIENT" > copia.tar.gz.age
