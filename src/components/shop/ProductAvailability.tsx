@@ -16,18 +16,18 @@ export function CatalogFeedback({ quietLoading = false }: { quietLoading?: boole
   return null
 }
 
-// Conteúdo não concede disponibilidade: o catálogo aplica a completude e publicação dos jogos.
-// `fallback` substitui o "Em breve" quando o jogo ainda se compra de outro jeito (no pacote).
+// Conteúdo não concede disponibilidade: o catálogo aplica a completude e publicação dos jogos. Produto lançado que não
+// está no /catalog (pausado no admin) fica "Indisponível no momento"; o que ainda não foi lançado, "Em breve".
+// `fallback` substitui esses avisos quando o jogo ainda se compra de outro jeito (no pacote).
 export function ProductAvailability({ product, detail = false, fallback }: { product?: Product; detail?: boolean; fallback?: ReactNode }) {
   const { catalog } = useShop()
-  const soon = fallback ?? <p className="shop-soon">Em breve</p>
-  if (!product || product.availability !== 'sale' || !siteConfig.showCartAccess) return soon
+  if (!product || product.availability !== 'sale' || !siteConfig.showCartAccess) return fallback ?? <p className="shop-soon">Em breve</p>
   if (catalog.loading || catalog.error) return detail ? <CatalogFeedback /> : null
   const listed = catalog.data?.products.find(item => item.code === product.code)
-  if (!listed) return soon
+  if (!listed) return fallback ?? <p className="shop-soon">Indisponível no momento</p>
   if (!listed.price) return <p className="shop-status">Não conseguimos carregar o preço.</p>
-  // Preço de tabela riscado (promoção de lançamento): só em real e só se for maior que o cobrado pela Stripe.
-  const list = product.offer.listPrice
+  // Preço de tabela riscado (a promoção, no admin): só em real e só se for maior que o cobrado pela Stripe.
+  const list = listed.list_price
   const struck = list && listed.price.currency === 'brl' && list.amount > listed.price.unit_amount ? list : undefined
   return <div className="shop-availability">
     {struck && <p className="shop-price-tag">{struck.label}</p>}

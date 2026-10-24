@@ -5,16 +5,15 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
+import { catalogEntry } from '../../src/content/catalog.ts'
 import { products, productPages } from '../../src/content/products.ts'
 import { publicPages } from '../../src/content/site.ts'
 
-test('cada jogo pago tem oferta avulsa própria, com o preço aprovado (2026-10-16); vagas sem ficha não viram produtos', () => {
+test('cada jogo pago tem oferta avulsa própria, com o preço do catálogo; vagas sem ficha não viram produtos', () => {
   const single = products.find(product => product.code === 'J001')
   assert.equal(single.slug, 'rabisque-e-adivinhe')
-  assert.equal(single.offer.price, 'R$ 9,90')
-  assert.equal(single.offer.priceApproved, true)
+  assert.equal(single.purchaseAction, 'cart')
   assert.deepEqual(single.games.map(game => game.code), ['J001'])
-  assert.notEqual(single.offer, products.find(product => product.code === 'P001').offer)
   // Todo jogo pago também se vende sozinho (responsável, 2026-10-16), na ordem do pacote.
   // URLs com o nome (SEO, 2026-10-22); os códigos antigos redirecionam no nginx.
   assert.deepEqual(productPages.map(product => product.slug), ['colecao-fundadores', 'rabisque-e-adivinhe', 'tabuleiro-da-sorte', 'o-sumico-de-rapadura', 'a-rota-da-fornalha', 'retrospectiva-a-dois'])
@@ -22,12 +21,13 @@ test('cada jogo pago tem oferta avulsa própria, com o preço aprovado (2026-10-
     const other = products.find(product => product.code === code)
     assert.equal(other.kind, 'single')
     assert.deepEqual(other.games.map(game => game.code), [code])
-    assert.equal(other.offer.priceApproved, true)
+    assert.equal(other.purchaseAction, 'cart')
   }
-  assert.deepEqual(products.map(product => [product.code, product.offer.price]), [['P001', 'R$ 29,90'], ['J001', 'R$ 9,90'], ['J003', 'R$ 9,90'], ['J002', 'R$ 12,90'], ['J004', 'R$ 12,90'], ['J005', 'R$ 9,90']])
-  // Pacote com os 5 jogos (responsável, 2026-10-23) e o preço de tabela riscado da promoção de lançamento.
+  // O retrato do catálogo do banco (catalog-snapshot.ts; na VPS, o build troca pelo do momento): preços da Stripe,
+  // o pacote com os 5 jogos na ordem do banco e o preço de tabela riscado da promoção de lançamento.
+  assert.deepEqual(products.map(product => [product.code, catalogEntry(product.code)?.price?.unit_amount]), [['P001', 2990], ['J001', 990], ['J003', 990], ['J002', 1290], ['J004', 1290], ['J005', 990]])
   assert.deepEqual(products.find(product => product.code === 'P001').games.map(game => game.code), ['J001', 'J003', 'J002', 'J004', 'J005'])
-  assert.deepEqual(products.find(product => product.code === 'P001').offer.listPrice, { amount: 3990, label: 'Preço de lançamento' })
+  assert.deepEqual(catalogEntry('P001').list_price, { amount: 3990, label: 'Preço de lançamento' })
   for (const slug of ['hora-dos-artistas', 'p001', 'j001', 'jogo-4', 'jogo-5']) assert.equal(Object.hasOwn(publicPages, `/loja/${slug}`), false)
 })
 

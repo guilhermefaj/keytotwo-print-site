@@ -1,7 +1,7 @@
 import { apiBase, publishableKey, supabase } from './supabase'
 
 type Price = { unit_amount: number; currency: string }
-export type CatalogProduct = { code: string; kind: 'bundle' | 'single'; name: string; games: { code: string; name: string }[]; price: Price | null }
+export type CatalogProduct = { code: string; kind: 'bundle' | 'single'; name: string; games: { code: string; name: string }[]; price: Price | null; list_price?: { amount: number; label: string } | null }
 // status: ok (vai para o pedido), unavailable, already_owned (já está no Portal) e included (avulso que já está num
 // pacote da sacola). price é o de tabela; charge, o que será cobrado (só no ok; menor no pacote de completar a coleção).
 export type CartItem = CatalogProduct & { status: 'ok' | 'unavailable' | 'already_owned' | 'included'; available: boolean; owned_games: string[]; included_in: string[]; shared_with: string[]; charge: Price | null }

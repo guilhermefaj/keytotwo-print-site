@@ -1,5 +1,5 @@
+import { catalogEntry } from './catalog.ts'
 import { games, packageGames, cover, type Game, type GameCoverArt } from './games.ts'
-import { packageOffer, type ProductOffer } from './offer.ts'
 
 export type Product = {
   code: string
@@ -13,7 +13,8 @@ export type Product = {
   contents: readonly string[]
   delivery: readonly string[]
   games: readonly Game[]
-  offer: ProductOffer
+  /** Ação editorial; poder comprar de fato depende de o produto estar no /catalog. */
+  purchaseAction: 'cart' | null
   /** Capa oficial (16:9) para miniaturas; sem ela, a capa tipográfica com o título. Nunca a prévia do PDF. */
   thumbnail?: { src: string; alt: string }
   /** Capa do próprio produto (pacote) na Loja e na página dele; o avulso usa a capa do jogo. */
@@ -26,9 +27,8 @@ const packageContents = ['Todos os jogos da coleção num só pedido', 'Um PDF p
 
 const byCode = (code: string) => games.find(game => game.code === code)!
 
-// Avulso: todo jogo pago também se vende sozinho (responsável, 2026-10-16). O preço exibido vem do /catalog;
-// `price` é o valor aprovado pelo responsável em 2026-10-16, conferido só pela trava de release.
-function single(game: Game, price: string, contents: readonly string[], seo: Product['seo']): Product {
+// Avulso: todo jogo pago também se vende sozinho (responsável, 2026-10-16). O preço vem do catálogo (Stripe).
+function single(game: Game, contents: readonly string[], seo: Product['seo']): Product {
   const code = game.code!
   return {
     // URL com o nome do jogo (SEO, 2026-10-22); os códigos antigos (/loja/j001…) redirecionam no nginx.
@@ -36,30 +36,33 @@ function single(game: Game, price: string, contents: readonly string[], seo: Pro
     title: game.name, tagline: game.summary, contents,
     delivery: ['O PDF aparece em Meus jogos assim que o pagamento é confirmado e também chega por e-mail.', 'Dá para baixar de novo quando precisar, sem prazo.'],
     games: [game], thumbnail: { src: game.cover!.src, alt: '' }, seo,
-    offer: { code, price, priceApproved: true, purchaseAction: 'cart' },
+    purchaseAction: 'cart',
   }
 }
 
-// Produtos confirmados pelo responsável; preço e aprovação comercial são por oferta.
+// Os jogos do pacote, na ordem do catálogo do banco (o admin monta o pacote); fora do catálogo (pausado), a lista do
+// conteúdo. Jogo do banco sem ficha aqui não aparece.
+const catalogGames = (code: string) => catalogEntry(code)?.games.map(item => games.find(game => game.code === item)).filter(game => game !== undefined)
+
+// Produtos confirmados pelo responsável; o preço e o pacote vêm do catálogo (catalog.ts).
 // Regra de catálogo: título, chamada, conteúdo e entrega vêm daqui; a oferta renderiza um card por produto.
 // Conteúdo genérico (responsável, 2026-10-16): o que vem, sem contar páginas nem cartas; base nas fichas do segundo cérebro.
 export const products: readonly Product[] = [
-  { code: packageOffer.code, slug: 'colecao-fundadores', kind: 'bundle', availability: 'sale', title: 'Coleção KeyToTwo: Fundadores', tagline: 'Os primeiros jogos da KeyToTwo, num só pedido.', shopHeadline: 'Pacote de jogos', contents: packageContents, delivery: ['Os PDFs aparecem em Meus jogos assim que o pagamento é confirmado e também chegam por e-mail.', 'Dá para baixar de novo quando precisar, sem prazo.'], games: packageGames, cover: cover('p001'), thumbnail: { src: cover('p001').src, alt: '' }, offer: packageOffer,
+  { code: 'P001', slug: 'colecao-fundadores', kind: 'bundle', availability: 'sale', title: 'Coleção KeyToTwo: Fundadores', tagline: 'Os primeiros jogos da KeyToTwo, num só pedido.', shopHeadline: 'Pacote de jogos', contents: packageContents, delivery: ['Os PDFs aparecem em Meus jogos assim que o pagamento é confirmado e também chegam por e-mail.', 'Dá para baixar de novo quando precisar, sem prazo.'], games: catalogGames('P001') ?? packageGames, cover: cover('p001'), thumbnail: { src: cover('p001').src, alt: '' }, purchaseAction: 'cart',
     seo: { title: 'Coleção KeyToTwo: Fundadores, pacote de jogos para casais', description: 'Os primeiros jogos da KeyToTwo num só pedido, em PDF para casais imprimirem e jogarem em casa.' } },
-  single(byCode('J001'), 'R$ 9,90', ['O jogo completo em PDF para imprimir', 'Cartas para recortar e as instruções do jogo'],
+  single(byCode('J001'), ['O jogo completo em PDF para imprimir', 'Cartas para recortar e as instruções do jogo'],
     { title: 'Rabisque e Adivinhe, jogo de desenho para casais', description: 'Jogo cooperativo de desenho e adivinhação para casais, em PDF para imprimir em casa. Rodadas de um minuto e placar da dupla.' }),
-  single(byCode('J003'), 'R$ 9,90', ['O jogo completo em PDF para imprimir', 'Tabuleiro, cartas, moedas, dado e pinos para montar'],
+  single(byCode('J003'), ['O jogo completo em PDF para imprimir', 'Tabuleiro, cartas, moedas, dado e pinos para montar'],
     { title: 'Tabuleiro da Sorte, jogo de tabuleiro para casais', description: 'Perguntas, desafios e moedas num tabuleiro para dois, com um pedido secreto valendo. PDF para imprimir e montar em casa.' }),
-  single(byCode('J002'), 'R$ 12,90', ['O jogo completo em PDF para imprimir', 'Desafios, envelopes e cartões de dica'],
+  single(byCode('J002'), ['O jogo completo em PDF para imprimir', 'Desafios, envelopes e cartões de dica'],
     { title: 'O Sumiço de Rapadura, escape room para casais', description: 'Escape room de papel para dois: ajudem o Kito a encontrar Rapadura. PDF para imprimir, recortar e resolver juntos em casa.' }),
-  // Preços do responsável em 2026-10-23.
-  single(byCode('J004'), 'R$ 12,90', ['O jogo completo em PDF para imprimir', 'Desafios, envelopes e cartões de dica'],
+  single(byCode('J004'), ['O jogo completo em PDF para imprimir', 'Desafios, envelopes e cartões de dica'],
     { title: 'A Rota da Fornalha, escape room espacial para casais', description: 'Escape room de papel para dois: ajudem o Kito a pôr a nave de volta na rota. PDF para imprimir, recortar e resolver juntos em casa.' }),
-  single(byCode('J005'), 'R$ 9,90', ['O jogo completo em PDF para imprimir', 'Cartões, cédulas, pôster e cápsula para preencher'],
+  single(byCode('J005'), ['O jogo completo em PDF para imprimir', 'Cartões, cédulas, pôster e cápsula para preencher'],
     { title: 'Retrospectiva a Dois, jogo de memória para casais', description: 'Uma premiação da temporada do casal, com linha do tempo, prêmios e uma cápsula para a próxima. PDF para imprimir e jogar em casa.' }),
 ]
 
-// Um produto soon deve declarar offer.purchaseAction: null; não cadastrar exemplos públicos.
+// Um produto soon deve declarar purchaseAction: null; não cadastrar exemplos públicos.
 
 // O prerender é editorial. A venda na tela exige também presença no /catalog em runtime.
 export const productPages = products.filter(product => product.availability === 'sale')

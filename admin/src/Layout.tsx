@@ -1,4 +1,4 @@
-import { IconAlertTriangle, IconArticle, IconChartBar, IconExternalLink, IconLogout, IconReceipt2, IconUsers } from '@tabler/icons-react'
+import { IconAlertTriangle, IconArticle, IconBox, IconChartBar, IconExternalLink, IconLogout, IconReceipt2, IconUsers } from '@tabler/icons-react'
 import { NavLink, Outlet } from 'react-router'
 import { useAlerts } from './alerts'
 import { SignOut } from './Screen'
@@ -11,6 +11,7 @@ const sections = [
   { to: '/atencao', label: 'Atenção', icon: IconAlertTriangle },
   { to: '/blog', label: 'Blog', icon: IconArticle },
   { to: '/pedidos', label: 'Pedidos e reembolsos', icon: IconReceipt2 },
+  { to: '/catalogo', label: 'Catálogo', icon: IconBox },
   { to: '/usuarios', label: 'Usuários', icon: IconUsers },
 ] as const
 

@@ -24,11 +24,15 @@ main() {
   blog=$(curl -fsS --max-time 20 -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" "$VITE_SUPABASE_URL/functions/v1/api/blog/version" \
     | sed -n 's/.*"version":"\([0-9a-f]\{32\}\)".*/\1/p')
   if [ -z "$blog" ]; then echo "A API não respondeu a versão do blog" >&2; exit 1; fi
+  # Catálogo (2026-10-24): o preço, o riscado e os pacotes vêm do banco no build; a versão muda a cada mudança no admin.
+  catalog=$(curl -fsS --max-time 20 -X POST -H "apikey: $VITE_SUPABASE_PUBLISHABLE_KEY" -H 'Content-Type: application/json' \
+    -d '{}' "$VITE_SUPABASE_URL/rest/v1/rpc/get_catalog_version" | sed -n 's/^"\([0-9a-f]\{32\}\)"$/\1/p')
+  if [ -z "$catalog" ]; then echo "A API não respondeu a versão do catálogo" >&2; exit 1; fi
   # O prefixo separa a imagem live da do teste, feita do mesmo commit com outras variáveis.
   docker build --pull --quiet -t "keytotwo-site:live-$sha" \
     --build-arg VITE_SITE_STAGE --build-arg VITE_SITE_URL --build-arg VITE_SUPABASE_URL \
     --build-arg VITE_SUPABASE_PUBLISHABLE_KEY --build-arg VITE_STRIPE_PUBLISHABLE_KEY --build-arg VITE_CHECKOUT_MODE \
-    --build-arg VITE_TERMS_VERSION --build-arg BLOG_SOURCE=api --build-arg BLOG_VERSION="$blog" \
+    --build-arg VITE_TERMS_VERSION --build-arg CONTENT_SOURCE=api --build-arg BLOG_VERSION="$blog" --build-arg CATALOG_VERSION="$catalog" \
     "$base/repo" >/dev/null
 
   # Para voltar, basta pôr um live-<commit> anterior no IMAGE_TAG e rodar o compose de novo.

@@ -196,7 +196,8 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
     authAdminCalls.push(call)
     return Promise.resolve(respond(authAdminReply(call)))
   }
-  if (url.origin === 'https://api.stripe.com' && url.pathname.startsWith('/v1/prices/')) {
+  // Ler um Price (prices.ts, sem o SDK) é o onPrice; criar e arquivar passam pelo onStripe, como o resto da Stripe.
+  if (url.origin === 'https://api.stripe.com' && url.pathname.startsWith('/v1/prices/') && (init?.method ?? 'GET').toUpperCase() === 'GET') {
     return Promise.resolve(respond(priceReply(decodeURIComponent(url.pathname.slice('/v1/prices/'.length)))))
   }
   if (url.origin === 'https://api.stripe.com') {

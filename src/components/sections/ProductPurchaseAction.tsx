@@ -13,7 +13,7 @@ export function ProductPurchaseAction({ code, name, compact = false }: { code: s
   const { cart, catalog, add, busy } = useShop()
   const [error, setError] = useState('')
   const product = productByCode(code)
-  const canPurchase = product?.availability === 'sale' && product.offer.purchaseAction === 'cart'
+  const canPurchase = product?.availability === 'sale' && product.purchaseAction === 'cart'
   const listed = catalog.data?.products.find(item => item.code === code)
   const owned = Boolean(session && cart.data?.owned_products?.includes(code))
   async function addProduct() {

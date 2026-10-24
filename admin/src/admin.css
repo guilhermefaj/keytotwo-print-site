@@ -316,6 +316,7 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .plain-row-sub { color: var(--color-ink-soft); font-size: var(--text-caption); }
 .plain-row-amount { min-width: 80px; font-variant-numeric: tabular-nums; text-align: right; }
 .alert-links { display: flex; flex-wrap: wrap; gap: 0 16px; }
+.catalog-list-price { margin-right: 4px; color: var(--color-ink-soft); font-size: var(--text-caption); }
 .timeline { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: var(--text-label); }
 .timeline time { margin-right: 6px; color: var(--color-ink-soft); font-variant-numeric: tabular-nums; }
 .timeline-by { color: var(--color-ink-soft); }

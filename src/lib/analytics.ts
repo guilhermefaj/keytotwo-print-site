@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from 'react'
-import { priceDecimal } from './format'
 import { siteConfig } from './site-config'
 
 // GA4 (responsável, 2026-10-22): só no domínio real, só depois do "Aceitar" no aviso de cookies (LGPD: consentimento,
@@ -108,12 +107,6 @@ export function track(event: string, params: { currency?: string; value?: number
   if (granted) window.gtag?.('event', event, params)
 }
 export const toReais = (cents: number) => Math.round(cents) / 100
-
-// Preço de tabela do conteúdo ("R$ 29,90") em reais.
-export function offerValue(price: string): number | undefined {
-  const value = Number(priceDecimal(price))
-  return Number.isFinite(value) && value > 0 ? value : undefined
-}
 
 // A confirmação não recebe valor nem itens: o início do pagamento guarda o que foi para a Stripe nesta aba. O valor é
 // o da sacola, antes de cupom. A compra é medida uma vez por sessão do Checkout, mesmo recarregando a confirmação.
