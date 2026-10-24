@@ -41,23 +41,24 @@ select pg_temp.expect('lista: filtro desconhecido é KT001',
   $$select * from public.admin_list_orders(pg_temp.uid('padm'), null, 'tudo', false, 0)$$, 'KT001');
 select pg_temp.expect('lista: sem o modo da Stripe é KT001',
   $$select * from public.admin_list_orders(pg_temp.uid('padm'), null, 'all', null, 0)$$, 'KT001');
--- Dentro da transação o now() não anda: os pedidos têm o mesmo created_at e a ordem entre eles é a do id.
+-- Dentro da transação o now() não anda: os pedidos têm o mesmo created_at e a ordem entre eles é a do id. O banco de
+-- teste pode ter o seed (supabase test db): a busca pelo domínio dos e-mails daqui isola os pedidos deste arquivo.
 select pg_temp.assert('lista: só os pedidos do modo pedido, com itens, e-mail e código',
   (select outcome = 'ok' and (result->>'total')::int = 2 and (result->>'limit')::int = 50
           and result->'orders' @> jsonb_build_array(jsonb_build_object('id', pg_temp.oid('aberto')))
           and result->'orders' @> jsonb_build_array(jsonb_build_object(
                 'id', pg_temp.oid('pago'), 'email', 'pana@pgtap.test', 'items', '["Produto PSOLO [TESTE]"]'::jsonb,
                 'ref', private.order_ref(pg_temp.oid('pago')), 'status', 'paid', 'amount_total', 990))
-     from public.admin_list_orders(pg_temp.uid('padm'), null, 'all', false, 0)));
+     from public.admin_list_orders(pg_temp.uid('padm'), '@pgtap.test', 'all', false, 0)));
 select pg_temp.assert('lista: o modo produção mostra só o pedido de produção',
   (select (result->>'total')::int = 1 and result->'orders'->0->>'id' = pg_temp.oid('pago2')::text
-     from public.admin_list_orders(pg_temp.uid('padm'), null, 'all', true, 0)));
+     from public.admin_list_orders(pg_temp.uid('padm'), '@pgtap.test', 'all', true, 0)));
 select pg_temp.assert('lista: filtros pago e em andamento',
   (select (result->>'total')::int = 1 and result->'orders'->0->>'id' = pg_temp.oid('pago')::text
-     from public.admin_list_orders(pg_temp.uid('padm'), null, 'paid', false, 0))
+     from public.admin_list_orders(pg_temp.uid('padm'), '@pgtap.test', 'paid', false, 0))
   and (select (result->>'total')::int = 1 and result->'orders'->0->>'id' = pg_temp.oid('aberto')::text
-     from public.admin_list_orders(pg_temp.uid('padm'), null, 'pending', false, 0))
-  and (select (result->>'total')::int = 0 from public.admin_list_orders(pg_temp.uid('padm'), null, 'refunded', false, 0)));
+     from public.admin_list_orders(pg_temp.uid('padm'), '@pgtap.test', 'pending', false, 0))
+  and (select (result->>'total')::int = 0 from public.admin_list_orders(pg_temp.uid('padm'), '@pgtap.test', 'refunded', false, 0)));
 select pg_temp.assert('lista: busca pelo código (com #, em minúsculas) e por parte do e-mail',
   (select (result->>'total')::int = 1 and result->'orders'->0->>'id' = pg_temp.oid('pago')::text
      from public.admin_list_orders(pg_temp.uid('padm'), '#' || lower(private.order_ref(pg_temp.oid('pago'))), 'all', false, 0))
@@ -114,7 +115,7 @@ select pg_temp.assert('reembolso: o webhook depois vira noop e o aviso de reembo
          from public.email_outbox where order_id = pg_temp.oid('pago') and kind = 'refund')
   and (select status = 'canceled' from public.email_outbox where order_id = pg_temp.oid('pago') and kind = 'delivery'));
 select pg_temp.assert('reembolso: a lista filtra o reembolsado e a ficha mostra o aviso',
-  (select (result->>'total')::int = 1 from public.admin_list_orders(pg_temp.uid('padm'), null, 'refunded', false, 0))
+  (select (result->>'total')::int = 1 from public.admin_list_orders(pg_temp.uid('padm'), '@pgtap.test', 'refunded', false, 0))
   and (select not (result->'order'->>'refundable')::boolean and not (result->'order'->>'deliverable')::boolean
               and result->'emails' @> '[{"kind": "refund", "status": "queued"}]'::jsonb
          from public.admin_get_order(pg_temp.uid('padm'), pg_temp.oid('pago'))));
