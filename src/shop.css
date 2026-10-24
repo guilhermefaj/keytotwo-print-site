@@ -50,18 +50,16 @@
 .shop-game-facts dd { margin: 2px 0 0; font-size: var(--text-small); font-weight: 600; overflow-wrap: anywhere; }
 [data-variant="included"] .shop-game-body > .shop-details { margin: auto 0 0; }
 .shop-game .shop-soon { align-self: flex-start; margin: auto 0 0; padding: 6px 12px; border: var(--line-card-quiet); border-radius: var(--radius-sm); font-size: var(--text-label); font-weight: 600; }
-/* Card de jogo indefinido (segundo freebie): o quadro tracejado diz "ainda não". */
 /* Grátis: título à esquerda e cards à direita no desktop; empilha abaixo de 960 px. */
 .shop-freebies { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-xl); align-items: start; }
 .shop-page .shop-freebies { margin-top: var(--space-3xl); }
 .shop-freebies-heading h2 { font-size: var(--text-headline-sm); margin: var(--space-md) 0 var(--space-sm); }
 /* No Início a seção Grátis é uma folha: H2 de seção, como as vizinhas (na Loja é bloco, sob o H1). */
 .page-section .shop-freebies-heading h2 { font-size: var(--text-headline); }
-.shop-freebies-heading > p:not(.tag) { color: var(--color-ink-soft); max-width: 40ch; margin: 0; }
+.shop-freebies-heading > p { color: var(--color-ink-soft); max-width: 40ch; margin: 0; }
 .shop-freebie-cta { margin-top: var(--space-lg); }
 /* Só a largura do texto, com 44 px de alvo pelo padding: o marca-texto acompanha a palavra e a linha. */
 .shop-details { display: block; width: fit-content; margin: var(--space-sm) auto 0; padding-block: 11px; font-size: var(--text-label); }
-/* Nos cards, o link fica com sublinhado contínuo e fino (o tracejado é da folha de recorte). */
 .shop-price { font-family: var(--font-display); font-size: var(--text-headline-sm); font-weight: 700; letter-spacing: var(--tracking-headline); font-variant-numeric: tabular-nums; margin: 0; }
 .shop-price-note { font-size: var(--text-caption); color: var(--color-ink-soft); margin: var(--space-xs) 0 var(--space-md); }
 /* Promoção (offer.listPrice): o preço de tabela riscado antes do cobrado e o rótulo em Marca-texto. */
@@ -177,7 +175,7 @@
 .free-games .file-meta { margin: 0 0 var(--space-sm); font-size: var(--text-caption); color: var(--color-ink-soft); }
 .free-community { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2xl); align-items: center; margin-top: var(--space-3xl); padding: var(--space-xl); border: var(--line-card); border-radius: var(--radius-md); }
 .free-community h2 { font-size: var(--text-headline-sm); margin: var(--space-md) 0; }
-.free-community-copy > p:not(.tag) { max-width: 60ch; margin: 0 0 var(--space-sm); }
+.free-community-copy > p { max-width: 60ch; margin: 0 0 var(--space-sm); }
 .free-community-invite { font-weight: 600; }
 .free-community-follow { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-sm); }
 .social-button { gap: 10px; }

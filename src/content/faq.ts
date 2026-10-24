@@ -1,4 +1,4 @@
-// Cada resposta começa pela resposta. O prazo tem texto próprio: offer.access também vai para os Termos.
+// Cada resposta começa pela resposta.
 export const faq = [
   { id: 'formato', question: 'É um jogo para jogar no celular?', answer: 'Não. Vocês recebem um PDF para imprimir e jogar na mesa. Um ou outro jogo pede o celular para cronometrar ou tirar uma foto, e só.' },
   { id: 'impressao', question: 'Preciso ter impressora?', answer: 'Não precisa ter uma em casa. Uma gráfica ou papelaria imprime o PDF em A4 comum. Antes, deem uma olhada no guia de impressão.', link: { href: '/ajuda#impressao', label: 'Ajuda com a impressão' } },

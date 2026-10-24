@@ -4,8 +4,6 @@ import { useEffect, useRef } from 'react'
 import { Link, useLocation, useRouteLoaderData } from 'react-router'
 import type { loader as rootLoader } from '../../root'
 import { siteConfig } from '../../lib/seo'
-import { newsletterVisible } from '../../lib/features'
-import { Newsletter } from '../newsletter/Newsletter'
 import { CutLine } from '../ui/CutLine'
 import { company } from '../../content/legal'
 import { instagram, tiktok } from '../../content/gratuitos'
@@ -37,11 +35,10 @@ function FooterKito() {
 export function SiteFooter() {
   const { hasBlogPosts } = useRouteLoaderData<typeof rootLoader>('root')!
   const path = useLocation().pathname.replace(/\/+$/, '')
-  // A newsletter do rodapé fica só nas páginas públicas; a tesoura e o chão do Kito valem em todas (2026-10-24), fora o pagamento.
-  const publicFooter = !['/entrar', '/carrinho', '/pagamento', '/pedido/confirmacao', '/meus-jogos', '/pedidos', '/conta', '/email/preferencias'].includes(path) && !path.startsWith('/blog/')
   // Pagamento em modo foco: só a linha legal, sem convites para sair da compra.
   if (path === '/pagamento') return <footer className="site-footer" data-focus="true"><div className="site-footer-rule" aria-hidden="true" /><div className="content-width footer-bottom"><LegalLine /><nav aria-label="Informações legais"><Link to="/termos">Termos de uso</Link><Link to="/reembolsos">Reembolsos</Link><Link to="/privacidade">Privacidade</Link><CookieSettingsButton /><Link to="/ajuda">Ajuda</Link></nav></div></footer>
-  return <footer className="site-footer" data-public={publicFooter}><CutLine />{publicFooter && newsletterVisible && <div className="content-width footer-newsletter"><Newsletter /></div>}<div className="content-width footer-grid">
+  // A tesoura e o chão do Kito valem em todas as páginas fora o pagamento (2026-10-24).
+  return <footer className="site-footer"><CutLine /><div className="content-width footer-grid">
     <div className="footer-brand"><Link className="brand" to="/" aria-label="KeyToTwo — início"><img src="/media/hero/keytotwo-logo.webp" width="420" height="97" alt="KeyToTwo" loading="lazy" /></Link><p>Um pinguim numa tela pedindo para vocês saírem dela.</p><div className="footer-social"><a href={instagram.href} target="_blank" rel="noopener" aria-label={`${instagram.handle} no Instagram (abre em nova aba)`}><IconBrandInstagram aria-hidden="true" size={22} stroke={1.75} />Instagram</a><a href={tiktok.href} target="_blank" rel="noopener" aria-label={`${tiktok.handle} no TikTok (abre em nova aba)`}><IconBrandTiktok aria-hidden="true" size={22} stroke={1.75} />TikTok</a></div></div>
     <nav aria-label="Explorar"><h2>Vamos jogar</h2><Link to="/">Início</Link><Link to="/loja">Loja</Link><a href="/#como-funciona">Como funciona</a><Link to="/gratuitos">Gratuitos</Link>{hasBlogPosts && <Link to="/blog">Blog</Link>}</nav>
     <nav aria-label="Ajuda e acesso"><h2>Conta e ajuda</h2><Link to="/meus-jogos">Meus jogos</Link><Link to="/conta">Minha conta</Link>{siteConfig.showCartAccess && <Link to="/carrinho">Sacola</Link>}<Link to="/ajuda">Ajuda</Link></nav>

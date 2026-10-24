@@ -299,12 +299,11 @@ test('pacote: as miniaturas da galeria cabem numa linha só', async ({ page }) =
   }
 })
 
-test('rodapé: a tesoura e o chão do Kito também em Entrar e na Sacola; a newsletter só nas páginas públicas', async ({ page }) => {
+test('rodapé: a tesoura e o chão do Kito também em Entrar e na Sacola', async ({ page }) => {
   await catalog(page)
   for (const route of ['/entrar', '/carrinho']) {
     await page.goto(route)
     await expect(page.locator('.site-footer .cut-line'), route).toHaveCount(1)
     await expect(page.locator('.site-footer .footer-ground'), route).toHaveCount(1)
-    await expect(page.locator('.site-footer .footer-newsletter'), route).toHaveCount(0)
   }
 })

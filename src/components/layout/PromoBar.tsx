@@ -1,6 +1,5 @@
 import { useLocation } from 'react-router'
-import { promo } from '../../content/site'
-import { privateRoutes } from './SiteHeader'
+import { privateRoutes, promo } from '../../content/site'
 
 // Barrinha do cupom acima do cabeçalho (DESIGN.md › Barrinha de cupom). Rola com a página; o cabeçalho continua
 // grudado no topo. Fica fora do Portal, que não tem estímulo comercial.

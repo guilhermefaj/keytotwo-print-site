@@ -50,7 +50,7 @@ const MAX_WIDTH = 1600
 const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp', 'image/avif', 'image/gif']
 export const acceptedImages = ACCEPTED.join(',')
 
-export async function prepareImage(file: File): Promise<{ blob: Blob; type: string }> {
+async function prepareImage(file: File): Promise<{ blob: Blob; type: string }> {
   if (!ACCEPTED.includes(file.type)) throw new ApiError('UNSUPPORTED_MEDIA_TYPE', 'Use uma imagem PNG, JPG, WebP, AVIF ou GIF.')
   if (file.type === 'image/gif') return { blob: file, type: file.type }
   const bitmap = await createImageBitmap(file)

@@ -10,12 +10,14 @@ export const navigation = [
 
 export const site = {
   description: 'Jogos para casais imprimirem e jogarem juntos em casa.',
-  heroDescription: 'Um pacote de jogos para imprimir, preparar e jogar juntos em casa. O Kito traz a ideia. Vocês fazem a noite acontecer.',
   closing: 'Da tela para a mesa.',
 }
 
 // Barrinha acima do cabeçalho (responsável, 2026-10-23): cupom de primeira compra. O código é um código promocional
 // da Stripe (10%, só para quem nunca pagou), digitado em "Tenho um cupom" no pagamento. Sem cupom no ar: `null`.
+// As páginas do Portal (Meus jogos, Pedidos e Minha conta): sem barrinha de cupom e com o cabeçalho enxuto.
+export const privateRoutes = ['/meus-jogos', '/pedidos', '/conta']
+
 export const promo: { code: string; before: string; after: string } | null = {
   code: 'PRIMEIRA10',
   before: 'Primeira compra? Usem o cupom',
@@ -36,7 +38,6 @@ export const publicPages = {
 } as const
 
 export const otherPages = {
-  '/preview/hero': { title: 'Prévia da página de venda — KeyToTwo', description: 'Prévia de desenvolvimento da página de venda KeyToTwo, com a hero do Kito e informações do pacote em preparação.' },
   '/entrar': { title: 'Entrar — KeyToTwo', description: 'Página de entrada para acessar sua conta KeyToTwo.' },
   '/meus-jogos': { title: 'Meus jogos — KeyToTwo', description: 'Área reservada aos jogos adquiridos na KeyToTwo.' },
   '/conta': { title: 'Minha conta — KeyToTwo', description: 'Área reservada às informações da sua conta KeyToTwo.' },

@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from 
 import { Link, useLocation, useNavigate, useRouteLoaderData } from 'react-router'
 import type { loader as rootLoader } from '../../root'
 import { IconChevronDown, IconLock, IconMenu2, IconShoppingBag } from '@tabler/icons-react'
-import { navigation } from '../../content/site'
+import { navigation, privateRoutes } from '../../content/site'
 import { siteConfig } from '../../lib/seo'
 import { adminUrl, isAdmin, useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
@@ -18,7 +18,6 @@ const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: 
 // as abas do Portal já levam a Meus jogos, Pedidos e Minha conta, então o cabeçalho fica com logo, Portal e a
 // conta. O menu móvel mantém os três links. No desktop, quem entrou vê "Portal" e quem não entrou vê só
 // "Entrar"; a Ajuda fica no rodapé e no menu móvel (responsável, 2026-10-21).
-export const privateRoutes = ['/meus-jogos', '/pedidos', '/conta']
 const privateNavigation = [
   { label: 'Meus jogos', href: '/meus-jogos' },
   { label: 'Minha conta', href: '/conta' },

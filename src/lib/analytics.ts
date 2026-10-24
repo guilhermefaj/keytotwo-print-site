@@ -3,7 +3,7 @@ import { siteConfig } from './seo'
 
 // GA4 (responsável, 2026-10-22): só no domínio real, só depois do "Aceitar" no aviso de cookies (LGPD: consentimento,
 // Política de privacidade › Cookies). No stage test o aviso aparece para revisão, mas aceitar não carrega nada.
-export const gaMeasurementId = 'G-9NVMZZS65E'
+const gaMeasurementId = 'G-9NVMZZS65E'
 
 type Choice = 'granted' | 'denied'
 type Stored = { value: Choice; at: string; version: number }
@@ -20,7 +20,7 @@ declare global {
 }
 
 // Medição de verdade só no host de produção do build live (o teste e o localhost nunca enviam dados).
-export function analyticsAvailable() {
+function analyticsAvailable() {
   return siteConfig.stage === 'live' && typeof location !== 'undefined' && location.hostname === new URL(siteConfig.origin).hostname
 }
 export const cookieNoticeEnabled = () => analyticsAvailable() || siteConfig.stage === 'test'

@@ -5,7 +5,6 @@ import { formatBlogDate, relatedPosts } from '../lib/blog'
 import { FloatingShare, ShareLinks } from '../components/blog/ShareLinks'
 import { siteConfig } from '../lib/seo'
 import { site } from '../content/site'
-import { Newsletter } from '../components/newsletter/Newsletter'
 import { BackLink } from '../components/ui/BackLink'
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -70,7 +69,6 @@ export default function BlogPost() {
       <p>{site.description}</p>
       <Link className="button button-primary" to="/loja">Ver os jogos</Link>
     </aside>
-    <Newsletter />
     <BackLink to="/blog">Voltar ao blog</BackLink>
   </main>
 }

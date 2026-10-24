@@ -18,7 +18,7 @@ export const itemName = (code: string, fallback = '') => {
 // Nome de jogo pelo código (composição e sobreposição): o conteúdo cobre os códigos reais; a fixture
 // TESTE-J01 do seed corresponde ao J001 (mesma remoção de rótulo do GameCover). Código desconhecido
 // mostra o próprio código, nunca um nome inventado.
-export const gameName = (code: string) => {
+const gameName = (code: string) => {
   const contentCode = siteConfig.stage === 'test' && code === 'TESTE-J01' ? 'J001' : code
   return games.find(game => game.code === contentCode)?.name || code
 }

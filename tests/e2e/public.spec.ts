@@ -4,13 +4,13 @@ import { expect, test, type Page } from './fixtures/test'
 
 // Checks for the public sales pages, run against the prerendered build (build/client).
 // Stage-specific assertions follow the stage the build was made for (robots.txt tells which).
-const routes = ['/', '/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/gratuitos', '/email/preferencias', '/ajuda', '/termos', '/reembolsos', '/privacidade', '/loja', '/loja/colecao-fundadores', '/loja/rabisque-e-adivinhe', '/404']
+const routes = ['/', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/gratuitos', '/email/preferencias', '/ajuda', '/termos', '/reembolsos', '/privacidade', '/loja', '/loja/colecao-fundadores', '/loja/rabisque-e-adivinhe', '/404']
 const redirectRoutes: string[] = []
 const blogRoutes = readdirSync('build/client/blog', { withFileTypes: true }).filter(file => file.isDirectory()).map(file => `/blog/${file.name}`)
 routes.push('/blog', ...blogRoutes)
 const shopRoutes = readdirSync('build/client/loja', { withFileTypes: true }).filter(file => file.isDirectory()).map(file => `/loja/${file.name}`)
 routes.push(...shopRoutes.filter(route => !routes.includes(route)))
-const privateRoutes = ['/preview/hero', '/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/email/preferencias', '/404']
+const privateRoutes = ['/entrar', '/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao', '/email/preferencias', '/404']
 const protectedRoutes = ['/carrinho', '/pagamento', '/meus-jogos', '/pedidos', '/conta', '/pedido/confirmacao']
 const refundNotice = /Fora dos casos da Pol[íi]tica de reembolso e da lei, n[ãa]o h[áa] reembolso depois da libera[çc][ãa]o/i
 
@@ -133,9 +133,6 @@ test.describe('conteúdo', () => {
     await expect(page.locator('.shop-showcase [data-shop-product]')).toHaveCount(1)
     await expect(page.locator('.shop-showcase [data-shop-product]')).toHaveAttribute('data-shop-product', 'P001')
     await expect(page.locator('.shop-showcase .cover-tile')).toHaveCount(5)
-    await expect(page.locator('section.offer-section')).toHaveCount(0)
-    await expect(page.locator('.package-game')).toHaveCount(0)
-    await expect(page.locator('.mobile-purchase-bar')).toHaveCount(0)
     expect(await visibleText(page)).not.toMatch(/PENDENTE/)
     expect((await visibleText(page)).match(/\bP\d{3}\b/g) ?? [], 'códigos de produto além de P001').toEqual([])
   })
@@ -166,7 +163,6 @@ test.describe('conteúdo', () => {
   // The refund condition must not appear on the home; it moved to the terms.
   test('home: sem linha de reembolso', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('.refund-notice')).toHaveCount(0)
     expect(await visibleText(page)).not.toMatch(refundNotice)
   })
 
@@ -230,8 +226,7 @@ test.describe('stage', () => {
       expect(title, `title de ${route}`).not.toBe('')
       expect(await page.locator('meta[name="description"]').getAttribute('content'), `description de ${route}`).toBeTruthy()
       expect(await page.locator('link[rel="canonical"]').getAttribute('href'), `canonical de ${route}`).toBeTruthy()
-      // /preview/hero is a copy of the home by design.
-      if (route !== '/preview/hero' && !protectedRoutes.includes(route)) {
+      if (!protectedRoutes.includes(route)) {
         expect(titles.get(title), `title repetido em ${route} e ${titles.get(title)}`).toBeUndefined()
         titles.set(title, route)
       }

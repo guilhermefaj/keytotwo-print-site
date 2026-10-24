@@ -57,7 +57,6 @@
 .confetti-piece { position: absolute; top: calc(12% + mod(var(--piece), 3) * 20%); left: calc(5% + var(--piece) * 9%); width: 6px; height: 12px; border-radius: 2px; background: var(--color-deep-teal); transform: rotate(calc(var(--piece) * 35deg)); }
 .confetti-piece:nth-child(2n) { background: var(--color-highlight); }
 .confetti-piece:nth-child(3n) { background: var(--color-line); }
-.confirmation-page > .newsletter { margin-top: 32px; }
 @media (prefers-reduced-motion: no-preference) {
   .payment-reveal { animation: purchase-appear var(--duration-ui) var(--ease-out) both; }
   .stripe-payment #checkout-form { transition: opacity var(--duration-ui) var(--ease-out), transform var(--duration-ui) var(--ease-out); }

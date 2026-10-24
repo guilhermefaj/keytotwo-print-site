@@ -4,7 +4,7 @@ import { marketingConsent } from '../../content/account'
 import { api, apiErrorMessage, type Marketing } from '../../lib/api'
 import { siteConfig } from '../../lib/seo'
 
-export function MarketingPreference({ marketing, source = 'account', onSaved, onDismiss }: { marketing: Marketing; source?: 'account' | 'signup_prompt'; onSaved: () => void; onDismiss?: () => Promise<void> }) {
+export function MarketingPreference({ marketing, onSaved }: { marketing: Marketing; onSaved: () => void }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -13,15 +13,11 @@ export function MarketingPreference({ marketing, source = 'account', onSaved, on
   async function put(granted: boolean) {
     setBusy(true); setError(''); setMessage('')
     try {
-      await api('/account/marketing', { method: 'PUT', body: { granted, source, text_version: marketingConsent.version } })
+      await api('/account/marketing', { method: 'PUT', body: { granted, source: 'account', text_version: marketingConsent.version } })
       setMessage(granted ? 'Combinado. As próximas ideias chegam por e-mail.' : 'Combinado. Você não recebe mais ideias.')
       onSaved()
     } catch (cause) { setError(apiErrorMessage(cause)) }
     finally { setBusy(false) }
-  }
-  async function dismiss() {
-    setBusy(true); setError('')
-    try { await onDismiss?.() } catch (cause) { setError(apiErrorMessage(cause)); setBusy(false) }
   }
   if (marketing.opted_in) return <div className="marketing-form" aria-busy={busy}>
     <p>Você recebe nossas ideias</p>
@@ -31,7 +27,6 @@ export function MarketingPreference({ marketing, source = 'account', onSaved, on
   return <form className="marketing-form" onSubmit={event => { event.preventDefault(); put(true) }} aria-busy={busy}>
     <button className="button button-primary" disabled={busy || !allowed}>{marketingConsent.label}</button>
     <p className="field-help">{marketingConsent.detail} <Link className="inline-link" to="/privacidade">Privacidade</Link></p>
-    {onDismiss && <button type="button" className="text-button" onClick={dismiss} disabled={busy}>Agora não</button>}
     <p className="form-error" role="alert">{error}</p><p role="status">{message}</p>
   </form>
 }

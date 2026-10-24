@@ -10,8 +10,8 @@ import { ProductAvailability } from './ProductAvailability'
 // Cabeça e corpo separados: no celular a capa fica ao lado da cabeça e o corpo ocupa a largura toda (2026-10-24).
 export function GameCard({ game, kind = true, children }: { game: Game; kind?: boolean; children: ReactNode }) {
   const style = kind ? playStyle(game) : undefined
-  return <li className={game.confirmed ? 'shop-game' : 'shop-game shop-game-soon'} data-shop-game={game.id}>
-    <GameCover code={game.code} name={game.name} soon={!game.confirmed} />
+  return <li className="shop-game" data-shop-game={game.id}>
+    <GameCover code={game.code} name={game.name} />
     <div className="shop-game-head">
       {style && <p className="shop-game-kind">{style}</p>}
       <h3>{game.name}</h3>

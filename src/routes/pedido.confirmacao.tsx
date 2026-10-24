@@ -10,7 +10,6 @@ import { supabase } from '../lib/supabase'
 import { deliveryMock } from '../lib/downloads'
 import { CheckoutSteps } from '../components/checkout/CheckoutSteps'
 import { Celebration } from '../components/checkout/Celebration'
-import { Newsletter } from '../components/newsletter/Newsletter'
 
 const copy = {
   paid: { title: 'Pronto. Os jogos são de vocês.', text: 'Pagamento confirmado. Escolham um jogo e preparem a mesa.', cta: 'Abrir Meus jogos', to: '/meus-jogos' },
@@ -76,7 +75,7 @@ function Status({ sessionId }: { sessionId: string }) {
       {(error || state === 'processing' || state === 'pending_payment') && <button className="button button-secondary" disabled={checking} onClick={() => { setChecking(true); setError(''); setRevision(value => value + 1) }}>Atualizar status</button>}
       <Link className="inline-link" to="/ajuda">Preciso de ajuda</Link>
     </div>
-    </div></div></div>{state === 'paid' && !demo && <Newsletter />}</main>
+    </div></div></div></main>
 }
 
 export default function ConfirmacaoPedido() {

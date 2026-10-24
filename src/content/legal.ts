@@ -3,13 +3,12 @@ import { supportEmail } from './help'
 // Termos, Política de reembolso e Política de privacidade (responsável, 2026-10-19). Fatos conferidos no código:
 // tabelas do banco (docs/data-contract.md), funções (docs/api-contract.md) e o que o navegador guarda.
 // Um bloco string é um parágrafo; uma lista de strings vira uma lista com marcadores.
-export type LegalBlock = string | readonly string[]
-export type LegalSection = { title: string; id: string; paragraphs: readonly LegalBlock[] }
+type LegalBlock = string | readonly string[]
+type LegalSection = { title: string; id: string; paragraphs: readonly LegalBlock[] }
 export type LegalContent = { title: string; intro: string; version: string; versionLabel: string; sections: readonly LegalSection[] }
 
 /** Quem fornece e quem controla os dados. Sem endereço físico publicado (decisão do responsável). */
 export const company = {
-  brand: 'KeyToTwo',
   legalName: 'CHALK LABS CONSULTORIA EM TI LTDA',
   name: 'Chalk Labs',
   cnpj: '66.782.936/0001-20',

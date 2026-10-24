@@ -29,8 +29,6 @@ export type Game = {
   name: string
   confirmed: boolean
   description: string
-  /** Pendência que trava o build live (`pending()` de src/lib/pending.ts), até o jogo ser testado. */
-  pending?: string
   summary: string
   cover?: GameCoverArt
   /** Grátis ao criar a conta: fica fora do pacote e da venda (decisão do responsável, 2026-10-16). */
@@ -145,11 +143,3 @@ export const packageGames = games.filter(game => !game.freebie)
 // O jeito de jogar da ficha: o rótulo curto que apresenta o jogo nos cards e nas listas do pacote.
 export const playStyle = (game: Game) => game.facts?.find(fact => fact.label === 'Jeito de jogar')?.value
 export const freebies = games.filter(game => game.freebie)
-
-export const j001 = {
-  facts: j001Facts,
-  materials: 'Impressão, tesoura, uma folha grande para desenhar, uma caneta por pessoa e temporizador.',
-  preparation: 'Imprimam e recortem as cartas. Coloquem-nas viradas para baixo e escolham quem começa desenhando.',
-  rules: 'O Artista desenha a palavra ou frase da carta sem usar letras ou números. A dupla tenta acertar o máximo de cartas em 60 segundos e troca de papéis a cada rodada. Ao final das 10 rodadas, soma os pontos.',
-  duration: 'São 10 minutos de cronômetro. Preparação, trocas e soma dos pontos acrescentam tempo; a duração total ainda não foi medida.',
-}

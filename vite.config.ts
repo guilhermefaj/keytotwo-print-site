@@ -4,15 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [tailwindcss(), {
-    name: 'blog-admin-directory',
-    configureServer(server) {
-      server.middlewares.use((request, _response, next) => {
-        // Serve the static CMS before React Router handles /admin in development.
-        if (request.url === '/admin' || request.url === '/admin/') request.url = '/admin/index.html'
-        next()
-      })
-    },
-  }, {
     name: 'blog-parsers-build-only',
     generateBundle(_options, bundle) {
       if (this.environment.name !== 'client') return
