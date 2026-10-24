@@ -1,8 +1,8 @@
-# Contrato da API — KeyToTwo (v0.3.13)
+# Contrato da API — KeyToTwo (v0.3.14)
 
 | | |
 | --- | --- |
-| Versão | 0.3.13, 2026-10-24 (cupons, parceiros e indicações em `/admin/discounts/*`, `/admin/partners/*` e `POST /referral/visit`; a faixa do topo no `/catalog`, a indicação no `POST /checkout` e o marketing nas métricas, seção 6.18). 0.3.12, 2026-10-24 (catálogo no admin em `/admin/catalog` e `/admin/products/*`, seção 6.17; o `/catalog` leva o preço riscado, seção 6.1). 0.3.11, 2026-10-24 (alertas do admin em `/admin/alerts/*`, seção 6.16; o e-mail dos admins e a contestação que abre o alerta, seções 8.2 e 9). 0.3.10, 2026-10-24 (Fase 3 do admin: pedidos e reembolsos em `/admin/orders/*`, seção 6.15; o aviso de reembolso por e-mail, seção 8). 0.3.9, 2026-10-24 (limpeza: saem `GET /health`, `POST /account/marketing/prompt`, a origem `cart` e o `Content-Disposition` das exportações; Customer apagado na Stripe é trocado: seção 11.7). 0.3.8, 2026-10-23 (usuários no admin). 0.3.7, 2026-10-23 (blog no admin). 0.3.6, 2026-10-22 (preços da Stripe guardados no banco: seção 6.1). 0.3.5, 2026-10-22 (sacola sem login e jogo repetido: seções 6.2, 6.2.1 e 6.5). 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
+| Versão | 0.3.14, 2026-10-24 (o formulário de pagamento abre com a página, travado até o aceite: `POST /checkout` sem `terms_accepted` devolve também o `order_id`, e `POST /checkout/terms` grava o aceite, seção 6.5; sai o `TERMS_NOT_ACCEPTED`). 0.3.13, 2026-10-24 (cupons, parceiros e indicações em `/admin/discounts/*`, `/admin/partners/*` e `POST /referral/visit`; a faixa do topo no `/catalog`, a indicação no `POST /checkout` e o marketing nas métricas, seção 6.18). 0.3.12, 2026-10-24 (catálogo no admin em `/admin/catalog` e `/admin/products/*`, seção 6.17; o `/catalog` leva o preço riscado, seção 6.1). 0.3.11, 2026-10-24 (alertas do admin em `/admin/alerts/*`, seção 6.16; o e-mail dos admins e a contestação que abre o alerta, seções 8.2 e 9). 0.3.10, 2026-10-24 (Fase 3 do admin: pedidos e reembolsos em `/admin/orders/*`, seção 6.15; o aviso de reembolso por e-mail, seção 8). 0.3.9, 2026-10-24 (limpeza: saem `GET /health`, `POST /account/marketing/prompt`, a origem `cart` e o `Content-Disposition` das exportações; Customer apagado na Stripe é trocado: seção 11.7). 0.3.8, 2026-10-23 (usuários no admin). 0.3.7, 2026-10-23 (blog no admin). 0.3.6, 2026-10-22 (preços da Stripe guardados no banco: seção 6.1). 0.3.5, 2026-10-22 (sacola sem login e jogo repetido: seções 6.2, 6.2.1 e 6.5). 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
 | Dono | Ferrolho (Backend sênior). Banco, permissões e RPCs: `docs/data-contract.md` v0.3 (Lastro). |
 | Estado | I4: além do I3 (`POST /checkout`, `GET /order-status`, `stripe-webhook`), implementadas `POST /download-url`, `GET /d/{token}`, `GET /free-games`, `POST /free-download` e a função `email-dispatch` (entrega; modo log no local). I5: e-mails de marketing (`cart_reminder`, `post_purchase`) no `email-dispatch`, `GET`/`POST /email/unsubscribe`, a função `brevo-webhook` e a agenda (`pg_cron` + `pg_net`, migração do Lastro). Testes em `supabase/functions/tests`. Passos restantes da Stripe: `docs/stripe.md`. |
 | Fontes | Nota "Plano do site P2" (ajustes do orquestrador, seções 4 e 5) e decisões do responsável registradas nas notas P1 e P2. |
@@ -78,7 +78,6 @@ Headers enviados pelo site:
 | --- | --- | --- |
 | 400 | `INVALID_REQUEST` | Corpo, JSON ou parâmetro inválido |
 | 400 | `INVALID_TOKEN` | Token HMAC inválido em `POST /email/unsubscribe` |
-| 400 | `TERMS_NOT_ACCEPTED` | Checkout sem o aceite dos termos (`terms_accepted` diferente de `true`) |
 | 401 | `UNAUTHENTICATED` | Rota de sessão sem sessão válida; função interna sem chave válida |
 | 403 | `EMAIL_NOT_CONFIRMED` | Sessão de conta sem e-mail confirmado |
 | 403 | `NOT_ENTITLED` | Sem direito ao arquivo |
@@ -351,15 +350,14 @@ Meus jogos, organizado **por jogo** → `get_library(uid)`:
 
 O pagamento usa o **formulário embutido** configurado pelo responsável no Checkout Studio da Stripe (nota "Stripe Checkout Studio", fonte autorizada dos parâmetros). A rota cria a Checkout Session e devolve o `client_secret`; o site monta o formulário na própria página de checkout.
 
-Corpo: `{ "cart_version": 3, "terms_accepted": true, "terms_version": "termos-2026-10" }`.
+Corpo: `{ "cart_version": 3, "terms_version": "termos-2026-10", "terms_accepted"?: true, "referral"?: {…} }`.
 
-O aceite dos termos (sem reembolso) é colhido **na nossa página**, numa caixa obrigatória antes de montar o formulário. O Studio não configurou `consent_collection`.
+O aceite dos termos é colhido **na nossa página**, na caixa "Li e aceito" logo acima do formulário (o formulário embutido não aceita `consent_collection`). Desde 2026-10-24 (responsável) o formulário abre com a página, apagado e travado (`inert`) até a pessoa marcar a caixa: o pedido nasce aqui sem o momento do aceite e `POST /checkout/terms` o grava antes de o site destravar o formulário. `terms_accepted: true` (o site anterior, que só chamava depois do aceite) ainda grava o aceite aqui.
 
 0. **Validação:**
-   - `terms_accepted` diferente de `true` → `400 TERMS_NOT_ACCEPTED`;
    - `terms_version` diferente de `TERMS_VERSION` → `409 TERMS_CHANGED`;
    - `cart_version` inteiro ≥ 0, senão `400 INVALID_REQUEST`.
-1. `create_order_from_cart(uid, livemode, cart_version, terms_version, terms_accepted)` confere a versão e os itens. Cria o pedido `open` com `order_items` só dos itens `ok` (o riscado fica de fora) e grava `terms_version` e `terms_accepted_at` (data-contract v0.3.1; `KT007` se o aceite não for `true`). Reaproveita o pedido `open` da mesma versão do carrinho e dos termos, se nenhum jogo foi ganho ou perdido desde então (`reused`). Devolve `outcome`, `order_id`, itens (`product_code`, `stripe_price_id`, `kind`, `games` com o `single_price_id` de cada jogo e `owned_games`), e-mail da conta, `stripe_customer_id` e `detail`.
+1. `create_order_from_cart(uid, livemode, cart_version, terms_version, terms_accepted)` confere a versão e os itens. Cria o pedido `open` com `order_items` só dos itens `ok` (o riscado fica de fora) e grava `terms_version` (e `terms_accepted_at` só com `terms_accepted: true`). Reaproveita o pedido `open` da mesma versão do carrinho e dos termos, se nenhum jogo foi ganho ou perdido desde então (`reused`). Devolve `outcome`, `order_id`, itens (`product_code`, `stripe_price_id`, `kind`, `games` com o `single_price_id` de cada jogo e `owned_games`), e-mail da conta, `stripe_customer_id` e `detail`.
 
    | `outcome` | HTTP |
    | --- | --- |
@@ -395,13 +393,15 @@ O aceite dos termos (sem reembolso) é colhido **na nossa página**, numa caixa 
    - Os métodos de pagamento seguem a conta Stripe **[D9]**.
 4. `attach_checkout_session(order_id, session_id, expires_at)`. Se falhar, só vai para o log: webhook e confirmação acham o pedido pelo `client_reference_id`.
 
-`200 { "client_secret": "<client_secret da sessão>" }`.
+`200 { "client_secret": "<client_secret da sessão>", "order_id": "<uuid>" }`.
 
 - O `client_secret` permite concluir aquele pagamento: nunca vai para log nem URL, e a resposta é `no-store`.
 - Pedido reaproveitado devolve a mesma sessão (mesma chave de idempotência), dentro da janela de 24 h da Stripe.
 - A sessão expira no prazo padrão da Stripe **[D9]**. Ao expirar, o webhook marca o pedido `expired` e o funil registra `checkout_expired`.
 
-Erros: `400 INVALID_REQUEST`, `400 TERMS_NOT_ACCEPTED`, `409 TERMS_CHANGED`, os da tabela do passo 1, `401`, `403 EMAIL_NOT_CONFIRMED` e `502 PAYMENT_PROVIDER_ERROR`.
+Erros: `400 INVALID_REQUEST`, `409 TERMS_CHANGED`, os da tabela do passo 1, `401`, `403 EMAIL_NOT_CONFIRMED` e `502 PAYMENT_PROVIDER_ERROR`.
+
+**`POST /checkout/terms { order_id, terms_version }`** (sessão) → `200 { "accepted": true }`: a pessoa marcou o "Li e aceito". `accept_order_terms` grava `terms_accepted_at` no pedido de compra `open` dela, uma vez (marcar de novo não muda o momento). `order_id` que não é uuid → `400`; versão diferente de `TERMS_VERSION` ou do pedido → `409 TERMS_CHANGED`; pedido de outra pessoa ou que não está aberto → `404 NOT_FOUND`. Uma compra sem o aceite gravado só acontece se alguém destravar o formulário à mão; o pagamento é liberado mesmo assim.
 
 **Verificado na API de teste (2026-10-08):** `ui_mode: 'form'` com os parâmetros do Studio, `allow_promotion_codes: true` e `payment_intent_data.metadata` criam a sessão juntos, com `client_secret` e validade de 24 h.
 

@@ -44,8 +44,9 @@ select pg_temp.assert('nenhuma coluna url/uri/ip/user_agent (I-11)',
 select pg_temp.assert('sem o ZIP do pacote (2026-10-24): files sem product_id, todo arquivo de um jogo',
   not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'files' and column_name = 'product_id')
   and (select is_nullable = 'NO' from information_schema.columns where table_schema = 'public' and table_name = 'files' and column_name = 'game_id'));
--- Desde 20261023200000 o aceite é obrigatório por CHECK só na compra: o presente (kind courtesy) não passa pelos termos.
-select pg_temp.assert('compra exige o aceite dos termos (orders_terms_required); user_id e email só ficam nulos com anonymized_at (D-28)',
+-- Desde 20261023200000 a compra tem os termos por CHECK; o presente (kind courtesy) não passa por eles. Desde
+-- 20261024230000 a compra nasce com a versão e o momento do aceite chega quando a pessoa marca a caixa.
+select pg_temp.assert('compra exige a versão dos termos (orders_terms_required); user_id e email só ficam nulos com anonymized_at (D-28)',
   exists (select 1 from pg_constraint where conname = 'orders_terms_required' and conrelid = 'public.orders'::regclass)
   and exists (select 1 from pg_constraint where conname = 'orders_anonymized_check' and conrelid = 'public.orders'::regclass));
 select pg_temp.assert('triggers em auth.users existem (2) e são os nossos',
@@ -78,7 +79,7 @@ select pg_temp.expect('suppression: origem que não seja a Brevo', $q$insert int
 -- ===== pedidos e itens ============================================================================
 select pg_temp.expect('orders: user_id nulo sem anonimização (D-28)', $q$insert into public.orders (email,cart_version,terms_version,terms_accepted_at,livemode) values ('a@b.test',0,'v',now(),false)$q$, '23514');
 select pg_temp.expect('orders: e-mail nulo sem anonimização (D-28)', format($q$insert into public.orders (user_id,cart_version,terms_version,terms_accepted_at,livemode) values (%L,0,'v',now(),false)$q$, pg_temp.uid('u1')), '23514');
-select pg_temp.expect('orders: compra sem aceite dos termos (orders_terms_required)', format($q$insert into public.orders (user_id,email,cart_version,terms_version,livemode) values (%L,'a@b.test',0,'v',false)$q$, pg_temp.uid('u1')), '23514');
+select pg_temp.expect('orders: compra sem a versão dos termos (orders_terms_required)', format($q$insert into public.orders (user_id,email,cart_version,livemode) values (%L,'a@b.test',0,false)$q$, pg_temp.uid('u1')), '23514');
 select pg_temp.expect('orders: e-mail maiúsculo', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode) values (%L,'A@b.test',0,'v',now(),false)$q$, pg_temp.uid('u1')), '23514');
 select pg_temp.expect('orders: terms_version vazio', format($q$insert into public.orders (user_id,email,cart_version,terms_version,terms_accepted_at,livemode) values (%L,'a@b.test',0,'  ',now(),false)$q$, pg_temp.uid('u1')), '23514');
 select pg_temp.expect('orders: dispute_lost sem paid_at', format($q$insert into public.orders (user_id,email,status,cart_version,terms_version,terms_accepted_at,livemode,amount_total,currency) values (%L,'a@b.test','dispute_lost',0,'v',now(),false,0,'brl')$q$, pg_temp.uid('u1')), '23514');

@@ -69,15 +69,17 @@ for (const width of [390, 1440]) test(`purchase states, focused payment, keyboar
   await page.getByRole('button', { name: 'Finalizar compra', exact: true }).focus(); await page.keyboard.press('Enter')
   await expect(page.locator('main').getByRole('checkbox')).toHaveCount(1)
   // Aceite expresso (Política de reembolso): termos, reembolso e entrega imediata no nome da caixa.
-  const terms = page.getByRole('checkbox', { name: /^Li e aceito os termos de uso e a política de reembolso ?\. Estou ciente de que os jogos são conteúdo digital, liberado para download assim que o pagamento é confirmado, e peço essa entrega imediata\.$/ })
+  const terms = page.getByRole('checkbox', { name: /^Li e aceito os termos de uso e a política de reembolso ?, e peço a entrega imediata dos jogos\.$/ })
   await expect(terms).not.toBeChecked()
   await expect(page.getByRole('link', { name: 'Voltar à sacola', exact: true })).toHaveCount(1)
-  await expect(page.locator('#checkout-form')).toHaveCount(0)
+  // desde 2026-10-24 o formulário aparece com a página, travado até o aceite
+  await expect(page.locator('.stripe-payment')).toHaveAttribute('data-ready', 'true')
+  await expect(page.locator('.payment-lock').first()).toHaveAttribute('data-locked', 'true')
   await expect(page.locator('main')).not.toContainText(/Stripe|nova aba/i)
   await expect(page.locator('.payment-card').getByRole('link', { name: 'política de reembolso' })).toHaveAttribute('href', '/reembolsos')
   await capture(page, `pagamento-antes-${width}`); await axe(page)
   await terms.focus(); await page.keyboard.press('Space')
-  await expect(page.locator('.stripe-payment')).toHaveAttribute('data-ready', 'true')
+  await expect(page.locator('.payment-lock').first()).toHaveAttribute('data-locked', 'false')
   await expect(page.getByText('Pagamento seguro', { exact: true })).toHaveCount(1)
   await capture(page, `pagamento-depois-fixture-${width}`); await axe(page)
   await page.getByRole('button', { name: 'Pagar (simulação de teste)' }).click()
@@ -187,7 +189,7 @@ test('purchase and home fit 320–1440 with doubled text', async ({ page }) => {
     for (const path of ['/', '/carrinho', '/pagamento', '/pedido/confirmacao?session_id=cs_test_synthetic123456']) {
       await page.goto(path)
       await expect(page.locator('main h1')).toBeVisible()
-      if (path === '/pagamento') { await page.getByRole('checkbox', { name: /^Li e aceito os termos de uso/ }).check(); await expect(page.locator('.stripe-payment')).toHaveAttribute('data-ready', 'true') }
+      if (path === '/pagamento') await expect(page.locator('.stripe-payment')).toHaveAttribute('data-ready', 'true')
       for (const size of ['16px', '32px']) {
         await page.evaluate(value => { document.documentElement.style.fontSize = value }, size)
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `${path} at ${width}/${size}`).toBe(true)

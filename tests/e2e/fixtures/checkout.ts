@@ -12,12 +12,14 @@ const stripeStub = `window.Stripe = (key, options) => ({ initCheckoutFormSdk({ap
   return {on(event,handler) {change=handler}, async loadActions() {return {type:'success',actions}}, createForm(options) { if(options.layout!=='expanded') throw Error('Not expanded'); return {on(event,handler){handlers[event]=handler}, mount(host){button=document.createElement('button');button.textContent='Pagar (simulação de teste)';button.onclick=()=>handlers.confirm({source:'checkout-form-pay-button',paymentMethodType:'card'});host.append(button);handlers.ready()},destroy(){button?.remove()}}; }};
 }});`
 
+export const SYNTHETIC_ORDER = '0f0f0f0f-0000-4000-8000-000000000001'
+
 export async function fixture(page: Page) {
   await page.addInitScript(([key, session]) => localStorage.setItem(key, JSON.stringify(session)), [authStorageKey, fakeSession] as const)
   await page.route('**/auth/v1/**', route => route.fulfill({ json: fakeSession.user }))
   await page.route('**/functions/v1/api/**', route => {
     const path = new URL(route.request().url()).pathname.split('/api')[1]
-    const data = path === '/cart' ? cart : path === '/catalog' ? { products: [product] } : path === '/account' ? { email: fakeSession.user.email, marketing: { opted_in: false, prompted_at: '2026-01-01', text_version: null }, orders: [] } : path === '/checkout' ? { client_secret: 'synthetic-only-no-stripe-secret' } : path === '/order-status' ? { state: 'paid', next: 'open_library', items: [{ code: 'P001', name: product.name }] } : { games: [], pending: [] }
+    const data = path === '/cart' ? cart : path === '/catalog' ? { products: [product] } : path === '/account' ? { email: fakeSession.user.email, marketing: { opted_in: false, prompted_at: '2026-01-01', text_version: null }, orders: [] } : path === '/checkout' ? { client_secret: 'synthetic-only-no-stripe-secret', order_id: SYNTHETIC_ORDER } : path === '/checkout/terms' ? { accepted: true } : path === '/order-status' ? { state: 'paid', next: 'open_library', items: [{ code: 'P001', name: product.name }] } : { games: [], pending: [] }
     return route.fulfill({ json: data })
   })
   await page.route('https://js.stripe.com/dahlia/stripe.js', route => route.fulfill({ contentType: 'application/javascript', body: stripeStub }))

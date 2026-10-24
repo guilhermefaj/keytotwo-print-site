@@ -7,7 +7,7 @@ import { adminBlockUser, adminDeleteUser, adminExportUser, adminFollowUp, adminG
 import { adminBlogImage, adminBlogImages, adminBlogPost, adminBlogPosts, adminCreateBlogPost, adminDeleteBlogImage, adminDeleteBlogPost, adminUpdateBlogPost, blogPublished, blogVersion } from './routes/blog.ts'
 import { addCartItem, getCart, mergeCart, quoteCart, removeCartItem } from './routes/cart.ts'
 import { catalog } from './routes/catalog.ts'
-import { checkout } from './routes/checkout.ts'
+import { checkout, checkoutTerms } from './routes/checkout.ts'
 import { deliveryLink, downloadUrl } from './routes/downloads.ts'
 import { freeDownload, freeGames } from './routes/free.ts'
 import { orderStatus } from './routes/order-status.ts'
@@ -52,6 +52,7 @@ const routes: Route[] = [
   route('/account/delete', { POST: deleteAccount }),
   route('/library', { GET: library }),
   route('/checkout', { POST: checkout }),
+  route('/checkout/terms', { POST: checkoutTerms }),
   route('/order-status', { GET: orderStatus }),
   route('/download-url', { POST: downloadUrl }),
   route('/d/:token', { GET: deliveryLink }),
