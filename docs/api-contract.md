@@ -1,10 +1,10 @@
-# Contrato da API — KeyToTwo (v0.3.6)
+# Contrato da API — KeyToTwo (v0.3.9)
 
 | | |
 | --- | --- |
-| Versão | 0.3.6, 2026-10-22 (preços da Stripe guardados no banco: seção 6.1). 0.3.5, 2026-10-22 (sacola sem login e jogo repetido: seções 6.2, 6.2.1 e 6.5). 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
+| Versão | 0.3.9, 2026-10-24 (limpeza: saem `GET /health`, `POST /account/marketing/prompt`, a origem `cart` e o `Content-Disposition` das exportações; Customer apagado na Stripe é trocado: seção 11.7). 0.3.8, 2026-10-23 (usuários no admin). 0.3.7, 2026-10-23 (blog no admin). 0.3.6, 2026-10-22 (preços da Stripe guardados no banco: seção 6.1). 0.3.5, 2026-10-22 (sacola sem login e jogo repetido: seções 6.2, 6.2.1 e 6.5). 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
 | Dono | Ferrolho (Backend sênior). Banco, permissões e RPCs: `docs/data-contract.md` v0.3 (Lastro). |
-| Estado | I4: além do I3 (`POST /checkout`, `GET /order-status`, `stripe-webhook`), implementadas `POST /download-url`, `GET /d/{token}`, `GET /free-game`, `POST /free-download` e a função `email-dispatch` (entrega; modo log no local). I5: e-mails de marketing (`cart_reminder`, `post_purchase`) no `email-dispatch`, `GET`/`POST /email/unsubscribe`, a função `brevo-webhook` e a agenda (`pg_cron` + `pg_net`, migração do Lastro). Testes em `supabase/functions/tests`. Passos restantes da Stripe: `STRIPE_INTEGRATION_TODO.md`. |
+| Estado | I4: além do I3 (`POST /checkout`, `GET /order-status`, `stripe-webhook`), implementadas `POST /download-url`, `GET /d/{token}`, `GET /free-games`, `POST /free-download` e a função `email-dispatch` (entrega; modo log no local). I5: e-mails de marketing (`cart_reminder`, `post_purchase`) no `email-dispatch`, `GET`/`POST /email/unsubscribe`, a função `brevo-webhook` e a agenda (`pg_cron` + `pg_net`, migração do Lastro). Testes em `supabase/functions/tests`. Passos restantes da Stripe: `STRIPE_INTEGRATION_TODO.md`. |
 | Fontes | Nota "Plano do site P2" (ajustes do orquestrador, seções 4 e 5) e decisões do responsável registradas nas notas P1 e P2. |
 
 **Alinhamento:** conferido com `docs/data-contract.md` v0.3.1 (21 RPCs), em revisão cruzada com o Lastro. **Marcador:** **[D#]** indica decisão pendente do responsável (nota P2, seção 7).
@@ -132,11 +132,10 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `POST /cart/merge` | `cart_add(uid, code)` para cada código, na ordem → `get_cart(uid)` | Sacola sem login (2026-10-22) |
 | `GET /account` | `get_account(uid)` | I2b |
 | `PUT /account/marketing` | `set_marketing_consent(uid, granted, source, text_version)` → `get_account(uid)` | I2b |
-| `POST /account/marketing/prompt` | `mark_marketing_prompt(uid)` → `get_account(uid)` | I2b |
 | `GET /library` | `get_library(uid)` | I2b |
 | `GET /account/export` | `export_account_data(uid)` | LGPD |
 | `POST /account/delete` | `delete_account_data(uid)` → Auth admin `DELETE /auth/v1/admin/users/{uid}` (só com `deleted`) | LGPD |
-| `POST /checkout` | `create_order_from_cart(uid, livemode, cart_version, terms_version, terms_accepted)` → Stripe Customer, se faltar → `set_stripe_customer(uid, customer_id)` → Checkout Session do formulário embutido → `attach_checkout_session(order_id, session_id, expires_at)` | I3 |
+| `POST /checkout` | `create_order_from_cart(uid, livemode, cart_version, terms_version, terms_accepted)` → Stripe Customer, se faltar ou se a Stripe disser que foi apagado → `set_stripe_customer(uid, customer_id[, replaces])` → Checkout Session do formulário embutido → `attach_checkout_session(order_id, session_id, expires_at)` | I3 |
 | `GET /order-status` | Stripe lê a sessão → `fulfill_order` ou `set_order_status`, se preciso → `get_order_status(order_id, uid)` | I3 |
 | `POST /download-url` | `resolve_download(uid, file_id)` → assina no B2 | I4 |
 | `GET /d/{token}` | `resolve_delivery(entitlement_id, game_id)` → assina no B2 | I4 |
@@ -169,12 +168,11 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 
 | Método e rota | Acesso | Incremento | Estado |
 | --- | --- | --- | --- |
-| `GET /health` | Pública | I0 | Implementada |
 | `GET /catalog` | Pública | I2b | Implementada |
 | `GET /cart` · `POST /cart/items` · `DELETE /cart/items/{code}` | Sessão | I2b | Implementada |
 | `POST /cart/quote` | Pública | Sacola sem login | Implementada |
 | `POST /cart/merge` | Sessão | Sacola sem login | Implementada |
-| `GET /account` · `PUT /account/marketing` · `POST /account/marketing/prompt` | Sessão | I2b | Implementada |
+| `GET /account` · `PUT /account/marketing` | Sessão | I2b | Implementada |
 | `GET /library` | Sessão | I2b | Implementada |
 | `GET /account/export` · `POST /account/delete` | Sessão | LGPD | Implementada |
 | `POST /checkout` · `GET /order-status` | Sessão | I3 | Implementada |
@@ -315,17 +313,11 @@ Um carrinho por usuário, guardado no banco (vale entre aparelhos). Desde 2026-1
 
 `PUT /account/marketing`, corpo `{ "granted": true, "source": "account", "text_version": "mkt-2026-10" }` → `set_marketing_consent(uid, granted, source, text_version)`. Responde `200 { "marketing": { ... } }`.
 
-- `source` aceito do site: `account`, `signup_prompt`, `cart` ou `free_games` (página Gratuitos). `signup_prompt`, `cart` e `free_games` só concedem; para retirar, `source` é `account`. As demais origens (`unsubscribe_link`, `brevo_webhook`, `support`) são só do servidor. Fora dessas regras, `400 INVALID_REQUEST`.
+- `source` aceito do site: `account`, `signup_prompt` ou `free_games` (página Gratuitos). `signup_prompt` e `free_games` só concedem; para retirar, `source` é `account`. As demais origens (`unsubscribe_link`, `brevo_webhook`, `support`) são só do servidor. Fora dessas regras, `400 INVALID_REQUEST`.
 - `text_version` é obrigatório para conceder e opcional para revogar. Segue `^[A-Za-z0-9._-]{1,40}$`, o mesmo formato do banco, e é a versão do texto que a pessoa viu **[D6]**.
 - Consentimento é sempre opcional: comprar não depende dele. Cada mudança vira uma linha no histórico; repetir o mesmo estado não cria linha (`noop`).
 
-**Convite pós-login** (uma vez por conta, em qualquer aparelho):
-
-- `marketing.prompted_at` é `null` enquanto o convite não foi respondido. O site mostra o convite após o login só com `opted_in = false` e `prompted_at = null`. A caixa no carrinho não depende disso.
-- **Dispensar:** `POST /account/marketing/prompt`, sem corpo → `mark_marketing_prompt(uid)`. É idempotente: grava a primeira vez e mantém a data depois. Responde `200 { "marketing": { ... } }`.
-- **Aceitar:** `PUT /account/marketing` com `source: "signup_prompt"`, que também preenche `prompted_at`.
-- **Ver ou dispensar o convite não é consentimento.** O histórico de consentimento registra só as ações explícitas de conceder ou retirar.
-- Com `prompted_at` ausente na resposta (API antiga), o site pode usar a dispensa no `localStorage` por usuário como fallback; com o campo presente, vale só o servidor.
+**`marketing.prompted_at`:** a primeira vez que a pessoa concedeu pelo convite (`source: "signup_prompt"`); `null` antes disso. O convite pós-login do site saiu em 2026-10-10 e a rota de dispensa (`POST /account/marketing/prompt`) saiu em 2026-10-24; o campo continua na conta e na exportação. Ver o convite nunca foi consentimento: o histórico registra só as ações explícitas de conceder ou retirar.
 
 ### 6.4 `GET /library`
 
@@ -373,7 +365,7 @@ O aceite dos termos (sem reembolso) é colhido **na nossa página**, numa caixa 
    | `product_unavailable` | `409 PRODUCT_UNAVAILABLE`, com `details.product_codes` |
    | `already_owned` | `409 ALREADY_OWNED`, com `details.product_codes`: nada a pagar (tudo já é do usuário, comprado em outra aba por exemplo, ou já está num pacote da sacola) |
 
-2. **Customer.** Sem `stripe_customer_id`, cria o Customer com o e-mail da conta, `metadata.user_id` e idempotency key `customer:<user_id>`, e grava com `set_stripe_customer(uid, customer_id)`. A RPC devolve o id vigente; se outra requisição gravou antes, vale o dela. Se o e-mail da conta mudou, atualiza o Customer antes.
+2. **Customer.** Sem `stripe_customer_id`, cria o Customer com o e-mail da conta, `metadata.user_id` e idempotency key `customer:<user_id>`, e grava com `set_stripe_customer(uid, customer_id)`. A RPC devolve o id vigente; se outra requisição gravou antes, vale o dela. Com o Customer guardado, atualiza o e-mail nele; se a Stripe responder `resource_missing` (Customer apagado no painel), cria outro com a chave `customer:<user_id>:<id apagado>` e troca com `set_stripe_customer(uid, customer_id, replaces)`, que só troca se o guardado ainda for o apagado.
 3. **Checkout Session** (`checkout.sessions.create`, idempotency key `checkout:<order_id>`):
 
    | Parâmetro | Valor | Origem |
@@ -526,7 +518,7 @@ Autenticado pelo token de propósito `u` (seção 7), presente em todo e-mail de
 
 LGPD, art. 18 (Política de privacidade › Seus direitos). Sessão obrigatória; a pessoa resolve sozinha em Minha conta, sem e-mail ao atendimento. Decisão de retenção e anonimização: `docs/data-contract.md` D-28.
 
-`GET /account/export` → `export_account_data(uid)`. Responde `200` com o JSON da cópia e `Content-Disposition: attachment; filename="keytotwo-meus-dados.json"`; o site salva o arquivo. Sem ids internos (pedidos pelo `ref` de 8 caracteres):
+`GET /account/export` → `export_account_data(uid)`. Responde `200` com o JSON da cópia; o site salva o arquivo com o nome dele (a rota não manda `Content-Disposition`: o site chama por CORS e não leria o header). Sem ids internos (pedidos pelo `ref` de 8 caracteres):
 
 ```json
 {
@@ -735,9 +727,9 @@ Contestação e reembolso valem para o pedido inteiro.
 | **`EMAIL_LINK_SECRET`** (+ `EMAIL_LINK_SECRET_PREVIOUS` opcional) | `api`, `email-dispatch` | **Nova, secreta** |
 | **`BREVO_WEBHOOK_SECRET`** | `brevo-webhook` | **Nova, secreta**, já no modelo. É o token Bearer cadastrado no webhook da Brevo |
 | **`BREVO_TEMPLATE_DELIVERY`**, **`BREVO_TEMPLATE_CART_REMINDER`**, **`BREVO_TEMPLATE_POST_PURCHASE`** | `email-dispatch` | **Novas**, ids (não secretos) |
-| **`TERMS_VERSION`** | `api` | **Nova**, não secreta. Versão vigente dos termos mostrada na página de checkout; o aceite precisa vir com ela. Desde 2026-10-19: `termos-2026-10-19` (`src/content/legal.ts`, `termsVersion`); o site manda a mesma, salvo `VITE_TERMS_VERSION` **[D11]** |
+| **`TERMS_VERSION`** | `api` | **Nova**, não secreta. Versão vigente dos termos mostrada na página de checkout; o aceite precisa vir com ela. Desde 2026-10-22: `termos-2026-10-22` (`src/content/legal.ts`, `termsVersion`); o site manda a mesma, salvo `VITE_TERMS_VERSION` **[D11]** |
 
-`STRIPE_PRICE_ID_P001` deixa de ser lida pelas funções: o Price de cada ambiente fica em `products.stripe_price_id`, gravado pelo script do ambiente.
+O Price de cada produto fica em `products.stripe_price_id`, no banco de cada ambiente; nenhuma variável de ambiente guarda Price.
 
 ## 11. O que mudou da v0.2
 
@@ -797,6 +789,15 @@ Contestação e reembolso valem para o pedido inteiro.
 - Avisos novos `COMPLETE_THE_SET` e `INCLUDED_IN_BUNDLE`; `PARTIAL_OVERLAP` fica só para itens `ok` que dividem jogos.
 - O checkout cobra o pacote de "completar a coleção" com `price_data` e a metadata `base_price_<produto>`.
 
+### 11.7 O que mudou na v0.3.9 (limpeza, 2026-10-24)
+
+- Saem `GET /health` (ninguém chamava; o CI confere `/catalog`) e `POST /account/marketing/prompt` (o convite do site saiu em 2026-10-10), junto com a RPC `mark_marketing_prompt`.
+- `PUT /account/marketing` deixa de aceitar `source: "cart"`: nenhuma tela pede consentimento na sacola.
+- As exportações JSON (`GET /account/export` e `GET /admin/users/{id}/export`) não mandam mais `Content-Disposition`: o site e o admin dão o nome ao arquivo.
+- Checkout: Customer apagado no painel da Stripe é trocado por um novo (6.5, passo 2), em vez de travar as compras da conta com `502`.
+- Link de e-mail cortado (assinatura com menos de 43 caracteres) responde `401 INVALID_TOKEN` em `GET /d/{token}` e `400 INVALID_TOKEN` no descadastro, em vez de `500`.
+- `email-dispatch` responde `400` a corpo que não é objeto; `brevo-webhook` grava sem data o evento com `ts_event` fora da faixa, em vez de `500` sem fim.
+
 ### 11.6 O que mudou na v0.3.6 (preços guardados)
 
 - O catálogo, a sacola e o checkout leem os Prices da Stripe guardados no banco (6.1); o formato das respostas não muda.
@@ -806,7 +807,6 @@ Contestação e reembolso valem para o pedido inteiro.
 
 - **[D1]** Catálogo além do P001. **[D2]** Posse sobreposta (padrão provisório na seção 6.2). **[D3]** Fluxos e prazos de follow-up. **[D4]** Links ou anexos e validade do link. **[D5]** Reembolso parcial. **[D6]** Texto e versão do consentimento. **[D7]** Remetentes. **[D8]** Plano da Brevo e conteúdo promocional pela API. **[D9]** Métodos de pagamento, URL dos termos e validade da sessão. **[D11]** Termos, Política de reembolso e Política de privacidade escritos (2026-10-19); falta a validação jurídica. **[D12]** Condições do jogo gratuito.
 - Webhook da Brevo: cadastrar na conta (tipo `transactional`, eventos `hard_bounce`, `invalid_email`, `blocked`, `spam` e `unsubscribed`, `auth` bearer com o `BREVO_WEBHOOK_SECRET`) quando houver URL pública (I6). Os eventos de marketing da Brevo (campanhas) não são usados.
-- Página `/email/preferencias` no site (Aquarela).
 - Limite de abuso nas rotas públicas que gravam (`/free-download`) e no carrinho: taxa ou CAPTCHA antes da produção.
 - Login com Google configurado localmente e ainda não testado: falta credencial.
 - Revisão cruzada com `docs/data-contract.md` v0.3.1 concluída: assinaturas, `outcome`, códigos `KT` e o aceite dos termos no checkout estão alinhados.
