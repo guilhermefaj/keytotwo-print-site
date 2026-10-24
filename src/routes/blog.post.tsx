@@ -1,7 +1,8 @@
+import { useRef } from 'react'
 import { Link, isRouteErrorResponse, useLoaderData, useRouteError, type ClientLoaderFunctionArgs, type LoaderFunctionArgs } from 'react-router'
 import { readBlogPosts, summarizeBlogPost } from '../lib/blog.server'
 import { formatBlogDate, relatedPosts } from '../lib/blog'
-import { ShareLinks } from '../components/blog/ShareLinks'
+import { FloatingShare, ShareLinks } from '../components/blog/ShareLinks'
 import { siteConfig } from '../lib/seo'
 import { site } from '../content/site'
 import { Newsletter } from '../components/newsletter/Newsletter'
@@ -31,6 +32,9 @@ clientLoader.hydrate = true
 
 export default function BlogPost() {
   const { post, related } = useLoaderData<typeof loader>()
+  const shareStart = useRef<HTMLDivElement>(null)
+  const prose = useRef<HTMLDivElement>(null)
+  const url = new URL(`/blog/${post.slug}`, siteConfig.origin).href
   return <main id="conteudo" tabIndex={-1} className="blog-page blog-post content-width">
     <BackLink to="/blog">Voltar ao blog</BackLink>
     <article>
@@ -44,12 +48,13 @@ export default function BlogPost() {
         <h1>{post.title}</h1>
         <p className="blog-description">{post.description}</p>
         {post.tags.length > 0 && <ul className="blog-tags" aria-label="Temas">{post.tags.map(tag => <li key={tag}>{tag}</li>)}</ul>}
+        <ShareLinks ref={shareStart} title={post.title} url={url} label="Compartilhar" />
       </header>
       {post.cover && <img className="blog-post-cover" src={post.cover} alt={post.coverAlt} width="1200" height="800" fetchPriority="high" />}
       {/* Only HTML produced by blog.server.ts with raw HTML disabled reaches here. */}
-      <div className="blog-prose" dangerouslySetInnerHTML={{ __html: post.html }} />
+      <div ref={prose} className="blog-prose" dangerouslySetInnerHTML={{ __html: post.html }} />
     </article>
-    <ShareLinks title={post.title} url={new URL(`/blog/${post.slug}`, siteConfig.origin).href} />
+    <FloatingShare key={post.slug} title={post.title} url={url} start={shareStart} body={prose} />
     {related.length > 0 && <section className="blog-related" aria-labelledby="blog-related-title">
       <h2 id="blog-related-title">Leia também</h2>
       <ul>{related.map(item => <li key={item.slug}>

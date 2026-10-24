@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { ShareLinks } from '../components/blog/ShareLinks'
 import type { Route } from './+types/blog'
 import { readBlogPosts, summarizeBlogPost } from '../lib/blog.server'
 import { formatBlogDate } from '../lib/blog'
@@ -27,6 +28,7 @@ export default function Blog({ loaderData }: Route.ComponentProps) {
             <h2><Link to={`/blog/${post.slug}`}>{post.title}</Link></h2>
             <p>{post.description}</p>
             {post.tags.length > 0 && <ul className="blog-tags" aria-label="Temas">{post.tags.map(tag => <li key={tag}>{tag}</li>)}</ul>}
+            <ShareLinks title={post.title} url={new URL(`/blog/${post.slug}`, siteConfig.origin).href} label={`Compartilhar ${post.title}`} />
           </div>
         </article>
       </li>)}
