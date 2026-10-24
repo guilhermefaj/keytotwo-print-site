@@ -153,8 +153,10 @@ O plano grátis do Supabase não guarda backup. Desde 2026-10-24 (decisões do r
 
 1. Baixe a cópia no painel da B2 (ou com uma chave de leitura do bucket) e abra: `age -d -i <chave-secreta> <arquivo>.tar.gz.age | tar -xz`.
 2. Restaure como manda a Supabase (*Restore a Platform Project*): `psql --single-transaction -v ON_ERROR_STOP=1 -f roles.sql -f schema.sql -c 'SET session_replication_role = replica' -f data.sql --dbname "<conexão do projeto novo>"`.
-3. Refaça o que o banco não leva: os segredos do Vault do despacho de e-mail (`supabase/local/aplicar-dispatch-vault.mjs`), a senha do `backup_ro`, os segredos e o deploy das funções, a configuração do Auth (Google, URLs de retorno, TOTP) e o `SUPABASE_URL`/chaves no site, no admin e na VPS.
+3. Refaça o que a cópia não leva: as duas agendas do `pg_cron` (o `pg_dump` não leva as tabelas das extensões; rode os `cron.schedule` de `email-dispatch-tick` e `email-outbox-purge`, nas migrações `20261008190749` e `20261019120000`), os segredos do Vault do despacho de e-mail (`supabase/local/aplicar-dispatch-vault.mjs`), a senha do `backup_ro`, os segredos e o deploy das funções, a configuração do Auth (Google, URLs de retorno, TOTP) e o `SUPABASE_URL`/chaves no site, no admin e na VPS.
 4. Confira as contagens (`auth.users`, `public.orders`, `public.entitlements`) com as da última noite.
+
+**Ensaio:** a primeira cópia (2026-10-24) abriu com a chave do responsável e trouxe tudo o que o banco tinha (2 contas, 3 pedidos, 6 produtos, o post e o histórico do admin); foi assim que se viu que as agendas do `pg_cron` ficam de fora.
 
 ## Blog (posts no banco, site reconstruído sozinho)
 
