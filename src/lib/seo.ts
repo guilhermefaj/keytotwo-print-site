@@ -3,7 +3,7 @@ import { productPages, type Product } from '../content/products.ts'
 import { supportEmail } from '../content/help.ts'
 import { instagram, tiktok } from '../content/gratuitos.ts'
 import type { BlogPostSummary } from './blog.ts'
-import { priceDecimal } from './format.ts'
+import { catalogEntry } from '../content/catalog.ts'
 import { siteConfig } from './site-config.ts'
 
 export function pageSeo(pathname: string, post?: BlogPostSummary) {
@@ -55,17 +55,19 @@ export function homeJsonLd() {
   }
 }
 
-// Página do produto: o produto com o preço aprovado (o mesmo do Price da Stripe) e a trilha Início › Loja › produto.
+// Página do produto: o produto com o preço do catálogo no build (o Price da Stripe; fora do catálogo, sem oferta) e a
+// trilha Início › Loja › produto.
 export function productJsonLd(product: Product) {
   const url = new URL(`/loja/${product.slug}`, siteConfig.origin).href
-  const price = product.offer.priceApproved && product.offer.price ? priceDecimal(product.offer.price) : null
+  const listed = catalogEntry(product.code)?.price
+  const price = listed && product.availability === 'sale' ? (listed.unit_amount / 100).toFixed(2) : null
   return {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'Product', name: product.title, description: product.seo.description, sku: product.code, url,
         image: shareImage(`/loja/${product.slug}`).url, brand: { '@type': 'Brand', name: 'KeyToTwo' },
-        ...(price && product.availability === 'sale' ? { offers: { '@type': 'Offer', price, priceCurrency: 'BRL', availability: 'https://schema.org/InStock', url, seller: { '@id': `${siteConfig.origin}/#organizacao` } } } : {}),
+        ...(price ? { offers: { '@type': 'Offer', price, priceCurrency: listed!.currency.toUpperCase(), availability: 'https://schema.org/InStock', url, seller: { '@id': `${siteConfig.origin}/#organizacao` } } } : {}),
       },
       {
         '@type': 'BreadcrumbList',

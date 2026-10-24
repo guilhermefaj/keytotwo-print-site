@@ -6,8 +6,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY react-router.config.ts vite.config.ts tsconfig.json site.config.json ./
-# Scripts that `npm run build` calls, the release gate and the blog export; tests/unit/docker-build.test.mjs checks this list.
-COPY scripts/seo-files.mjs scripts/html-priorities.mjs scripts/check-release.mjs scripts/blog-export.mjs ./scripts/
+# Scripts that `npm run build` calls, the release gate and the blog and catalog exports; tests/unit/docker-build.test.mjs checks this list.
+COPY scripts/seo-files.mjs scripts/html-priorities.mjs scripts/check-release.mjs scripts/blog-export.mjs scripts/catalog-export.mjs ./scripts/
 COPY src/ ./src/
 # As regras do post do blog, as mesmas da API e do admin (src/lib/blog.server.ts importa).
 COPY supabase/functions/_shared/blog-rules.ts ./supabase/functions/_shared/
@@ -22,11 +22,14 @@ ARG VITE_SUPABASE_PUBLISHABLE_KEY
 ARG VITE_STRIPE_PUBLISHABLE_KEY
 ARG VITE_CHECKOUT_MODE
 ARG VITE_TERMS_VERSION
-# Blog (2026-10-23): on the VPS (BLOG_SOURCE=api) the published posts come from the database through the API and replace
-# content/blog. BLOG_VERSION changes with every publish, so only the steps below run again (deploy/blog/vigiar.sh).
+# Content from the database (blog 2026-10-23, catalog 2026-10-24): on the VPS (BLOG_SOURCE=api; the name predates the
+# catalog and stays, since the VPS rebuilds older commits with newer deploy scripts and vice versa) the published posts and
+# the catalog on sale come from the API and replace content/blog and src/content/catalog-snapshot.ts. The versions change
+# with every publish or catalog change, so only the steps below run again (deploy/blog/vigiar.sh).
 ARG BLOG_SOURCE
 ARG BLOG_VERSION
-RUN if [ "$BLOG_SOURCE" = api ]; then node scripts/blog-export.mjs; fi \
+ARG CATALOG_VERSION
+RUN if [ "$BLOG_SOURCE" = api ]; then node scripts/blog-export.mjs && node scripts/catalog-export.mjs; fi \
     && node scripts/check-release.mjs \
     && npm run build \
     && node scripts/check-release.mjs --built

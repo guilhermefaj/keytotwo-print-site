@@ -6,7 +6,10 @@ import { builtStage } from './fixtures/stage'
 
 const stage = builtStage()
 const single = { code: 'J001', kind: 'single', name: 'Rabisque e Adivinhe', games: [{ code: 'J001', name: 'Rabisque e Adivinhe' }], price: { unit_amount: 990, currency: 'brl' } }
-const bundle = { ...single, code: 'P001', kind: 'bundle', name: 'Coleção KeyToTwo: Fundadores', price: { unit_amount: 1990, currency: 'brl' } }
+// O riscado da promoção vem do /catalog (o admin define; 2026-10-24).
+const bundle = { ...single, code: 'P001', kind: 'bundle', name: 'Coleção KeyToTwo: Fundadores', price: { unit_amount: 1990, currency: 'brl' }, list_price: { amount: 3990, label: 'Preço de lançamento' } }
+// Produto lançado fora do /catalog (pausado no admin): "Indisponível no momento"; no preview, sem preço, "Em breve".
+const unavailable = stage === 'preview' ? 'Em breve' : 'Indisponível no momento'
 
 async function catalog(page: Page, products = [single]) {
   await page.route('**/functions/v1/api/catalog', route => route.fulfill({ json: { products } }))
@@ -19,7 +22,7 @@ async function catalog(page: Page, products = [single]) {
   })
 }
 
-test('loja: pacote fora do catálogo fica em breve; jogos do pacote sem avulso ficam "No pacote"; só o avulso tem compra', async ({ page }) => {
+test('loja: pacote fora do catálogo fica indisponível; jogos do pacote sem avulso ficam "No pacote"; só o avulso tem compra', async ({ page }) => {
   await catalog(page)
   await page.goto('/loja')
   await expect(page.getByRole('heading', { name: 'Loja', exact: true })).toBeVisible()
@@ -27,7 +30,7 @@ test('loja: pacote fora do catálogo fica em breve; jogos do pacote sem avulso f
   await expect(pack).toContainText('Pacote de jogos')
   await expect(pack.locator('.shop-bundle-games .pack-game-name')).toHaveText(['Rabisque e Adivinhe', 'Tabuleiro da Sorte', 'O Sumiço de Rapadura', 'A Rota da Fornalha', 'Retrospectiva a Dois'])
   await expect(pack.locator('.shop-bundle-games .pack-game-kind').first()).toHaveText('Desenho e adivinhação')
-  await expect(pack).toContainText('Em breve')
+  await expect(pack).toContainText(unavailable)
   await expect(pack.getByRole('link')).toHaveCount(0)
   // Jogos do pacote: só os disponíveis; capas oficiais no lugar da prévia do PDF.
   const paid = page.locator('.shop-games [data-shop-game]')
@@ -87,7 +90,7 @@ test('produto: preço vem do catálogo, compra preserva escolha e ausência não
     await page.keyboard.press('Escape')
   }
   await page.goto('/loja/colecao-fundadores')
-  await expect(page.locator('.shop-purchase')).toContainText('Em breve')
+  await expect(page.locator('.shop-purchase')).toContainText(unavailable)
   await expect(page.locator('.shop-purchase button')).toHaveCount(0)
   // Jogos do pacote: apresentação e ficha, sem compra avulsa nem "Em breve" dentro da oferta.
   const included = page.locator('.shop-games [data-shop-game]')
@@ -179,7 +182,8 @@ test('carregamento não antecipa preço nem compra', async ({ page }) => {
     await expect(page.locator('.shop-purchase button')).toHaveCount(0)
     await expect(page.locator('.shop-price')).toHaveCount(0)
   } finally { release() }
-  await expect(page.locator('.shop-purchase')).toContainText('Em breve')
+  // Fora do catálogo que chegou: o avulso lançado fica indisponível, sem compra.
+  await expect(page.locator('.shop-purchase')).toContainText('Indisponível no momento')
 })
 
 test('slugs sem produto e desconhecidos usam a 404 existente', async ({ page }) => {

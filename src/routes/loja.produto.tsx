@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Link, isRouteErrorResponse, useLoaderData, useRouteError, type ClientLoaderFunctionArgs, type LoaderFunctionArgs } from 'react-router'
+import { catalogEntry } from '../content/catalog'
 import { bundleFor, productPages, type Product } from '../content/products'
 import type { Game } from '../content/games'
 import { ProductAvailability } from '../components/shop/ProductAvailability'
@@ -8,7 +9,7 @@ import { ProductGallery, type GalleryImage } from '../components/shop/ProductGal
 import { ProductDelivery, ProductFacts, ProductMoments, ProductNeeds, ProductPackage } from '../components/shop/ProductSections'
 import { BackLink } from '../components/ui/BackLink'
 import NotFound from './not-found'
-import { offerValue, track } from '../lib/analytics'
+import { toReais, track } from '../lib/analytics'
 
 export function loader({ params }: LoaderFunctionArgs) {
   return loadProduct(params.slug)
@@ -42,7 +43,8 @@ export default function ShopProduct() {
   const game = product.kind === 'single' ? product.games[0] : undefined
   const bundle = game && bundleFor(game)
   useEffect(() => {
-    const value = product.offer.price ? offerValue(product.offer.price) : undefined
+    const listed = catalogEntry(product.code)?.price
+    const value = listed ? toReais(listed.unit_amount) : undefined
     track('view_item', { currency: 'BRL', value, items: [{ item_id: product.code, item_name: product.title, price: value }] })
   }, [product])
   return <main id="conteudo" tabIndex={-1} className="shop-page shop-product-page content-width">

@@ -35,20 +35,21 @@ select pg_temp.assert('funções de private sem EXECUTE para os papéis de API',
    where p.pronamespace = 'private'::regnamespace and has_function_privilege(r, p.oid, 'EXECUTE')));
 
 -- ===== RPCs do I2b e do I3: ACL e modo de execução ========================================================
-select pg_temp.assert('as RPCs de public são exatamente as 55 do I2b aos alertas do admin (todas as do contrato)',
-  (select array_agg(p.proname::text order by p.proname collate "C") = array['admin_blog_image_usage','admin_check_user_block','admin_delete_blog_image','admin_delete_blog_post','admin_delete_user','admin_export_user','admin_follow_up','admin_get_blog_post','admin_get_order','admin_get_user','admin_gift_products','admin_list_alerts','admin_list_blog_posts','admin_list_orders','admin_list_users','admin_log_order_action','admin_log_user_block','admin_newsletter_off','admin_order_stripe','admin_register_blog_image','admin_resend_delivery','admin_resolve_alert','admin_revoke_entitlement','admin_save_blog_post','admin_set_admin','attach_checkout_session','cart_add','cart_remove','claim_email_batch','create_order_from_cart','delete_account_data','export_account_data','fulfill_order','get_account','get_admin_metrics','get_blog_version','get_cart','get_catalog','get_library','get_order_status','get_stripe_prices','list_free_games','list_published_blog_posts','mark_email_result','quote_cart','record_dispute_alert','record_email_event','remember_stripe_prices','resolve_delivery','resolve_download','resolve_free_download','set_marketing_consent','set_order_status','set_stripe_customer','unsubscribe']
+select pg_temp.assert('as RPCs de public são exatamente as 62 do I2b ao catálogo do admin (todas as do contrato)',
+  (select array_agg(p.proname::text order by p.proname collate "C") = array['admin_add_pack_game','admin_blog_image_usage','admin_check_user_block','admin_delete_blog_image','admin_delete_blog_post','admin_delete_user','admin_export_user','admin_follow_up','admin_get_blog_post','admin_get_order','admin_get_user','admin_gift_products','admin_list_alerts','admin_list_blog_posts','admin_list_catalog','admin_list_orders','admin_list_users','admin_log_order_action','admin_log_user_block','admin_newsletter_off','admin_order_stripe','admin_register_blog_image','admin_remove_pack_game','admin_resend_delivery','admin_resolve_alert','admin_revoke_entitlement','admin_save_blog_post','admin_set_admin','admin_set_list_price','admin_set_product_price','admin_set_product_status','attach_checkout_session','cart_add','cart_remove','claim_email_batch','create_order_from_cart','delete_account_data','export_account_data','fulfill_order','get_account','get_admin_metrics','get_blog_version','get_cart','get_catalog','get_catalog_version','get_library','get_order_status','get_stripe_prices','list_free_games','list_published_blog_posts','mark_email_result','quote_cart','record_dispute_alert','record_email_event','remember_stripe_prices','resolve_delivery','resolve_download','resolve_free_download','set_marketing_consent','set_order_status','set_stripe_customer','unsubscribe']
    from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'));
-select pg_temp.assert('cada RPC: ACL = {dono, service_role} apenas, menos get_blog_version',
-  (select count(*) = 54 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
-     and p.proname <> 'get_blog_version' and p.proacl::text = '{postgres=X/postgres,service_role=X/postgres}'));
--- A exceção (blog, 2026-10-23): o vigia da VPS lê a versão do blog pela API de dados; é o dado de GET /blog/version.
-select pg_temp.assert('get_blog_version: EXECUTE para anon e service_role; nada para authenticated nem public',
-  (select has_function_privilege('anon', p.oid, 'EXECUTE') and has_function_privilege('service_role', p.oid, 'EXECUTE')
+select pg_temp.assert('cada RPC: ACL = {dono, service_role} apenas, menos as versões do blog e do catálogo',
+  (select count(*) = 60 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
+     and p.proname not in ('get_blog_version', 'get_catalog_version') and p.proacl::text = '{postgres=X/postgres,service_role=X/postgres}'));
+-- As exceções (blog, 2026-10-23; catálogo, 2026-10-24): o vigia da VPS lê as versões pela API de dados; são md5 do
+-- que o site já mostra.
+select pg_temp.assert('get_blog_version e get_catalog_version: EXECUTE para anon e service_role; nada para authenticated nem public',
+  (select count(*) = 2 and bool_and(has_function_privilege('anon', p.oid, 'EXECUTE') and has_function_privilege('service_role', p.oid, 'EXECUTE')
           and not has_function_privilege('authenticated', p.oid, 'EXECUTE')
-          and p.proacl::text = '{postgres=X/postgres,service_role=X/postgres,anon=X/postgres}'
-   from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = 'get_blog_version'));
+          and p.proacl::text = '{postgres=X/postgres,service_role=X/postgres,anon=X/postgres}')
+   from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname in ('get_blog_version', 'get_catalog_version')));
 select pg_temp.assert('cada RPC: SECURITY DEFINER com search_path vazio',
-  (select count(*) = 55 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
+  (select count(*) = 62 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prokind = 'f'
      and p.prosecdef and p.proconfig @> array['search_path=""']));
 
 -- ===== comportamento por papel ====================================================================

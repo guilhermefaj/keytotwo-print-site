@@ -54,13 +54,12 @@ async function check(root, built) {
   }
   const products = modules['products.ts']?.products
   if (!Array.isArray(products) || !products.length) errors.push('Catálogo público ausente ou vazio')
+  // O preço vem do catálogo do banco (catalog.ts, desde 2026-10-24): a trava confere só a ação de compra.
   for (const [index, product] of (products || []).entries()) {
-    const offer = product.offer
     if (product.availability === 'sale') {
-      if (offer?.priceApproved !== true) errors.push(`Preço não aprovado em products[${index}]`)
-      if (typeof offer?.price !== 'string' || !offer.price.trim()) errors.push(`Preço ausente em products[${index}]`)
+      if (product.purchaseAction !== 'cart') errors.push(`Produto à venda sem ação de compra em products[${index}]`)
     } else if (product.availability === 'soon') {
-      if (offer?.purchaseAction != null) errors.push(`Produto em breve com ação de compra em products[${index}]`)
+      if (product.purchaseAction != null) errors.push(`Produto em breve com ação de compra em products[${index}]`)
     } else errors.push(`Disponibilidade inválida em products[${index}]`)
   }
   // Relatos de exemplo (placeholder: true) não travam: o live os filtra, e sem relato real a seção some. O build confere
@@ -110,25 +109,23 @@ function selfTest() {
     writeFileSync(path.join(root, 'src/content/site.ts'), 'export const publicPages = {"/": {title: "Fixture"}}')
     mkdirSync(path.join(root, 'build/client'), { recursive: true })
     const cases = [
-      ['live limpo', 'live', '"Texto de fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 0],
-      ['marcador literal', 'live', '"PENDENTE: fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1],
-      ['marcador via helper', 'live', 'pending("fixture")', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1],
-      ['preço não aprovado', 'live', '"Fixture"', false, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1],
-      ['preço ausente', 'live', '"Fixture"', true, '', '<h1>Fixture</h1>', 1],
-      ['marcador no HTML', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>PENDENTE: fixture</h1>', 1],
-      ['preview com pendências', 'preview', 'pending("fixture")', false, '', '<h1>PENDENTE</h1>', 0],
-      ['test com pendências', 'test', 'pending("fixture")', false, '', '<h1>PENDENTE</h1>', 0],
-      ['relato incompleto', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1, 'sale', 'cart', /Relato incompleto/],
-      ['relato sem nota', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 1, 'sale', 'cart', /Relato sem nota/],
-      ['relato de exemplo fora do HTML', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<h1>Fixture</h1>', 0],
-      ['relato de exemplo no HTML', 'live', '"Fixture"', true, 'VALOR DE TESTE', '<p>FIXTURE do exemplo</p>', 1, 'sale', 'cart', /Relato de exemplo no HTML/],
-      ['soon sem preço nem compra', 'live', '"Fixture"', false, null, '<h1>Fixture</h1>', 0, 'soon', null],
-      ['soon com compra', 'live', '"Fixture"', false, null, '<h1>Fixture</h1>', 1, 'soon', 'cart', /Produto em breve com ação de compra/],
-      ['soon ainda com pendência', 'live', 'pending("fixture")', false, null, '<h1>Fixture</h1>', 1, 'soon', null, /PENDENTE em/],
-      ['sale sem oferta', 'live', '"Fixture"', false, null, '<h1>Fixture</h1>', 1, 'sale', null, /Preço não aprovado/],
-      ['disponibilidade desconhecida', 'live', '"Fixture"', true, 'FIXTURE', '<h1>Fixture</h1>', 1, 'invalid', null, /Disponibilidade inválida/],
+      ['live limpo', 'live', '"Texto de fixture"', '<h1>Fixture</h1>', 0],
+      ['marcador literal', 'live', '"PENDENTE: fixture"', '<h1>Fixture</h1>', 1],
+      ['marcador via helper', 'live', 'pending("fixture")', '<h1>Fixture</h1>', 1],
+      ['marcador no HTML', 'live', '"Fixture"', '<h1>PENDENTE: fixture</h1>', 1],
+      ['preview com pendências', 'preview', 'pending("fixture")', '<h1>PENDENTE</h1>', 0],
+      ['test com pendências', 'test', 'pending("fixture")', '<h1>PENDENTE</h1>', 0],
+      ['relato incompleto', 'live', '"Fixture"', '<h1>Fixture</h1>', 1, 'sale', 'cart', /Relato incompleto/],
+      ['relato sem nota', 'live', '"Fixture"', '<h1>Fixture</h1>', 1, 'sale', 'cart', /Relato sem nota/],
+      ['relato de exemplo fora do HTML', 'live', '"Fixture"', '<h1>Fixture</h1>', 0],
+      ['relato de exemplo no HTML', 'live', '"Fixture"', '<p>FIXTURE do exemplo</p>', 1, 'sale', 'cart', /Relato de exemplo no HTML/],
+      ['soon sem compra', 'live', '"Fixture"', '<h1>Fixture</h1>', 0, 'soon', null],
+      ['soon com compra', 'live', '"Fixture"', '<h1>Fixture</h1>', 1, 'soon', 'cart', /Produto em breve com ação de compra/],
+      ['soon ainda com pendência', 'live', 'pending("fixture")', '<h1>Fixture</h1>', 1, 'soon', null, /PENDENTE em/],
+      ['sale sem compra', 'live', '"Fixture"', '<h1>Fixture</h1>', 1, 'sale', null, /Produto à venda sem ação de compra/],
+      ['disponibilidade desconhecida', 'live', '"Fixture"', '<h1>Fixture</h1>', 1, 'invalid', null, /Disponibilidade inválida/],
     ]
-    for (const [name, stage, copy, approved, price, html, status, availability = 'sale', purchaseAction = 'cart', diagnostic = /Release live bloqueada/] of cases) {
+    for (const [name, stage, copy, html, status, availability = 'sale', purchaseAction = 'cart', diagnostic = /Release live bloqueada/] of cases) {
       const example = '{testimonials:[{quote:"FIXTURE do exemplo",author:"FIXTURE",rating:5,placeholder:true}]}'
       const social = {
         'relato incompleto': '{testimonials:[{quote:null,author:null,rating:5}]}',
@@ -137,8 +134,8 @@ function selfTest() {
         'relato de exemplo no HTML': example,
       }[name]
       writeFileSync(path.join(root, 'src/content/experience.ts'), `export const experience = { social: ${social ?? '{testimonials:[{quote:"FIXTURE de teste",author:"FIXTURE",rating:5}]}'} }`)
-      // Um primeiro produto aprovado garante que a trava avalia também as ofertas seguintes.
-      writeFileSync(path.join(root, 'src/content/products.ts'), `import { pending } from '../lib/pending'\nexport const products = [{availability:'sale',offer:{priceApproved:true,price:'FIXTURE',purchaseAction:'cart'}}, { title: ${copy}, availability: ${JSON.stringify(availability)}, offer: ${name === 'sale sem oferta' ? 'null' : `{priceApproved: ${approved}, price: ${JSON.stringify(price)}, purchaseAction: ${JSON.stringify(purchaseAction)}}`} }]`)
+      // Um primeiro produto à venda garante que a trava avalia também os seguintes.
+      writeFileSync(path.join(root, 'src/content/products.ts'), `import { pending } from '../lib/pending'\nexport const products = [{availability:'sale',purchaseAction:'cart'}, { title: ${copy}, availability: ${JSON.stringify(availability)}, purchaseAction: ${JSON.stringify(purchaseAction)} }]`)
       writeFileSync(path.join(root, 'build/client/index.html'), html)
       const result = spawnSync(process.execPath, [script, '--root', root, '--built'], {
         env: { ...process.env, VITE_SITE_STAGE: stage }, encoding: 'utf8',
@@ -148,7 +145,7 @@ function selfTest() {
       console.log(`Fixture OK: ${name}`)
     }
     // Use approved test-only fixtures; no real commercial copy is rewritten.
-    writeFileSync(path.join(root, 'src/content/products.ts'), 'export const products = [{availability: "sale", offer: {priceApproved: true, price: "FIXTURE", purchaseAction: "cart"}}]')
+    writeFileSync(path.join(root, 'src/content/products.ts'), 'export const products = [{availability: "sale", purchaseAction: "cart"}]')
     writeFileSync(path.join(root, 'src/content/experience.ts'), 'export const experience = {}')
     writeFileSync(path.join(root, 'build/client/index.html'), '<h1>Fixture</h1>')
     mkdirSync(path.join(root, 'content/blog'), { recursive: true })

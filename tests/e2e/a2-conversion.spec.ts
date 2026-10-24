@@ -2,7 +2,7 @@
 import { readFile } from 'node:fs/promises'
 
 // A vitrine do Início aplica a regra da Loja: à venda só com sale + catálogo (preço real vindo do
-// /catalog); o pacote incompleto e os jogos sem avulso aparecem "Em breve". A prévia real do J001 fica
+// /catalog); o pacote fora do catálogo aparece "Indisponível no momento" e os jogos sem avulso, "No pacote". A prévia real do J001 fica
 // na seção de experiência; nos cards a imagem é a capa oficial.
 test('real previews and catalog price on the home showcase', async ({ page }) => {
   const html = await readFile(new URL('../../build/client/index.html', import.meta.url), 'utf8')
@@ -20,8 +20,8 @@ test('real previews and catalog price on the home showcase', async ({ page }) =>
   await expect(tile.getByRole('link')).toHaveAttribute('href', '/loja/rabisque-e-adivinhe')
   await expect(tile.locator('.cover-tile-meta')).toHaveText('R$ 19,90')
   await expect(showcase.locator('[data-shop-game="tabuleiro-da-sorte"] .cover-tile-meta')).toHaveText('No pacote')
-  // O pacote não está no catálogo (incompleto): aparece "Em breve", sem botão de compra.
-  await expect(showcase.locator('[data-shop-product="P001"] .shop-soon')).toHaveText('Em breve')
+  // O pacote não está no catálogo (pausado ou incompleto): "Indisponível no momento", sem botão de compra.
+  await expect(showcase.locator('[data-shop-product="P001"] .shop-soon')).toHaveText('Indisponível no momento')
   await expect(showcase.locator('[data-shop-product="P001"]').getByRole('button')).toHaveCount(0)
   await expect(showcase.getByRole('button', { name: /Adicionar à sacola/ })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Ver os jogos' }).first()).toHaveAttribute('href', '/loja')

@@ -129,7 +129,7 @@ test('métricas: barra lateral com as seções, 7 e 30 dias, celular sem rolagem
   await page.goto('/')
   const nav = page.getByRole('navigation', { name: 'Seções do admin' })
   // Desde a Fase 3 (2026-10-24) todas as seções existem: sem o grupo "Em breve".
-  await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Atenção', 'Blog', 'Pedidos e reembolsos', 'Usuários'])
+  await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Atenção', 'Pedidos e reembolsos', 'Catálogo', 'Usuários', 'Blog'])
   await expect(nav.getByRole('link', { name: 'Métricas' })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('region', { name: 'Vendas' }).locator('.cards dd')).toHaveText(['R$ 19,80', '2', 'R$ 9,90'])
   await expect(page.locator('.bars span')).toHaveCount(7)

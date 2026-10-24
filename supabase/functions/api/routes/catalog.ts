@@ -7,10 +7,12 @@ interface CatalogProduct {
   kind: string
   name: string | null
   stripe_price_id: string | null
+  list_price: { amount: number; label: string } | null
   games: { code: string; name: string }[]
 }
 
-// GET /catalog (pública): produtos vendáveis com o preço lido da Stripe. O stripe_price_id não sai da API.
+// GET /catalog (pública): produtos vendáveis com o preço lido da Stripe e o riscado da promoção. O stripe_price_id
+// não sai da API.
 export async function catalog(): Promise<Response> {
   const products = (await rpc<CatalogProduct[] | null>('get_catalog')) ?? []
   await primePrices(products.map((product) => product.stripe_price_id))

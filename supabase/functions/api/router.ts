@@ -14,6 +14,7 @@ import { orderStatus } from './routes/order-status.ts'
 import { unsubscribe, unsubscribePage } from './routes/unsubscribe.ts'
 import { library } from './routes/library.ts'
 import { adminOrder, adminOrders, adminReconcileOrder, adminRefundOrder } from './routes/orders.ts'
+import { adminAddPackGame, adminCatalog, adminProductListPrice, adminProductPrice, adminProductStatus, adminRemovePackGame } from './routes/products.ts'
 
 type Params = Record<string, string>
 type Handler = (req: Request, url: URL, params: Params) => Response | Promise<Response>
@@ -76,6 +77,12 @@ const routes: Route[] = [
   route('/admin/orders/:id/refund', { POST: adminRefundOrder }),
   route('/admin/orders/:id/reconcile', { POST: adminReconcileOrder }),
   route('/admin/alerts', { GET: adminAlerts }),
+  route('/admin/catalog', { GET: adminCatalog }),
+  route('/admin/products/:code/status', { POST: adminProductStatus }),
+  route('/admin/products/:code/price', { POST: adminProductPrice }),
+  route('/admin/products/:code/list-price', { POST: adminProductListPrice }),
+  route('/admin/products/:code/games', { POST: adminAddPackGame }),
+  route('/admin/products/:code/games/:game/remove', { POST: adminRemovePackGame }),
   route('/admin/alerts/:id/resolve', { POST: adminResolveAlert }),
   route('/blog/posts', { GET: blogPublished }),
   route('/blog/version', { GET: blogVersion }),

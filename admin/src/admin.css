@@ -116,7 +116,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .back-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-bottom: 8px; color: var(--color-ink-soft); font-size: var(--text-label); text-decoration: none; }
 .back-link:hover { color: var(--color-ink); }
 .text-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--color-deep-teal); font-size: var(--text-label); font-weight: 600; text-underline-offset: 4px; }
-.notice { margin-bottom: 20px; padding: 12px 16px; border: var(--line-rule); border-left: 3px solid var(--color-deep-teal); border-radius: var(--radius-sm); background: var(--color-paper); font-size: var(--text-label); }
+.notice { margin-bottom: 20px; padding: 12px 16px; border: var(--line-rule); border-radius: var(--radius-sm); background: var(--color-paper); font-size: var(--text-label); }
 .status-error { margin-bottom: 20px; }
 .badge { justify-self: start; display: inline-block; margin: 0; padding: 2px 10px; border-radius: 999px; background: var(--color-ink-wash); color: var(--color-ink-soft); font-size: var(--text-caption); font-weight: 600; line-height: 1.6; white-space: nowrap; }
 .badge-published { background: var(--color-sky); color: var(--color-deep-teal); }
@@ -137,12 +137,12 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .site-sync-synced .site-sync-dot { background: var(--color-deep-teal); }
 .site-sync-pending .site-sync-dot { background: var(--color-highlight); }
 .post-list { margin: 0; padding: 0; list-style: none; border-top: var(--line-rule); }
-.post-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 360px) 44px 44px; align-items: center; gap: 8px 24px; padding: 14px 4px; border-bottom: var(--line-rule); }
+.post-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 420px) 44px 44px; align-items: center; gap: 8px 24px; padding: 14px 4px; border-bottom: var(--line-rule); }
 .post-row-main { display: grid; gap: 2px; min-width: 0; }
 .post-row-title { overflow-wrap: anywhere; color: var(--color-ink); font-weight: 600; text-decoration: none; }
 .post-row-title:hover { color: var(--color-deep-teal); text-decoration: underline; text-underline-offset: 4px; }
 .post-row-slug { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-soft); font-size: var(--text-caption); }
-.post-row-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; font-size: var(--text-caption); }
+.post-row-meta { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; gap: 12px; margin: 0; font-size: var(--text-caption); }
 .post-row-meta dt { color: var(--color-ink-soft); }
 .post-row-meta dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .post-row-link { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: var(--radius-sm); color: var(--color-ink-soft); }
@@ -150,7 +150,7 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .post-row-delete { padding: 0; border: 0; background: transparent; cursor: pointer; }
 .post-row-delete:hover, .post-row-delete[aria-expanded="true"] { background: var(--color-ink-wash); color: var(--color-error); }
 /* Confirmação de excluir, dentro da própria linha. */
-.row-confirm { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; border-left: 3px solid var(--color-error); border-radius: var(--radius-sm); background: var(--color-paper); }
+.row-confirm { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid var(--color-error); border-radius: var(--radius-sm); background: var(--color-paper); }
 .row-confirm p { flex-basis: 100%; font-size: var(--text-label); }
 .row-confirm .field-error { margin: 0; }
 .icon-button { display: inline-grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--color-ink-soft); cursor: pointer; }
@@ -211,7 +211,7 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .tool[aria-pressed="true"] { background: var(--color-ink-wash); color: var(--color-ink); box-shadow: inset 0 -2px 0 var(--color-deep-teal); }
 .tool.is-disabled { opacity: .5; cursor: default; }
 /* Barra do link e da descrição da imagem selecionada, logo abaixo da barra de formatação. */
-.editor-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; border: var(--line-rule); border-left: 3px solid var(--color-deep-teal); border-radius: var(--radius-sm); background: var(--color-paper); font-size: var(--text-label); }
+.editor-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; border: var(--line-rule); border-radius: var(--radius-sm); background: var(--color-paper); font-size: var(--text-label); }
 .editor-bar label { font-weight: 600; }
 .editor-bar input { flex: 1 1 240px; min-height: 40px; padding: 6px 12px; border: 1.5px solid var(--color-ink-rule); border-radius: var(--radius-sm); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-body); }
 .editor-bar input:focus-visible { border-color: var(--color-deep-teal); outline-offset: 2px; }
@@ -260,7 +260,7 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .gallery-use { overflow: hidden; padding: 0 6px; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-soft); font-size: var(--text-caption); line-height: 44px; }
 .gallery-delete { justify-self: start; padding-inline: 6px; font-size: var(--text-label); }
 /* Confirmação de apagar, no próprio cartão: borda de Erro e os dois botões dividindo a largura. */
-.gallery-confirm { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border-left: 3px solid var(--color-error); border-radius: var(--radius-sm); background: var(--color-ink-wash); }
+.gallery-confirm { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border: 1px solid var(--color-error); border-radius: var(--radius-sm); background: var(--color-ink-wash); }
 .gallery-confirm p { flex-basis: 100%; font-size: var(--text-caption); }
 .gallery-confirm .field-error { margin: 0; }
 .gallery-confirm .button { flex: 1 1 0; min-height: 40px; padding: 6px 8px; font-size: var(--text-label); }
@@ -272,7 +272,9 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .preview-empty { color: var(--color-ink-soft); font-size: var(--text-body); }
 .editor-actions { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; padding: 12px 0; border-top: var(--line-rule); background: var(--color-paper); }
 .editor-state { margin-right: auto; color: var(--color-ink-soft); font-size: var(--text-label); }
-.danger-zone { display: grid; justify-items: start; gap: 8px; margin-top: 40px; padding-top: 24px; border-top: var(--line-rule); }
+.danger-zone { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 24px; margin-top: 40px; padding-top: 24px; border-top: var(--line-rule); }
+.danger-zone > h2, .danger-zone > .field-error { flex-basis: 100%; }
+.action-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 24px; }
 .danger-zone h2 { font-family: var(--font-sans); font-size: var(--text-body); font-weight: 600; letter-spacing: 0; }
 .danger-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .danger-confirm p { flex-basis: 100%; color: var(--color-ink-soft); font-size: var(--text-label); }
@@ -316,6 +318,7 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .plain-row-sub { color: var(--color-ink-soft); font-size: var(--text-caption); }
 .plain-row-amount { min-width: 80px; font-variant-numeric: tabular-nums; text-align: right; }
 .alert-links { display: flex; flex-wrap: wrap; gap: 0 16px; }
+.catalog-list-price { margin-right: 4px; color: var(--color-ink-soft); font-size: var(--text-caption); }
 .timeline { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: var(--text-label); }
 .timeline time { margin-right: 6px; color: var(--color-ink-soft); font-variant-numeric: tabular-nums; }
 .timeline-by { color: var(--color-ink-soft); }
@@ -323,7 +326,7 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .data-table { width: 100%; border-collapse: collapse; font-size: var(--text-label); font-variant-numeric: tabular-nums; }
 .data-table th, .data-table td { padding: 8px 16px 8px 0; border-bottom: var(--line-rule); text-align: left; white-space: nowrap; }
 .data-table thead th { color: var(--color-ink-soft); font-weight: 600; }
-.status-warning { padding: 10px 14px; border-left: 3px solid var(--color-highlight); border-radius: var(--radius-sm); background: var(--color-paper); font-size: var(--text-label); }
+.status-warning { padding: 10px 14px; border: 1px solid var(--color-highlight); border-radius: var(--radius-sm); background: var(--color-paper); font-size: var(--text-label); }
 .inline-action { display: grid; justify-items: start; gap: 4px; }
 .inline-action .text-button { display: inline-flex; align-items: center; gap: 6px; }
 
@@ -352,8 +355,8 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .check-group legend { margin-bottom: 4px; padding: 0; font-size: var(--text-label); font-weight: 600; }
 
 /* Ação com motivo: abre no lugar do botão, com borda Turquesa profundo (ou de Erro, quando tira ou apaga algo). */
-.reason-form { display: grid; flex-basis: 100%; gap: 12px; width: 100%; max-width: 640px; padding: 16px; border: var(--line-rule); border-left: 3px solid var(--color-deep-teal); border-radius: var(--radius-sm); background: var(--color-paper); }
-.reason-form-danger { border-left-color: var(--color-error); }
+.reason-form { display: grid; flex-basis: 100%; gap: 12px; width: 100%; max-width: 640px; padding: 16px; border: var(--line-rule); border-radius: var(--radius-sm); background: var(--color-paper); }
+.reason-form-danger { border-color: var(--color-error); }
 .reason-form > p { font-size: var(--text-label); }
 .reason-form textarea, .reason-form select { min-height: 48px; padding: 10px 14px; border: 1.5px solid var(--color-ink-rule); border-radius: var(--radius-sm); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-body); font-weight: 400; }
 .reason-form textarea { resize: vertical; }

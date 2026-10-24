@@ -42,7 +42,7 @@ function AlertRow({ alert, onResolved }: { alert: Alert; onResolved?: (alert: Al
   return <li className="plain-row">
     <div className="plain-row-main">
       <strong>{title}</strong>
-      <span>{hint}</span>
+      {!alert.resolved_at && <span>{hint}</span>}
       <span className="plain-row-sub">{alert.resolved_at
         ? `Resolvido em ${formatMoment(alert.resolved_at)}: ${alert.resolved_by ? `${alert.resolution} · ${alert.resolved_by}` : 'fechou sozinho'}`
         : `Aberto em ${formatMoment(alert.opened_at)}`}</span>
