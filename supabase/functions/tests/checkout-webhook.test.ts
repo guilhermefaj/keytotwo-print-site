@@ -153,6 +153,30 @@ contractTest('checkout: cria Customer, sessão do formulário embutido com os pa
   })
 })
 
+contractTest('checkout: a indicação (link do parceiro e campanhas) vai para o banco; falha nela não impede o pagamento', async () => {
+  const token = await sessionToken()
+  const referral = { partner: 'ana-souza', landed_at: '2026-10-24T12:00:00.000Z', path: '/loja', utm_source: 'instagram' }
+  for (const referralReply of [ok([{ outcome: 'ok' }]), { status: 500, body: {} }]) {
+    onRpc((fn) => {
+      if (fn === 'create_order_from_cart') {
+        return row({ outcome: 'ok', order_id: ORDER_ID, email: 'teste@example.com', stripe_customer_id: 'cus_teste', items: [{ product_code: 'P001', stripe_price_id: PRICE }], reused: false, detail: null })
+      }
+      if (fn === 'set_order_referral') return referralReply
+      return ok('applied')
+    })
+    onStripe((call) => (call.method === 'POST' && call.path === '/v1/checkout/sessions' ? ok(session({ status: 'open', payment_status: 'unpaid' })) : ok({ id: 'cus_teste', object: 'customer' })))
+    const { result: res } = await captureErrors(() => handleRequest(request('/checkout', { method: 'POST', token, body: { ...checkoutBody, referral } })))
+    assertEquals(res.status, 200)
+    assertEquals(rpcCalls.find((c) => c.fn === 'set_order_referral')!.args, { p_user_id: userId(token), p_order_id: ORDER_ID, p_referral: referral })
+  }
+  // sem indicação, o banco nem é chamado para isso
+  onRpc((fn) => (fn === 'create_order_from_cart'
+    ? row({ outcome: 'ok', order_id: ORDER_ID, email: 'teste@example.com', stripe_customer_id: 'cus_teste', items: [{ product_code: 'P001', stripe_price_id: PRICE }], reused: false, detail: null })
+    : ok('applied')))
+  await handleRequest(request('/checkout', { method: 'POST', token, body: checkoutBody }))
+  assertEquals(rpcCalls.some((c) => c.fn === 'set_order_referral'), false)
+})
+
 contractTest('checkout e liberação: o pacote de completar a coleção vai com price_data e volta pelo Price de tabela', async () => {
   const prices: Record<string, number> = { price_col_P001: 2990, price_col_J001: 990, price_col_J002: 1290 }
   onPrice((id) => (id in prices ? ok({ id, active: true, unit_amount: prices[id], currency: 'brl', product: 'prod_col_P001' }) : { status: 404, body: {} }))

@@ -14,6 +14,8 @@ import { orderStatus } from './routes/order-status.ts'
 import { unsubscribe, unsubscribePage } from './routes/unsubscribe.ts'
 import { library } from './routes/library.ts'
 import { adminOrder, adminOrders, adminReconcileOrder, adminRefundOrder } from './routes/orders.ts'
+import { adminCreateDiscount, adminDiscounts, adminDiscountState, internalDiscountsTick } from './routes/discounts.ts'
+import { adminPartner, adminPartnerExport, adminPartnerPayout, adminPartners, adminSavePartner, referralVisit } from './routes/partners.ts'
 import { adminAddPackGame, adminCatalog, adminProductListPrice, adminProductPrice, adminProductStatus, adminRemovePackGame } from './routes/products.ts'
 
 type Params = Record<string, string>
@@ -56,6 +58,8 @@ const routes: Route[] = [
   route('/free-games', { GET: freeGames }),
   route('/free-download', { POST: freeDownload }),
   route('/email/unsubscribe', { GET: unsubscribePage, POST: unsubscribe }),
+  route('/referral/visit', { POST: referralVisit }),
+  route('/internal/discounts/tick', { POST: internalDiscountsTick }),
   route('/admin/metrics', { GET: adminMetrics }),
   route('/admin/blog/posts', { GET: adminBlogPosts, POST: adminCreateBlogPost }),
   route('/admin/blog/posts/:id', { GET: adminBlogPost, PUT: adminUpdateBlogPost, DELETE: adminDeleteBlogPost }),
@@ -78,6 +82,12 @@ const routes: Route[] = [
   route('/admin/orders/:id/reconcile', { POST: adminReconcileOrder }),
   route('/admin/alerts', { GET: adminAlerts }),
   route('/admin/catalog', { GET: adminCatalog }),
+  route('/admin/discounts', { GET: adminDiscounts, POST: adminCreateDiscount }),
+  route('/admin/discounts/:id/state', { POST: adminDiscountState }),
+  route('/admin/partners', { GET: adminPartners, POST: adminSavePartner }),
+  route('/admin/partners/:id', { GET: adminPartner, POST: adminSavePartner }),
+  route('/admin/partners/:id/payouts', { POST: adminPartnerPayout }),
+  route('/admin/partners/:id/export', { GET: adminPartnerExport }),
   route('/admin/products/:code/status', { POST: adminProductStatus }),
   route('/admin/products/:code/price', { POST: adminProductPrice }),
   route('/admin/products/:code/list-price', { POST: adminProductListPrice }),

@@ -32,6 +32,7 @@ function detail(id: string, refunded = false) {
       stripe_payment_intent_id: open ? null : 'pi_TESTE123', deliverable: !open && !refunded, refundable: !open && !refunded, reconcilable: open,
     },
     person: { id: ANA, email: 'ana@example.test', order_email: 'ana@example.test', exists: true, stripe_customer_id: 'cus_TESTE123' },
+    origin: open ? null : { partner: { id: '4d5e6f7a-8b9c-4d0e-9f1a-3b4c5d6e7f80', slug: 'ana-souza', name: 'Ana Souza' }, source: 'link', landed_at: '2026-10-20T15:00:00Z', path: '/loja', utm_source: 'instagram' },
     items: [{ code: 'J001', name: 'Rabisque e Adivinhe', kind: 'single', unit_amount: 1100, currency: 'brl' }],
     events: open ? [] : [{ from_status: 'open', to_status: 'paid', source: 'webhook', reason: null, created_at: '2026-10-21T10:00:00Z' },
       ...(refunded ? [{ from_status: 'paid', to_status: 'refunded', source: 'admin', reason: 'admin_refund', created_at: '2026-10-24T12:00:00Z' }] : [])],
@@ -88,7 +89,7 @@ test('pedidos: a seção está pronta na barra lateral, sem o grupo "Em breve"',
   await ordersApi(page)
   await page.goto('/pedidos')
   const nav = page.getByRole('navigation', { name: 'Seções do admin' })
-  await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Atenção', 'Pedidos e reembolsos', 'Catálogo', 'Usuários', 'Blog'])
+  await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Atenção', 'Pedidos e reembolsos', 'Catálogo', 'Cupons e parceiros', 'Usuários', 'Blog'])
   await expect(nav.getByText('Em breve')).toHaveCount(0)
   await expect(nav.getByRole('link', { name: 'Pedidos e reembolsos' })).toHaveAttribute('aria-current', 'page')
 })
@@ -130,6 +131,9 @@ test('ficha: valores com cupom, jogos e downloads, linha do tempo, e-mails; reem
   await expect(values).toContainText(/R\$\s11,00/)
   await expect(values).toContainText(/R\$\s1,10, cupom PRIMEIRA10/)
   await expect(values).toContainText(/R\$\s9,90/)
+  await expect(values).toContainText('Ana Souza, pelo link')
+  await expect(values).toContainText('Campanha: instagram')
+  await expect(values.getByRole('link', { name: 'Ana Souza' })).toHaveAttribute('href', '/cupons/parceiros/4d5e6f7a-8b9c-4d0e-9f1a-3b4c5d6e7f80')
   await expect(values.getByRole('link', { name: /pi_TESTE123/ })).toHaveAttribute('href', 'https://dashboard.stripe.com/payments/pi_TESTE123')
   await expect(page.getByRole('region', { name: /Jogos liberados/ })).toContainText('2 downloads depois do pagamento')
   await expect(page.getByRole('region', { name: 'Linha do tempo' })).toContainText('Pago, pelo aviso da Stripe')

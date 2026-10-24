@@ -12,6 +12,9 @@ import { AuthProvider } from './components/auth/AuthProvider'
 import { CookieNotice } from './components/layout/CookieNotice'
 import { ShopProvider } from './components/account/ShopProvider'
 import { useAuth } from './lib/auth-context'
+import { api, ApiError } from './lib/api'
+import { captureReferral } from './lib/referral'
+import { authConfigured } from './lib/supabase'
 // Fase 4 (desempenho): o título da hero é o LCP e espera a Bricolage; o preload a busca junto com o CSS.
 // As URLs são os mesmos arquivos (com hash) que o CSS do @fontsource referencia.
 import bricolage700 from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-700-normal.woff2?url'
@@ -84,6 +87,17 @@ export function Layout({ children }: { children: ReactNode }) {
 
 // O JS só começa depois da primeira pintura (scripts/html-priorities.mjs). Este marcador diz que a página já
 // responde: hidratada e com a sessão lida. Os e2e esperam por ele (tests/e2e/fixtures/test.ts).
+// Quem chega pelo link de um parceiro ou de uma campanha (lib/referral.ts): guarda no navegador e conta a visita.
+function ReferralCapture() {
+  const { search } = useLocation()
+  useEffect(() => {
+    if (!authConfigured || !search) return
+    void captureReferral(new URL(window.location.href), partner => api<{ name: string; code: string | null; percent_off: number | null }>('/referral/visit', { method: 'POST', body: { partner }, public: true })
+      .catch(error => { if (error instanceof ApiError && error.code === 'NOT_FOUND') return null; throw error }))
+  }, [search])
+  return null
+}
+
 function InteractiveMarker() {
   const { ready } = useAuth()
   useEffect(() => { if (ready) document.documentElement.dataset.interactive = 'true' }, [ready])
@@ -92,7 +106,7 @@ function InteractiveMarker() {
 
 export default function Root() {
   const [menuOpen, setMenuOpen] = useState(false)
-  return <AuthProvider><ShopProvider><InteractiveMarker />
+  return <AuthProvider><ShopProvider><InteractiveMarker /><ReferralCapture />
     <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
     {siteConfig.stage === 'test' && <aside aria-label="Aviso de ambiente"><p className="stage-banner">Ambiente de teste — sem cobranças reais.</p></aside>}
     <CookieNotice />

@@ -38,6 +38,19 @@ test('explicit mock: acceptance, coupon and simulated confirmation without a che
   expect(calls).toBe(0)
 })
 
+// Link de parceiro (2026-10-24): o pedido leva de onde a pessoa veio, e o código do parceiro entra sozinho no formulário.
+test('partner link: referral goes with the order and the partner code is applied on its own', async ({ page }) => {
+  const referral = { partner: 'ana-souza', landed_at: new Date().toISOString(), path: '/loja', utm_source: 'instagram', name: 'Ana Souza', code: 'TESTE10', percent_off: 10, counted_on: '2026-10-24' }
+  await page.addInitScript(value => localStorage.setItem('keytotwo:indicacao', JSON.stringify(value)), referral)
+  const bodies: unknown[] = []
+  page.on('request', request => { if (request.url().endsWith('/api/checkout')) bodies.push(request.postDataJSON()) })
+  await stripeMode(page)
+  await page.getByRole('checkbox', { name: /Li e aceito os/ }).check()
+  await expect(page.locator('.payment-total')).toContainText('17,91')
+  await expect(page.getByText('Cupom TESTE10 aplicado (indicação de Ana Souza).')).toBeVisible()
+  expect(bodies).toEqual([{ cart_version: 3, terms_accepted: true, terms_version: 'termos-2026-10-22', referral: { partner: 'ana-souza', landed_at: referral.landed_at, path: '/loja', utm_source: 'instagram' } }])
+})
+
 test('acceptance gates API and form; coupon invalid/apply/remove; confirmation', async ({ page }) => {
   let calls = 0
   page.on('request', request => { if (request.url().endsWith('/api/checkout')) { calls++; expect(request.postDataJSON()).toEqual({ cart_version: 3, terms_accepted: true, terms_version: 'termos-2026-10-22' }) } })

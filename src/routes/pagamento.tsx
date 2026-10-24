@@ -12,6 +12,7 @@ import { checkoutMock, canCheckout, checkoutError, termsVersion } from '../lib/c
 import { useShop } from '../lib/shop-context'
 import { useAuth } from '../lib/auth-context'
 import { toReais, trackBeginCheckout } from '../lib/analytics'
+import { referralForOrder, useReferral } from '../lib/referral'
 
 // Aceite expresso (Política de reembolso): termos, reembolso e entrega imediata numa caixa só. O pedido grava a
 // versão (terms_version) e o momento do aceite (terms_accepted_at); a versão vem de legal.ts.
@@ -31,6 +32,7 @@ function Payment({ cart, refresh }: { cart: Cart; refresh: () => void }) {
   const [demo, setDemo] = useState(false)
   const [error, setError] = useState('')
   const [termsChanged, setTermsChanged] = useState(false)
+  const referral = useReferral()
   const request = useRef<AbortController | null>(null)
   useEffect(() => () => request.current?.abort(), [])
   async function start() {
@@ -40,7 +42,7 @@ function Payment({ cart, refresh }: { cart: Cart; refresh: () => void }) {
     const controller = new AbortController(); request.current = controller
     setBusy(true); setError('')
     try {
-      const response = await api<{ client_secret: string }>('/checkout', { method: 'POST', body: { cart_version: cart.version, terms_accepted: true, terms_version: termsVersion }, signal: controller.signal })
+      const response = await api<{ client_secret: string }>('/checkout', { method: 'POST', body: { cart_version: cart.version, terms_accepted: true, terms_version: termsVersion, referral: referralForOrder(referral) }, signal: controller.signal })
       if (!controller.signal.aborted) setSecret(response.client_secret)
     } catch (cause) {
       if (controller.signal.aborted) return
@@ -64,7 +66,7 @@ function Payment({ cart, refresh }: { cart: Cart; refresh: () => void }) {
       </div>
       <p role="alert" className="form-error">{error}</p>{termsChanged && <a className="inline-link" href="/pagamento">Recarregar e revisar os termos</a>}
       {!canCheckout(cart) && !checkoutMock && <p>Revise os itens e os preços <Link className="inline-link" to="/carrinho">na sacola</Link> antes de continuar.</p>}
-      {accepted && secret && <div className="payment-reveal"><StripePayment clientSecret={secret} /></div>}
+      {accepted && secret && <div className="payment-reveal"><StripePayment clientSecret={secret} partner={referral?.code && referral.name ? { code: referral.code, name: referral.name } : undefined} /></div>}
       {accepted && demo && <div className="payment-reveal"><MockPayment cart={cart} /></div>}
     </section></div>
 }

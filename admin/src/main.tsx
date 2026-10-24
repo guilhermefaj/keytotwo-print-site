@@ -4,6 +4,7 @@ import { AuthGate } from './AuthGate'
 import { Layout } from './Layout'
 import { BlogPage } from './pages/Blog'
 import { CatalogPage } from './pages/Catalog'
+import { DiscountsPage, PartnersPage } from './pages/Discounts'
 import { AlertsPage } from './pages/Alerts'
 import { MetricsPage } from './pages/Metrics'
 import { NotFoundPage } from './pages/NotFound'
@@ -27,6 +28,9 @@ const router = createBrowserRouter([{
     { path: 'pedidos/:id', lazy: async () => ({ Component: (await import('./pages/Order')).OrderRoute }) },
     { path: 'catalogo', element: <CatalogPage /> },
     { path: 'catalogo/:code', lazy: async () => ({ Component: (await import('./pages/Product')).ProductRoute }) },
+    { path: 'cupons', element: <DiscountsPage /> },
+    { path: 'cupons/parceiros', element: <PartnersPage /> },
+    { path: 'cupons/parceiros/:id', lazy: async () => ({ Component: (await import('./pages/Partner')).PartnerRoute }) },
     { path: 'usuarios', element: <UsersPage /> },
     { path: 'usuarios/acompanhamento', element: <FollowUpPage /> },
     { path: 'usuarios/equipe', element: <TeamPage /> },

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router'
-import { api, ApiError, apiErrorMessage, type Account, type Cart, type CatalogProduct } from '../../lib/api'
+import { api, ApiError, apiErrorMessage, type Account, type Cart, type CatalogProduct, type CatalogResponse } from '../../lib/api'
 import { useAuth } from '../../lib/auth-context'
 import { guestCartLimit, useGuestCartCodes, writeGuestCart } from '../../lib/guest-cart'
 import { toReais, track } from '../../lib/analytics'
@@ -59,7 +59,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const server = useApiResource<Cart>('/cart')
   const guest = useGuestCart(ready && !session)
   const account = useApiResource<Account>('/account')
-  const catalog = useApiResource<{ products: CatalogProduct[] }>('/catalog', true)
+  const catalog = useApiResource<CatalogResponse>('/catalog', true)
   // Mudança na sacola da conta ainda sem resposta da API (a do navegador já muda na hora).
   const [pending, setPending] = useState<{ code: string; remove: boolean } | null>(null)
   const serverCodes = server.data?.items.map(item => item.code)

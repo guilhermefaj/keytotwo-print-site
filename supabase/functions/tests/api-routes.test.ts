@@ -29,15 +29,17 @@ function cartItem(code: string, extra: Record<string, unknown> = {}) {
 
 onPrice((id) => (id === 'price_fora' ? { status: 404, body: {} } : { status: 200, body: { id, active: true, unit_amount: 1990, currency: 'brl' } }))
 
-contractTest('GET /catalog é pública, lê preço da Stripe e não expõe o stripe_price_id', async () => {
-  onRpc(() => ({ status: 200, body: CATALOG }))
+contractTest('GET /catalog é pública, lê preço da Stripe e não expõe o stripe_price_id; leva a faixa do topo', async () => {
+  const BANNER = { code: 'BLACK26', text: 'Black Friday: 30% com {cupom}' }
+  onRpc((fn) => ({ status: 200, body: fn === 'get_promo_banner' ? BANNER : CATALOG }))
   const res = await handleRequest(request('/catalog'))
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Cache-Control'), 'public, max-age=60')
   const body = await res.json()
   assertEquals(body.products.map((p: { price: unknown }) => p.price), [{ unit_amount: 1990, currency: 'brl' }, null])
   assertEquals(body.products.some((p: Record<string, unknown>) => 'stripe_price_id' in p), false)
-  assertEquals(domainCalls().map((c) => c.fn), ['get_catalog'])
+  assertEquals(body.banner, BANNER)
+  assertEquals(domainCalls().map((c) => c.fn), ['get_catalog', 'get_promo_banner'])
   assertEquals(rpcCalls[0].secretKeyOk && !rpcCalls[0].hasAuthorization, true)
 })
 
@@ -47,13 +49,14 @@ contractTest('preços: vêm do banco sem ir à Stripe; o que falta vem da Stripe
   onRpc((fn) => fn === 'get_stripe_prices'
     ? { status: 200, body: [{ price_id: 'price_guardado_A', unit_amount: 4590, currency: 'brl', product: 'prod_guardado_A', active: true, fetched_at: new Date().toISOString() }] }
     : fn === 'remember_stripe_prices' ? { status: 200, body: 1 }
-      : { status: 200, body: [{ ...CATALOG[0], stripe_price_id: 'price_guardado_A' }, { ...CATALOG[1], stripe_price_id: 'price_guardado_B' }] })
+      : fn === 'get_promo_banner' ? { status: 200, body: null }
+        : { status: 200, body: [{ ...CATALOG[0], stripe_price_id: 'price_guardado_A' }, { ...CATALOG[1], stripe_price_id: 'price_guardado_B' }] })
   const body = await (await handleRequest(request('/catalog'))).json()
   assertEquals(body.products.map((p: { price: { unit_amount: number } }) => p.price.unit_amount), [4590, 1990])
   assertEquals(fetched, ['price_guardado_B'])
-  assertEquals(rpcCalls.map((c) => c.fn), ['get_catalog', 'get_stripe_prices', 'remember_stripe_prices'])
-  assertEquals(rpcCalls[1].args, { p_price_ids: ['price_guardado_A', 'price_guardado_B'] })
-  assertEquals(rpcCalls[2].args, { p_prices: [{ price_id: 'price_guardado_B', unit_amount: 1990, currency: 'brl', product: 'prod_guardado_B', active: true }] })
+  assertEquals(rpcCalls.map((c) => c.fn), ['get_catalog', 'get_promo_banner', 'get_stripe_prices', 'remember_stripe_prices'])
+  assertEquals(rpcCalls[2].args, { p_price_ids: ['price_guardado_A', 'price_guardado_B'] })
+  assertEquals(rpcCalls[3].args, { p_prices: [{ price_id: 'price_guardado_B', unit_amount: 1990, currency: 'brl', product: 'prod_guardado_B', active: true }] })
   // Na mesma instância, os dois ficam em memória: nem banco nem Stripe na próxima chamada.
   await handleRequest(request('/catalog'))
   assertEquals([rpcCalls.map((c) => c.fn).filter((fn) => fn.endsWith('_stripe_prices')).length, fetched.length], [2, 1])
@@ -281,24 +284,26 @@ contractTest('KT009 vira 403 EMAIL_NOT_CONFIRMED; outra falha de RPC vira 500 se
   assertEquals(logs[0].includes('PGRST202'), true)
 })
 
-contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, 403 sem segundo fator ou sem admin', async () => {
+contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, com cupons e parceiros; 403 sem segundo fator ou sem admin', async () => {
   const token = await sessionToken({ aal: 'aal2' })
   const METRICS = { days: 30, sales: { orders: 2, revenue: 1980, currency: 'brl' }, daily: [] }
-  onRpc(() => ({ status: 200, body: [{ outcome: 'ok', metrics: METRICS }] }))
+  const MARKETING = { codes: [{ code: 'ANA10', orders: 1 }], partners: [], campaigns: [] }
+  onRpc((fn) => ({ status: 200, body: [fn === 'admin_marketing_metrics' ? { outcome: 'ok', result: MARKETING } : { outcome: 'ok', metrics: METRICS }] }))
   const res = await handleRequest(request('/admin/metrics?days=30', { token }))
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Cache-Control'), 'no-store')
-  assertEquals(await res.json(), METRICS)
-  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['get_admin_metrics', { p_user_id: userId(token), p_days: 30, p_livemode: false }]])
+  assertEquals(await res.json(), { ...METRICS, marketing: MARKETING })
+  const args = { p_user_id: userId(token), p_days: 30, p_livemode: false }
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['get_admin_metrics', args], ['admin_marketing_metrics', args]])
   assertEquals((await handleRequest(request('/admin/metrics', { token }))).status, 200)
-  assertEquals(rpcCalls[1].args.p_days, 7)
+  assertEquals(rpcCalls[2].args.p_days, 7)
 
   for (const days of ['0', '14', '366', 'sete', '']) {
     const invalid = await handleRequest(request(`/admin/metrics?days=${days}`, { token }))
     assertEquals(invalid.status, 400, days)
     assertEquals((await invalid.json()).error.code, 'INVALID_REQUEST')
   }
-  assertEquals(rpcCalls.length, 2)
+  assertEquals(rpcCalls.length, 4)
 
   // Sessão só com o primeiro fator (aal1), mesmo de admin: nem chega ao banco.
   for (const claims of [{}, { aal: 'aal1' }]) {
@@ -306,9 +311,9 @@ contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, 403
     assertEquals(single.status, 403)
     assertEquals((await single.json()).error.code, 'MFA_REQUIRED')
   }
-  assertEquals(rpcCalls.length, 2)
+  assertEquals(rpcCalls.length, 4)
 
-  onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden', metrics: null }] }))
+  onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden', metrics: null, result: null }] }))
   const forbidden = await handleRequest(request('/admin/metrics?days=7', { token }))
   assertEquals(forbidden.status, 403)
   assertEquals((await forbidden.json()).error.code, 'NOT_ADMIN')

@@ -20,6 +20,23 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   return result as T
 }
 
+// Arquivo de uma rota /admin/* (a planilha do parceiro): baixa com a sessão e entrega com o nome dado.
+export async function apiDownload(path: string, filename: string) {
+  const session = (await supabase?.auth.getSession())?.data.session
+  if (!session) throw new ApiError('UNAUTHENTICATED')
+  const response = await fetch(`${apiBase}${path}`, { headers: { apikey: publishableKey, Authorization: `Bearer ${session.access_token}` } })
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}))
+    throw new ApiError(result.error?.code || 'INTERNAL_ERROR', result.error?.message)
+  }
+  const url = URL.createObjectURL(await response.blob())
+  const link = Object.assign(document.createElement('a'), { href: url, download: filename })
+  document.body.append(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
 export function apiMessage(error: unknown) {
   const code = error instanceof ApiError ? error.code : ''
   if (code === 'UNAUTHENTICATED') return 'Sua sessão terminou. Entre de novo para continuar.'

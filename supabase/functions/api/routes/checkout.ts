@@ -80,7 +80,9 @@ async function customerFor(userId: string, order: CheckoutOrder): Promise<string
   return await rpc<string>('set_stripe_customer', { p_user_id: userId, p_stripe_customer_id: customer.id, ...(stored ? { p_replaces: stored } : {}) })
 }
 
-// POST /checkout { cart_version, terms_accepted, terms_version } → { client_secret } do formulário embutido.
+// POST /checkout { cart_version, terms_accepted, terms_version, referral? } → { client_secret } do formulário embutido.
+// referral (2026-10-24): de onde veio quem compra (o parceiro do link e as marcas de campanha); o banco confere e
+// descarta o que não vale, e uma falha aqui não impede o pagamento.
 export async function checkout(req: Request): Promise<Response> {
   const user = await requireSessionUser(req)
   const body = await readJsonObject(req)
@@ -109,6 +111,10 @@ export async function checkout(req: Request): Promise<Response> {
     throw new Error(`create_order_from_cart: resultado inesperado (${order.outcome})`)
   }
   const orderId = order.order_id
+  if (body.referral && typeof body.referral === 'object' && !Array.isArray(body.referral)) {
+    await rpc('set_order_referral', { p_user_id: user.id, p_order_id: orderId, p_referral: body.referral })
+      .catch((error) => console.error(`checkout: indicação não gravada (${errorLabel(error)})`))
+  }
   const customer = await customerFor(user.id, order)
   const { lines, metadata } = await lineItems(order.items)
 

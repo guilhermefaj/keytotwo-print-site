@@ -149,11 +149,36 @@ test('pacote: preço de lançamento riscado só quando o cobrado é menor; leito
 test('barrinha do cupom: acima do cabeçalho nas páginas públicas', async ({ page }) => {
   await catalog(page)
   await page.goto('/loja')
-  const bar = page.getByRole('complementary', { name: 'Cupom de primeira compra' })
+  const bar = page.getByRole('complementary', { name: 'Cupom de desconto' })
   await expect(bar).toHaveText('Primeira compra? Usem o cupom PRIMEIRA10 no pagamento e ganhem 10% de desconto.')
+  await expect(bar.locator('.promo-code')).toHaveText('PRIMEIRA10')
   // Vem antes do cabeçalho na página e rola com ela (o cabeçalho é que gruda no topo).
   const [barBox, headerBox] = [await bar.boundingBox(), await page.locator('.site-header-shell').boundingBox()]
   expect(barBox!.y + barBox!.height).toBeLessThanOrEqual(headerBox!.y + 1)
+})
+
+// Cupons do admin (2026-10-24): a faixa vem do cupom com faixa (o /catalog na hora; o build traz a mesma); quem chega
+// pelo link de um parceiro vê o cupom dele, que fica guardado no navegador.
+test('barrinha do cupom: a faixa do /catalog e o cupom do parceiro do link', async ({ page }) => {
+  test.skip(stage === 'preview', 'Preview não consulta a API')
+  await page.route('**/functions/v1/api/catalog', route => route.fulfill({ json: { products: [bundle], banner: { code: 'BLACK26', text: 'Black Friday: 30% em tudo com o cupom {cupom}.' } } }))
+  const visits: unknown[] = []
+  await page.route('**/functions/v1/api/referral/visit', route => {
+    visits.push(route.request().postDataJSON())
+    return route.fulfill({ json: { partner: 'ana-souza', name: 'Ana Souza', code: 'ANA10', percent_off: 12.5 } })
+  })
+  await page.goto('/loja')
+  const bar = page.getByRole('complementary', { name: 'Cupom de desconto' })
+  await expect(bar).toHaveText('Black Friday: 30% em tudo com o cupom BLACK26.')
+  await page.goto('/loja?p=ana-souza&utm_source=instagram')
+  await expect(bar).toHaveText('Indicação de Ana Souza: 12,5% de desconto no pagamento, com o cupom ANA10')
+  expect(visits).toEqual([{ partner: 'ana-souza' }])
+  // Guardado: as próximas páginas mostram o mesmo, sem contar a visita de novo.
+  await page.goto('/')
+  await expect(bar).toContainText('Indicação de Ana Souza')
+  expect(visits).toHaveLength(1)
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('keytotwo:indicacao') ?? 'null'))
+  expect([stored.partner, stored.utm_source, stored.path]).toEqual(['ana-souza', 'instagram', '/loja'])
 })
 
 test('produto listado sem preço não oferece compra; falha permite retry', async ({ page }) => {

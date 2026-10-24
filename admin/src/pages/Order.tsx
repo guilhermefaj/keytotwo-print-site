@@ -64,6 +64,7 @@ function OrderPage({ id }: { id: string }) {
           <Fact label="Total cobrado">{amount(order.amount_total)}</Fact>
         </>}
         <Fact label="Pago em">{order.paid_at ? formatMoment(order.paid_at) : 'Ainda não'}</Fact>
+        {!courtesy && <Fact label="Origem"><Origin origin={detail.origin} /></Fact>}
         {order.refunded_at && <Fact label="Reembolsado em">{formatMoment(order.refunded_at)}</Fact>}
         {order.terms_version && <Fact label="Termos aceitos">{`${order.terms_version}${order.terms_accepted_at ? `, ${formatMoment(order.terms_accepted_at)}` : ''}`}</Fact>}
         {order.stripe_payment_intent_id && <Fact label="Pagamento na Stripe">
@@ -180,4 +181,16 @@ function Refund({ order, onDone }: { order: OrderDetail['order']; onDone: (text:
       <input id={field} value={typed} onChange={event => setTyped(event.target.value)} autoComplete="off" spellCheck={false} />
     </div>
   </ReasonAction>
+}
+
+// De onde veio o pedido: o parceiro (pelo cupom dele ou pelo link) e as marcas de campanha do link.
+function Origin({ origin }: { origin: OrderDetail['origin'] }) {
+  if (!origin) return <>Sem indicação</>
+  const campaign = [origin.utm_source, origin.utm_medium, origin.utm_campaign, origin.utm_content].filter(Boolean).join(' · ')
+  return <>
+    {origin.partner && <><Link className="text-link" to={`/cupons/parceiros/${origin.partner.id}`}>{origin.partner.name}</Link>, {origin.source === 'code' ? 'pelo cupom' : 'pelo link'}</>}
+    {origin.partner && campaign && <br />}
+    {campaign && <>Campanha: {campaign}</>}
+    {origin.landed_at && <span className="plain-row-sub"> · chegou {formatMoment(origin.landed_at)}{origin.path ? ` em ${origin.path}` : ''}</span>}
+  </>
 }
