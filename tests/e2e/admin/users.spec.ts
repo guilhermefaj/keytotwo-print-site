@@ -171,7 +171,8 @@ test('ficha: presente com motivo e e-mail, retirar um jogo e reenviar o acesso; 
     [`/admin/users/${ANA}/entitlements/${ENT}/revoke`, { reason: 'Pedido por engano' }],
     [`/admin/users/${ANA}/orders/${ORDER}/resend`, null],
   ])
-  expect(calls.filter(call => call.method === 'GET' && call.path === `/admin/users/${ANA}`)).toHaveLength(4)
+  // A recarga depois do reenvio pode chegar logo depois do aviso.
+  await expect.poll(() => calls.filter(call => call.method === 'GET' && call.path === `/admin/users/${ANA}`).length).toBe(4)
 })
 
 test('novidades, bloqueio, exportar e excluir com o e-mail digitado; recusa da API aparece no formulário', async ({ page }) => {
