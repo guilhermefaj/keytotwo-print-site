@@ -157,10 +157,9 @@ select pg_temp.assert('toda FK tem índice com a 1ª coluna na frente',
 select pg_temp.assert('nenhuma coluna url/uri/ip/user_agent (I-11)',
   not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name not in ('test')
     and (column_name ~* '(^|_)(url|uri)(_|$)' or column_name ~* '^(ip|ip_address|user_agent)$')));
-select pg_temp.assert('v0.3.3: sem entitlements.expires_at, orders.product_id e email_outbox.product_name',
-  not exists (select 1 from information_schema.columns where table_schema = 'public' and
-    ((table_name = 'entitlements' and column_name = 'expires_at') or (table_name = 'orders' and column_name = 'product_id')
-     or (table_name = 'email_outbox' and column_name = 'product_name'))));
+select pg_temp.assert('sem o ZIP do pacote (2026-10-24): files sem product_id, todo arquivo de um jogo',
+  not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'files' and column_name = 'product_id')
+  and (select is_nullable = 'NO' from information_schema.columns where table_schema = 'public' and table_name = 'files' and column_name = 'game_id'));
 -- Desde 20261023200000 o aceite é obrigatório por CHECK só na compra: o presente (kind courtesy) não passa pelos termos.
 select pg_temp.assert('compra exige o aceite dos termos (orders_terms_required); user_id e email só ficam nulos com anonymized_at (D-28)',
   exists (select 1 from pg_constraint where conname = 'orders_terms_required' and conrelid = 'public.orders'::regclass)
@@ -189,7 +188,8 @@ select pg_temp.expect('consent: signup_prompt revogando', format($q$insert into 
 select pg_temp.expect('consent: unsubscribe_link concedendo', format($q$insert into public.marketing_consents (user_id,email,action,source,text_version) values (%L,'u2@pgtap.test','granted','unsubscribe_link','v1')$q$, pg_temp.uid('u2')), '23514');
 select pg_temp.expect('consent: e-mail maiúsculo', format($q$insert into public.marketing_consents (user_id,email,action,source,text_version) values (%L,'U2@pgtap.test','granted','account','v1')$q$, pg_temp.uid('u2')), '23514');
 select pg_temp.expect('suppression: motivo inválido', $q$insert into public.email_suppressions (email,reason,source) values ('x@pgtap.test','spam','brevo_webhook')$q$, '23514');
-select pg_temp.expect('suppression: repetida (e-mail, motivo)', $q$insert into public.email_suppressions (email,reason,source) values ('y@pgtap.test','hard_bounce','brevo_webhook'), ('y@pgtap.test','hard_bounce','support')$q$, '23505');
+select pg_temp.expect('suppression: repetida (e-mail, motivo)', $q$insert into public.email_suppressions (email,reason,source) values ('y@pgtap.test','hard_bounce','brevo_webhook'), ('y@pgtap.test','hard_bounce','brevo_webhook')$q$, '23505');
+select pg_temp.expect('suppression: origem que não seja a Brevo', $q$insert into public.email_suppressions (email,reason,source) values ('z@pgtap.test','hard_bounce','support')$q$, '23514');
 
 -- ===== pedidos e itens ============================================================================
 select pg_temp.expect('orders: user_id nulo sem anonimização (D-28)', $q$insert into public.orders (email,cart_version,terms_version,terms_accepted_at,livemode) values ('a@b.test',0,'v',now(),false)$q$, '23514');

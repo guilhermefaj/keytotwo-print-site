@@ -131,7 +131,7 @@ end $$;
 create temp view seed_users as select id, email from auth.users where email like 'teste-%@keytotwo.test';
 create temp view seed_products as select * from public.products where code in ('P001', 'J001', 'TESTE-AV2');
 create temp view seed_games as select * from public.games where code in ('TESTE-J01', 'TESTE-J02', 'TESTE-J03', 'TESTE-J04', 'TESTE-J05', 'TESTE-GRATIS');
-create temp view seed_files as select * from public.files where game_id in (select id from seed_games) or product_id in (select id from seed_products);
+create temp view seed_files as select * from public.files where game_id in (select id from seed_games);
 create temp view seed_orders as select * from public.orders where user_id in (select id from seed_users);
 
 -- ===== conteúdo e rótulos ==========================================================================
@@ -156,14 +156,15 @@ select pg_temp.assert('avulso J001: single ativo, 1 jogo esperado, ligado só ao
 select pg_temp.assert('6 jogos: 5 pagos publicados + 1 grátis em draft', (select count(*) = 6 and count(*) filter (where access = 'paid' and status = 'published') = 5 and count(*) filter (where access = 'free' and status = 'draft') = 1 from seed_games));
 select pg_temp.assert('composição: P001 = 5 jogos; cada avulso = 1 (e os avulsos repetem jogos do P001)', (select count(*) = 7 from public.product_games pg where pg.product_id in (select id from seed_products))
   and (select count(*) = 5 from public.product_games pg join seed_products p on p.id = pg.product_id where p.code = 'P001'));
-select pg_temp.assert('7 arquivos e 7 objetos do B2, todos fictícios, sem URL', (select count(*) = 7 from seed_files) and (select count(*) = 7 from public.file_objects where file_id in (select id from seed_files))
+select pg_temp.assert('6 arquivos e 6 objetos do B2 (5 PDFs pagos e o grátis), todos fictícios, sem URL', (select count(*) = 6 from seed_files) and (select count(*) = 6 from public.file_objects where file_id in (select id from seed_files))
   and (select bool_and(case when status = 'published' then size_bytes = 699 and sha256 ~ '^[0-9a-f]{64}$' and sha256 <> repeat('0', 64)
                             else size_bytes = 1024 and sha256 = repeat('0', 64) end) from seed_files)
   and (select bool_and(object_key !~ '(:|\?|\s)' and bucket = 'bucket-teste-pendente') from public.file_objects where file_id in (select id from seed_files)));
-select pg_temp.assert('ZIP do P001 e arquivo grátis em draft', (select count(*) = 2 from seed_files where status = 'draft' and (kind = 'zip' or access = 'free')));
+select pg_temp.assert('arquivo grátis em draft; todo arquivo é PDF', (select count(*) = 1 from seed_files where status = 'draft' and access = 'free')
+  and (select bool_and(kind = 'pdf') from seed_files));
 select pg_temp.assert('nenhum preço: valores 0 (e subtotal e desconto 0) nos pedidos do seed', (select bool_and(amount_total = 0 and amount_subtotal = 0 and amount_discount = 0 and promotion_code is null) from seed_orders where amount_total is not null));
-select pg_temp.assert('Prices: formato da Stripe em todos; o TESTE-AV2 é price_TESTE_*; o P001 e o J001 são price_TESTE_<código> ou o Price real de TESTE aplicado localmente (aplicar-price-teste)',
-  (select bool_and(stripe_price_id ~ '^price_[A-Za-z0-9_]+$') from seed_products) and (select bool_and(stripe_price_id like 'price_TESTE_%') from seed_products where code not in ('P001', 'J001')));
+select pg_temp.assert('Prices: todos fictícios, price_TESTE_*',
+  (select bool_and(stripe_price_id ~ '^price_TESTE_[A-Za-z0-9_]+$') from seed_products));
 select pg_temp.assert('e-mails, ids da Stripe e termos rotulados como teste', (select count(*) = 8 and bool_and(email like '%@keytotwo.test' and terms_version = 'v1-TESTE') from seed_orders)
   and (select bool_and(coalesce(stripe_checkout_session_id, 'cs_test_TESTE_x') ~ 'TESTE' and coalesce(stripe_payment_intent_id, 'pi_TESTE_x') ~ 'TESTE') from seed_orders)
   and (select bool_and(stripe_customer_id ~ 'TESTE') from public.profiles where user_id in (select id from seed_users) and stripe_customer_id is not null));

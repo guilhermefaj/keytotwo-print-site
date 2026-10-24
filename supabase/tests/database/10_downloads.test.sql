@@ -127,18 +127,13 @@ end $$;
 -- A chave do B2 só sai por estas RPCs, para a API (service_role); o cliente nunca a vê.
 
 -- ===== ajudantes ====================================================================================
--- arquivo de um jogo (ou de um produto, se p_product) no estado pedido, com o objeto no B2
-create function pg_temp.mk_file(p_owner text, p_version text, p_status text default 'published', p_kind text default 'pdf', p_access text default 'paid',
-                                p_product boolean default false) returns uuid language plpgsql as $$
+-- arquivo de um jogo no estado pedido, com o objeto no B2
+create function pg_temp.mk_file(p_owner text, p_version text, p_status text default 'published', p_kind text default 'pdf', p_access text default 'paid')
+  returns uuid language plpgsql as $$
 declare v_id uuid; v_name text := p_owner || '-v' || p_version || '.' || p_kind;
 begin
-  if p_product then
-    insert into public.files (product_id, kind, access, version, filename, size_bytes, sha256)
-    select id, p_kind, p_access, p_version, v_name, 2000, repeat('b', 64) from public.products where code = p_owner returning id into v_id;
-  else
-    insert into public.files (game_id, kind, access, version, filename, size_bytes, sha256)
-    select id, p_kind, p_access, p_version, v_name, 2000, repeat('b', 64) from public.games where code = p_owner returning id into v_id;
-  end if;
+  insert into public.files (game_id, kind, access, version, filename, size_bytes, sha256)
+  select id, p_kind, p_access, p_version, v_name, 2000, repeat('b', 64) from public.games where code = p_owner returning id into v_id;
   insert into public.file_objects (file_id, access, bucket, object_key)
   values (v_id, p_access, 'bucket-pgtap-teste', p_access || '/' || p_owner || '/' || p_version || '/' || v_name);
   if p_status in ('published', 'retired') then update public.files set status = 'published' where id = v_id; end if;
@@ -150,7 +145,7 @@ create function pg_temp.fid(p_filename text) returns uuid language sql as $$ sel
 create function pg_temp.events() returns bigint language sql as $$
   select count(*) from public.download_events d
    where d.file_id in (select f.id from public.files f
-                        where f.filename like 'GM-PK1-%' or f.filename like 'GM-SG1-%' or f.filename like 'FG-1-%' or f.filename = 'PK1-v1.0.zip')
+                        where f.filename like 'GM-PK1-%' or f.filename like 'GM-SG1-%' or f.filename like 'FG-1-%')
 $$;
 create temp table fx (k text primary key, v text);
 create function pg_temp.fxv(p_k text) returns text language sql as $$ select v from pg_temp.fx where k = p_k $$;
@@ -187,8 +182,6 @@ begin
   perform pg_temp.mk_file('GM-PK1-2', '2.0', 'draft');
   -- GM-PK1-3: aposentado SEM sucessor
   update public.files set status = 'retired' where filename = 'GM-PK1-3-v1.0.pdf';
-  -- ZIP do pacote PK1, publicado
-  perform pg_temp.mk_file('PK1', '1.0', 'published', 'zip', 'paid', true);
   -- jogo gratuito: tudo em rascunho. Um grátis publicado que a stack já tenha (no máximo um, I-8) sai do ar só dentro desta transação.
   update public.files set status = 'retired' where access = 'free' and status = 'published';
   update public.games set status = 'draft' where access = 'free' and status = 'published';
@@ -233,12 +226,6 @@ select pg_temp.assert('download: sem direito, rascunho = not_found (não vaza qu
 select pg_temp.assert('download: sem direito, aposentado (com ou sem sucessor) = not_found', (select outcome = 'not_found' from public.resolve_download(pg_temp.uid('db'), pg_temp.fid('GM-PK1-3-v1.0.pdf')))
   and (select outcome = 'not_found' from public.resolve_download(pg_temp.uid('db'), pg_temp.fid('GM-PK1-1-v1.0.pdf'))));
 select pg_temp.assert('download: arquivo GRATUITO nunca sai por esta rota (not_found), nem com direito', (select outcome = 'not_found' from public.resolve_download(pg_temp.uid('da'), pg_temp.fid('FG-1-v0.1.pdf'))));
-
--- ZIP do pacote: o direito é do produto
-select pg_temp.assert('download: ZIP do pacote para o dono do PK1 (application/zip)', (select outcome = 'ok' and content_type = 'application/zip' and filename = 'PK1-v1.0.zip' and size_bytes = 2000
-  from public.resolve_download(pg_temp.uid('da'), pg_temp.fid('PK1-v1.0.zip'))));
-select pg_temp.assert('download: ZIP do pacote para quem tem só um jogo avulso = not_entitled', (select outcome = 'not_entitled' from public.resolve_download(pg_temp.uid('dov'), pg_temp.fid('PK1-v1.0.zip'))));
-select pg_temp.assert('download: ZIP do pacote com o direito revogado = not_entitled', (select outcome = 'not_entitled' from public.resolve_download(pg_temp.uid('dc'), pg_temp.fid('PK1-v1.0.zip'))));
 
 -- nada além do ok grava evento
 do $c$ begin insert into fx values ('ev_before', pg_temp.events()::text); end $c$;

@@ -259,7 +259,7 @@ select pg_temp.expect('entitlement_games: UPDATE', $q$update public.entitlement_
 select pg_temp.expect('entitlement_games: DELETE', $q$delete from public.entitlement_games$q$, 'KT008');
 select pg_temp.expect('marketing_consents: UPDATE', $q$update public.marketing_consents set source = 'support'$q$, 'KT008');
 select pg_temp.expect('marketing_consents: DELETE', $q$delete from public.marketing_consents$q$, 'KT008');
-select pg_temp.expect('email_suppressions: UPDATE', $q$update public.email_suppressions set source = 'support'$q$, 'KT008');
+select pg_temp.expect('email_suppressions: UPDATE', $q$update public.email_suppressions set source = 'brevo_webhook'$q$, 'KT008');
 select pg_temp.expect('email_suppressions: DELETE', $q$delete from public.email_suppressions$q$, 'KT008');
 select pg_temp.expect('download_events: UPDATE qualquer', $q$update public.download_events set kind = 'free'$q$, 'KT008');
 select pg_temp.expect('download_events: DELETE', $q$delete from public.download_events$q$, 'KT008');

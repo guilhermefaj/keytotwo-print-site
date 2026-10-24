@@ -257,7 +257,7 @@ create function pg_temp.fxv(p_k text) returns text language sql as $$ select v f
 
 -- Este arquivo é dono da fila e das supressões: quem já existia (seed, dados de QA) fica fora de toda elegibilidade, só dentro desta transação.
 insert into public.email_suppressions (email, reason, source)
-select private.normalize_email(u.email), 'hard_bounce', 'support' from auth.users u on conflict do nothing;
+select private.normalize_email(u.email), 'hard_bounce', 'brevo_webhook' from auth.users u on conflict do nothing;
 update public.email_outbox set status = 'canceled', skip_reason = 'order_not_paid', locked_at = null where status in ('queued', 'sending');
 
 do $fx$
@@ -349,7 +349,7 @@ do $c$ begin
 end $c$;
 select pg_temp.assert('evento: id da mensagem em branco vira nulo', (select provider_message_id is null from public.email_suppressions where email = 'rh@pgtap.test'));
 select pg_temp.assert('evento: id da mensagem com 500 caracteres é cortado em 200', (select char_length(provider_message_id) = 200 from public.email_suppressions where email = 'ri@pgtap.test'));
-select pg_temp.expect('evento: a supressão só se insere (UPDATE)', $q$update public.email_suppressions set source = 'support'$q$, 'KT008');
+select pg_temp.expect('evento: a supressão só se insere (UPDATE)', $q$update public.email_suppressions set source = 'brevo_webhook'$q$, 'KT008');
 select pg_temp.expect_as('evento: service_role executa', 'service_role', $q$select * from public.record_email_event('rj@pgtap.test', 'hard_bounce')$q$, 'OK');
 select pg_temp.expect_as('evento: anon não executa', 'anon', $q$select * from public.record_email_event('rj@pgtap.test', 'hard_bounce')$q$, '42501');
 select pg_temp.expect_as('evento: authenticated não executa', 'authenticated', $q$select * from public.record_email_event('rj@pgtap.test', 'hard_bounce')$q$, '42501');
@@ -361,9 +361,9 @@ begin
   perform pg_temp.mk_opt('cr1'); perform public.cart_add(pg_temp.uid('cr1'), 'FP1');                                    -- elegível
   perform pg_temp.mk_user('cr2'); perform public.cart_add(pg_temp.uid('cr2'), 'FP1');                                   -- sem opt-in
   perform pg_temp.mk_opt('cr3'); perform public.cart_add(pg_temp.uid('cr3'), 'FP1');
-  insert into public.email_suppressions (email, reason, source) values ('cr3@pgtap.test', 'hard_bounce', 'support');    -- bounce
+  insert into public.email_suppressions (email, reason, source) values ('cr3@pgtap.test', 'hard_bounce', 'brevo_webhook');    -- bounce
   perform pg_temp.mk_opt('cr4'); perform public.cart_add(pg_temp.uid('cr4'), 'FP1');
-  insert into public.email_suppressions (email, reason, source, created_at) values ('cr4@pgtap.test', 'unsubscribe_all', 'support', now() + interval '1 minute');   -- descadastro depois do opt-in
+  insert into public.email_suppressions (email, reason, source, created_at) values ('cr4@pgtap.test', 'unsubscribe_all', 'brevo_webhook', now() + interval '1 minute');   -- descadastro depois do opt-in
   perform pg_temp.mk_opt('cr5'); perform public.cart_add(pg_temp.uid('cr5'), 'FP1');
   update auth.users set email_confirmed_at = null where id = pg_temp.uid('cr5');                                        -- não confirmado
   perform pg_temp.mk_opt('cr6'); perform public.cart_add(pg_temp.uid('cr6'), 'FP1'); perform public.cart_remove(pg_temp.uid('cr6'), 'FP1');   -- vazio
@@ -427,7 +427,7 @@ begin
   o := pg_temp.mk_order(pg_temp.uid('pp2'), 'paid', array[fp1], 'PP2'); perform pg_temp.mk_ents(o);                                         -- sem opt-in
   perform pg_temp.mk_opt('pp3');
   o := pg_temp.mk_order(pg_temp.uid('pp3'), 'paid', array[fp1], 'PP3'); perform pg_temp.mk_ents(o);
-  insert into public.email_suppressions (email, reason, source) values ('pp3@pgtap.test', 'complaint', 'support');                            -- queixa
+  insert into public.email_suppressions (email, reason, source) values ('pp3@pgtap.test', 'complaint', 'brevo_webhook');                            -- queixa
   perform pg_temp.mk_opt('pp4');
   o := pg_temp.mk_order(pg_temp.uid('pp4'), 'refunded', array[fp1], 'PP4'); perform pg_temp.mk_ents(o, 'revoked', 'refund');                -- reembolsado
   perform pg_temp.mk_opt('pp5');

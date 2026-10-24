@@ -169,7 +169,8 @@ select pg_temp.assert('a senha volta a ser zerada se a confirmação for refeita
 select pg_temp.expect('consent: usuário não confirmado', format($q$select * from public.set_marketing_consent(%L, true, 'account', 'v1')$q$, pg_temp.uid('unconf')), 'KT009');
 select pg_temp.expect('consent: conceder sem versão do texto', format($q$select * from public.set_marketing_consent(%L, true, 'account')$q$, pg_temp.uid('ac1')), 'KT001');
 select pg_temp.expect('consent: origem desconhecida', format($q$select * from public.set_marketing_consent(%L, true, 'banner', 'v1')$q$, pg_temp.uid('ac1')), 'KT001');
-select pg_temp.expect('consent: origem que só concede, revogando', format($q$select * from public.set_marketing_consent(%L, false, 'cart')$q$, pg_temp.uid('ac1')), 'KT001');
+select pg_temp.expect('consent: origem que só concede, revogando', format($q$select * from public.set_marketing_consent(%L, false, 'free_games')$q$, pg_temp.uid('ac1')), 'KT001');
+select pg_temp.expect('consent: a sacola não é origem (saiu em 2026-10-24)', format($q$select * from public.set_marketing_consent(%L, true, 'cart', 'v1')$q$, pg_temp.uid('ac1')), 'KT001');
 select pg_temp.expect('consent: p_granted nulo', format($q$select * from public.set_marketing_consent(%L, null, 'account', 'v1')$q$, pg_temp.uid('ac1')), 'KT001');
 select pg_temp.assert('consent: revogar quem nunca concedeu é noop e não cria linha',
   (select outcome = 'noop' and opted_in = false from public.set_marketing_consent(pg_temp.uid('ac1'), false, 'account'))
@@ -193,11 +194,11 @@ select pg_temp.assert('consent: revogar cancela o marketing na fila (no_opt_in) 
   (select status = 'canceled' and skip_reason = 'no_opt_in' from public.email_outbox where dedupe_key = 'cart_reminder:ac1:1')
   and (select status = 'sent' from public.email_outbox where dedupe_key = 'cart_reminder:ac1:0'));
 select pg_temp.assert('consent: o histórico tem as 2 linhas (conceder, revogar), em ordem', (select array_agg(action order by id) = array['granted','revoked'] from public.marketing_consents where user_id = pg_temp.uid('ac1')));
-select pg_temp.expect('consent: histórico só por inserção (UPDATE)', $q$update public.marketing_consents set source = 'support'$q$, 'KT008');
+select pg_temp.expect('consent: histórico só por inserção (UPDATE)', $q$update public.marketing_consents set source = 'account'$q$, 'KT008');
 select pg_temp.expect('consent: histórico só por inserção (DELETE)', $q$delete from public.marketing_consents$q$, 'KT008');
 
 -- ===== unsubscribe: descadastro em 1 clique, efeito imediato, sem exigir e-mail confirmado =========
-do $s$ begin perform public.set_marketing_consent(pg_temp.uid('ac2'), true, 'cart', 'v1-pgtap'); end $s$;
+do $s$ begin perform public.set_marketing_consent(pg_temp.uid('ac2'), true, 'free_games', 'v1-pgtap'); end $s$;
 select pg_temp.assert('unsubscribe: quem tem opt-in é descadastrado (applied)', (select outcome = 'applied' and not opted_in from public.unsubscribe(pg_temp.uid('ac2'), 'unsubscribe_link')));
 select pg_temp.assert('unsubscribe: a origem fica no histórico e o estado em profiles acompanha',
   (select action = 'revoked' and source = 'unsubscribe_link' from public.marketing_consents where user_id = pg_temp.uid('ac2') order by id desc limit 1)
@@ -206,9 +207,10 @@ select pg_temp.assert('unsubscribe: repetido é noop', (select outcome = 'noop' 
 select pg_temp.assert('unsubscribe: não exige e-mail confirmado (noop)', (select outcome = 'noop' from public.unsubscribe(pg_temp.uid('unconf'))));
 insert into public.email_outbox (user_id, kind, category, to_email, dedupe_key, payload)
   values (pg_temp.uid('unconf'), 'cart_reminder', 'marketing', 'unconf@pgtap.test', 'cart_reminder:unconf:1', '{}');
-select pg_temp.assert('unsubscribe: sem opt-in é noop', (select outcome = 'noop' from public.unsubscribe(pg_temp.uid('unconf'), 'support')));
+select pg_temp.assert('unsubscribe: sem opt-in é noop', (select outcome = 'noop' from public.unsubscribe(pg_temp.uid('unconf'))));
 select pg_temp.assert('unsubscribe: tira da fila o marketing que sobrou, mesmo sem opt-in', (select status = 'canceled' and skip_reason = 'no_opt_in' from public.email_outbox where dedupe_key = 'cart_reminder:unconf:1'));
 select pg_temp.expect('unsubscribe: origem inválida', format($q$select * from public.unsubscribe(%L, 'banner')$q$, pg_temp.uid('ac2')), 'KT001');
+select pg_temp.expect('unsubscribe: o suporte tira das novidades pelo admin, não por aqui', format($q$select * from public.unsubscribe(%L, 'support')$q$, pg_temp.uid('ac2')), 'KT001');
 select pg_temp.expect('unsubscribe: usuário inexistente', $q$select * from public.unsubscribe(gen_random_uuid())$q$, 'KT001');
 select pg_temp.expect('unsubscribe: p_user_id nulo', $q$select * from public.unsubscribe(null)$q$, 'KT001');
 select pg_temp.expect_as('unsubscribe: service_role executa', 'service_role', format($q$select * from public.unsubscribe(%L)$q$, pg_temp.uid('ac2')), 'OK');
@@ -220,6 +222,11 @@ select pg_temp.assert('stripe: não sobrescreve; devolve o vigente', (select pub
 select pg_temp.expect('stripe: cliente de outro perfil (23505)', format($q$select public.set_stripe_customer(%L, 'cus_PGTAP_A')$q$, pg_temp.uid('ac2')), '23505');
 select pg_temp.expect('stripe: formato inválido', format($q$select public.set_stripe_customer(%L, 'xyz')$q$, pg_temp.uid('ac2')), 'KT001');
 select pg_temp.expect('stripe: usuário não confirmado', format($q$select public.set_stripe_customer(%L, 'cus_PGTAP_Z')$q$, pg_temp.uid('unconf')), 'KT009');
+-- Customer apagado no painel da Stripe (2026-10-24): com p_replaces igual ao guardado, troca; com outro, não mexe.
+select pg_temp.assert('stripe: p_replaces diferente do guardado não troca', (select public.set_stripe_customer(pg_temp.uid('ac1'), 'cus_PGTAP_B', 'cus_PGTAP_OUTRO') = 'cus_PGTAP_A'));
+select pg_temp.assert('stripe: p_replaces igual ao guardado troca e devolve o novo', (select public.set_stripe_customer(pg_temp.uid('ac1'), 'cus_PGTAP_B', 'cus_PGTAP_A') = 'cus_PGTAP_B'));
+select pg_temp.assert('stripe: ... e o perfil ficou com o novo', (select stripe_customer_id = 'cus_PGTAP_B' from public.profiles where user_id = pg_temp.uid('ac1')));
+select pg_temp.expect('stripe: p_replaces em formato inválido', format($q$select public.set_stripe_customer(%L, 'cus_PGTAP_C', 'xyz')$q$, pg_temp.uid('ac1')), 'KT001');
 
 -- ===== marketing_allowed ==========================================================================
 do $mk$
@@ -249,7 +256,7 @@ select pg_temp.assert('marketing_allowed: unsubscribe_all POSTERIOR ao opt-in bl
 update auth.users set deleted_at = now() where id = pg_temp.uid('mk4');
 select pg_temp.assert('marketing_allowed: usuário removido = false', (select not private.marketing_allowed(pg_temp.uid('mk4'))));
 select pg_temp.assert('marketing_allowed: usuário inexistente = false', (select not private.marketing_allowed(gen_random_uuid())));
-select pg_temp.expect('suppression: histórico só por inserção', $q$update public.email_suppressions set source = 'support'$q$, 'KT008');
+select pg_temp.expect('suppression: histórico só por inserção', $q$update public.email_suppressions set source = 'brevo_webhook'$q$, 'KT008');
 
 -- ===== get_account =================================================================================
 do $acc$
@@ -289,25 +296,14 @@ select pg_temp.expect('get_account: usuário removido', format($q$select public.
 select pg_temp.expect('get_account: usuário inexistente', $q$select public.get_account(gen_random_uuid())$q$, 'KT009');
 select pg_temp.expect('get_account: p_user_id nulo', $q$select public.get_account(null)$q$, 'KT001');
 
--- ===== mark_marketing_prompt e profiles.marketing_prompted_at (D-22): ver ou dispensar o convite NÃO é consentimento =====
+-- ===== profiles.marketing_prompted_at (D-22): o consentimento signup_prompt marca a 1ª vez que o convite foi visto =====
+-- Ver ou dispensar o convite NÃO é consentimento. mark_marketing_prompt saiu em 2026-10-24 (o convite do site saiu antes).
 do $pr$
 begin
-  perform pg_temp.mk_user('pr1'); perform pg_temp.mk_user('pr2'); perform pg_temp.mk_user('pr3');
-  perform pg_temp.mk_user('pr4'); perform pg_temp.mk_user('pr5'); perform pg_temp.mk_user('pr6');
+  perform pg_temp.mk_user('pr2'); perform pg_temp.mk_user('pr3'); perform pg_temp.mk_user('pr4');
 end $pr$;
-select pg_temp.assert('prompt: perfil nasce sem convite exibido', (select count(*) = 6 and bool_and(marketing_prompted_at is null) from public.profiles where user_id in (select pg_temp.uid(n) from unnest(array['pr1','pr2','pr3','pr4','pr5','pr6']) n)));
-select pg_temp.assert('prompt: mark_marketing_prompt grava e devolve o instante', (select public.mark_marketing_prompt(pg_temp.uid('pr1')) is not null));
-select pg_temp.assert('prompt: ... e o perfil ficou marcado', (select marketing_prompted_at is not null from public.profiles where user_id = pg_temp.uid('pr1')));
-update public.profiles set marketing_prompted_at = now() - interval '3 days' where user_id = pg_temp.uid('pr1');
-select pg_temp.assert('prompt: idempotente, devolve o valor JÁ gravado (now() é fixo na transação, por isso o valor antigo é forçado)',
-  (select public.mark_marketing_prompt(pg_temp.uid('pr1')) < now() - interval '2 days'));
-select pg_temp.assert('prompt: ... e não o sobrescreveu', (select marketing_prompted_at < now() - interval '2 days' from public.profiles where user_id = pg_temp.uid('pr1')));
-select pg_temp.assert('prompt: ver o convite NÃO é consentimento (nenhuma linha no histórico, opt-in intacto)',
-  (select count(*) = 0 from public.marketing_consents where user_id = pg_temp.uid('pr1'))
-  and (select not marketing_opt_in and marketing_opt_in_at is null from public.profiles where user_id = pg_temp.uid('pr1')));
-select pg_temp.assert('prompt: ver o convite NÃO libera marketing', (select not private.marketing_allowed(pg_temp.uid('pr1'))));
-select pg_temp.assert('prompt: get_account devolve marketing.prompted_at e continua sem opt-in', (select (public.get_account(pg_temp.uid('pr1'))->'marketing'->>'prompted_at') is not null
-  and (public.get_account(pg_temp.uid('pr1'))->'marketing'->>'opted_in')::boolean = false));
+select pg_temp.assert('prompt: perfil nasce sem convite exibido', (select count(*) = 3 and bool_and(marketing_prompted_at is null) from public.profiles where user_id in (select pg_temp.uid(n) from unnest(array['pr2','pr3','pr4']) n)));
+select pg_temp.assert('prompt: mark_marketing_prompt não existe mais', not exists (select 1 from pg_proc where proname = 'mark_marketing_prompt'));
 select pg_temp.assert('prompt: get_account de quem nunca viu o convite traz prompted_at nulo (a chave existe)',
   (select (public.get_account(pg_temp.uid('pr2'))->'marketing') ? 'prompted_at' and (public.get_account(pg_temp.uid('pr2'))->'marketing'->'prompted_at') = 'null'::jsonb));
 select pg_temp.assert('prompt: set_marketing_consent com signup_prompt (concedendo) é applied',
@@ -327,16 +323,6 @@ select pg_temp.assert('prompt: ... mas preenche o marcador (a pessoa viu o convi
   and (select count(*) = 1 from public.marketing_consents where user_id = pg_temp.uid('pr3')));
 select pg_temp.expect('prompt: signup_prompt sem a versão do texto é recusado', format($q$select * from public.set_marketing_consent(%L, true, 'signup_prompt')$q$, pg_temp.uid('pr4')), 'KT001');
 select pg_temp.assert('prompt: ... e a chamada recusada não marca o convite', (select marketing_prompted_at is null from public.profiles where user_id = pg_temp.uid('pr4')));
-select pg_temp.expect('prompt: mark_marketing_prompt de usuário não confirmado', format($q$select public.mark_marketing_prompt(%L)$q$, pg_temp.uid('unconf')), 'KT009');
-select pg_temp.expect('prompt: mark_marketing_prompt de usuário inexistente', $q$select public.mark_marketing_prompt(gen_random_uuid())$q$, 'KT009');
-select pg_temp.expect('prompt: mark_marketing_prompt com p_user_id nulo', $q$select public.mark_marketing_prompt(null)$q$, 'KT001');
-update auth.users set deleted_at = now() where id = pg_temp.uid('pr5');
-select pg_temp.expect('prompt: mark_marketing_prompt de usuário removido', format($q$select public.mark_marketing_prompt(%L)$q$, pg_temp.uid('pr5')), 'KT009');
-select pg_temp.assert('prompt: ... e nada foi gravado para os usuários recusados', (select count(*) = 2 and bool_and(marketing_prompted_at is null) from public.profiles where user_id in (pg_temp.uid('unconf'), pg_temp.uid('pr5'))));
-select pg_temp.expect_as('prompt: service_role executa', 'service_role', format($q$select public.mark_marketing_prompt(%L)$q$, pg_temp.uid('pr6')), 'OK');
-select pg_temp.expect_as('prompt: anon não executa', 'anon', format($q$select public.mark_marketing_prompt(%L)$q$, pg_temp.uid('pr6')), '42501');
-select pg_temp.expect_as('prompt: authenticated não executa', 'authenticated', format($q$select public.mark_marketing_prompt(%L)$q$, pg_temp.uid('pr6')), '42501');
-select pg_temp.assert('prompt: a chamada do service_role gravou o marcador de pr6', (select marketing_prompted_at is not null from public.profiles where user_id = pg_temp.uid('pr6')));
 
 select * from finish();
 rollback;

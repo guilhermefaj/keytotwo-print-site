@@ -1008,7 +1008,6 @@ do $c$ begin perform pg_temp.mk_user('kapi3'); end $c$;
 select pg_temp.as_api('API: cart_add', format($q$select * from public.cart_add(%L, 'CS3')$q$, pg_temp.uid('kapi3')));
 select pg_temp.as_api('API: cart_remove', format($q$select * from public.cart_remove(%L, 'CS3')$q$, pg_temp.uid('kapi3')));
 select pg_temp.as_api('API: set_marketing_consent (conceder)', format($q$select * from public.set_marketing_consent(%L, true, 'signup_prompt', 'v1-pgtap')$q$, pg_temp.uid('kapi3')));
-select pg_temp.as_api('API: mark_marketing_prompt', format($q$select public.mark_marketing_prompt(%L)$q$, pg_temp.uid('kapi3')));
 select pg_temp.as_api('API: set_stripe_customer', format($q$select public.set_stripe_customer(%L, 'cus_PGTAP_KAPI3')$q$, pg_temp.uid('kapi3')));
 select pg_temp.as_api('API: unsubscribe (revogar)', format($q$select * from public.unsubscribe(%L)$q$, pg_temp.uid('kapi3')));
 select pg_temp.as_api('API: leituras (get_cart, get_library, get_account, get_order_status, get_catalog)',

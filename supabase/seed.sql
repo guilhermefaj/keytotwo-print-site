@@ -4,8 +4,8 @@
 -- Avulsos: J001 (Rabisque e Adivinhe; código do produto = código comercial do jogo, decisão do responsável) e TESTE-AV2 existem só aqui;
 -- o P001 segue com nome PENDENTE. Os jogos mantêm os códigos TESTE-J0n (chaves do B2 e PDFs de teste dependem deles).
 -- Sem senhas: os usuários entram por código de e-mail (Mailpit, porta 54324) ou criam outra conta de teste.
--- As RPCs de pedido (checkout, fulfillment) chegam no I3: o seed grava direto, como dono, e as invariantes
--- (CHECKs e triggers) validam a coerência. Cada pedido nasce open e chega ao estado final por arestas legais.
+-- Os pedidos não passam pelas RPCs de checkout: o seed grava direto, como dono, e as invariantes (CHECKs e triggers)
+-- validam a coerência. Cada pedido nasce open e chega ao estado final por arestas legais.
 -- Um único bloco (uma transação): o trigger de consistência pedido-direito é checado no commit.
 
 do $seed$
@@ -110,13 +110,6 @@ begin
   insert into public.file_objects (file_id, access, bucket, object_key)
   values (v_file, 'free', 'bucket-teste-pendente', 'free/TESTE-GRATIS/0.1/TESTE-GRATIS-v0.1.pdf');
 
-  -- ZIP do pacote: draft (decisão do ZIP completo pendente).
-  insert into public.files (product_id, kind, access, version, filename, size_bytes, sha256)
-  values (v_p001, 'zip', 'paid', '1.0', 'P001-TESTE-v1.0.zip', 1024, repeat('0', 64))
-  returning id into v_file;
-  insert into public.file_objects (file_id, access, bucket, object_key)
-  values (v_file, 'paid', 'bucket-teste-pendente', 'paid/P001/1.0/P001-TESTE-v1.0.zip');
-
   -- ===== Clientes da Stripe de teste (fictícios) =====
   update public.profiles set stripe_customer_id = 'cus_TESTE_A' where user_id = v_a;
   update public.profiles set stripe_customer_id = 'cus_TESTE_B' where user_id = v_b;
@@ -207,19 +200,9 @@ begin
     (v_b, 'checkout_started', 'a1000002-0000-4000-8000-000000000002', 0),
     (v_b, 'order_paid',       'a1000002-0000-4000-8000-000000000002', null);
 
-  -- Entrega (delivery) na fila para os dois pedidos pagos: payload por jogo, sem token.
+  -- Entrega (delivery) na fila para os dois pedidos pagos: o mesmo payload de fulfill_order, por jogo, sem token.
   insert into public.email_outbox (user_id, order_id, kind, category, to_email, dedupe_key, payload)
-  select o.user_id, o.id, 'delivery', 'transactional', o.email, 'delivery:' || o.id,
-         jsonb_build_object(
-           'order_ref', upper(left(replace(o.id::text, '-', ''), 8)),
-           'items', (select jsonb_agg(jsonb_build_object('code', p.code, 'name', p.name) order by i.position)
-                     from public.order_items i join public.products p on p.id = i.product_id where i.order_id = o.id),
-           'games', (select jsonb_agg(jsonb_build_object('entitlement_id', en.id, 'game_id', eg.game_id,
-                                                         'code', g.code, 'name', g.name) order by en.id, eg.position)
-                     from public.entitlements en
-                     join public.entitlement_games eg on eg.entitlement_id = en.id
-                     join public.games g on g.id = eg.game_id
-                     where en.order_id = o.id))
+  select o.user_id, o.id, 'delivery', 'transactional', o.email, 'delivery:' || o.id, private.delivery_payload(o.id)
   from public.orders o
   where o.id in ('a1000001-0000-4000-8000-000000000001', 'a1000002-0000-4000-8000-000000000002');
 end
