@@ -30,11 +30,12 @@ export default function Home() {
   const params = new URLSearchParams(search)
   const capa = experience.capas.find(item => item.id === params.get('capa')) ?? experience.capas[0]
   const texto = experience.textos.find(item => item.id === params.get('texto')) ?? experience.textos[0]
-  const largest = capa.widths[capa.widths.length - 1]
+  const { photo } = experience
+  const largest = photo.widths[photo.widths.length - 1]
   return <main id="conteudo" tabIndex={-1} ref={main}>
-    <div className="hero" data-tone="vinheta" data-capa={capa.id}>
+    <div className="hero" data-tone="vinheta" data-vinheta={capa.vinheta}>
       {/* A foto é o maior elemento da hero no celular: prioridade alta, sem carregamento tardio (docs/desempenho.md). */}
-      <div className="hero-media"><img key={capa.id} className="hero-photo" src={`/media/hero/${capa.photo}-${largest}.webp`} srcSet={capa.widths.map(width => `/media/hero/${capa.photo}-${width}.webp ${width}w`).join(', ')} sizes="100vw" width={largest} height={capa.height} alt={capa.alt} style={{ objectPosition: capa.position }} fetchPriority="high" decoding="async" /></div>
+      <div className="hero-media"><img className="hero-photo" src={`/media/hero/${photo.name}-${largest}.webp`} srcSet={photo.widths.map(width => `/media/hero/${photo.name}-${width}.webp ${width}w`).join(', ')} sizes="100vw" width={largest} height={photo.height} alt={photo.alt} style={{ objectPosition: photo.position }} fetchPriority="high" decoding="async" /></div>
       <div className="hero-panel"><div className="hero-stack">
         <section className="hero-copy" aria-labelledby="hero-title">
           <h1 id="hero-title">{experience.headline[0]}{' '}<span>{headlineRest}<mark>{experience.highlight}</mark></span></h1>

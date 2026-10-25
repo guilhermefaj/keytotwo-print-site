@@ -136,9 +136,15 @@ input, select, textarea { font: inherit; color: inherit; }
    "encontro." em Marca-texto, sem o traço. */
 .hero[data-tone="vinheta"] { background: var(--color-ink); color: var(--color-paper); }
 .hero[data-tone="vinheta"] .hero-media { inset: var(--header-height) 0 0; }
+/* A vinheta: cor e força em variáveis (em comparação: tinta ou preta; fraca, média ou forte). edge: o canto; ring: o meio
+   do caminho até o centro da foto; side: o lado do texto, do começo ao fim da coluna e depois dela. */
+.hero[data-tone="vinheta"] { --vig: var(--color-ink); --vig-edge: 70%; --vig-ring: 34%; --vig-side: 70%; --vig-text: 56%; --vig-after: 18%; }
+.hero[data-vinheta$="-fraca"] { --vig-edge: 46%; --vig-ring: 18%; --vig-side: 50%; --vig-text: 38%; --vig-after: 8%; }
+.hero[data-vinheta$="-forte"] { --vig-edge: 88%; --vig-ring: 52%; --vig-side: 86%; --vig-text: 74%; --vig-after: 32%; }
+.hero[data-vinheta^="preta-"] { --vig: black; background: black; }
 .hero[data-tone="vinheta"]::after { inset: var(--header-height) 0 0; background:
-  radial-gradient(ellipse 110% 95% at 70% 55%, transparent 34%, color-mix(in srgb, var(--color-ink) 34%, transparent) 68%, color-mix(in srgb, var(--color-ink) 70%, transparent) 100%),
-  linear-gradient(90deg, color-mix(in srgb, var(--color-ink) 70%, transparent) 0, color-mix(in srgb, var(--color-ink) 56%, transparent) calc(var(--hero-fade) - 120px), color-mix(in srgb, var(--color-ink) 18%, transparent) calc(var(--hero-fade) + 140px), transparent calc(var(--hero-fade) + 360px)); }
+  radial-gradient(ellipse 110% 95% at 70% 55%, transparent 34%, color-mix(in srgb, var(--vig) var(--vig-ring), transparent) 68%, color-mix(in srgb, var(--vig) var(--vig-edge), transparent) 100%),
+  linear-gradient(90deg, color-mix(in srgb, var(--vig) var(--vig-side), transparent) 0, color-mix(in srgb, var(--vig) var(--vig-text), transparent) calc(var(--hero-fade) - 120px), color-mix(in srgb, var(--vig) var(--vig-after), transparent) calc(var(--hero-fade) + 140px), transparent calc(var(--hero-fade) + 360px)); }
 .hero[data-tone="vinheta"] h1, .hero[data-tone="vinheta"] .hero-description { color: var(--color-paper); text-shadow: 0 1px 18px color-mix(in srgb, var(--color-ink) 45%, transparent); }
 .hero[data-tone="vinheta"] mark { background: none; color: var(--color-highlight); padding: 0; }
 .hero[data-tone="vinheta"] .hero-cta { background: var(--color-paper); color: var(--color-ink); }
@@ -195,7 +201,7 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .hero-copy { padding-top: 0; margin-top: -24px; }
   .hero[data-tone="vinheta"] .hero-media { position: absolute; inset: var(--header-height) 0 0; flex: none; }
   .hero[data-tone="vinheta"] .hero-media::after { content: none; }
-  .hero[data-tone="vinheta"]::after { content: ''; background: radial-gradient(ellipse 120% 80% at 60% 30%, transparent 30%, color-mix(in srgb, var(--color-ink) 50%, transparent) 100%), linear-gradient(180deg, color-mix(in srgb, var(--color-ink) 30%, transparent), color-mix(in srgb, var(--color-ink) 62%, transparent) 70%); }
+  .hero[data-tone="vinheta"]::after { content: ''; background: radial-gradient(ellipse 120% 80% at 60% 30%, transparent 30%, color-mix(in srgb, var(--vig) var(--vig-edge), transparent) 100%), linear-gradient(180deg, color-mix(in srgb, var(--vig) var(--vig-ring), transparent), color-mix(in srgb, var(--vig) var(--vig-text), transparent) 70%); }
   .hero[data-tone="vinheta"] .hero-panel { flex: 1 0 auto; }
   .hero[data-tone="vinheta"] .hero-copy { margin-block: auto; padding-top: 32px; }
 }

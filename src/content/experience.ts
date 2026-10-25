@@ -12,14 +12,17 @@ export const experience = {
   secondary: { label: 'Como funciona', href: '/#como-funciona' },
   // Hero com foto (responsável, 2026-10-24: o site estava lúdico demais para a persona). As folhas das fotos não dão para
   // ler: nenhuma página do PDF vai para o site.
-  // Capas para o responsável comparar no teste (?capa=1 a 5 e ?texto=a a c; temporário): a foto na hero inteira, com
-  // vinheta, e o texto em Papel por cima. Depois da escolha, fica só a escolhida.
+  // A foto da hero (responsável, 2026-10-24): olhando a mesma folha, na hero inteira, com vinheta.
+  photo: { name: 'foto-mesma-folha', widths: [640, 1008], height: 567, position: '60% 40%', alt: 'Casal à mesa com folhas impressas, lápis de cor e uma taça de vinho' },
+  // Vinhetas e textos para o responsável comparar no teste (?capa=1 a 6 e ?texto=a a c; temporário): depois da
+  // escolha, fica só a escolhida. A preta é pedido do responsável, fora da paleta.
   capas: [
-    { id: '1', name: 'Uma carta entre vocês', photo: 'foto-carta-entre-voces', widths: [640, 1122], height: 1402, position: '50% 6%', alt: 'Casal sorrindo à mesa, trocando cartas de um jogo impresso' },
-    { id: '2', name: 'Mãos e papel', photo: 'foto-maos-e-papel', widths: [640, 1280, 1600], height: 900, position: '58% 40%', alt: 'Casal à mesa com folhas e cartas impressas, lápis de cor, taças de vinho e uma vela' },
-    { id: '3', name: 'Encontro à mesa', photo: 'foto-encontro-a-mesa', widths: [640, 969], height: 545, position: '55% 35%', alt: 'Casal à mesa com folhas impressas, lápis de cor e taças de vinho' },
-    { id: '4', name: 'Pequenos preparativos', photo: 'foto-preparativos', widths: [640, 1280, 1600], height: 900, position: '62% 50%', alt: 'Mesa ao sol com lápis de cor, uma vela e folhas impressas, e uma mão pegando um lápis' },
-    { id: '5', name: 'Olhando a mesma folha', photo: 'foto-mesma-folha', widths: [640, 1008], height: 567, position: '60% 40%', alt: 'Casal à mesa com folhas impressas, lápis de cor e uma taça de vinho' },
+    { id: '1', name: 'Tinta, média', vinheta: 'tinta-media' },
+    { id: '2', name: 'Tinta, forte', vinheta: 'tinta-forte' },
+    { id: '3', name: 'Tinta, fraca', vinheta: 'tinta-fraca' },
+    { id: '4', name: 'Preta, média', vinheta: 'preta-media' },
+    { id: '5', name: 'Preta, forte', vinheta: 'preta-forte' },
+    { id: '6', name: 'Preta, fraca', vinheta: 'preta-fraca' },
   ],
   textos: [
     { id: 'a', description: 'Jogos para casais em PDF: vocês compram, imprimem em casa e jogam na mesma noite.' },
