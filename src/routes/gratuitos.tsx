@@ -72,7 +72,19 @@ function FreeAccess({ unlocked }: { unlocked: boolean }) {
   }
   return <section className="free-access" aria-labelledby="como-baixar">
     <h2 id="como-baixar">{access.title}</h2>
-    <ol>{access.steps.map(step => <li key={step}>{step}</li>)}</ol>
+    <ol>
+      {access.steps.map(step => <li key={step}>{step}</li>)}
+      <li className="free-access-last"><div className="free-access-kito">
+        <img src="/media/hero/kito-pixel-pose.webp" width="256" height="256" alt="" loading="lazy" decoding="async" />
+        <div>
+          <p>{access.kito}</p>
+          <p className="free-access-social">
+            <a className="inline-link" href={instagram.href} target="_blank" rel="noopener"><IconBrandInstagram aria-hidden="true" size={18} stroke={1.75} />Instagram<span className="sr-only"> (abre em nova aba)</span></a>
+            <a className="inline-link" href={tiktok.href} target="_blank" rel="noopener"><IconBrandTiktok aria-hidden="true" size={18} stroke={1.75} />TikTok<span className="sr-only"> (abre em nova aba)</span></a>
+          </p>
+        </div>
+      </div></li>
+    </ol>
     <p className="field-help">{access.note} <Link className="inline-link" to="/privacidade">Privacidade</Link></p>
     {deliveryMock && <p className="checkout-demo">Prévia da entrega (mock): o download é simulado.</p>}
     {!deliveryMock && ready && (!session
