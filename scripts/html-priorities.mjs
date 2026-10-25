@@ -4,12 +4,18 @@
 // 2. o boot do React Router (o <script type="module"> que importa manifest, rotas e entry.client) passa a
 //    rodar depois da primeira pintura (FCP), recriando os modulepreload nesse momento (sem cascata de downloads).
 // Assim o primeiro quadro, e o LCP, dependem só de HTML, CSS, fontes e da imagem principal. O dev server não muda.
+// 3. (segurança, 2026-10-25) todo <script> que roda, menos os dados JSON-LD, leva nonce="__CSP_NONCE__"; o nginx troca o
+//    marcador pelo nonce de cada resposta e o CSP só aceita scripts com ele (nginx.conf). Sem nginx (dev, preview e os
+//    testes), o atributo fica e não faz nada.
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const root = path.resolve('build/client')
 const preloadTag = /<link rel="modulepreload" href="([^"]+)"\/>/g
 const bootTag = /<script type="module" async="">([\s\S]*?)<\/script>/
+const NONCE_MARKER = '__CSP_NONCE__'
+const scriptOpen = /<script(?![^>]*\snonce=)(?![^>]*type="application\/ld\+json")(\s[^>]*)?>/g
+const withNonces = html => html.replace(scriptOpen, (_, attrs = '') => `<script nonce="${NONCE_MARKER}"${attrs}>`)
 
 function rewriteBoot(body, preloads) {
   // Cada import estático vira import dinâmico com await, na mesma ordem; o resto do boot (montagem das rotas
@@ -34,6 +40,7 @@ for (const type of ['pointerdown', 'keydown', 'touchstart', 'focusin']) addEvent
 }
 
 let pages = 0
+let signed = 0
 async function walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name)
@@ -42,11 +49,12 @@ async function walk(dir) {
     const html = await readFile(full, 'utf8')
     const preloads = [...html.matchAll(preloadTag)].map(match => match[1])
     const boot = html.match(bootTag)
-    if (!boot || !preloads.length) continue
-    const next = html.replace(preloadTag, '').replace(bootTag, rewriteBoot(boot[1], preloads))
-    await writeFile(full, next)
-    pages++
+    const rebooted = boot && preloads.length ? html.replace(preloadTag, '').replace(bootTag, rewriteBoot(boot[1], preloads)) : html
+    if (rebooted !== html) pages++
+    const next = withNonces(rebooted)
+    if (next !== rebooted) signed++
+    if (next !== html) await writeFile(full, next)
   }
 }
 await walk(root)
-console.log(`html-priorities: boot depois do primeiro quadro em ${pages} páginas`)
+console.log(`html-priorities: boot depois do primeiro quadro em ${pages} páginas; nonce do CSP em ${signed}`)

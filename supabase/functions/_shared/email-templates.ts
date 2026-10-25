@@ -288,6 +288,8 @@ function alertCopy(alert: Alert): { text: string; links: { href: string; label: 
       return { text: 'Os e-mails estão parados na fila há mais de 30 minutos.', links }
     case 'backup_late':
       return { text: 'A cópia de segurança do banco não roda há mais de 26 horas.', links }
+    case 'terms_missing':
+      return { text: `O pedido ${ref} foi pago sem o "Li e aceito" gravado: alguém destravou o formulário à mão. Guarde isto para um pedido de reembolso ou uma contestação.`, links }
     default:
       throw new PermanentEmailError('alerta_desconhecido')
   }

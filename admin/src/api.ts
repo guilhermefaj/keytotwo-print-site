@@ -16,9 +16,15 @@ export async function api<T>(path: string, options: { method?: string; body?: un
   if (options.body !== undefined) headers['Content-Type'] = raw ? raw.type : 'application/json'
   const response = await fetch(`${apiBase}${path}`, { method: options.method ?? 'GET', headers, body: options.body === undefined ? undefined : raw ?? JSON.stringify(options.body), signal: options.signal })
   const result = await response.json().catch(() => ({}))
-  if (!response.ok) throw new ApiError(result.error?.code || 'INTERNAL_ERROR', result.error?.message, result.error?.details)
+  if (!response.ok) {
+    // O código do app venceu para a API: o portão pede de novo (AuthGate).
+    if (result.error?.code === 'MFA_REQUIRED') window.dispatchEvent(new Event(MFA_REQUIRED_EVENT))
+    throw new ApiError(result.error?.code || 'INTERNAL_ERROR', result.error?.message, result.error?.details)
+  }
   return result as T
 }
+
+export const MFA_REQUIRED_EVENT = 'keytotwo-admin:mfa-required'
 
 // Arquivo de uma rota /admin/* (a planilha do parceiro): baixa com a sessão e entrega com o nome dado.
 export async function apiDownload(path: string, filename: string) {

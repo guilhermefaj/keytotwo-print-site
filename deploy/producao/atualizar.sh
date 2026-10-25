@@ -8,11 +8,18 @@ set -eu
 main() {
   base=/opt/keytotwo-site
   ref=${1:-main}
+  # Só um nome de branch ou um commit (revisão de segurança, 2026-10-25): nada de refs/ (refs/pull/* traria código de um
+  # PR de fork), de opção (-x) nem de caractere de shell.
+  case $ref in
+    ''|-*|refs/*|*..*|*[!A-Za-z0-9._/-]*) echo "ref inválida: use um branch ou um commit" >&2; exit 1 ;;
+  esac
   # Um deploy por vez (este, o do teste ou o vigia do blog): todos usam o mesmo checkout em repo/.
   exec 9>"$base/.deploy.lock"
   flock 9
   git -C "$base/repo" fetch --quiet --depth 1 origin "$ref"
   git -C "$base/repo" checkout --quiet --detach FETCH_HEAD
+  # O commit completo sai já: o vigia reconstrói o que for gravado no fim, e outro deploy não muda isso.
+  full=$(git -C "$base/repo" rev-parse HEAD)
   sha=$(git -C "$base/repo" rev-parse --short HEAD)
 
   # Variáveis públicas do build live (VITE_*): vão para o JavaScript do navegador. Só chaves publicáveis.
@@ -41,7 +48,7 @@ main() {
   docker compose --project-directory "$base/producao" up -d --wait
   # O vigia do blog reconstrói este mesmo commit quando um post é publicado. A cópia dele troca por rename: o cron
   # pode estar lendo o arquivo antigo agora (é ele que chama este script).
-  git -C "$base/repo" rev-parse HEAD > "$base/producao/commit"
+  echo "$full" > "$base/producao/commit"
   mkdir -p "$base/blog"
   cp "$base/repo/deploy/blog/vigiar.sh" "$base/blog/vigiar.sh.novo"
   mv -f "$base/blog/vigiar.sh.novo" "$base/blog/vigiar.sh"

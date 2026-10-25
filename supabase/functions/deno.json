@@ -3,7 +3,7 @@
     "@supabase/auth-js": "npm:@supabase/auth-js@2.117.2",
     "stripe": "npm:stripe@22.0.2",
     "@std/assert": "jsr:@std/assert@1.0.19",
-    "markdown-it": "npm:markdown-it@14.3.2"
+    "markdown-it": "npm:markdown-it@14.3.3"
   },
   "lock": false,
   "tasks": {

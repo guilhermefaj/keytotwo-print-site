@@ -43,14 +43,14 @@ test('explicit mock: acceptance, coupon and simulated confirmation without a che
 
 // Link de parceiro (2026-10-24): o pedido leva de onde a pessoa veio, e o código do parceiro entra sozinho no formulário.
 test('partner link: referral goes with the order and the partner code is applied on its own', async ({ page }) => {
-  const referral = { partner: 'ana-souza', landed_at: new Date().toISOString(), path: '/loja', utm_source: 'instagram', name: 'Ana Souza', code: 'TESTE10', percent_off: 10, counted_on: '2026-10-24' }
+  const referral = { partner: 'ana-souza', landed_at: new Date().toISOString(), path: '/loja', utm_source: 'instagram', name: 'Ana Souza', code: 'TESTE10', percent_off: 10, counted_on: '2026-10-24', token: 'comprovante-da-visita' }
   await page.addInitScript(value => localStorage.setItem('keytotwo:indicacao', JSON.stringify(value)), referral)
   const bodies: unknown[] = []
   page.on('request', request => { if (request.url().endsWith('/api/checkout')) bodies.push(request.postDataJSON()) })
   await stripeMode(page)
   await expect(page.locator('.payment-total')).toContainText('17,91')
   await expect(page.getByText('Cupom TESTE10 aplicado (indicação de Ana Souza).')).toBeVisible()
-  expect(bodies).toEqual([{ cart_version: 3, terms_version: 'termos-2026-10-22', referral: { partner: 'ana-souza', landed_at: referral.landed_at, path: '/loja', utm_source: 'instagram' } }])
+  expect(bodies).toEqual([{ cart_version: 3, terms_version: 'termos-2026-10-22', referral: { partner: 'ana-souza', landed_at: referral.landed_at, path: '/loja', utm_source: 'instagram', token: 'comprovante-da-visita' } }])
 })
 
 // O formulário abre com a página e fica travado até o aceite (responsável, 2026-10-24); o aceite vai para o pedido.

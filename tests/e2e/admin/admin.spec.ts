@@ -124,6 +124,29 @@ test('sessão nova de admin: código errado mostra o erro, o certo abre o admin'
   expect(calls.some(call => call.method === 'POST' && call.path === '/factors')).toBe(false)
 })
 
+test('código do app confirmado há mais de 12 horas: o admin pede de novo antes de abrir', async ({ page }) => {
+  const calls = await fixture(page, { stored: session('aal2', user(), 12 * 3600 + 60) })
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 1, name: 'Código do app autenticador' })).toBeVisible()
+  await expect(page.getByText('Por segurança, o admin pede o código de novo a cada 12 horas.')).toBeVisible()
+  expect(calls.some(call => call.path.startsWith('api'))).toBe(false)
+  await page.getByLabel('Código de 6 números').fill('123456')
+  await page.getByRole('button', { name: 'Entrar' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Métricas' })).toBeVisible()
+})
+
+test('a API diz que o código venceu: o admin pede de novo', async ({ page }) => {
+  const calls = await fixture(page, { stored: session('aal2') })
+  await page.route('**/functions/v1/api/admin/metrics**', route => route.fulfill({ status: 403, json: { error: { code: 'MFA_REQUIRED', message: 'Confirme o código do app autenticador para continuar.' } } }))
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 1, name: 'Código do app autenticador' })).toBeVisible()
+  await page.unroute('**/functions/v1/api/admin/metrics**')
+  await page.getByLabel('Código de 6 números').fill('123456')
+  await page.getByRole('button', { name: 'Entrar' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Métricas' })).toBeVisible()
+  expect(calls.some(call => /^\/factors\/[^/]+\/verify$/.test(call.path))).toBe(true)
+})
+
 test('métricas: barra lateral com as seções, 7 e 30 dias, celular sem rolagem lateral; sair volta ao início', async ({ page }) => {
   const calls = await fixture(page, { stored: session('aal2') })
   await page.setViewportSize({ width: 1440, height: 900 })

@@ -66,7 +66,9 @@ function OrderPage({ id }: { id: string }) {
         <Fact label="Pago em">{order.paid_at ? formatMoment(order.paid_at) : 'Ainda não'}</Fact>
         {!courtesy && <Fact label="Origem"><Origin origin={detail.origin} /></Fact>}
         {order.refunded_at && <Fact label="Reembolsado em">{formatMoment(order.refunded_at)}</Fact>}
-        {order.terms_version && <Fact label="Termos aceitos">{`${order.terms_version}${order.terms_accepted_at ? `, ${formatMoment(order.terms_accepted_at)}` : ''}`}</Fact>}
+        {order.terms_version && (order.terms_accepted_at
+          ? <Fact label="Termos aceitos">{`${order.terms_version}, ${formatMoment(order.terms_accepted_at)}`}</Fact>
+          : <Fact label="Termos">{`${order.terms_version}, sem o aceite gravado`}</Fact>)}
         {order.stripe_payment_intent_id && <Fact label="Pagamento na Stripe">
           <a className="text-link" href={stripePaymentUrl(order.stripe_payment_intent_id, order.livemode)} target="_blank" rel="noopener">{order.stripe_payment_intent_id}<IconExternalLink aria-hidden="true" size={14} stroke={1.75} /><span className="sr-only"> (abre a Stripe em nova aba)</span></a>
         </Fact>}

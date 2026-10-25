@@ -92,7 +92,7 @@ function ReferralCapture() {
   const { search } = useLocation()
   useEffect(() => {
     if (!authConfigured || !search) return
-    void captureReferral(new URL(window.location.href), partner => api<{ name: string; code: string | null; percent_off: number | null }>('/referral/visit', { method: 'POST', body: { partner }, public: true })
+    void captureReferral(new URL(window.location.href), partner => api<{ name: string; code: string | null; percent_off: number | null; token: string }>('/referral/visit', { method: 'POST', body: { partner }, public: true })
       .catch(error => { if (error instanceof ApiError && error.code === 'NOT_FOUND') return null; throw error }))
   }, [search])
   return null

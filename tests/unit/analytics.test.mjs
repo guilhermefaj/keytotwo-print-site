@@ -16,12 +16,12 @@ registerHooks({
 })
 
 const store = new Map()
-globalThis.window = Object.assign(new EventTarget(), { location: { hostname: 'keytotwo.com.br' } })
+globalThis.window = Object.assign(new EventTarget(), { location: { hostname: 'keytotwo.com.br', href: 'https://keytotwo.com.br/email/preferencias?token=abc' } })
 globalThis.location = window.location
 globalThis.localStorage = { getItem: key => store.get(key) ?? null, setItem: (key, value) => store.set(key, String(value)) }
 globalThis.document = { cookie: '', head: { append() {} }, createElement: () => ({}) }
 
-const { setCookieChoice, track } = await import('../../src/lib/analytics.ts')
+const { pageLocation, setCookieChoice, track } = await import('../../src/lib/analytics.ts')
 const pushed = () => window.dataLayer.map(args => [...args])
 const events = () => pushed().filter(([kind]) => kind === 'event').map(([, name]) => name)
 
@@ -43,4 +43,12 @@ test('recusar para os eventos na hora; aceitar de novo, na mesma página, volta 
   assert.deepEqual(events(), ['view_item', 'purchase'])
   // O gtag não é instalado duas vezes.
   assert.equal(pushed().filter(([kind]) => kind === 'config').length, 1)
+})
+
+// Revisão de segurança (2026-10-25): o GA4 não recebe o token do descadastro, a sessão da Stripe nem o código do login.
+test('o endereço que vai para o GA4 sai sem a consulta, menos as marcas de campanha e o parceiro', () => {
+  assert.equal(pageLocation('https://keytotwo.com.br/email/preferencias?token=abc.def'), 'https://keytotwo.com.br/email/preferencias')
+  assert.equal(pageLocation('https://keytotwo.com.br/pedido/confirmacao?session_id=cs_live_1#x'), 'https://keytotwo.com.br/pedido/confirmacao')
+  assert.equal(pageLocation('https://keytotwo.com.br/entrar?code=1&next=%2Fconta'), 'https://keytotwo.com.br/entrar')
+  assert.equal(pageLocation('https://keytotwo.com.br/loja?p=ana-souza&utm_source=instagram&x=1'), 'https://keytotwo.com.br/loja?utm_source=instagram&p=ana-souza')
 })

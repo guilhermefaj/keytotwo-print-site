@@ -3,6 +3,9 @@
 # não guarda backup. Entra com o papel backup_ro (só leitura), gera roles.sql, schema.sql e data.sql como o
 # `supabase db dump`, fecha com age (a chave secreta fica só com o responsável) e envia para o bucket PRIVADO da B2 com
 # uma chave que só escreve. Quem apaga as antigas é a regra de validade do bucket (diario/ 30 dias, mensal/ 12 meses).
+# Desde 2026-10-25 (revisão de segurança) a cópia leva só os dados da loja (public e private) e, do Auth, as contas e os
+# logins (auth.users e auth.identities); sessões, tokens e o app autenticador dos admins ficam de fora, como o backup_ro.
+# A senha vai em BACKUP_DB_PASSWORD (PGPASSWORD), fora da URL: assim não aparece na lista de processos.
 # No fim, registra a cópia no banco: o alerta "backup atrasado" do admin confere esse registro.
 # Fica em /opt/keytotwo-site/backup/backup.sh (o deploy da produção copia a versão do repositório), com o backup.env
 # (600, só do deploy) ao lado. Cron do deploy, 03:30 em Brasília:
@@ -17,6 +20,7 @@ main() {
   # Tudo roda num contêiner do Postgres 17 (o pg_dump da mesma versão do banco); os segredos entram pelo --env-file.
   docker run --rm -i --env-file "$base/backup.env" postgres:17-alpine sh -s <<'CONTEINER'
 set -eu
+if [ -n "${BACKUP_DB_PASSWORD:-}" ]; then export PGPASSWORD="$BACKUP_DB_PASSWORD"; fi
 apk add --quiet --no-cache age curl >/dev/null
 cd "$(mktemp -d)"
 stamp=$(date -u +%Y-%m-%dT%H%MZ)
@@ -24,9 +28,6 @@ stamp=$(date -u +%Y-%m-%dT%H%MZ)
 # Os mesmos filtros do `supabase db dump` (CLI 2.118.0: pkg/migration/dump.go e scripts/dump_*.sh), sem o
 # `--role postgres`: o papel do backup não vira postgres. As listas e os sed são os da CLI.
 internal='information_schema|pg_*|_analytics|_realtime|_supavisor|auth|etl|extensions|pgbouncer|realtime|storage|supabase_functions|supabase_migrations|cron|dbdev|graphql|graphql_public|net|pgmq|pgsodium|pgsodium_masks|pgtle|repack|tiger|tiger_data|timescaledb_*|_timescaledb_*|topology|vault'
-# Nos dados sai também o storage: a loja não usa o Storage do Supabase (os arquivos ficam na B2), e num projeto novo o
-# postgres não grava nas tabelas dele (o ensaio de 2026-10-24 parou ali).
-excluded='information_schema|pg_*|graphql|graphql_public|pgsodium|pgsodium_masks|pgtle|repack|tiger|tiger_data|timescaledb_*|_timescaledb_*|topology|vault|etl|extensions|pgbouncer|realtime|supabase_migrations|_analytics|_realtime|_supavisor|storage'
 reserved='anon|authenticated|authenticator|cli_login_.*|dashboard_user|pgbouncer|postgres|service_role|supabase_.*|pgsodium_keyholder|pgsodium_keyiduser|pgsodium_keymaker|pgtle_admin'
 configs='pgaudit.*|pgrst.*|session_replication_role|statement_timeout|track_io_timing'
 
@@ -48,7 +49,9 @@ pg_dumpall --dbname="$BACKUP_DB_URL" --roles-only --quote-all-identifier --no-ro
   echo 'ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" REVOKE ALL ON FUNCTIONS FROM "anon", "authenticated", "service_role";'
   echo 'ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" REVOKE ALL ON TABLES FROM "anon", "authenticated", "service_role";'
   echo 'ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" REVOKE ALL ON SEQUENCES FROM "anon", "authenticated", "service_role";'
+  # A public.test do hospedado (do responsável, fora da loja) não entra: o backup_ro não tem permissão nela.
   pg_dump "$BACKUP_DB_URL" --schema-only --quote-all-identifier --exclude-schema="$internal" \
+    --exclude-table='"public"."test"' --exclude-table='"public"."test_id_seq"' \
 | sed -E 's/^\\(un)?restrict .*$/-- &/' \
 | sed -E 's/^CREATE SCHEMA "/CREATE SCHEMA IF NOT EXISTS "/' \
 | sed -E 's/^CREATE TABLE "/CREATE TABLE IF NOT EXISTS "/' \
@@ -78,16 +81,33 @@ pg_dumpall --dbname="$BACKUP_DB_URL" --roles-only --quote-all-identifier --no-ro
   # Os gatilhos da loja nas tabelas do Auth (o perfil de quem se cadastra, a confirmação do e-mail) ficam fora do dump,
   # que não leva o schema auth: entram no fim, depois das funções que eles chamam (visto no ensaio de 2026-10-24).
   psql "$BACKUP_DB_URL" --no-psqlrc -At -v ON_ERROR_STOP=1 -c "select pg_get_triggerdef(t.oid) || ';' from pg_trigger t
-    join pg_class c on c.oid = t.tgrelid join pg_proc p on p.oid = t.tgfoid
-    where c.relnamespace = 'auth'::regnamespace and not t.tgisinternal
-      and p.pronamespace in ('public'::regnamespace, 'private'::regnamespace) order by t.tgname"
+    join pg_class c on c.oid = t.tgrelid join pg_namespace cn on cn.oid = c.relnamespace
+    join pg_proc p on p.oid = t.tgfoid join pg_namespace pn on pn.oid = p.pronamespace
+    where cn.nspname = 'auth' and not t.tgisinternal and pn.nspname in ('public', 'private') order by t.tgname"
 } > schema.sql
+
+# Do Auth, só auth.users e auth.identities, pelas funções da cópia (o backup_ro não lê o schema auth; migração
+# 20261025120000) ou, antes dela, direto da tabela. As colunas geradas ficam de fora, como no pg_dump.
+auth_copy() {
+  cols=$(psql "$BACKUP_DB_URL" --no-psqlrc -At -v ON_ERROR_STOP=1 -c "select string_agg(quote_ident(a.attname), ', ' order by a.attnum)
+    from pg_attribute a join pg_class c on c.oid = a.attrelid join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'auth' and c.relname = '$1' and a.attnum > 0 and not a.attisdropped and a.attgenerated = ''")
+  [ -n "$cols" ] || { echo "auth.$1 sem colunas" >&2; exit 1; }
+  source=$(psql "$BACKUP_DB_URL" --no-psqlrc -At -v ON_ERROR_STOP=1 -c "select case when exists (select 1 from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'private' and p.proname = 'backup_auth_$1')
+    then 'private.backup_auth_$1()' else 'auth.$1' end")
+  echo "COPY \"auth\".\"$1\" ($cols) FROM stdin;"
+  psql "$BACKUP_DB_URL" --no-psqlrc -v ON_ERROR_STOP=1 -c "copy (select $cols from $source) to stdout"
+  printf '%s\n' '\.'
+}
 
 {
   echo 'SET session_replication_role = replica;'
-  pg_dump "$BACKUP_DB_URL" --data-only --quote-all-identifier --exclude-schema="$excluded" --schema='*' \
-    --exclude-table='auth.schema_migrations' --exclude-table='storage.migrations' --exclude-table='supabase_functions.migrations' \
+  pg_dump "$BACKUP_DB_URL" --data-only --quote-all-identifier --schema=public --schema=private \
+    --exclude-table='"public"."test"' --exclude-table='"public"."test_id_seq"' \
   | sed -E 's/^\\(un)?restrict .*$/-- &/'
+  auth_copy users
+  auth_copy identities
   echo 'RESET ALL;'
 } > data.sql
 
@@ -95,10 +115,11 @@ pg_dumpall --dbname="$BACKUP_DB_URL" --roles-only --quote-all-identifier --no-ro
 # pg_dump; a conferência não).
 grep -q '^CREATE ROLE "backup_ro"' roles.sql
 grep -q '^CREATE TABLE IF NOT EXISTS "public"."orders"' schema.sql
-grep -q '^ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "anon"' schema.sql
+grep -q '^ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public"' schema.sql
 grep -q '^CREATE TRIGGER on_auth_user_created ' schema.sql
 grep -q '^COPY "public"."orders"' data.sql
 grep -q '^COPY "auth"."users"' data.sql
+grep -q '^COPY "auth"."identities"' data.sql
 tar -czf - roles.sql schema.sql data.sql | age -r "$BACKUP_AGE_RECIPIENT" > copia.tar.gz.age
 bytes=$(wc -c < copia.tar.gz.age)
 
