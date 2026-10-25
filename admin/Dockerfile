@@ -15,7 +15,6 @@ COPY src/tokens.css src/primitives.css src/blog.css ./src/
 COPY src/lib/format.ts src/lib/save-json.ts ./src/lib/
 COPY src/components/blog/PostHeader.tsx ./src/components/blog/
 COPY supabase/functions/_shared/blog-rules.ts ./supabase/functions/_shared/
-COPY public/media/hero/keytotwo-logo.webp ./public/media/hero/
 COPY public/media/auth/google-g.png ./public/media/auth/
 # Só chaves publicáveis: vão para o JavaScript do navegador.
 ARG VITE_SUPABASE_URL
