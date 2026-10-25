@@ -65,8 +65,10 @@ export const env = {
   apiPublicUrl: () => (read('API_PUBLIC_URL') ?? `${required('SUPABASE_URL').replace(/\/+$/, '')}/functions/v1/api`).replace(/\/+$/, ''),
   // Links HMAC dos e-mails: o atual assina e verifica; o anterior (opcional) só verifica, durante a rotação.
   emailLinkSecrets: () => [required('EMAIL_LINK_SECRET'), read('EMAIL_LINK_SECRET_PREVIOUS')].filter((s): s is string => Boolean(s)),
-  // Chave do email-dispatch: a secreta nomeada "dispatch" na nuvem; sem ela (local), a "default".
-  dispatchKey: () => namedKey('SUPABASE_SECRET_KEYS', 'dispatch') ?? apiKey('SUPABASE_SECRET_KEYS', 'SUPABASE_SECRET_KEY'),
+  // Segredo da agenda do banco (email-dispatch e /internal/discounts/tick), que vem do Vault no header apikey. Desde
+  // 2026-10-25, na nuvem, um segredo próprio (DISPATCH_SECRET), sem poder nenhum no banco; antes era uma chave secreta
+  // do Supabase. Sem ele (local), a chave nomeada "dispatch" e, por fim, a "default".
+  dispatchKey: () => read('DISPATCH_SECRET') ?? namedKey('SUPABASE_SECRET_KEYS', 'dispatch') ?? apiKey('SUPABASE_SECRET_KEYS', 'SUPABASE_SECRET_KEY'),
   // log (padrão): nada sai para fora; brevo: envio real pela API v3.
   emailMode: () => (read('EMAIL_MODE') === 'brevo' ? 'brevo' : 'log') as 'brevo' | 'log',
   emailLogMailpitUrl: () => read('EMAIL_LOG_MAILPIT_URL')?.replace(/\/+$/, ''),

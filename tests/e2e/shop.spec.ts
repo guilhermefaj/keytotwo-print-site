@@ -165,7 +165,7 @@ test('barrinha do cupom: a faixa do /catalog e o cupom do parceiro do link', asy
   const visits: unknown[] = []
   await page.route('**/functions/v1/api/referral/visit', route => {
     visits.push(route.request().postDataJSON())
-    return route.fulfill({ json: { partner: 'ana-souza', name: 'Ana Souza', code: 'ANA10', percent_off: 12.5 } })
+    return route.fulfill({ json: { partner: 'ana-souza', name: 'Ana Souza', code: 'ANA10', percent_off: 12.5, token: 'comprovante-da-visita' } })
   })
   await page.goto('/loja')
   const bar = page.getByRole('complementary', { name: 'Cupom de desconto' })
@@ -178,7 +178,7 @@ test('barrinha do cupom: a faixa do /catalog e o cupom do parceiro do link', asy
   await expect(bar).toContainText('Indicação de Ana Souza')
   expect(visits).toHaveLength(1)
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('keytotwo:indicacao') ?? 'null'))
-  expect([stored.partner, stored.utm_source, stored.path]).toEqual(['ana-souza', 'instagram', '/loja'])
+  expect([stored.partner, stored.utm_source, stored.path, stored.token]).toEqual(['ana-souza', 'instagram', '/loja', 'comprovante-da-visita'])
 })
 
 test('produto listado sem preço não oferece compra; falha permite retry', async ({ page }) => {

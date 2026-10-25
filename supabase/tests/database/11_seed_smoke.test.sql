@@ -157,8 +157,9 @@ do $c$
 begin
   insert into smoke4 select 'claim', to_jsonb(r) from public.claim_email_batch(5, (select (j->>'outbox_id')::uuid from smoke where k = 'ful')) r;
 end $c$;
+-- B já tinha o J001: o pacote foi cobrado sem ele e entrega só os 4 jogos novos (credited_game_ids, 2026-10-25).
 select pg_temp.assert('seed I4: o claim por p_outbox_id entrega ao despachante a entrega do pedido que o smoke do I3 acabou de pagar, com o payload por jogo',
-  (select count(*) = 1 and bool_and(j->>'kind' = 'delivery' and j->>'category' = 'transactional' and j->>'to_email' = 'teste-b@keytotwo.test' and jsonb_array_length(j->'payload'->'games') = 5) from smoke4 where k = 'claim'));
+  (select count(*) = 1 and bool_and(j->>'kind' = 'delivery' and j->>'category' = 'transactional' and j->>'to_email' = 'teste-b@keytotwo.test' and jsonb_array_length(j->'payload'->'games') = 4) from smoke4 where k = 'claim'));
 do $c$
 declare v_id uuid := (select (j->>'id')::uuid from smoke4 where k = 'claim' order by j->>'id' limit 1);
 begin

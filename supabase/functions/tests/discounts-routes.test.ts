@@ -3,6 +3,7 @@
 import { assert, assertEquals } from '@std/assert'
 import { adminToken as admin, captureErrors, contractTest, ok, onRpc, onStripe, request, row, rpcCalls, send, SECRET_KEY, sessionToken, stripeCalls, userId } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
+import { verifyReferralToken } from '../_shared/tokens.ts'
 
 const DISCOUNT = '3c4d5e6f-7a8b-4c9d-8e0f-2a3b4c5d6e7f'
 const PARTNER = '4d5e6f7a-8b9c-4d0e-9f1a-3b4c5d6e7f80'
@@ -114,6 +115,14 @@ contractTest('POST /internal/discounts/tick: só com a chave do despacho; liga o
   assertEquals([res.status, await res.json()], [200, { due: 1, started: 1 }])
   assertEquals([stripeCalls[0].path, Object.fromEntries(stripeCalls[0].params).active], ['/v1/promotion_codes/promo_NATAL26', 'true'])
   assertEquals(rpcCalls.map((call) => call.fn), ['due_discounts', 'mark_discount_started'])
+  // Na nuvem, desde 2026-10-25, um segredo próprio (DISPATCH_SECRET): a chave secreta do Supabase não vale mais.
+  Deno.env.set('DISPATCH_SECRET', 'segredo-da-agenda-de-teste')
+  try {
+    assertEquals((await handleRequest(request('/internal/discounts/tick', { method: 'POST', body: {}, headers: { apikey: SECRET_KEY } }))).status, 401)
+    assertEquals((await handleRequest(request('/internal/discounts/tick', { method: 'POST', body: {}, headers: { apikey: 'segredo-da-agenda-de-teste' } }))).status, 200)
+  } finally {
+    Deno.env.delete('DISPATCH_SECRET')
+  }
 })
 
 contractTest('parceiros: criar e editar com conferência; o repasse e a planilha do mês, sem e-mail de cliente', async () => {
@@ -151,10 +160,13 @@ contractTest('parceiros: criar e editar com conferência; o repasse e a planilha
   assertEquals(text.includes('@'), false)
 })
 
-contractTest('POST /referral/visit (pública): o parceiro ativo devolve o nome e o código; o resto 404', async () => {
+contractTest('POST /referral/visit (pública): o parceiro ativo devolve o nome, o código e o comprovante da visita; o resto 404', async () => {
   onRpc(() => row({ outcome: 'ok', slug: 'ana-souza', name: 'Ana Souza', code: 'ANA10', percent_off: '10.00' }))
   const res = await handleRequest(request('/referral/visit', { method: 'POST', body: { partner: ' Ana-Souza ' } }))
-  assertEquals([res.status, await res.json()], [200, { partner: 'ana-souza', name: 'Ana Souza', code: 'ANA10', percent_off: 10 }])
+  const { token, ...visit } = await res.json()
+  assertEquals([res.status, visit], [200, { partner: 'ana-souza', name: 'Ana Souza', code: 'ANA10', percent_off: 10 }])
+  const verified = await verifyReferralToken(token)
+  assert(verified.ok && verified.claims.p === 'ana-souza' && Math.abs(verified.claims.l * 1000 - Date.now()) < 5000)
   assertEquals(rpcCalls[0].args, { p_slug: 'ana-souza' })
   assertEquals((await handleRequest(request('/referral/visit', { method: 'POST', body: { partner: 'ana souza' } }))).status, 404)
   assertEquals(rpcCalls.length, 1)

@@ -23,6 +23,8 @@ export type Referral = {
   percent_off?: number | null
   // o dia (de Brasília) em que a visita foi contada: uma por parceiro por dia
   counted_on?: string
+  // o comprovante da visita, assinado pela API (2026-10-25): só com ele o pedido conta para o parceiro
+  token?: string
 }
 
 export const isPartnerSlug = (value: string) => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value) && value.length <= 30
@@ -82,13 +84,13 @@ export function referralFromUrl(url: URL): Referral | null {
 
 // Guarda o link novo e, se for de parceiro, conta a visita (uma por dia) e traz o nome e o código dele. Parceiro que não
 // vale (pausado, apelido errado): fica só a campanha.
-export async function captureReferral(url: URL, visit: (partner: string) => Promise<{ name: string; code: string | null; percent_off: number | null } | null>) {
+export async function captureReferral(url: URL, visit: (partner: string) => Promise<{ name: string; code: string | null; percent_off: number | null; token?: string } | null>) {
   const landed = referralFromUrl(url)
   if (!landed) return
   const previous = readReferral()
   const samePartner = landed.partner && previous?.partner === landed.partner
   if (samePartner && previous?.counted_on === today()) {
-    writeReferral({ ...landed, name: previous.name, code: previous.code, percent_off: previous.percent_off, counted_on: previous.counted_on })
+    writeReferral({ ...landed, name: previous.name, code: previous.code, percent_off: previous.percent_off, counted_on: previous.counted_on, token: previous.token })
     return
   }
   writeReferral(landed)
@@ -98,8 +100,9 @@ export async function captureReferral(url: URL, visit: (partner: string) => Prom
   writeReferral(partner ? { ...landed, ...partner, counted_on: today() } : { ...landed, partner: undefined })
 }
 
-// O que vai para o pedido (POST /checkout): sem o nome nem o código, que o banco não precisa.
-const ORDER_KEYS = ['partner', 'landed_at', 'path', ...UTM] as const
+// O que vai para o pedido (POST /checkout): sem o nome nem o código, que o banco não precisa. O parceiro só conta com o
+// comprovante (token); sem ele, a API guarda só a campanha.
+const ORDER_KEYS = ['partner', 'landed_at', 'path', ...UTM, 'token'] as const
 export function referralForOrder(referral: Referral | null) {
   return referral ? Object.fromEntries(ORDER_KEYS.flatMap(key => (referral[key] ? [[key, referral[key]]] : []))) : undefined
 }

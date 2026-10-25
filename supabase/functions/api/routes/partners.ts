@@ -2,6 +2,7 @@ import { rpcRow } from '../../_shared/admin.ts'
 import { requireAdminSession } from '../../_shared/auth.ts'
 import { HttpError, isUuid, json, readJsonObject } from '../../_shared/http.ts'
 import { livemode } from '../../_shared/stripe.ts'
+import { signReferralToken } from '../../_shared/tokens.ts'
 import { reasonOf, settle } from './outcome.ts'
 
 // Parceiros e indicações (2026-10-24, decisões do responsável): o cadastro (o apelido do link não muda depois), os
@@ -123,12 +124,16 @@ export async function adminPartnerExport(req: Request, url: URL, params: Record<
 }
 
 // POST /referral/visit { partner } (pública): quem abriu o link do parceiro. Conta a visita do dia e devolve o nome e o
-// código ativo dele, para a faixa e o pagamento. Parceiro pausado ou que não existe: 404.
+// código ativo dele, para a faixa e o pagamento, e o comprovante assinado da visita (token), que o checkout exige para
+// atribuir a venda ao parceiro (2026-10-25). Parceiro pausado ou que não existe: 404.
 export async function referralVisit(req: Request): Promise<Response> {
   const body = await readJsonObject(req)
   const slug = typeof body.partner === 'string' ? body.partner.trim().toLowerCase() : ''
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) || slug.length > 30) throw notFound()
   const result = await rpcRow<{ outcome: string; slug: string; name: string; code: string | null; percent_off: number | null }>('record_partner_visit', { p_slug: slug })
   if (result.outcome !== 'ok') throw notFound()
-  return json({ partner: result.slug, name: result.name, code: result.code, percent_off: result.percent_off === null ? null : Number(result.percent_off) })
+  return json({
+    partner: result.slug, name: result.name, code: result.code, percent_off: result.percent_off === null ? null : Number(result.percent_off),
+    token: await signReferralToken(result.slug),
+  })
 }

@@ -67,6 +67,19 @@ export function onCookieNoticeReopen(listener: () => void) {
 // `loaded`: o gtag já está na página. `granted`: a escolha vale agora, nesta página. Recusar e aceitar de novo
 // sem recarregar reaproveita o gtag e só troca o consentimento (e o ga-disable, que o próprio GA respeita).
 let loaded = false
+// O endereço que vai para o GA4 (revisão de segurança, 2026-10-25): sem a consulta, que pode ter o token do descadastro
+// (com o id da conta), a sessão da Stripe ou o código do login. Ficam só as marcas de campanha e o link de parceiro.
+const CAMPAIGN_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'p']
+export function pageLocation(href = location.href) {
+  const url = new URL(href)
+  const clean = new URL(`${url.origin}${url.pathname}`)
+  for (const name of CAMPAIGN_PARAMS) {
+    const value = url.searchParams.get(name)
+    if (value) clean.searchParams.set(name, value)
+  }
+  return clean.href
+}
+
 let granted = false
 export function loadAnalytics() {
   if (!analyticsAvailable() || snapshot() !== 'granted') return
@@ -83,7 +96,7 @@ export function loadAnalytics() {
   window.gtag = function gtag() { window.dataLayer!.push(arguments) }
   window.gtag('consent', 'default', { analytics_storage: 'granted', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' })
   window.gtag('js', new Date())
-  window.gtag('config', gaMeasurementId, { allow_google_signals: false, allow_ad_personalization_signals: false })
+  window.gtag('config', gaMeasurementId, { allow_google_signals: false, allow_ad_personalization_signals: false, page_location: pageLocation() })
   const script = document.createElement('script')
   script.async = true
   script.src = `https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`

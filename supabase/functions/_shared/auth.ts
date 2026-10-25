@@ -8,6 +8,18 @@ interface SessionUser {
   accessToken: string
   // Nível da sessão: aal2 quando o segundo fator (app autenticador) foi confirmado nela.
   aal: string | null
+  // Quando o código do app autenticador foi confirmado pela última vez nesta sessão (epoch s), do claim amr.
+  totpAt: number | null
+}
+
+// O admin pede o código do app de novo a cada 12 horas (revisão de segurança, 2026-10-25): sem isso, renovar a sessão
+// mantinha o aal2 para sempre, e uma sessão copiada do navegador valia como admin sem prazo.
+export const ADMIN_MFA_MAX_AGE_SECONDS = 12 * 3600
+
+function totpTimestamp(amr: unknown): number | null {
+  if (!Array.isArray(amr)) return null
+  const times = amr.flatMap((entry) => entry && typeof entry === 'object' && entry.method === 'totp' && Number.isFinite(entry.timestamp) ? [entry.timestamp as number] : [])
+  return times.length ? Math.max(...times) : null
 }
 
 let client: GoTrueClient | undefined
@@ -50,7 +62,7 @@ async function getSessionUser(req: Request): Promise<SessionUser | null> {
   const { claims } = data
   if (claims.role !== 'authenticated' || !claims.sub || claims.is_anonymous === true) return null
   const email = typeof claims.email === 'string' ? claims.email.trim().toLowerCase() : null
-  return { id: claims.sub, email, accessToken: token, aal: typeof claims.aal === 'string' ? claims.aal : null }
+  return { id: claims.sub, email, accessToken: token, aal: typeof claims.aal === 'string' ? claims.aal : null, totpAt: totpTimestamp(claims.amr) }
 }
 
 export async function requireSessionUser(req: Request): Promise<SessionUser> {
@@ -59,9 +71,12 @@ export async function requireSessionUser(req: Request): Promise<SessionUser> {
   return user
 }
 
-// Rotas de admin: a sessão precisa do segundo fator (aal2). Quem é admin, o banco confere a cada chamada.
-export async function requireAdminSession(req: Request): Promise<SessionUser> {
+// Rotas de admin: a sessão precisa do segundo fator (aal2), confirmado nas últimas 12 horas. Quem é admin, o banco
+// confere a cada chamada.
+export async function requireAdminSession(req: Request, now = Date.now()): Promise<SessionUser> {
   const user = await requireSessionUser(req)
-  if (user.aal !== 'aal2') throw new HttpError(403, 'MFA_REQUIRED', 'Confirme o código do app autenticador para continuar.')
+  if (user.aal !== 'aal2' || user.totpAt === null || user.totpAt * 1000 < now - ADMIN_MFA_MAX_AGE_SECONDS * 1000) {
+    throw new HttpError(403, 'MFA_REQUIRED', 'Confirme o código do app autenticador para continuar.')
+  }
   return user
 }

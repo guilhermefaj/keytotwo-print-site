@@ -44,7 +44,7 @@ export function Enroll() {
 // Sessão nova de quem já cadastrou o app: só o código.
 export function Challenge({ factorId }: { factorId: string }) {
   return <Screen title="Código do app autenticador">
-    <p>Digite os 6 números do app autenticador para a KeyToTwo.</p>
+    <p>Digite os 6 números do app autenticador para a KeyToTwo. Por segurança, o admin pede o código de novo a cada 12 horas.</p>
     <CodeForm factorId={factorId} action="Entrar" />
     <p className="field-help">Sem acesso ao app? O fator pode ser removido no painel do Supabase (Authentication › Users › sua conta), e o admin pede um cadastro novo.</p>
   </Screen>

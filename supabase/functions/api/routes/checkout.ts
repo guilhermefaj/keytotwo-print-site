@@ -7,6 +7,7 @@ import { basePriceKey } from '../../_shared/fulfillment.ts'
 import { type ErrorCode, errorLabel, HttpError, isUuid, json, readJsonObject } from '../../_shared/http.ts'
 import { primePrices, stripePriceProduct } from '../../_shared/prices.ts'
 import { isStripeError, livemode, stripe, STRIPE_UI_MODE, stripeErrorLabel } from '../../_shared/stripe.ts'
+import { verifyReferralToken } from '../../_shared/tokens.ts'
 
 interface CheckoutOrder {
   outcome: string
@@ -80,6 +81,14 @@ async function customerFor(userId: string, order: CheckoutOrder): Promise<string
   return await rpc<string>('set_stripe_customer', { p_user_id: userId, p_stripe_customer_id: customer.id, ...(stored ? { p_replaces: stored } : {}) })
 }
 
+// A indicação que vai para o pedido (2026-10-25): o parceiro e a chegada vêm só do comprovante assinado da visita
+// (token). Sem ele, ou vencido, ficam a página, a chegada e as marcas de campanha, que não mexem em comissão.
+async function verifiedReferral(referral: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const rest = Object.fromEntries(Object.entries(referral).filter(([key]) => key !== 'partner' && key !== 'token'))
+  const verified = typeof referral.token === 'string' ? await verifyReferralToken(referral.token) : null
+  return verified?.ok ? { ...rest, partner: verified.claims.p, landed_at: new Date(verified.claims.l * 1000).toISOString() } : rest
+}
+
 const termsChanged = (termsVersion: string) =>
   new HttpError(409, 'TERMS_CHANGED', 'Os termos foram atualizados. Leia e aceite a versão atual.', { details: { terms_version: termsVersion } })
 
@@ -112,7 +121,8 @@ export async function checkout(req: Request): Promise<Response> {
   }
   const orderId = order.order_id
   if (body.referral && typeof body.referral === 'object' && !Array.isArray(body.referral)) {
-    await rpc('set_order_referral', { p_user_id: user.id, p_order_id: orderId, p_referral: body.referral })
+    await verifiedReferral(body.referral as Record<string, unknown>)
+      .then((referral) => rpc('set_order_referral', { p_user_id: user.id, p_order_id: orderId, p_referral: referral }))
       .catch((error) => console.error(`checkout: indicação não gravada (${errorLabel(error)})`))
   }
   const customer = await customerFor(user.id, order)

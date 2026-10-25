@@ -21,7 +21,8 @@ export function supabase() {
 export function safeNext(value: string | null) {
   if (!value || !value.startsWith('/') || value.startsWith('//') || /[\\\r\n]/.test(value)) return '/conta'
   const parsed = new URL(value, 'https://local.invalid')
-  if (parsed.origin !== 'https://local.invalid' || parsed.pathname === '/entrar') return '/conta'
+  // /.//x e /a/..//x normalizam para //x, que o navegador leria como outro site (revisão de segurança, 2026-10-25).
+  if (parsed.origin !== 'https://local.invalid' || parsed.pathname === '/entrar' || parsed.pathname.startsWith('//')) return '/conta'
   return `${parsed.pathname}${parsed.search}${parsed.hash}`
 }
 

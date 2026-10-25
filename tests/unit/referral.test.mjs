@@ -19,7 +19,7 @@ test('indicação: o link do parceiro e as marcas de campanha; o resto da URL n�
 test('indicação: conta a visita uma vez por dia; parceiro que não vale fica só com a campanha; o pedido não leva o nome', async () => {
   writeReferral(null)
   const visits = []
-  const visit = async (partner) => { visits.push(partner); return partner === 'ana-souza' ? { name: 'Ana Souza', code: 'ANA10', percent_off: 10 } : null }
+  const visit = async (partner) => { visits.push(partner); return partner === 'ana-souza' ? { name: 'Ana Souza', code: 'ANA10', percent_off: 10, token: 'comprovante' } : null }
   const seen = []
   window.addEventListener('keytotwo:indicacao-mudou', () => seen.push(true))
 
@@ -27,10 +27,11 @@ test('indicação: conta a visita uma vez por dia; parceiro que não vale fica s
   await captureReferral(new URL('https://keytotwo.com.br/loja?p=ana-souza'), visit)
   assert.deepEqual(visits, ['ana-souza'])
 
-  // o segundo link (mesmo dia) troca as marcas, mantém o que a API disse e não conta de novo
+  // o segundo link (mesmo dia) troca as marcas, mantém o que a API disse (com o comprovante da visita) e não conta de novo
   const order = referralForOrder(lastWritten())
-  assert.deepEqual(Object.keys(order).sort(), ['landed_at', 'partner', 'path'])
+  assert.deepEqual(Object.keys(order).sort(), ['landed_at', 'partner', 'path', 'token'])
   assert.equal(order.path, '/loja')
+  assert.equal(order.token, 'comprovante')
 
   await captureReferral(new URL('https://keytotwo.com.br/?p=pausado&utm_campaign=natal'), visit)
   assert.deepEqual(visits, ['ana-souza', 'pausado'])

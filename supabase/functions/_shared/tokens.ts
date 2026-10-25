@@ -20,6 +20,15 @@ interface UnsubscribeClaims {
   i: number
 }
 
+// Indicação (2026-10-25): quem abriu o link do parceiro; p = apelido, l = chegada (epoch s). Vale 30 dias, a janela da
+// comissão. O checkout só atribui a venda ao parceiro com este comprovante, não com o que o navegador disser.
+interface ReferralClaims {
+  t: 'r'
+  p: string
+  l: number
+}
+export const REFERRAL_TTL_SECONDS = 30 * 24 * 3600
+
 type VerifyResult<T> = { ok: true; claims: T } | { ok: false; reason: 'invalid' | 'expired' }
 
 const encoder = new TextEncoder()
@@ -41,7 +50,7 @@ async function hmacKey(secret: string): Promise<CryptoKey> {
   return await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify'])
 }
 
-async function sign(claims: DeliveryClaims | UnsubscribeClaims): Promise<string> {
+async function sign(claims: DeliveryClaims | UnsubscribeClaims | ReferralClaims): Promise<string> {
   const payload = toBase64Url(encoder.encode(JSON.stringify(claims)))
   const [secret] = env.emailLinkSecrets()
   const signature = await crypto.subtle.sign('HMAC', await hmacKey(secret), encoder.encode(payload))
@@ -93,4 +102,17 @@ export async function verifyUnsubscribeToken(token: string): Promise<VerifyResul
     return { ok: false, reason: 'invalid' }
   }
   return { ok: true, claims: claims as unknown as UnsubscribeClaims }
+}
+
+export async function signReferralToken(partner: string, now = Date.now()): Promise<string> {
+  return await sign({ t: 'r', p: partner, l: Math.floor(now / 1000) })
+}
+
+export async function verifyReferralToken(token: string, now = Date.now()): Promise<VerifyResult<ReferralClaims>> {
+  const claims = await verify(token)
+  if (!claims || claims.t !== 'r' || typeof claims.p !== 'string' || !Number.isSafeInteger(claims.l)) return { ok: false, reason: 'invalid' }
+  const landed = (claims.l as number) * 1000
+  if (landed > now + 300_000) return { ok: false, reason: 'invalid' }
+  if (landed <= now - REFERRAL_TTL_SECONDS * 1000) return { ok: false, reason: 'expired' }
+  return { ok: true, claims: claims as unknown as ReferralClaims }
 }

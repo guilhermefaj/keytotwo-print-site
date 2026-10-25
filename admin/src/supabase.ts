@@ -14,14 +14,27 @@ export const supabase = url && key
 // Só decide a tela: quem é admin e se o segundo fator foi confirmado, a API confere a cada chamada.
 export const isAdmin = (session: Session) => session.user.app_metadata?.admin === true
 
-export function sessionLevel(session: Session): string | null {
+function claimsOf(session: Session): { aal?: unknown; amr?: unknown } {
   try {
     const payload = session.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
-    const claims = JSON.parse(atob(payload)) as { aal?: unknown }
-    return typeof claims.aal === 'string' ? claims.aal : null
+    return JSON.parse(atob(payload)) as { aal?: unknown; amr?: unknown }
   } catch {
-    return null
+    return {}
   }
+}
+
+export function sessionLevel(session: Session): string | null {
+  const { aal } = claimsOf(session)
+  return typeof aal === 'string' ? aal : null
+}
+
+// O código do app autenticador vale 12 horas na sessão (revisão de segurança, 2026-10-25; a API confere o mesmo
+// prazo). A tela pede de novo 5 minutos antes, para o relógio do computador não deixar a API recusar antes dela.
+export const MFA_MAX_AGE_MS = 12 * 3600_000
+export function mfaExpiresAt(session: Session): number | null {
+  const { amr } = claimsOf(session)
+  const times = Array.isArray(amr) ? amr.flatMap(entry => entry?.method === 'totp' && Number.isFinite(entry.timestamp) ? [entry.timestamp as number] : []) : []
+  return times.length ? Math.max(...times) * 1000 + MFA_MAX_AGE_MS - 5 * 60_000 : null
 }
 
 export function authMessage(error: unknown) {

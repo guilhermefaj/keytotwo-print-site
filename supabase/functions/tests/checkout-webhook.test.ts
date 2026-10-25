@@ -2,10 +2,11 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assertEquals } from '@std/assert'
-import { captureErrors, onPrice, onRpc, onStripe, request, rpcCalls, sessionToken, type StripeCall, stripeCalls, TERMS_VERSION, userId, WEBHOOK_SECRET, contractTest, ok, row } from './contract-helpers.ts'
+import { captureErrors, onPrice, onRpc, onStripe, request, rpcCalls, sessionToken, type StripeCall, stripeCalls, tampered, TERMS_VERSION, userId, WEBHOOK_SECRET, contractTest, ok, row } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { handleStripeWebhook } from '../stripe-webhook/handler.ts'
 import { cryptoProvider, stripe } from '../_shared/stripe.ts'
+import { signReferralToken } from '../_shared/tokens.ts'
 
 const ORDER_ID = '11111111-1111-4111-8111-111111111111'
 const SESSION_ID = 'cs_test_sessao1'
@@ -175,10 +176,21 @@ contractTest('checkout: cria Customer, sessão do formulário embutido com os pa
   })
 })
 
-contractTest('checkout: a indicação (link do parceiro e campanhas) vai para o banco; falha nela não impede o pagamento', async () => {
+contractTest('checkout: a indicação vai para o banco, com o parceiro só pelo comprovante da visita; falha nela não impede o pagamento', async () => {
   const token = await sessionToken()
-  const referral = { partner: 'ana-souza', landed_at: '2026-10-24T12:00:00.000Z', path: '/loja', utm_source: 'instagram' }
-  for (const referralReply of [ok([{ outcome: 'ok' }]), { status: 500, body: {} }]) {
+  const landed = Date.now() - 3600_000
+  const visit = await signReferralToken('ana-souza', landed)
+  const referral = { partner: 'ana-souza', landed_at: '2026-10-24T12:00:00.000Z', path: '/loja', utm_source: 'instagram', token: visit }
+  const stored = { path: '/loja', utm_source: 'instagram', partner: 'ana-souza', landed_at: new Date(Math.floor(landed / 1000) * 1000).toISOString() }
+  // sem o comprovante (ou com um adulterado), o parceiro que o navegador disser não vale: ficam a chegada e a campanha
+  const unproven = { path: '/loja', utm_source: 'instagram', landed_at: '2026-10-24T12:00:00.000Z' }
+  for (const [body, expected, referralReply] of [
+    [referral, stored, ok([{ outcome: 'ok' }])],
+    [referral, stored, { status: 500, body: {} }],
+    [{ ...referral, token: undefined }, unproven, ok([{ outcome: 'ok' }])],
+    [{ ...referral, token: tampered(visit) }, unproven, ok([{ outcome: 'ok' }])],
+    [{ ...referral, partner: 'bia', token: await signReferralToken('ana-souza', Date.now() - 31 * 86_400_000) }, unproven, ok([{ outcome: 'ok' }])],
+  ] as const) {
     onRpc((fn) => {
       if (fn === 'create_order_from_cart') {
         return row({ outcome: 'ok', order_id: ORDER_ID, email: 'teste@example.com', stripe_customer_id: 'cus_teste', items: [{ product_code: 'P001', stripe_price_id: PRICE }], reused: false, detail: null })
@@ -187,9 +199,9 @@ contractTest('checkout: a indicação (link do parceiro e campanhas) vai para o 
       return ok('applied')
     })
     onStripe((call) => (call.method === 'POST' && call.path === '/v1/checkout/sessions' ? ok(session({ status: 'open', payment_status: 'unpaid' })) : ok({ id: 'cus_teste', object: 'customer' })))
-    const { result: res } = await captureErrors(() => handleRequest(request('/checkout', { method: 'POST', token, body: { ...checkoutBody, referral } })))
+    const { result: res } = await captureErrors(() => handleRequest(request('/checkout', { method: 'POST', token, body: { ...checkoutBody, referral: body } })))
     assertEquals(res.status, 200)
-    assertEquals(rpcCalls.find((c) => c.fn === 'set_order_referral')!.args, { p_user_id: userId(token), p_order_id: ORDER_ID, p_referral: referral })
+    assertEquals(rpcCalls.findLast((c) => c.fn === 'set_order_referral')!.args, { p_user_id: userId(token), p_order_id: ORDER_ID, p_referral: expected })
   }
   // sem indicação, o banco nem é chamado para isso
   onRpc((fn) => (fn === 'create_order_from_cart'

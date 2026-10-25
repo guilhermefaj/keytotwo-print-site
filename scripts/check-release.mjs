@@ -81,6 +81,8 @@ async function check(root, built) {
       else {
         const content = readFileSync(html, 'utf8')
         if (marker.test(content)) errors.push(`PENDENTE no HTML público: ${route}`)
+        // Sem o nonce, o CSP do nginx barraria o script e a página não funcionaria (scripts/html-priorities.mjs).
+        if (/<script(?![^>]*\snonce="__CSP_NONCE__")(?![^>]*type="application\/ld\+json")[\s>]/.test(content)) errors.push(`Script sem o nonce do CSP: ${route}`)
         if (examples.some(item => content.includes(item.quote) || content.includes(escapeHtml(item.quote)))) errors.push(`Relato de exemplo no HTML público: ${route}`)
       }
     }
@@ -124,6 +126,8 @@ function selfTest() {
       ['soon ainda com pendência', 'live', 'pending("fixture")', '<h1>Fixture</h1>', 1, 'soon', null, /PENDENTE em/],
       ['sale sem compra', 'live', '"Fixture"', '<h1>Fixture</h1>', 1, 'sale', null, /Produto à venda sem ação de compra/],
       ['disponibilidade desconhecida', 'live', '"Fixture"', '<h1>Fixture</h1>', 1, 'invalid', null, /Disponibilidade inválida/],
+      ['script com o nonce', 'live', '"Fixture"', '<script nonce="__CSP_NONCE__">1</script><script type="application/ld+json">{}</script>', 0],
+      ['script sem o nonce', 'live', '"Fixture"', '<script type="module">1</script>', 1, 'sale', 'cart', /Script sem o nonce do CSP/],
     ]
     for (const [name, stage, copy, html, status, availability = 'sale', purchaseAction = 'cart', diagnostic = /Release live bloqueada/] of cases) {
       const example = '{testimonials:[{quote:"FIXTURE do exemplo",author:"FIXTURE",rating:5,placeholder:true}]}'

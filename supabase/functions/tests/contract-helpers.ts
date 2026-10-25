@@ -56,12 +56,14 @@ const publicJwk = { ...(await crypto.subtle.exportKey('jwk', keys.publicKey)), k
 const encoder = new TextEncoder()
 const base64url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
 
+// Sessão com aal2 leva, por padrão, o código do app autenticador confirmado agora (amr), como a do Supabase.
 export async function sessionToken(claims: Record<string, unknown> = {}): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
+  const amr = claims.aal === 'aal2' && !('amr' in claims) ? { amr: [{ method: 'otp', timestamp: now - 60 }, { method: 'totp', timestamp: now }] } : {}
   const header = base64url(encoder.encode(JSON.stringify({ alg: 'ES256', typ: 'JWT', kid: KID })))
   const payload = base64url(encoder.encode(JSON.stringify({
     sub: crypto.randomUUID(), role: 'authenticated', aud: 'authenticated', email: 'teste@example.com',
-    iat: now, exp: now + 600, is_anonymous: false, ...claims,
+    iat: now, exp: now + 600, is_anonymous: false, ...amr, ...claims,
   })))
   const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, keys.privateKey, encoder.encode(`${header}.${payload}`))
   return `${header}.${payload}.${base64url(new Uint8Array(signature))}`

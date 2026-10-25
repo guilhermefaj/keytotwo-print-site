@@ -8,6 +8,7 @@ import { adminBlogImage, adminBlogImages, adminBlogPost, adminBlogPosts, adminCr
 import { addCartItem, getCart, mergeCart, quoteCart, removeCartItem } from './routes/cart.ts'
 import { catalog } from './routes/catalog.ts'
 import { checkout, checkoutTerms } from './routes/checkout.ts'
+import { cspReport } from './routes/csp.ts'
 import { deliveryLink, downloadUrl } from './routes/downloads.ts'
 import { freeDownload, freeGames } from './routes/free.ts'
 import { orderStatus } from './routes/order-status.ts'
@@ -60,6 +61,7 @@ const routes: Route[] = [
   route('/free-download', { POST: freeDownload }),
   route('/email/unsubscribe', { GET: unsubscribePage, POST: unsubscribe }),
   route('/referral/visit', { POST: referralVisit }),
+  route('/csp-report', { POST: cspReport }),
   route('/internal/discounts/tick', { POST: internalDiscountsTick }),
   route('/admin/metrics', { GET: adminMetrics }),
   route('/admin/blog/posts', { GET: adminBlogPosts, POST: adminCreateBlogPost }),

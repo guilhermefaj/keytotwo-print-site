@@ -8,6 +8,15 @@ set -eu
 main() {
   base=/opt/keytotwo-site
   ref=${1:-main}
+  # Só um nome de branch ou um commit (revisão de segurança, 2026-10-25): nada de refs/ (refs/pull/* traria código de um
+  # PR de fork), de opção (-x) nem de caractere de shell.
+  case $ref in
+    ''|-*|refs/*|*..*|*[!A-Za-z0-9._/-]*) echo "ref inválida: use um branch ou um commit" >&2; exit 1 ;;
+  esac
+  # Um deploy por vez (2026-10-25: este também): o teste, a produção, o vigia e o admin usam o mesmo checkout em repo/. Sem
+  # isso, um checkout do admin no meio do build da produção fazia o vigia reconstruir a produção num branch.
+  exec 9>"$base/.deploy.lock"
+  flock 9
   git -C "$base/repo" fetch --quiet --depth 1 origin "$ref"
   git -C "$base/repo" checkout --quiet --detach FETCH_HEAD
   sha=$(git -C "$base/repo" rev-parse --short HEAD)

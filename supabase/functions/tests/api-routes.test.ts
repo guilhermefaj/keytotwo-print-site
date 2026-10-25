@@ -305,13 +305,18 @@ contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, com
   }
   assertEquals(rpcCalls.length, 4)
 
-  // Sessão só com o primeiro fator (aal1), mesmo de admin: nem chega ao banco.
-  for (const claims of [{}, { aal: 'aal1' }]) {
+  // Sessão só com o primeiro fator (aal1), mesmo de admin, ou com o código do app confirmado há mais de 12 horas (ou sem
+  // ele no amr): nem chega ao banco.
+  const hours = (n: number) => Math.floor(Date.now() / 1000) - n * 3600
+  for (const claims of [{}, { aal: 'aal1' }, { aal: 'aal2', amr: [{ method: 'totp', timestamp: hours(12.1) }] }, { aal: 'aal2', amr: [{ method: 'otp', timestamp: hours(0) }] }, { aal: 'aal2', amr: 'totp' }]) {
     const single = await handleRequest(request('/admin/metrics?days=7', { token: await sessionToken(claims) }))
     assertEquals(single.status, 403)
     assertEquals((await single.json()).error.code, 'MFA_REQUIRED')
   }
   assertEquals(rpcCalls.length, 4)
+  const recent = await sessionToken({ aal: 'aal2', amr: [{ method: 'totp', timestamp: hours(11.9) }, { method: 'totp', timestamp: hours(30) }] })
+  assertEquals((await handleRequest(request('/admin/metrics?days=7', { token: recent }))).status, 200)
+  assertEquals(rpcCalls.length, 6)
 
   onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden', metrics: null, result: null }] }))
   const forbidden = await handleRequest(request('/admin/metrics?days=7', { token }))
@@ -330,4 +335,26 @@ contractTest('router: 404, 405 com Allow e CORS com PUT e DELETE', async () => {
   assertEquals(preflight.status, 204)
   assertEquals(preflight.headers.get('Access-Control-Allow-Methods'), 'GET, POST, PUT, DELETE, OPTIONS')
   assertExists(preflight.headers.get('Access-Control-Allow-Origin'))
+})
+
+contractTest('POST /csp-report (pública): só a diretiva, a origem barrada e o caminho vão para o log, nos dois formatos', async () => {
+  const logs: string[] = []
+  const original = console.log
+  console.log = (...args: unknown[]) => logs.push(args.join(' '))
+  try {
+    const legacy = await handleRequest(new Request('http://localhost/api/csp-report', {
+      method: 'POST', headers: { 'Content-Type': 'application/csp-report' },
+      body: JSON.stringify({ 'csp-report': { 'document-uri': 'https://keytotwo.com.br/email/preferencias?token=segredo', 'effective-directive': 'script-src-elem', 'blocked-uri': 'https://evil.example/x.js?chave=1' } }),
+    }))
+    const modern = await handleRequest(new Request('http://localhost/api/csp-report', {
+      method: 'POST', headers: { 'Content-Type': 'application/reports+json' },
+      body: JSON.stringify([{ type: 'csp-violation', body: { documentURL: 'https://keytotwo.com.br/pagamento', effectiveDirective: 'script-src-elem', blockedURL: 'inline', disposition: 'enforce' } }, { type: 'deprecation', body: {} }]),
+    }))
+    const junk = await handleRequest(new Request('http://localhost/api/csp-report', { method: 'POST', body: 'x'.repeat(20_000) }))
+    assertEquals([legacy.status, modern.status, junk.status], [204, 204, 204])
+  } finally {
+    console.log = original
+  }
+  assertEquals(logs, ['csp: barraria script-src-elem https://evil.example em /email/preferencias', 'csp: barrou script-src-elem inline em /pagamento'])
+  assertEquals(rpcCalls.length, 0)
 })

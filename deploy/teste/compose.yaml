@@ -19,8 +19,10 @@ services:
       traefik.http.routers.keytotwo-teste.rule: Host(`teste.keytotwo.com.br`)
       traefik.http.routers.keytotwo-teste.entrypoints: websecure
       traefik.http.routers.keytotwo-teste.tls.certresolver: letsencrypt
-      traefik.http.routers.keytotwo-teste.middlewares: keytotwo-teste-auth
+      traefik.http.routers.keytotwo-teste.middlewares: keytotwo-teste-hsts,keytotwo-teste-auth
       # Senha do ambiente de teste. O hash vem do .env entre aspas simples, para o compose não expandir o $.
       traefik.http.middlewares.keytotwo-teste-auth.basicauth.users: ${SITE_BASIC_AUTH_USERS:?defina SITE_BASIC_AUTH_USERS no .env}
       traefik.http.middlewares.keytotwo-teste-auth.basicauth.realm: KeyToTwo (teste)
+      # HSTS de um ano, como na produção e no admin (revisão de segurança, 2026-10-25).
+      traefik.http.middlewares.keytotwo-teste-hsts.headers.stsSeconds: "31536000"
       traefik.http.services.keytotwo-teste.loadbalancer.server.port: "8080"
