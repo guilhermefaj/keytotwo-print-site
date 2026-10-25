@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { ApiError } from '../lib/api'
 import { emailPreferencesMock, unsubscribeEmail } from '../lib/email-preferences'
 import { useShop } from '../lib/shop-context'
+import { useHydrated } from '../lib/use-hydrated'
 
 function PreferenceForm({ token, completed }: { token: string; completed: boolean }) {
   const [busy, setBusy] = useState(false)
@@ -53,14 +54,25 @@ function PreferenceForm({ token, completed }: { token: string; completed: boolea
   </section>
 }
 
+// O HTML pré-renderizado não sabe se o link trouxe o token: até o navegador ler a URL, um skeleton no lugar do texto e
+// do botão (2026-10-25; antes o texto sem token aparecia e trocava, e o React acusava a divergência).
+function PreferenceSkeleton() {
+  return <section className="account-card" aria-labelledby="email-choice-title">
+    <h2 id="email-choice-title">Seu e-mail, suas escolhas.</h2>
+    <div className="preference-skeleton" role="status"><span className="sr-only">Carregando…</span><span aria-hidden="true" /><span aria-hidden="true" /><span aria-hidden="true" /></div>
+    <Link className="inline-link" to="/conta">Minha conta</Link>
+  </section>
+}
+
 export default function EmailPreferences() {
   const [params] = useSearchParams()
   const { state } = useLocation()
+  const hydrated = useHydrated()
   const token = params.get('token') || ''
   const completed = state?.emailPreferenceResult === (emailPreferencesMock ? 'mock' : 'unsubscribed')
   return <main id="conteudo" tabIndex={-1} className="reading-page content-width">
     <h1>Preferências de e-mail</h1>
     {emailPreferencesMock && <p className="checkout-demo">Demonstração (mock): nenhuma preferência de e-mail será alterada.</p>}
-    <PreferenceForm key={token} token={token} completed={completed} />
+    {hydrated ? <PreferenceForm key={token} token={token} completed={completed} /> : <PreferenceSkeleton />}
   </main>
 }

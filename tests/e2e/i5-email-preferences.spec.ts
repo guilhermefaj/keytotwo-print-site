@@ -19,6 +19,20 @@ async function open(page: Page, apiMode = true) {
   test.skip(apiMode ? mock : !mock, apiMode ? 'Requires VITE_EMAIL_PREFERENCES_MODE=api build' : 'Only applies to preferences mock')
 }
 
+// O HTML pré-renderizado não sabe se o link trouxe o token (2026-10-25): sai com um skeleton, sem o texto de nenhum dos
+// casos, e o navegador troca pelo certo sem divergir (erro #418 do React).
+test('prerendered page shows a skeleton; with the token, hydration swaps in the button without a mismatch', async ({ page }) => {
+  const html = await readFile(new URL('../../build/client/email/preferencias/index.html', import.meta.url), 'utf8')
+  expect(html).toContain('preference-skeleton')
+  expect(html).not.toContain('Abra o link que veio no e-mail')
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await open(page)
+  await expect(page.getByRole('button', { name: 'Parar de receber novidades' })).toBeVisible()
+  await expect(page.locator('.preference-skeleton')).toHaveCount(0)
+  expect(errors).toEqual([])
+})
+
 test('public, noindex, no token: no mutation, private data or navigation entry', async ({ page }) => {
   let posts = 0
   page.on('request', request => { if (request.url().includes('/email/unsubscribe')) posts++ })
