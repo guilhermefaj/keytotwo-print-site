@@ -25,18 +25,21 @@ export default function Home() {
   const headlineRest = experience.headline[1].endsWith(experience.highlight) ? experience.headline[1].slice(0, -experience.highlight.length) : `${experience.headline[1]} `
   // O reveal anima o conteúdo de cada folha, nunca o fundo da seção.
   useScrollReveal(main, '.page-section > .content-width')
-  // Capa em comparação (temporário): a 2 por padrão; ?capa=N troca depois de abrir.
-  const capaId = useSyncExternalStore(() => () => {}, () => new URLSearchParams(window.location.search).get('capa'), () => null)
-  const capa = experience.capas.find(item => item.id === capaId) ?? experience.capas[1]
+  // Capa e texto em comparação (temporário): ?capa=N e ?texto=x trocam depois de abrir.
+  const search = useSyncExternalStore(() => () => {}, () => window.location.search, () => '')
+  const params = new URLSearchParams(search)
+  const capa = experience.capas.find(item => item.id === params.get('capa')) ?? experience.capas[0]
+  const texto = experience.textos.find(item => item.id === params.get('texto')) ?? experience.textos[0]
   const largest = capa.widths[capa.widths.length - 1]
   return <main id="conteudo" tabIndex={-1} ref={main}>
-    <div className="hero" data-tone={capa.tone} data-capa={capa.id}>
+    <div className="hero" data-tone="vinheta" data-capa={capa.id}>
       {/* A foto é o maior elemento da hero no celular: prioridade alta, sem carregamento tardio (docs/desempenho.md). */}
-      <div className="hero-media"><img key={capa.id} className="hero-photo" src={`/media/hero/${capa.photo}-${largest}.webp`} srcSet={capa.widths.map(width => `/media/hero/${capa.photo}-${width}.webp ${width}w`).join(', ')} sizes={capa.tone === 'escuro' ? '100vw' : '(max-width: 1023px) 100vw, 60vw'} width={largest} height={capa.height} alt={capa.alt} fetchPriority="high" decoding="async" /></div>
+      <div className="hero-media"><img key={capa.id} className="hero-photo" src={`/media/hero/${capa.photo}-${largest}.webp`} srcSet={capa.widths.map(width => `/media/hero/${capa.photo}-${width}.webp ${width}w`).join(', ')} sizes="100vw" width={largest} height={capa.height} alt={capa.alt} style={{ objectPosition: capa.position }} fetchPriority="high" decoding="async" /></div>
       <div className="hero-panel"><div className="hero-stack">
         <section className="hero-copy" aria-labelledby="hero-title">
           <h1 id="hero-title">{experience.headline[0]}{' '}<span>{headlineRest}<mark>{experience.highlight}</mark></span></h1>
-          <p className="hero-description">{experience.description}</p>
+          <p className="hero-description">{texto.description}</p>
+          {texto.facts && <ul className="hero-facts">{texto.facts.map(fact => <li key={fact}>{fact}</li>)}</ul>}
           <div className="hero-actions"><Link className="button button-primary hero-cta" to={experience.cta.href}>{experience.cta.label}</Link><a className="inline-link hero-secondary" href={experience.secondary.href}>{experience.secondary.label}</a></div>
         </section>
       </div></div>

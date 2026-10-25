@@ -12,13 +12,19 @@ export const experience = {
   secondary: { label: 'Como funciona', href: '/#como-funciona' },
   // Hero com foto (responsável, 2026-10-24: o site estava lúdico demais para a persona). As folhas das fotos não dão para
   // ler: nenhuma página do PDF vai para o site.
-  // Capas para o responsável comparar no teste (?capa=1 a 5; temporário): depois da escolha, fica só a escolhida.
+  // Capas para o responsável comparar no teste (?capa=1 a 5 e ?texto=a a c; temporário): a foto na hero inteira, com
+  // vinheta, e o texto em Papel por cima. Depois da escolha, fica só a escolhida.
   capas: [
-    { id: '1', name: 'Claro, olhando a mesma folha', tone: 'claro', photo: 'foto-mesma-folha', widths: [640, 1008], height: 567, alt: 'Casal à mesa com folhas impressas, lápis de cor e uma taça de vinho' },
-    { id: '2', name: 'Escuro, olhando a mesma folha', tone: 'escuro', photo: 'foto-mesma-folha', widths: [640, 1008], height: 567, alt: 'Casal à mesa com folhas impressas, lápis de cor e uma taça de vinho' },
-    { id: '3', name: 'Escuro, mãos e papel', tone: 'escuro', photo: 'foto-maos-e-papel', widths: [640, 1280, 1600], height: 900, alt: 'Casal à mesa com folhas e cartas impressas, lápis de cor, taças de vinho e uma vela' },
-    { id: '4', name: 'Escuro, noite a dois', tone: 'escuro', photo: 'foto-noite-a-dois', widths: [640, 930], height: 523, alt: 'Mesa à luz de vela com folhas impressas, lápis de cor e uma taça de vinho' },
-    { id: '5', name: 'Claro, mãos e papel', tone: 'claro', photo: 'foto-maos-e-papel', widths: [640, 1280, 1600], height: 900, alt: 'Casal à mesa com folhas e cartas impressas, lápis de cor, taças de vinho e uma vela' },
+    { id: '1', name: 'Uma carta entre vocês', photo: 'foto-carta-entre-voces', widths: [640, 1122], height: 1402, position: '50% 6%', alt: 'Casal sorrindo à mesa, trocando cartas de um jogo impresso' },
+    { id: '2', name: 'Mãos e papel', photo: 'foto-maos-e-papel', widths: [640, 1280, 1600], height: 900, position: '58% 40%', alt: 'Casal à mesa com folhas e cartas impressas, lápis de cor, taças de vinho e uma vela' },
+    { id: '3', name: 'Encontro à mesa', photo: 'foto-encontro-a-mesa', widths: [640, 969], height: 545, position: '55% 35%', alt: 'Casal à mesa com folhas impressas, lápis de cor e taças de vinho' },
+    { id: '4', name: 'Pequenos preparativos', photo: 'foto-preparativos', widths: [640, 1280, 1600], height: 900, position: '62% 50%', alt: 'Mesa ao sol com lápis de cor, uma vela e folhas impressas, e uma mão pegando um lápis' },
+    { id: '5', name: 'Olhando a mesma folha', photo: 'foto-mesma-folha', widths: [640, 1008], height: 567, position: '60% 40%', alt: 'Casal à mesa com folhas impressas, lápis de cor e uma taça de vinho' },
+  ],
+  textos: [
+    { id: 'a', description: 'Jogos para casais em PDF: vocês compram, imprimem em casa e jogam na mesma noite.' },
+    { id: 'b', description: 'Desenho, tabuleiro e mistério para jogar a dois. Baixem na hora, imprimam em papel comum e liberem a mesa.' },
+    { id: 'c', description: 'Jogos para casais imprimirem e jogarem juntos, longe das telas.', facts: ['Download na hora', 'Papel A4 comum', 'Para jogar a dois'] },
   ],
   steps: [
     { title: 'Escolham.', text: 'Um jogo ou o pacote vai para a sacola. Para pagar, é preciso entrar na conta.', icon: 'sacola' },
