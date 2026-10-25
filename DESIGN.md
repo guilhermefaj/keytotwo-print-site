@@ -161,7 +161,7 @@ components:
 
 **Creative North Star: "Folha de recorte"**
 
-O que o casal compra é papel. A hero é a janela para o mundo do Kito: céu, horizonte baixo, chão até as bordas e um único pinguim que brinca com quem chega. Logo abaixo do chão passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, cards de fio fino de Tinta, réguas contínuas e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
+O que o casal compra é papel. A hero mostra um casal à mesa com as folhas (desde 2026-10-24, responsável: o site estava lúdico demais para a persona): a foto na hero inteira, com uma vinheta preta, o texto em Papel por cima e o Kito, menor, andando no pé da hero. Dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, cards de fio fino de Tinta, réguas contínuas e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
 
 A hero vende a marca e uma forma de pensar (sair do automático, fazer algo juntos), não um produto específico. A folha abaixo vende o catálogo: hoje a Coleção KeyToTwo: Fundadores, amanhã outros pacotes e um freebie. Por isso o sistema é feito de cartas, fichas e folhas que aceitam qualquer quantidade de itens. O tom é adulto, divertido e direto; o acabamento é o de um objeto gráfico bem impresso, não o de um app.
 
@@ -169,8 +169,8 @@ Anti-referências: landing de template (kickers em caixa alta sobre títulos de 
 
 **Key Characteristics:**
 
-- Papel dominante abaixo da hero; o Céu existe só na primeira dobra.
-- Uma assinatura: linha de recorte tracejada com tesoura depois da hero e no rodapé.
+- Papel dominante abaixo da hero; a foto com vinheta existe só na primeira dobra.
+- Uma assinatura: linha de recorte tracejada com tesoura antes do rodapé (depois da hero até 2026-10-24).
 - A Turquesa J001 é só a linha de recorte; o texto é sempre Tinta ou Turquesa profundo.
 - Tipografia à esquerda, com um marca-texto por página, no máximo.
 - Controles planos, retos (6 px), sem sombra; só painéis que saem da folha (menu, gaveta) ganham sombra.
@@ -188,19 +188,21 @@ Uma folha branca com tinta verde-azulada escura, linhas de corte turquesa e um �
 
 ### Secondary
 
-- **Turquesa J001** (`{colors.line}`): **só linhas decorativas**: a linha de recorte com a tesoura depois da hero e no rodapé (The Two Cuts Rule; desde 2026-10-24, a única; cards, selos e réguas passaram ao fio de Tinta, e os e-mails são a exceção, em E-mails). Dá 2,41:1 sobre Papel, por isso nunca é texto, nem borda única de um controle (input, botão), nem ícone que precise ser lido.
+- **Turquesa J001** (`{colors.line}`): **só linhas decorativas**: a linha de recorte com a tesoura antes do rodapé (The One Cut Rule; desde 2026-10-24, a única; cards, selos e réguas passaram ao fio de Tinta, e os e-mails são a exceção, em E-mails). Dá 2,41:1 sobre Papel, por isso nunca é texto, nem borda única de um controle (input, botão), nem ícone que precise ser lido.
 - **Marca-texto** (`{colors.highlight}`): um traço atrás de uma palavra em Tinta (7,24:1), como caneta marca-texto. Aparece uma vez por página, na hero ("encontro."). Nunca é fundo de bloco, de seção ou de botão. Exceções: o selo "Preço de lançamento", o código do cupom na barrinha (texto em Marca-texto sobre Tinta) e o arco atrás das páginas dos gratuitos em "A próxima rodada sai da impressora", com topo em meia-volta e pé reto (responsável, 2026-10-21: o arco usa o amarelo da marca, não uma cor própria). As folhas passam dos lados e do pé dele.
 
 ### Neutral
 
 - **Papel** (`{colors.paper}`): fundo de toda a página abaixo da hero, de cards, inputs e do botão secundário.
-- **Céu** (`{colors.sky}`): fundo da hero e do cabeçalho enquanto ele está sobre a hero. Em nenhuma outra seção.
+- **Céu** (`{colors.sky}`): hover do botão claro da hero e selos claros do admin. Desde 2026-10-24 não é mais o fundo da hero nem do cabeçalho.
 - **Tinta suave** (`{colors.ink-soft}`): texto secundário (legendas, ajuda de campo, meta de pedidos). 7,50:1 sobre Papel.
 - **Aguada de tinta** (`{colors.ink-wash}`): superfície de hover e de desabilitado, Tinta a 6 %. Substitui qualquer cinza ou tom de céu em hover.
-- **Régua de tinta** (`{colors.ink-rule}`): divisórias sólidas de 1 px em listas, tabelas e rodapé, e o fio dos cards (Tinta a 18 %). Entre seções vale só a linha de recorte, nos dois lugares da The Two Cuts Rule.
+- **Régua de tinta** (`{colors.ink-rule}`): divisórias sólidas de 1 px em listas, tabelas e rodapé, e o fio dos cards (Tinta a 18 %). Entre seções vale só a linha de recorte, no lugar da The One Cut Rule.
 - **Erro** (`{colors.error}`): mensagens de erro e borda de campo inválido. 7,30:1 sobre Papel.
 
-A paisagem da hero tem a própria paleta de cena (terra `#684839`, grama `#77A85B` / `#ACD475` / `#3F7957`, mato distante `#CFE6D7`, sulco `#A16C4E`), confinada aos blocos `.hero-scene` e `.footer-ground` (o chão que fecha o rodapé). Esses valores não saem da cena.
+O chão do rodapé tem a própria paleta de cena (terra `#684839`, grama `#77A85B` / `#ACD475` / `#3F7957`, sulco `#A16C4E`), confinada ao bloco `.footer-ground`. Esses valores não saem dali. Desde 2026-10-24 a hero não tem mais paisagem (nuvens, mato e grama).
+
+**Preto na hero (2026-10-24, pedido do responsável).** A vinheta da foto da hero, a sombra do Kito sobre ela e a sombra do texto usam preto em transparência (`rgb(0 0 0 / …)`), fora da paleta. Só ali.
 
 ### Cor do jogo
 
@@ -216,7 +218,7 @@ Onde aparece: só no fundo da capa tipográfica (jogo ainda sem arte), misturado
 
 **The One Highlight Rule.** Há um marca-texto por página, atrás de uma palavra ou duas. Um segundo traço vira decoração.
 
-**The Sky Stays Up Rule.** O Céu termina no chão do Kito. Abaixo da linha de recorte a página é Papel; hover e estados usam aguada de Tinta, não Céu.
+**The Photo Stays Up Rule.** A foto com vinheta termina no pé da hero. Abaixo dela a página é Papel; hover e estados usam aguada de Tinta.
 
 ## Typography
 
@@ -251,9 +253,9 @@ Números (preço, contagem, data) usam `font-variant-numeric: tabular-nums`. O p
 
 ## Layout
 
-A página é uma pilha de folhas. Cada seção é uma folha de Papel com `padding-block: {spacing.section}`. A **linha de recorte** (2 px tracejada Turquesa J001, largura total, com a tesoura encostada na margem esquerda do contêiner) corta a página em **dois lugares**: depois da hero (entra a folha dos jogos) e antes do rodapé. Seções do mesmo assunto (prévia, como funciona, relatos; dúvidas, blog, fechamento) separam-se só por espaço. A tesoura nunca aparece dentro de uma seção.
+A página é uma pilha de folhas. Cada seção é uma folha de Papel com `padding-block: {spacing.section}`. A **linha de recorte** (2 px tracejada Turquesa J001, largura total, com a tesoura encostada na margem esquerda do contêiner) corta a página **num lugar só**: antes do rodapé (desde 2026-10-24, responsável; antes cortava também depois da hero). Seções do mesmo assunto (prévia, como funciona, relatos; dúvidas, blog, fechamento) separam-se só por espaço. A tesoura nunca aparece dentro de uma seção.
 
-Contêiner de conteúdo: `min(1140px, 100% − 80px)` no desktop, `100% − 48px` até 1050 px, `100% − 40px` até 767 px. O cabeçalho usa `min(1280px, 100% − 64px)`. Hero e cena ocupam a largura total; o chão vai até as bordas da janela.
+Contêiner de conteúdo: `min(1140px, 100% − 80px)` no desktop, `100% − 48px` até 1050 px, `100% − 40px` até 767 px. O cabeçalho usa `min(1280px, 100% − 64px)`. A hero ocupa a largura total: o texto fica no contêiner e a foto vai até a borda direita da janela.
 
 Grade: 12 colunas com divisões assimétricas. Título e apoio à esquerda em 7/12 (ou 1,2fr/0,8fr), card ou objeto à direita. A grade de cards de jogo tem até 3 colunas (mínimo 300 px); a vitrine do Início põe os jogos numa linha a partir de 1024 px e vira carrossel com snap abaixo disso.
 
@@ -265,7 +267,7 @@ Pontos de quebra principais: 360, 600, 768, 960, 1024 e 1050 px (e 1120, 70rem, 
 
 ### Named Rules
 
-**The Two Cuts Rule.** A tesoura corta a página em dois lugares: depois da hero (folha dos jogos) e antes do rodapé, em todas as páginas menos o pagamento (modo foco). Seções do mesmo assunto separam-se só por espaço; nunca há tesoura dentro de uma seção.
+**The One Cut Rule.** A tesoura corta a página num lugar só: antes do rodapé, em todas as páginas menos o pagamento (modo foco). Desde 2026-10-24 a hero passa para a folha de Papel sem corte. Seções do mesmo assunto separam-se só por espaço; nunca há tesoura dentro de uma seção.
 
 ## Elevation & Depth
 
@@ -289,7 +291,7 @@ Só o que **sai da folha** flutua: a gaveta do carrinho, o menu móvel e o menu 
 
 Cantos discretos, como papel cortado com cuidado: `{rounded.sm}` (6 px) em botões, inputs e selos; `{rounded.md}` (10 px) em todo card (jogo, pacote, conta, sacola, pagamento), miniaturas, avisos e popovers. `{rounded.lg}` (14 px) sobrou só em pontos do admin e no link da vitrine. Não existem cápsulas (999 px) em botões, links ou abas; círculos só no avatar com inicial, no número de etapa, na foto dos relatos (48 px) e no botão flutuante de compartilhar (52 px).
 
-A linguagem de forma é a da folha impressa: retângulos de fio fino, a linha de recorte com a tesoura de dois círculos e duas lâminas (depois da hero e no rodapé), e o traço de marca-texto que ocupa de 58 % a 92 % da altura da linha atrás da palavra.
+A linguagem de forma é a da folha impressa: retângulos de fio fino, a linha de recorte com a tesoura de dois círculos e duas lâminas (antes do rodapé), e o traço de marca-texto que ocupa de 58 % a 92 % da altura da linha atrás da palavra.
 
 A cena do Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelated`, nenhum raio.
 
@@ -311,7 +313,7 @@ Todos os ícones de interface vêm da Tabler (`@tabler/icons-react`, versão exa
 - **Primary:** Papel sobre Turquesa profundo; hover `{colors.deep-teal-hover}`; pressionado `{colors.deep-teal-active}` com `transform: scale(.98)` em 160 ms; desabilitado em aguada de Tinta com texto Tinta suave e `cursor: not-allowed`.
 - **Secondary:** Papel com borda de 1,5 px Tinta e texto Tinta; hover em aguada de Tinta; mesma altura e raio. É o botão de "Tentar novamente", "Atualizar status", "Sair da conta", cupom e voltar.
 - **Link de recorte** (`.inline-link` e os links das páginas legais): Turquesa profundo 600 com sublinhado **pontilhado** de 1 px (`text-underline-offset: 5px`; até 2026-10-24, tracejado de 1,5 px, que o responsável achou lúdico). Todo link de texto usa este desenho, inclusive "Ver detalhes" nos cards. No hover e no foco o pontilhado fica e um traço de marca-texto passa por trás do corpo das letras (23–81 % de cada linha, abaixo do pontilhado), da esquerda para a direita em 240 ms; com movimento reduzido, aparece sem transição. O traço é um SVG na cor Marca-texto, com pontas em bisel e mais carregado nas pontas (82 % no meio), e o texto escurece para Turquesa ativo (`{colors.deep-teal-active}`, 5,5:1 sobre o traço; o Turquesa profundo ficaria em 3,8:1). O link tem só a largura do texto: "Ver detalhes" ganha o alvo de 44 px pelo padding, nunca por flex com altura mínima, para o traço acompanhar a palavra e a linha (responsável, 2026-10-19). Usado para "Ver detalhes", "Remover", "Precisa de ajuda?" e "Guia de impressão" (responsável, 2026-10-18).
-- **Focus:** `outline: 3px solid {colors.ink}; outline-offset: 3px` em todo controle, em qualquer fundo (sobre a hero o Céu mantém 11,5:1).
+- **Focus:** `outline: 3px solid {colors.ink}; outline-offset: 3px` em todo controle, em qualquer fundo (na hero, sobre a foto com vinheta, o contorno é Papel).
 - **Rótulos:** um nome por ação em todo o site: "Ver os jogos" leva à Loja; "Adicionar à sacola" compra; "Ver detalhes" abre a página do produto; "Finalizar compra" paga.
 
 ### Tags (etiqueta e selo)
@@ -409,7 +411,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 
 ### Navigation
 
-- **Cabeçalho:** Céu sobre a hero, Papel nas demais páginas e quando rolado (Papel a 94 % com desfoque de 12 px e a sombra de cabeçalho). Logo à esquerda (146 px; 125 px no celular), links ao centro, ações à direita. Links em Body 15 px Tinta, padding `10px 12px`, alvo de 44 px. **Toques de pixel (2026-10-16), só CSS:** no hover o texto vai a Turquesa profundo e, sob ele, uma barra de blocos de pixel (4 px de altura, blocos de 2 pixels com 1 de vão, só blocos inteiros) se desenha em 4 passos, em Turquesa J001 (linha decorativa); o link ativo fica com a barra cheia em Turquesa profundo e Label 600. O logo dá um pulinho de 3 px em passos e acende uma estrela de 4 pontas em grade 7×7, como as das capas. A sacola pula do mesmo jeito; a contagem é um selo com cantos em degrau. O CTA ganha cantos em degrau no hover (o fundo fica num `::before`, para o contorno de foco não ser recortado). Com movimento reduzido nada anima; só cor e barra mudam. Nada disso vale para o menu da conta nem para o menu móvel. "Portal" tem o mesmo peso dos outros links. O CTA compacto é o botão primário de 44 px.
+- **Cabeçalho:** Papel em todas as páginas; no topo da Início, sem sombra, separado da foto da hero; rolado, Papel a 94 % com desfoque de 12 px e a sombra de cabeçalho. Logotipo à esquerda: o nome "KeyToTwo" em Bricolage Grotesque 700, a fonte dos títulos (`.wordmark`, em px como um logo, sem crescer com o texto: 26 px; 24 px no celular, 21 px na tela estreita; 32 px no rodapé, 28 px no celular), desde 2026-10-24 no lugar do desenho (responsável: muito infantil); `public/media/brand/keytotwo-wordmark.png` é a mesma marca para o JSON-LD, links ao centro, ações à direita. Links em Body 15 px Tinta, padding `10px 12px`, alvo de 44 px. **Toques de pixel (2026-10-16), só CSS:** no hover o texto vai a Turquesa profundo e, sob ele, uma barra de blocos de pixel (4 px de altura, blocos de 2 pixels com 1 de vão, só blocos inteiros) se desenha em 4 passos, em Turquesa J001 (linha decorativa); o link ativo fica com a barra cheia em Turquesa profundo e Label 600. O logo dá um pulinho de 3 px em passos e acende uma estrela de 4 pontas em grade 7×7, como as das capas. A sacola pula do mesmo jeito; a contagem é um selo com cantos em degrau. O CTA ganha cantos em degrau no hover (o fundo fica num `::before`, para o contorno de foco não ser recortado). Com movimento reduzido nada anima; só cor e barra mudam. Nada disso vale para o menu da conta nem para o menu móvel. "Portal" tem o mesmo peso dos outros links. O CTA compacto é o botão primário de 44 px.
 - **Portal** (`/meus-jogos`, `/pedidos`, `/conta`; antes "Minha área", renomeado em 2026-10-21): no desktop o cabeçalho fica com logo, Portal e a conta, porque as abas já levam a Meus jogos, Pedidos e Minha conta; o menu móvel mantém os três links. Sem CTA comercial nem carrinho. A saudação traz o Kito acenando ao lado do nome.
 - **Navegação pública:** Início, Loja, Gratuitos e Blog (somente quando há posts no stage do build). Loja fica ativa em `/loja` e seus detalhes, sem scroll-spy. À direita ficam Portal e a conta para quem entrou, ou só Entrar para quem não entrou, e a sacola, com rótulo acessível "Sacola, N itens". A Ajuda saiu do cabeçalho do desktop (responsável, 2026-10-21) e fica no rodapé e no menu móvel. Não há botão "Ver os jogos" no cabeçalho nem no menu móvel (decisão do responsável, 2026-10-20): a Loja já está na navegação. O menu móvel mantém a mesma ordem. No rodapé, Explorar oferece Início, Loja, Como funciona (`/#como-funciona`) e Gratuitos, além de Blog quando houver posts; não há link para a antiga oferta. Sob a frase da marca ficam os links do Instagram e do TikTok (@keytotwo, ícone + nome da rede, abrem em nova aba).
 - **Modo foco** (`/pagamento`): logo, "Compra segura" com cadeado e "Voltar à sacola" (rota `/carrinho`). O rodapé encolhe para a linha legal (©, Termos, Privacidade, Ajuda).
@@ -418,7 +420,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - **Abre e fecha** (`Summary`, `<details>`): o marcador do navegador some; o chevron Tabler (`IconChevronDown`, 20 px, Turquesa profundo) gira 180° em 240 ms quando abre. No FAQ o chevron vai à direita da linha; nos detalhes curtos (sacola, pedidos) ele vem logo depois do texto.
 - **Menu móvel (Sheet):** painel de Papel de até 480 px com a sombra de painel; links em Headline reduzida (Bricolage 700, 28 px) separados por régua de Tinta; entrada de 240 ms com 40 ms de escalonamento e 8 px de deslocamento; Escape fecha e devolve o foco.
 - **Admin** (admin.keytotwo.com.br, `admin/`, 2026-10-23; antes era o `/painel` da loja, que agora redireciona): só para admin (`app_metadata.admin`), pelo link "Painel" no menu da conta e no menu móvel da loja. App à parte, com os mesmos tokens (`src/tokens.css`) e sem cor nova.
-  - **Portão:** folha de Papel com Borda de card sobre Céu, logo e selo "Admin". Entrar com Google (botão secundário com o G) ou código por e-mail (não cria conta). Depois, o segundo fator: na primeira vez, o QR code do app autenticador (com a chave para digitar); nas sessões seguintes, só o código de 6 números. Quem não é admin vê a recusa com o link para a loja.
+  - **Portão:** folha de Papel com Borda de card sobre Céu, o logotipo em texto e selo "Admin". Entrar com Google (botão secundário com o G) ou código por e-mail (não cria conta). Depois, o segundo fator: na primeira vez, o QR code do app autenticador (com a chave para digitar); nas sessões seguintes, só o código de 6 números. Quem não é admin vê a recusa com o link para a loja.
   - **Estrutura:** barra lateral sóbria de 240 px em Papel com uma divisória (nome "KeyToTwo" em texto com "Admin" ao lado, seções, e-mail, "Ver a loja" e Sair); no celular vira faixa no topo, com as seções numa linha que rola de lado. Itens em Tinta suave; o ativo num lavado de Tinta, em 600, com o ícone em Turquesa profundo. Sem logo ilustrado, selo tracejado ou contorno na barra. Ordem (revisão de usabilidade, 2026-10-24): Métricas e Atenção (o número de alertas abertos num selo de Erro sobre Papel à direita do item), as operações da loja (Pedidos e reembolsos, Catálogo, Usuários) e o Blog por último; o grupo "Em breve" saiu na Fase 3. No celular, a seção aberta rola para dentro da faixa. Avisos, formulários de ação e confirmações têm uma borda só, o fio (o de perigo, em Erro), sem barra lateral colorida; as ações de uma seção ficam numa linha. Favicon próprio: um K branco num quadrado de Tinta (`admin/public/favicon.svg`), para a aba não se confundir com a da loja (o Kito).
   - **Seletor de opções** (`.periods`: períodos, filtros, abas Escrever/Prévia): borda de régua sobre Papel; o ativo num lavado de Tinta, sem contorno Turquesa.
   - **Métricas:** 7 ou 30 dias (botões com `aria-pressed`): cartões de Borda de card com o número em Bricolage, receita por dia em barras Turquesa J001 (dia a dia numa tabela em `<details>`), funil em barras Turquesa profundo sobre aguada de Tinta.
@@ -437,7 +439,8 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 
 ### Kito (uso do personagem)
 
-- **Hero (2026-10-18):** o único lugar onde o Kito se move, e ele interage com quem chega. Pixel art real em 256 px (`art-source/kito-pixel/`), servida num atlas WebP sem perda gerado por `scripts/prepare-kito-pixel.mjs` (posições em `src/kito-sprites.ts`, gerado; não editar à mão). Só os quadros virados para a direita entram; a esquerda é espelho no CSS. Tamanho: 192 px no desktop (×0,75) e 128 px no celular (×0,5, 1:1 em tela 2×); vizinho mais próximo quando a tela tem pixels de sobra, redução filtrada abaixo disso.
+- **Hero com foto (2026-10-24, responsável, a partir de uma referência dele):** a hero tem a altura da tela, entre 620 e 900 px (`clamp(620px, 100svh − 37px, 900px)`; 37 px é a barrinha do cupom). A foto (`foto-mesma-folha`, 640 e 1008 px em WebP, `object-fit: cover`) ocupa a hero inteira, abaixo do cabeçalho branco. Por cima, uma vinheta preta: uma elipse que escurece as bordas até 70 % e o lado do texto, de 70 % na borda esquerda a 56 % no fim da coluna (até 620 px, no contêiner), sumindo 360 px depois dela. O texto fica no meio da altura que sobra acima do Kito, em Papel com uma sombra preta leve; "encontro." fica em Marca-texto (cor do texto, sem o traço; 7+:1 sobre a vinheta). O botão "Ver os jogos" é Papel com texto em Tinta (hover em Céu) e "Como funciona" é Papel sublinhado (hover em Marca-texto). Até 1023 px o texto fica no meio da foto, e a vinheta escurece mais de cima para baixo (34 % a 56 %). A foto tem prioridade alta (é o maior elemento) e as folhas nela não dão para ler: nenhuma página do PDF vai para o site. O título da hero vai até 56 px no desktop (`clamp(2.625rem, 1rem + 2.6vw, 3.5rem)`), em duas linhas. Foram comparadas com o responsável capas claras, escuras, outras fotos e vinhetas em Tinta e em preto, fracas e fortes; ficou a preta média.
+- **Hero (2026-10-18):** o único lugar onde o Kito se move, e ele interage com quem chega. Desde 2026-10-24 anda no pé da hero, por cima da foto, sem chão desenhado: a sombra em degraus, preta a 50 %, o ancora. Pixel art real em 256 px (`art-source/kito-pixel/`), servida num atlas WebP sem perda gerado por `scripts/prepare-kito-pixel.mjs` (posições em `src/kito-sprites.ts`, gerado; não editar à mão). Só os quadros virados para a direita entram; a esquerda é espelho no CSS. Tamanho: 128 px no desktop (×0,5, 1:1 em tela 2×) e 96 px no celular (desde 2026-10-24; antes 192 e 128); vizinho mais próximo quando a tela tem pixels de sobra, redução filtrada abaixo disso.
   - **Mouse:** o Kito persegue o cursor pelo chão. Caminha perto, corre a meia distância e dispara de longe; a cadência dos pés acompanha a velocidade. Vira de frente para trocar de lado, às vezes tropeça ao virar em sprint. Ao alcançar, pula ou acena; com o cursor em cima, acena enquanto o cursor estiver ali; clicado, saltita segurando o coração; com o cursor parado, cochila em pé, respirando, e acorda num susto quando o cursor se mexe. Cursor além da borda: empurra a borda.
   - **Botão "Ver os jogos":** com o cursor ou o foco do teclado no botão, o Kito corre até embaixo dele e aponta, com brilhos, enquanto o cursor estiver lá. No piloto automático ele também vai até o botão e aponta por um instante.
   - **Plataformas:** o botão e a palavra destacada ("encontro.") são plataformas. Solto em cima deles (ou com os pés um pouco abaixo da borda, sem arremesso), o Kito fica ali até alguém carregá-lo de volta: anda só em cima da plataforma e, no piloto automático, só faz ações paradas. Não há animação de descida (decisão do responsável em 2026-10-18).
@@ -464,7 +467,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - **Erro:** uma única mensagem em Body com `role="alert"`, em Tinta (não em cor de erro quando não há culpa da pessoa), seguida de **um** botão secundário "Tentar novamente". Sem título em Display, sem segunda mensagem genérica. Falha de pagamento e 404 usam o Kito tonto.
 - **Desabilitado:** aguada de Tinta + Tinta suave; sempre com a razão em Caption ao lado quando não for óbvia.
 - **Foco:** contorno de 3 px Tinta com offset em tudo que recebe foco, inclusive cartas com `tabindex`, abas e a trilha do carrossel.
-- **Movimento reduzido:** nenhuma entrada, nenhum deslocamento, carrossel instantâneo, Kito da hero parado de frente e nuvens paradas.
+- **Movimento reduzido:** nenhuma entrada, nenhum deslocamento, carrossel instantâneo e o Kito da hero parado de frente.
 
 ### Movimento (tokens)
 
@@ -484,7 +487,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 
 ### Do:
 
-- **Do** usar a linha de recorte e a tesoura só depois da hero e antes do rodapé.
+- **Do** usar a linha de recorte e a tesoura só antes do rodapé.
 - **Do** alinhar títulos e apoio à esquerda; usar o lado direito para ficha, preço ou objeto.
 - **Do** usar a capa tipográfica (nome do jogo sobre a carta) para qualquer jogo sem capa oficial.
 - **Do** manter botões retos (6 px), sem sombra, sem seta, com um nome por ação.
@@ -497,7 +500,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 
 - **Don't** usar rótulo, kicker ou caixa alta com tracking acima de um título de seção ou de página (o jeito de jogar nos cards é a única caixa alta).
 - **Don't** usar Turquesa J001 em texto, ícone informativo ou borda única de controle.
-- **Don't** usar Céu ou Marca-texto fora da hero (exceções: o arco dos gratuitos, o selo "Preço de lançamento" e o código do cupom), nem a paleta da paisagem fora da hero e do chão do rodapé (o marca-texto só atrás de uma palavra).
+- **Don't** usar Marca-texto fora da hero (exceções: o arco dos gratuitos, o selo "Preço de lançamento" e o código do cupom) nem preto fora da vinheta da hero, nem a paleta da paisagem fora do chão do rodapé (o marca-texto só atrás de uma palavra).
 - **Don't** escrever texto na cor do jogo nem marcar um jogo do pacote como "Em breve".
 - **Don't** usar cápsula (999 px), sombra dura (`0 3px 0`), borda lateral colorida ou card com borda mais sombra.
 - **Don't** colocar o Kito como ícone ou em erro com expressão triste. A exceção é a arte oficial das capas.

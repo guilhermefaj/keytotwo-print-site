@@ -96,7 +96,7 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
   return <>
     <header className="site-header-shell" data-home={home} data-scrolled={scroll.scrolled || !home} data-hidden={scroll.hidden && !open && !cartOpen && !accountOpen} data-focus={focusMode} data-private={privateArea}>
       <div className="site-header">
-        <Link className="brand" to="/" aria-label="KeyToTwo — início"><img src="/media/hero/keytotwo-logo.webp" alt="KeyToTwo" width="420" height="97" fetchPriority="low" /></Link>
+        <Link className="brand" to="/" aria-label="KeyToTwo — início"><span className="wordmark">KeyToTwo</span></Link>
         {focusMode ? <><span className="checkout-secure"><Icon component={IconLock} size={16} />Compra segura</span><Link className="text-button checkout-back" to="/carrinho">Voltar à sacola</Link></> : <>
           {!privateArea && <nav className="desktop-nav" aria-label="Navegação principal">{visibleNavigation.map(item => <Link className="nav-link" aria-current={current(item.href)} key={item.href} to={item.href}>{item.label}</Link>)}</nav>}
           <div className="desktop-action">

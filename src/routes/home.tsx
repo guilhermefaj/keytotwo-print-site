@@ -25,13 +25,19 @@ export default function Home() {
   const headlineRest = experience.headline[1].endsWith(experience.highlight) ? experience.headline[1].slice(0, -experience.highlight.length) : `${experience.headline[1]} `
   // O reveal anima o conteúdo de cada folha, nunca o fundo da seção.
   useScrollReveal(main, '.page-section > .content-width')
+  const { photo } = experience
+  const largest = photo.widths[photo.widths.length - 1]
   return <main id="conteudo" tabIndex={-1} ref={main}>
     <div className="hero">
-      <section className="hero-copy" aria-labelledby="hero-title">
-        <h1 id="hero-title">{experience.headline[0]}{' '}<span>{headlineRest}<mark>{experience.highlight}</mark></span></h1>
-        <p className="hero-description">{experience.description}</p>
-        <div className="hero-actions"><Link className="button button-primary hero-cta" to={experience.cta.href}>{experience.cta.label}</Link><a className="inline-link hero-secondary" href={experience.secondary.href}>{experience.secondary.label}</a></div>
-      </section>
+      {/* A foto é o maior elemento da hero no celular: prioridade alta, sem carregamento tardio (docs/desempenho.md). */}
+      <div className="hero-media"><img className="hero-photo" src={`/media/hero/${photo.name}-${largest}.webp`} srcSet={photo.widths.map(width => `/media/hero/${photo.name}-${width}.webp ${width}w`).join(', ')} sizes="100vw" width={largest} height={photo.height} alt={photo.alt} style={{ objectPosition: photo.position }} fetchPriority="high" decoding="async" /></div>
+      <div className="hero-panel"><div className="hero-stack">
+        <section className="hero-copy" aria-labelledby="hero-title">
+          <h1 id="hero-title">{experience.headline[0]}{' '}<span>{headlineRest}<mark>{experience.highlight}</mark></span></h1>
+          <p className="hero-description">{experience.description}</p>
+          <div className="hero-actions"><Link className="button button-primary hero-cta" to={experience.cta.href}>{experience.cta.label}</Link><a className="inline-link hero-secondary" href={experience.secondary.href}>{experience.secondary.label}</a></div>
+        </section>
+      </div></div>
       <HeroScene obscured={menuOpen} />
     </div>
     {/* Início como landing (decisão 9): a oferta e a folha completa ficam só na Loja. */}

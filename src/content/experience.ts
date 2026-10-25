@@ -7,9 +7,15 @@ export const experience = {
   // Sem "Ver a prévia": nenhuma página do PDF vai para o site (responsável, 2026-10-16).
   headline: ['A rotina pode esperar.', 'Vocês têm um encontro.'],
   highlight: 'encontro.',
-  description: 'Jogos para imprimir, puxar uma cadeira e descobrir o quanto vocês se divertem juntos.',
+  // Texto de apoio escolhido pelo responsável em 2026-10-24 (opção a): o que é, como chega e quando se joga.
+  description: 'Jogos para casais em PDF: vocês compram, imprimem em casa e jogam na mesma noite.',
   cta: { label: 'Ver os jogos', href: '/loja' },
   secondary: { label: 'Como funciona', href: '/#como-funciona' },
+  // Hero com foto (responsável, 2026-10-24: o site estava lúdico demais para a persona). As folhas das fotos não dão para
+  // ler: nenhuma página do PDF vai para o site.
+  // A foto da hero (responsável, 2026-10-24): olhando a mesma folha, na hero inteira, com a vinheta preta. As folhas
+  // da foto não dão para ler: nenhuma página do PDF vai para o site.
+  photo: { name: 'foto-mesma-folha', widths: [640, 1008], height: 567, position: '60% 40%', alt: 'Casal à mesa com folhas impressas, lápis de cor e uma taça de vinho' },
   steps: [
     { title: 'Escolham.', text: 'Um jogo ou o pacote vai para a sacola. Para pagar, é preciso entrar na conta.', icon: 'sacola' },
     { title: 'Imprimam.', text: 'O PDF fica em Meus jogos e chega por e-mail. Papel A4 comum resolve.', icon: 'impressora' },

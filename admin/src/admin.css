@@ -38,7 +38,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .gate-card { width: min(100%, 460px); display: grid; gap: 16px; padding: 32px; border: var(--line-card); border-radius: var(--radius-lg); background: var(--color-paper); }
 .gate-card > .tag { justify-self: start; }
 .gate-card > p:not(.tag):not(.form-error) { color: var(--color-ink-soft); line-height: 1.6; }
-.gate-logo { width: 150px; height: auto; }
+.gate-logo { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.625rem; line-height: 1; letter-spacing: var(--tracking-title); }
 .gate-form { display: grid; gap: 12px; }
 .gate-form .text-button { justify-self: start; }
 .gate-actions { display: flex; flex-wrap: wrap; gap: 12px; }
