@@ -124,6 +124,12 @@ test('gratuitos sem sessão: passo a passo à vista, entrada que volta para a p�
   await page.goto('/gratuitos')
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Dois jogos de graça para começar.')
   await expect(page.getByRole('heading', { name: 'Como baixar', exact: true })).toBeVisible()
+  // O último passo do "Como baixar" é o Kito pedindo para seguir as redes (2026-10-24), com os links ali.
+  const steps = page.locator('.free-access ol > li')
+  await expect(steps).toHaveCount(4)
+  await expect(steps.last()).toContainText('Ah, e o último passo')
+  await expect(steps.last().getByRole('link', { name: 'Instagram (abre em nova aba)' })).toHaveAttribute('href', 'https://www.instagram.com/keytotwo/')
+  await expect(steps.last().getByRole('link', { name: 'TikTok (abre em nova aba)' })).toHaveAttribute('href', 'https://www.tiktok.com/@keytotwo')
   await expect(page.getByRole('link', { name: 'Criar conta ou entrar', exact: true })).toHaveAttribute('href', '/entrar?next=%2Fgratuitos')
   await expect(page.locator('.free-games [data-shop-game]')).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(0)

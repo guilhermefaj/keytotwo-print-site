@@ -14,6 +14,9 @@ export const gratuitos = {
     signIn: 'Criar conta ou entrar',
     unlock: 'Aceitar e liberar os jogos',
     unlocked: 'Os jogos estão liberados na sua conta. É só baixar.',
+    // O último passo, na voz do Kito (responsável, 2026-10-24): o convite das redes estava escondido no pé da página e
+    // quem baixava os jogos não via.
+    kito: 'Ah, e o último passo… Não esqueçam de me seguir nas redes e de me marcar nas próximas aventuras de vocês.',
   },
   community: {
     title: 'A KeyToTwo cresce com quem joga.',

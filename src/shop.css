@@ -170,6 +170,15 @@
 .free-access h2 { font-size: var(--text-title-lg); margin: 0 0 var(--space-md); }
 .free-access ol { list-style: decimal; margin: 0 0 var(--space-md); padding-left: var(--space-lg); }
 .free-access li + li { margin-top: var(--space-xs); }
+/* O último passo, com o Kito pequeno e os links das redes (2026-10-24): fica sempre à vista, antes e depois de liberar. */
+.free-access li.free-access-last { margin-top: var(--space-sm); }
+/* O Kito flutua à esquerda do texto: o número do passo fica na primeira linha, como nos outros. */
+.free-access-kito { display: flow-root; }
+.free-access-kito img { float: left; width: 48px; height: 48px; margin: -10px 12px 0 0; image-rendering: pixelated; }
+.free-access-kito > div { overflow: hidden; }
+.free-access-kito p { margin: 0; }
+.free-access-social { display: flex; flex-wrap: wrap; gap: 0 20px; }
+.free-access-social .inline-link { display: inline-flex; align-items: center; gap: 6px; }
 .free-access > .button, .free-access-action { margin-top: var(--space-md); }
 .free-access-done { margin: var(--space-md) 0 0; font-weight: 600; color: var(--color-deep-teal); }
 .free-games .file-meta { margin: 0 0 var(--space-sm); font-size: var(--text-caption); color: var(--color-ink-soft); }
