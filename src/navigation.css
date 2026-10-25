@@ -8,7 +8,8 @@
 .site-header-shell .site-header { width: min(var(--container-wide), calc(100% - 64px)); min-height: var(--header-height); margin: 0 auto; padding: 8px 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: nowrap; }
 .brand { display: inline-flex; flex-shrink: 0; padding: 4px 0; }
 .site-header .brand { min-height: 44px; align-items: center; }
-.site-header .brand img { width: 146px; height: auto; }
+/* Logotipo (responsável, 2026-10-24): o nome em Bricolage Grotesque 700, a fonte dos títulos, no lugar do desenho. */
+.wordmark { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1; letter-spacing: var(--tracking-title); color: var(--color-ink); white-space: nowrap; }
 .site-header .desktop-nav, .site-header .desktop-action { display: flex; align-items: center; flex-wrap: nowrap; gap: 8px; }
 .site-header .desktop-nav { margin-inline: auto; }
 .nav-link { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--color-ink); font-size: var(--text-small); line-height: 1.4; font-weight: 400; text-decoration: none; text-underline-offset: 6px; text-decoration-thickness: 2px; }
@@ -24,7 +25,7 @@
 /* Cabeçalho com toques de pixel (2026-10-16). Só CSS, sem imagem nova. Unidade de pixel: 3 px.
    - Link: barra de blocos de pixel que se desenha em 4 passos no hover (Turquesa J001, linha decorativa);
      o link ativo fica com a barra cheia em Turquesa profundo, que carrega o significado.
-   - Logo e sacola: pulinho em passos, como sprite; o logo acende uma estrela de pixel, como as das capas.
+   - Sacola: pulinho em passos, como sprite.
    - CTA: cantos em degrau no hover (fundo num ::before, para o contorno de foco não ser recortado).
    - Contagem da sacola: selo com cantos em degrau. */
 .site-header { --pixel: 3px; --bar: 4px; }
@@ -39,16 +40,6 @@
 }
 .site-header :is(.desktop-nav, .desktop-action) > .nav-link:hover::after { clip-path: inset(0); }
 .site-header :is(.desktop-nav, .desktop-action) > .nav-link[aria-current]::after { clip-path: inset(0); background: var(--color-deep-teal); }
-.site-header .brand { position: relative; }
-.site-header .brand::after {
-  /* Estrela de 4 pontas em grade 7×7 (pixel de 2 px), como as das capas: miolo em losango e braços longos. */
-  /* O ponto central fica dentro da caixa do logo (right: 0): os braços são sombra, que não cria rolagem. */
-  content: ''; position: absolute; top: -2px; right: 0; width: 2px; height: 2px;
-  background: var(--color-line); color: var(--color-line);
-  box-shadow: 0 -6px, 0 -4px, 0 -2px, 0 2px, 0 4px, 0 6px, -6px 0, -4px 0, -2px 0, 2px 0, 4px 0, 6px 0, -2px -2px, 2px -2px, -2px 2px, 2px 2px;
-  opacity: 0; transform: scale(.5);
-}
-.site-header .brand:hover::after, .site-header .brand:focus-visible::after { opacity: 1; transform: none; }
 .site-header .cart-count {
   border-radius: 0;
   clip-path: polygon(2px 0, calc(100% - 2px) 0, calc(100% - 2px) 2px, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 2px calc(100% - 2px), 0 calc(100% - 2px), 0 2px, 2px 2px);
@@ -56,11 +47,9 @@
 .site-header .cart-trigger:hover { background: transparent; color: var(--color-deep-teal); }
 @media (prefers-reduced-motion: no-preference) {
   .site-header :is(.desktop-nav, .desktop-action) > .nav-link:hover::after { transition: clip-path 200ms steps(4, end); }
-  .site-header .brand:hover img, .site-header .cart-trigger:hover svg { animation: pixel-hop 300ms steps(3, end) 1; }
-  .site-header .brand:hover::after { animation: pixel-twinkle 600ms steps(2, end) 1; }
+  .site-header .cart-trigger:hover svg { animation: pixel-hop 300ms steps(3, end) 1; }
 }
 @keyframes pixel-hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(calc(-1 * var(--pixel))); } }
-@keyframes pixel-twinkle { 0% { opacity: 0; transform: scale(.5); } 50% { opacity: 1; transform: scale(1.5); } 100% { opacity: 1; transform: none; } }
 .site-header-shell[data-private="true"] .desktop-action { gap: 12px; }
 .site-header-shell[data-private="true"] .sheet-nav { margin-top: 24px; }
 .site-header .menu-trigger { gap: 6px; font-size: var(--text-label); font-weight: 600; }
@@ -155,7 +144,7 @@
 @media (max-width: 70rem) {
   :root { --header-height: 3.5rem; }
   .site-header-shell .site-header { width: calc(100% - 32px); gap: 12px; padding: 4px 0; }
-  .site-header .brand img { width: 125px; }
+  .site-header .wordmark { font-size: 24px; }
   .site-header .desktop-nav, .site-header .desktop-action { display: none; }
   .site-header .mobile-navigation { display: flex; align-items: center; flex-wrap: nowrap; gap: 6px; }
 }
@@ -173,7 +162,7 @@
 }
 @media (max-width: 360px) {
   .site-header-shell .site-header { gap: 4px; }
-  .site-header .brand img { width: 104px; }
+  .site-header .wordmark { font-size: 21px; }
   .site-header .mobile-navigation { gap: 0; }
   .site-header .menu-trigger { padding-inline: 6px; }
 }

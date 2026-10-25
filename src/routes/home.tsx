@@ -7,7 +7,7 @@ import { ProductExperience, Testimonials } from '../components/sections/Experien
 import { ShopShowcase } from '../components/sections/ShopShowcase'
 import { FreebieSection } from '../components/shop/FreebieSection'
 import { experience } from '../content/experience'
-import { useRef, useSyncExternalStore } from 'react'
+import { useRef } from 'react'
 import { useScrollReveal } from '../lib/use-scroll-reveal'
 import { readBlogPosts, summarizeBlogPost } from '../lib/blog.server'
 import { FromBlog } from '../components/sections/FromBlog'
@@ -25,22 +25,16 @@ export default function Home() {
   const headlineRest = experience.headline[1].endsWith(experience.highlight) ? experience.headline[1].slice(0, -experience.highlight.length) : `${experience.headline[1]} `
   // O reveal anima o conteúdo de cada folha, nunca o fundo da seção.
   useScrollReveal(main, '.page-section > .content-width')
-  // Capa e texto em comparação (temporário): ?capa=N e ?texto=x trocam depois de abrir.
-  const search = useSyncExternalStore(() => () => {}, () => window.location.search, () => '')
-  const params = new URLSearchParams(search)
-  const capa = experience.capas.find(item => item.id === params.get('capa')) ?? experience.capas[0]
-  const texto = experience.textos.find(item => item.id === params.get('texto')) ?? experience.textos[0]
   const { photo } = experience
   const largest = photo.widths[photo.widths.length - 1]
   return <main id="conteudo" tabIndex={-1} ref={main}>
-    <div className="hero" data-tone="vinheta" data-vinheta={capa.vinheta}>
+    <div className="hero">
       {/* A foto é o maior elemento da hero no celular: prioridade alta, sem carregamento tardio (docs/desempenho.md). */}
       <div className="hero-media"><img className="hero-photo" src={`/media/hero/${photo.name}-${largest}.webp`} srcSet={photo.widths.map(width => `/media/hero/${photo.name}-${width}.webp ${width}w`).join(', ')} sizes="100vw" width={largest} height={photo.height} alt={photo.alt} style={{ objectPosition: photo.position }} fetchPriority="high" decoding="async" /></div>
       <div className="hero-panel"><div className="hero-stack">
         <section className="hero-copy" aria-labelledby="hero-title">
           <h1 id="hero-title">{experience.headline[0]}{' '}<span>{headlineRest}<mark>{experience.highlight}</mark></span></h1>
-          <p className="hero-description">{texto.description}</p>
-          {texto.facts && <ul className="hero-facts">{texto.facts.map(fact => <li key={fact}>{fact}</li>)}</ul>}
+          <p className="hero-description">{experience.description}</p>
           <div className="hero-actions"><Link className="button button-primary hero-cta" to={experience.cta.href}>{experience.cta.label}</Link><a className="inline-link hero-secondary" href={experience.secondary.href}>{experience.secondary.label}</a></div>
         </section>
       </div></div>

@@ -264,7 +264,8 @@ test('home: matriz responsiva, texto 200%, cena preservada e capturas', async ({
     expect(await page.locator('.kito-sprite').evaluate(el => getComputedStyle(el).backgroundImage)).toContain('kito-pixel-pose.webp')
     for (const zoom of [100, 200]) {
       if (zoom === 200) await page.evaluate(() => {
-        const sizes = [...document.querySelectorAll<HTMLElement>('body *')].map(el => [el, parseFloat(getComputedStyle(el).fontSize)] as const)
+        // O logotipo em texto (2026-10-24) tem tamanho fixo, como tinha a imagem do logo: fica fora da ampliação.
+        const sizes = [...document.querySelectorAll<HTMLElement>('body *')].filter(el => !el.closest('.wordmark')).map(el => [el, parseFloat(getComputedStyle(el).fontSize)] as const)
         for (const [el, size] of sizes) el.style.fontSize = `${size * 2}px`
       })
       const overflow = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('body *')].filter(el => {

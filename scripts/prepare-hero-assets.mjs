@@ -2,7 +2,7 @@ import sharp from 'sharp'
 import { mkdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 
-// Logo, nuvens e folhagem da hero e do rodapé, a partir dos originais em art-source/hero/ (o Kito sai de
+// Folhagem do chão do rodapé, a partir do original em art-source/hero/ (o Kito sai de
 // prepare-kito-pixel.mjs). Nenhum original é sobrescrito.
 const root = path.resolve(import.meta.dirname, '..')
 const sourceDir = path.join(root, 'art-source/hero')
@@ -24,10 +24,6 @@ async function alphaBounds(buffer) {
 }
 
 const jobs = [
-  { source: 'keytotwo_logo.png', output: 'keytotwo-logo.webp', width: 420 },
-  { source: 'nuvens_2.png', output: 'cloud-a.webp', crop: { left: 0, top: 0, width: 850, height: 400 }, width: 280 },
-  { source: 'nuvens_2.png', output: 'cloud-b.webp', crop: { left: 850, top: 270, width: 540, height: 235 }, width: 208 },
-  { source: 'paisagem_direita.png', output: 'foliage-right.webp', width: 720 },
   { source: 'paisagem_direita.png', output: 'foliage-left.webp', crop: { left: 0, top: 590, width: 900, height: 324 }, width: 360, flop: true },
 ]
 const outputs = []

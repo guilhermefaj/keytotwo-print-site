@@ -7,28 +7,15 @@ export const experience = {
   // Sem "Ver a prévia": nenhuma página do PDF vai para o site (responsável, 2026-10-16).
   headline: ['A rotina pode esperar.', 'Vocês têm um encontro.'],
   highlight: 'encontro.',
-  description: 'Jogos para imprimir, puxar uma cadeira e descobrir o quanto vocês se divertem juntos.',
+  // Texto de apoio escolhido pelo responsável em 2026-10-24 (opção a): o que é, como chega e quando se joga.
+  description: 'Jogos para casais em PDF: vocês compram, imprimem em casa e jogam na mesma noite.',
   cta: { label: 'Ver os jogos', href: '/loja' },
   secondary: { label: 'Como funciona', href: '/#como-funciona' },
   // Hero com foto (responsável, 2026-10-24: o site estava lúdico demais para a persona). As folhas das fotos não dão para
   // ler: nenhuma página do PDF vai para o site.
-  // A foto da hero (responsável, 2026-10-24): olhando a mesma folha, na hero inteira, com vinheta.
+  // A foto da hero (responsável, 2026-10-24): olhando a mesma folha, na hero inteira, com a vinheta preta. As folhas
+  // da foto não dão para ler: nenhuma página do PDF vai para o site.
   photo: { name: 'foto-mesma-folha', widths: [640, 1008], height: 567, position: '60% 40%', alt: 'Casal à mesa com folhas impressas, lápis de cor e uma taça de vinho' },
-  // Vinhetas e textos para o responsável comparar no teste (?capa=1 a 6 e ?texto=a a c; temporário): depois da
-  // escolha, fica só a escolhida. A preta é pedido do responsável, fora da paleta.
-  capas: [
-    { id: '1', name: 'Tinta, média', vinheta: 'tinta-media' },
-    { id: '2', name: 'Tinta, forte', vinheta: 'tinta-forte' },
-    { id: '3', name: 'Tinta, fraca', vinheta: 'tinta-fraca' },
-    { id: '4', name: 'Preta, média', vinheta: 'preta-media' },
-    { id: '5', name: 'Preta, forte', vinheta: 'preta-forte' },
-    { id: '6', name: 'Preta, fraca', vinheta: 'preta-fraca' },
-  ],
-  textos: [
-    { id: 'a', description: 'Jogos para casais em PDF: vocês compram, imprimem em casa e jogam na mesma noite.' },
-    { id: 'b', description: 'Desenho, tabuleiro e mistério para jogar a dois. Baixem na hora, imprimam em papel comum e liberem a mesa.' },
-    { id: 'c', description: 'Jogos para casais imprimirem e jogarem juntos, longe das telas.', facts: ['Download na hora', 'Papel A4 comum', 'Para jogar a dois'] },
-  ],
   steps: [
     { title: 'Escolham.', text: 'Um jogo ou o pacote vai para a sacola. Para pagar, é preciso entrar na conta.', icon: 'sacola' },
     { title: 'Imprimam.', text: 'O PDF fica em Meus jogos e chega por e-mail. Papel A4 comum resolve.', icon: 'impressora' },

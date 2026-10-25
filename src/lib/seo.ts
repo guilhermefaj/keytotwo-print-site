@@ -44,7 +44,7 @@ export function shareImage(pathname: string) {
 
 const organization = () => ({
   '@type': 'Organization', '@id': `${siteConfig.origin}/#organizacao`, name: 'KeyToTwo', url: siteConfig.origin,
-  logo: new URL('/media/hero/keytotwo-logo.webp', siteConfig.origin).href, email: supportEmail, sameAs: [instagram.href, tiktok.href],
+  logo: new URL('/media/brand/keytotwo-wordmark.png', siteConfig.origin).href, email: supportEmail, sameAs: [instagram.href, tiktok.href],
 })
 
 // Página inicial: quem é a KeyToTwo e o site.
