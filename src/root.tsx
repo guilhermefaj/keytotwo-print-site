@@ -15,6 +15,7 @@ import { useAuth } from './lib/auth-context'
 import { api, ApiError } from './lib/api'
 import { captureReferral } from './lib/referral'
 import { authConfigured } from './lib/supabase'
+import NotFound from './routes/not-found'
 // Fase 4 (desempenho): o título da hero é o LCP e espera a Bricolage; o preload a busca junto com o CSS.
 // As URLs são os mesmos arquivos (com hash) que o CSS do @fontsource referencia.
 import bricolage700 from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-700-normal.woff2?url'
@@ -104,7 +105,8 @@ function InteractiveMarker() {
   return null
 }
 
-export default function Root() {
+// A moldura de toda página: cabeçalho, avisos e rodapé em volta do conteúdo (que recebe se o menu está aberto).
+function Shell({ children }: { children: (menuOpen: boolean) => ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
   return <AuthProvider><ShopProvider><InteractiveMarker /><ReferralCapture />
     <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
@@ -112,9 +114,13 @@ export default function Root() {
     <CookieNotice />
     <PromoBar />
     <SiteHeader onMenuOpenChange={setMenuOpen} />
-    <Outlet context={{ menuOpen }} />
+    {children(menuOpen)}
     <SiteFooter />
   </ShopProvider></AuthProvider>
+}
+
+export default function Root() {
+  return <Shell>{menuOpen => <Outlet context={{ menuOpen }} />}</Shell>
 }
 
 // Temporary shared I0 shell. Individual journeys/content arrive in later increments.
@@ -131,7 +137,12 @@ export function PendingPage({ title, children, error = false, retry = false }: {
   )
 }
 
+// Enquanto a rota do endereço não carregou. Na prática, só num endereço que não existe: o nginx entrega a página 404
+// pronta (error_page), mas a rota que o navegador acha ali (o coringa, um produto ou post que não existe) ainda não
+// está carregada. Hidratar a tela de carregamento por cima daquele HTML divergia (erro #418 do React, 2026-10-25); por
+// isso, se o HTML é a 404, desenha a mesma página até a rota assumir. O documento ainda não foi tocado pelo React aqui.
 export function HydrateFallback() {
+  if (typeof document !== 'undefined' && document.querySelector('main.not-found-page')) return <Shell>{() => <NotFound />}</Shell>
   return <PendingPage title="Carregando">Embaralhando as cartas…</PendingPage>
 }
 
