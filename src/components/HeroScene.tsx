@@ -55,7 +55,7 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
     let cancelled = false
     if (kito.current) kito.current.setRunning(true)
     else loadKito().then(startKito => {
-      const hero = region.current?.closest<HTMLElement>('.hero-stack')
+      const hero = region.current?.closest<HTMLElement>('.hero')
       if (cancelled || !hero || !layer.current || !sprite.current || !hitbox.current || !shadow.current) return
       kito.current = startKito({ hero, layer: layer.current, sprite: sprite.current, hitbox: hitbox.current, shadow: shadow.current })
       kito.current.setRunning(true)
@@ -68,9 +68,9 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
 
   return (
     <div ref={region} className="hero-scene-region" data-running={running} data-visible={visible} data-in-view={inView}>
-      {/* Desde 2026-10-24 sem paisagem: o Kito anda num fio fino embaixo do texto (DESIGN.md › Hero). */}
+      {/* Desde 2026-10-24 sem paisagem: o Kito anda no pé da hero, por cima da foto também (DESIGN.md › Hero). */}
       <div ref={stage} className="hero-scene" aria-hidden="true"><div className="ground" /></div>
-      {/* A camada do Kito cobre a coluna do texto: ele anda no fio, mas pode ser carregado por cima do texto. */}
+      {/* A camada do Kito cobre a hero inteira: ele anda no pé dela e pode ser carregado por cima do texto e da foto. */}
       <div ref={layer} className="kito-layer" aria-hidden="true">
         <div ref={shadow} className="kito-shadow" />
         <div ref={sprite} className="kito-sprite"><div ref={hitbox} className="kito-hitbox" /></div>

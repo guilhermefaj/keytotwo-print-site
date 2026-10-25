@@ -161,7 +161,7 @@ components:
 
 **Creative North Star: "Folha de recorte"**
 
-O que o casal compra é papel. A hero mostra um casal à mesa com as folhas (desde 2026-10-24, responsável: o site estava lúdico demais para a persona): o texto à esquerda, sobre o Céu, a foto à direita, e o Kito, menor, andando num fio fino embaixo do texto. Logo abaixo da hero passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, cards de fio fino de Tinta, réguas contínuas e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
+O que o casal compra é papel. A hero mostra um casal à mesa com as folhas (desde 2026-10-24, responsável: o site estava lúdico demais para a persona): o texto à esquerda, sobre o Céu, a foto à direita, e o Kito, menor, andando no pé da hero, por cima da foto também. Logo abaixo da hero a página é a própria folha impressa do jogo: Papel branco dominante, cards de fio fino de Tinta, réguas contínuas e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
 
 A hero vende a marca e uma forma de pensar (sair do automático, fazer algo juntos), não um produto específico. A folha abaixo vende o catálogo: hoje a Coleção KeyToTwo: Fundadores, amanhã outros pacotes e um freebie. Por isso o sistema é feito de cartas, fichas e folhas que aceitam qualquer quantidade de itens. O tom é adulto, divertido e direto; o acabamento é o de um objeto gráfico bem impresso, não o de um app.
 
@@ -170,7 +170,7 @@ Anti-referências: landing de template (kickers em caixa alta sobre títulos de 
 **Key Characteristics:**
 
 - Papel dominante abaixo da hero; o Céu existe só na primeira dobra.
-- Uma assinatura: linha de recorte tracejada com tesoura depois da hero e no rodapé.
+- Uma assinatura: linha de recorte tracejada com tesoura antes do rodapé (depois da hero até 2026-10-24).
 - A Turquesa J001 é só a linha de recorte; o texto é sempre Tinta ou Turquesa profundo.
 - Tipografia à esquerda, com um marca-texto por página, no máximo.
 - Controles planos, retos (6 px), sem sombra; só painéis que saem da folha (menu, gaveta) ganham sombra.
@@ -188,7 +188,7 @@ Uma folha branca com tinta verde-azulada escura, linhas de corte turquesa e um �
 
 ### Secondary
 
-- **Turquesa J001** (`{colors.line}`): **só linhas decorativas**: a linha de recorte com a tesoura depois da hero e no rodapé (The Two Cuts Rule; desde 2026-10-24, a única; cards, selos e réguas passaram ao fio de Tinta, e os e-mails são a exceção, em E-mails). Dá 2,41:1 sobre Papel, por isso nunca é texto, nem borda única de um controle (input, botão), nem ícone que precise ser lido.
+- **Turquesa J001** (`{colors.line}`): **só linhas decorativas**: a linha de recorte com a tesoura antes do rodapé (The One Cut Rule; desde 2026-10-24, a única; cards, selos e réguas passaram ao fio de Tinta, e os e-mails são a exceção, em E-mails). Dá 2,41:1 sobre Papel, por isso nunca é texto, nem borda única de um controle (input, botão), nem ícone que precise ser lido.
 - **Marca-texto** (`{colors.highlight}`): um traço atrás de uma palavra em Tinta (7,24:1), como caneta marca-texto. Aparece uma vez por página, na hero ("encontro."). Nunca é fundo de bloco, de seção ou de botão. Exceções: o selo "Preço de lançamento", o código do cupom na barrinha (texto em Marca-texto sobre Tinta) e o arco atrás das páginas dos gratuitos em "A próxima rodada sai da impressora", com topo em meia-volta e pé reto (responsável, 2026-10-21: o arco usa o amarelo da marca, não uma cor própria). As folhas passam dos lados e do pé dele.
 
 ### Neutral
@@ -197,7 +197,7 @@ Uma folha branca com tinta verde-azulada escura, linhas de corte turquesa e um �
 - **Céu** (`{colors.sky}`): fundo da hero e do cabeçalho enquanto ele está sobre a hero. Em nenhuma outra seção.
 - **Tinta suave** (`{colors.ink-soft}`): texto secundário (legendas, ajuda de campo, meta de pedidos). 7,50:1 sobre Papel.
 - **Aguada de tinta** (`{colors.ink-wash}`): superfície de hover e de desabilitado, Tinta a 6 %. Substitui qualquer cinza ou tom de céu em hover.
-- **Régua de tinta** (`{colors.ink-rule}`): divisórias sólidas de 1 px em listas, tabelas e rodapé, e o fio dos cards (Tinta a 18 %). Entre seções vale só a linha de recorte, nos dois lugares da The Two Cuts Rule.
+- **Régua de tinta** (`{colors.ink-rule}`): divisórias sólidas de 1 px em listas, tabelas e rodapé, e o fio dos cards (Tinta a 18 %). Entre seções vale só a linha de recorte, no lugar da The One Cut Rule.
 - **Erro** (`{colors.error}`): mensagens de erro e borda de campo inválido. 7,30:1 sobre Papel.
 
 O chão do rodapé tem a própria paleta de cena (terra `#684839`, grama `#77A85B` / `#ACD475` / `#3F7957`, sulco `#A16C4E`), confinada ao bloco `.footer-ground`. Esses valores não saem dali. Desde 2026-10-24 a hero não tem mais paisagem (nuvens, mato e grama): o chão do Kito é o fio de Tinta dos cards.
@@ -216,7 +216,7 @@ Onde aparece: só no fundo da capa tipográfica (jogo ainda sem arte), misturado
 
 **The One Highlight Rule.** Há um marca-texto por página, atrás de uma palavra ou duas. Um segundo traço vira decoração.
 
-**The Sky Stays Up Rule.** O Céu termina no chão do Kito. Abaixo da linha de recorte a página é Papel; hover e estados usam aguada de Tinta, não Céu.
+**The Sky Stays Up Rule.** O Céu termina no pé da hero. Abaixo dela a página é Papel; hover e estados usam aguada de Tinta, não Céu.
 
 ## Typography
 
@@ -251,7 +251,7 @@ Números (preço, contagem, data) usam `font-variant-numeric: tabular-nums`. O p
 
 ## Layout
 
-A página é uma pilha de folhas. Cada seção é uma folha de Papel com `padding-block: {spacing.section}`. A **linha de recorte** (2 px tracejada Turquesa J001, largura total, com a tesoura encostada na margem esquerda do contêiner) corta a página em **dois lugares**: depois da hero (entra a folha dos jogos) e antes do rodapé. Seções do mesmo assunto (prévia, como funciona, relatos; dúvidas, blog, fechamento) separam-se só por espaço. A tesoura nunca aparece dentro de uma seção.
+A página é uma pilha de folhas. Cada seção é uma folha de Papel com `padding-block: {spacing.section}`. A **linha de recorte** (2 px tracejada Turquesa J001, largura total, com a tesoura encostada na margem esquerda do contêiner) corta a página **num lugar só**: antes do rodapé (desde 2026-10-24, responsável; antes cortava também depois da hero). Seções do mesmo assunto (prévia, como funciona, relatos; dúvidas, blog, fechamento) separam-se só por espaço. A tesoura nunca aparece dentro de uma seção.
 
 Contêiner de conteúdo: `min(1140px, 100% − 80px)` no desktop, `100% − 48px` até 1050 px, `100% − 40px` até 767 px. O cabeçalho usa `min(1280px, 100% − 64px)`. A hero ocupa a largura total: o texto fica no contêiner e a foto vai até a borda direita da janela.
 
@@ -265,7 +265,7 @@ Pontos de quebra principais: 360, 600, 768, 960, 1024 e 1050 px (e 1120, 70rem, 
 
 ### Named Rules
 
-**The Two Cuts Rule.** A tesoura corta a página em dois lugares: depois da hero (folha dos jogos) e antes do rodapé, em todas as páginas menos o pagamento (modo foco). Seções do mesmo assunto separam-se só por espaço; nunca há tesoura dentro de uma seção.
+**The One Cut Rule.** A tesoura corta a página num lugar só: antes do rodapé, em todas as páginas menos o pagamento (modo foco). Desde 2026-10-24 a hero passa para a folha de Papel sem corte. Seções do mesmo assunto separam-se só por espaço; nunca há tesoura dentro de uma seção.
 
 ## Elevation & Depth
 
@@ -289,7 +289,7 @@ Só o que **sai da folha** flutua: a gaveta do carrinho, o menu móvel e o menu 
 
 Cantos discretos, como papel cortado com cuidado: `{rounded.sm}` (6 px) em botões, inputs e selos; `{rounded.md}` (10 px) em todo card (jogo, pacote, conta, sacola, pagamento), miniaturas, avisos e popovers. `{rounded.lg}` (14 px) sobrou só em pontos do admin e no link da vitrine. Não existem cápsulas (999 px) em botões, links ou abas; círculos só no avatar com inicial, no número de etapa, na foto dos relatos (48 px) e no botão flutuante de compartilhar (52 px).
 
-A linguagem de forma é a da folha impressa: retângulos de fio fino, a linha de recorte com a tesoura de dois círculos e duas lâminas (depois da hero e no rodapé), e o traço de marca-texto que ocupa de 58 % a 92 % da altura da linha atrás da palavra.
+A linguagem de forma é a da folha impressa: retângulos de fio fino, a linha de recorte com a tesoura de dois círculos e duas lâminas (antes do rodapé), e o traço de marca-texto que ocupa de 58 % a 92 % da altura da linha atrás da palavra.
 
 A cena do Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelated`, nenhum raio.
 
@@ -437,8 +437,8 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 
 ### Kito (uso do personagem)
 
-- **Hero com foto (2026-10-24, responsável):** no desktop (a partir de 1024 px), a coluna do texto (até 620 px, no contêiner) fica sobre o Céu e a foto (`foto-mesma-folha`, 640 e 1008 px em WebP, `object-fit: cover`) ocupa da borda da coluna até a borda direita da janela, abaixo do cabeçalho; um degradê de Céu para transparente, de até 260 px, cobre a borda esquerda da foto. O texto fica no meio da altura que sobra acima do fio do Kito. Até 1023 px a foto vai para cima, em 16:9 na largura toda (no máximo 56 % da altura da tela), e o degradê sobe do pé dela até o texto. A foto tem prioridade alta (é o maior elemento no celular) e as folhas nela não dão para ler: nenhuma página do PDF vai para o site. O título da hero vai até 56 px no desktop (`clamp(2.625rem, 1rem + 2.6vw, 3.5rem)`), em duas linhas.
-- **Hero (2026-10-18):** o único lugar onde o Kito se move, e ele interage com quem chega. Desde 2026-10-24 anda só na coluna do texto, num fio de Régua de tinta embaixo dela, com a sombra em degraus em Tinta a 14 %; o cursor fora da coluna (sobre a foto) liga o piloto automático. Pixel art real em 256 px (`art-source/kito-pixel/`), servida num atlas WebP sem perda gerado por `scripts/prepare-kito-pixel.mjs` (posições em `src/kito-sprites.ts`, gerado; não editar à mão). Só os quadros virados para a direita entram; a esquerda é espelho no CSS. Tamanho: 128 px no desktop (×0,5, 1:1 em tela 2×) e 96 px no celular (desde 2026-10-24; antes 192 e 128); vizinho mais próximo quando a tela tem pixels de sobra, redução filtrada abaixo disso.
+- **Hero com foto (2026-10-24, responsável):** a hero tem a altura da tela, entre 620 e 900 px (`clamp(620px, 100svh − 37px, 900px)`; 37 px é a barrinha do cupom). No desktop (a partir de 1024 px), a coluna do texto (até 620 px, no contêiner) fica sobre o Céu, no meio da altura que sobra acima do Kito, e a foto (`foto-mesma-folha`, 640 e 1008 px em WebP, `object-fit: cover`) começa 160 px antes do fim da coluna e vai até a borda direita da janela, abaixo do cabeçalho. Um degradê de Céu em curva (passos de uma ease-out, do Céu cheio a transparente em 420 px, de 160 px antes a 260 px depois do fim da coluna) faz a foto aparecer sem borda; atrás do texto o Céu fica acima de 85 %. Até 1023 px a foto vai para cima, na largura toda, e cresce com a altura da tela (no mínimo `clamp(200px, 30svh, 420px)`); o degradê, também em curva, sobe do pé dela até o texto. A foto tem prioridade alta (é o maior elemento no celular) e as folhas nela não dão para ler: nenhuma página do PDF vai para o site. O título da hero vai até 56 px no desktop (`clamp(2.625rem, 1rem + 2.6vw, 3.5rem)`), em duas linhas.
+- **Hero (2026-10-18):** o único lugar onde o Kito se move, e ele interage com quem chega. Desde 2026-10-24 anda no pé da hero, por cima da foto também, sem chão desenhado: a sombra em degraus, em Tinta a 14 %, o ancora. Pixel art real em 256 px (`art-source/kito-pixel/`), servida num atlas WebP sem perda gerado por `scripts/prepare-kito-pixel.mjs` (posições em `src/kito-sprites.ts`, gerado; não editar à mão). Só os quadros virados para a direita entram; a esquerda é espelho no CSS. Tamanho: 128 px no desktop (×0,5, 1:1 em tela 2×) e 96 px no celular (desde 2026-10-24; antes 192 e 128); vizinho mais próximo quando a tela tem pixels de sobra, redução filtrada abaixo disso.
   - **Mouse:** o Kito persegue o cursor pelo chão. Caminha perto, corre a meia distância e dispara de longe; a cadência dos pés acompanha a velocidade. Vira de frente para trocar de lado, às vezes tropeça ao virar em sprint. Ao alcançar, pula ou acena; com o cursor em cima, acena enquanto o cursor estiver ali; clicado, saltita segurando o coração; com o cursor parado, cochila em pé, respirando, e acorda num susto quando o cursor se mexe. Cursor além da borda: empurra a borda.
   - **Botão "Ver os jogos":** com o cursor ou o foco do teclado no botão, o Kito corre até embaixo dele e aponta, com brilhos, enquanto o cursor estiver lá. No piloto automático ele também vai até o botão e aponta por um instante.
   - **Plataformas:** o botão e a palavra destacada ("encontro.") são plataformas. Solto em cima deles (ou com os pés um pouco abaixo da borda, sem arremesso), o Kito fica ali até alguém carregá-lo de volta: anda só em cima da plataforma e, no piloto automático, só faz ações paradas. Não há animação de descida (decisão do responsável em 2026-10-18).
@@ -485,7 +485,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 
 ### Do:
 
-- **Do** usar a linha de recorte e a tesoura só depois da hero e antes do rodapé.
+- **Do** usar a linha de recorte e a tesoura só antes do rodapé.
 - **Do** alinhar títulos e apoio à esquerda; usar o lado direito para ficha, preço ou objeto.
 - **Do** usar a capa tipográfica (nome do jogo sobre a carta) para qualquer jogo sem capa oficial.
 - **Do** manter botões retos (6 px), sem sombra, sem seta, com um nome por ação.

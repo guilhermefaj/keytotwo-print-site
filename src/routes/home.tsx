@@ -35,8 +35,8 @@ export default function Home() {
           <p className="hero-description">{experience.description}</p>
           <div className="hero-actions"><Link className="button button-primary hero-cta" to={experience.cta.href}>{experience.cta.label}</Link><a className="inline-link hero-secondary" href={experience.secondary.href}>{experience.secondary.label}</a></div>
         </section>
-        <HeroScene obscured={menuOpen} />
       </div></div>
+      <HeroScene obscured={menuOpen} />
     </div>
     {/* Início como landing (decisão 9): a oferta e a folha completa ficam só na Loja. */}
     <ProductExperience /><HowItWorks /><Testimonials /><ShopShowcase /><div className="page-section"><div className="content-width"><FreebieSection /></div></div><FaqSection /><FromBlog posts={posts} /><ClosingCta />

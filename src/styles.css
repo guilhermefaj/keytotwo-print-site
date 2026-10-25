@@ -111,12 +111,13 @@ input, select, textarea { font: inherit; color: inherit; }
 /* --------------------------------------------------------------------------
    Hero e cena do Kito (geometria da caminhada intacta; ver DESIGN.md › Kito)
    -------------------------------------------------------------------------- */
-/* Hero com foto (responsável, 2026-10-24): o texto à esquerda, sobre o Céu, e a foto à direita, até a borda da janela.
-   Um degradê de Céu esconde a borda da foto atrás do texto. O Kito anda menor, num fio fino embaixo do texto. */
-.hero { --hero-text: 620px; --hero-edge: max(40px, (100% - var(--container)) / 2); position: relative; background: var(--color-sky); min-height: min(720px, calc(100svh - 115px)); padding-top: var(--header-height); display: flex; flex-direction: column; isolation: isolate; }
-.hero-media { position: absolute; z-index: 0; top: var(--header-height); right: 0; bottom: 0; left: calc(var(--hero-edge) + var(--hero-text) - 8px); }
+/* Hero com foto (responsável, 2026-10-24): a altura da tela (entre 620 e 900 px), o texto à esquerda, sobre o Céu, e a
+   foto à direita, até a borda da janela. A foto começa atrás do fim do texto e aparece num degradê de Céu em curva.
+   O Kito anda no pé da hero, por cima da foto também. */
+.hero { --hero-text: 620px; --hero-edge: max(40px, (100% - var(--container)) / 2); --hero-fade: calc(var(--hero-edge) + var(--hero-text)); position: relative; background: var(--color-sky); min-height: clamp(620px, calc(100svh - 37px), 900px); padding-top: var(--header-height); display: flex; flex-direction: column; isolation: isolate; }
+.hero-media { position: absolute; z-index: 0; top: var(--header-height); right: 0; bottom: 0; left: calc(var(--hero-fade) - 160px); }
 .hero-photo { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%; }
-.hero-media::after { content: ''; position: absolute; inset: 0 auto 0 0; width: min(260px, 40%); background: linear-gradient(90deg, var(--color-sky), transparent); pointer-events: none; }
+.hero::after { content: ''; position: absolute; z-index: 0; inset: var(--header-height) 0 0; background: linear-gradient(90deg, var(--color-sky) calc(var(--hero-fade) - 160px), color-mix(in srgb, var(--color-sky) 90%, transparent) calc(var(--hero-fade) - 55px), color-mix(in srgb, var(--color-sky) 70%, transparent) calc(var(--hero-fade) + 30px), color-mix(in srgb, var(--color-sky) 44%, transparent) calc(var(--hero-fade) + 115px), color-mix(in srgb, var(--color-sky) 20%, transparent) calc(var(--hero-fade) + 190px), color-mix(in srgb, var(--color-sky) 6%, transparent) calc(var(--hero-fade) + 240px), transparent calc(var(--hero-fade) + 260px)); pointer-events: none; }
 .hero-panel { position: relative; z-index: 1; flex: 1 0 auto; display: flex; width: min(var(--container), calc(100% - 80px)); margin: 0 auto; }
 .hero-stack { position: relative; display: flex; flex-direction: column; width: min(var(--hero-text), 100%); }
 .hero-copy { margin-block: auto; padding-top: 32px; }
@@ -126,10 +127,10 @@ input, select, textarea { font: inherit; color: inherit; }
 .hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; margin-top: 28px; }
 .hero-cta { min-width: 178px; }
 .hero-secondary { padding-block: 10px; }
-.hero-scene-region { --floor-height: 20px; --foot-sink: 2px; --sprite-size: 128px; display: flex; flex-direction: column; flex: 0 0 168px; min-height: 168px; margin-top: 16px; }
+.hero-scene-region { --floor-height: 20px; --foot-sink: 2px; --sprite-size: 128px; display: flex; flex-direction: column; flex: 0 0 156px; margin-top: 16px; }
 .hero-scene { position: relative; flex: 1 0 auto; pointer-events: none; }
-/* O chão do Kito: o fio de tinta dos cards, só embaixo da coluna do texto. */
-.hero-scene .ground { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-height); border-top: 1px solid var(--color-ink-rule); }
+/* O chão do Kito é o pé da hero (sem linha); a sombra em degraus o ancora. */
+.hero-scene .ground { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-height); }
 .footer-ground { --scene-soil: #684839; --scene-soil-light: #a16c4e; --scene-grass: #77a85b; --scene-grass-light: #acd475; --scene-grass-dark: #3f7957; }
 .footer-ground .ground { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-height); background: var(--scene-soil); }
 .ground-grass { position: absolute; top: 0; width: 100%; height: 14px; background: var(--scene-grass); border-top: 5px solid var(--scene-grass-light); border-bottom: 4px solid var(--scene-grass-dark); }
@@ -162,13 +163,15 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .hero h1 { margin-top: 14px; margin-bottom: 16px; }
   .hero-actions { margin-top: 20px; }
 }
-/* Até 1023 px a foto vai para cima, na largura toda, e o degradê de Céu desce sobre o pé dela até o texto. */
+/* Até 1023 px a foto vai para cima, na largura toda, e cresce com a altura da tela; o degradê de Céu sobe do pé dela. */
 @media (max-width: 1023px) {
-  .hero { min-height: 0; }
-  .hero-media { position: relative; inset: auto; aspect-ratio: 16 / 9; max-height: 56svh; width: 100%; }
-  .hero-media::after { inset: auto 0 0; width: auto; height: 45%; background: linear-gradient(0deg, var(--color-sky), transparent); }
+  .hero { min-height: clamp(560px, calc(100svh - 58px), 860px); }
+  .hero::after { content: none; }
+  .hero-media { position: relative; inset: auto; flex: 1 0 clamp(200px, 30svh, 420px); width: 100%; }
+  .hero-media::after { content: ''; position: absolute; inset: auto 0 0; height: 55%; background: linear-gradient(0deg, var(--color-sky), color-mix(in srgb, var(--color-sky) 78%, transparent) 22%, color-mix(in srgb, var(--color-sky) 44%, transparent) 48%, color-mix(in srgb, var(--color-sky) 16%, transparent) 74%, transparent); pointer-events: none; }
+  .hero-panel { flex: 0 0 auto; }
   .hero-stack { width: min(640px, 100%); }
-  .hero-copy { padding-top: 4px; }
+  .hero-copy { padding-top: 0; margin-top: -24px; }
 }
 @media (max-width: 767px) {
   .hero h1 { font-size: var(--text-display-mobile); margin: 12px 0 20px; }
@@ -176,7 +179,7 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .hero-actions { flex-direction: column; align-items: stretch; gap: 10px; margin-top: 24px; }
   .hero-cta { width: 100%; }
   .hero-secondary { align-self: flex-start; }
-  .hero-scene-region { --floor-height: 16px; --sprite-size: 96px; flex: 1 0 128px; min-height: 128px; margin-top: 8px; }
+  .hero-scene-region { --floor-height: 12px; --sprite-size: 96px; flex: 0 0 120px; }
   .kito-dizzy { width: 128px; }
 }
 @media (max-width: 359px) {
@@ -191,8 +194,6 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 /* --------------------------------------------------------------------------
    Seções da home: cada folha começa com a linha de recorte
    -------------------------------------------------------------------------- */
-.page-section:has(> .cut-line) { padding-top: 0; }
-.page-section > .cut-line { margin-bottom: calc(var(--space-section) - 20px); }
 .experience-section { background: var(--color-paper); }
 .experience-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 6vw, 88px); }
 .experience-copy h2 { margin-bottom: var(--space-md); }

@@ -3,13 +3,12 @@ import { Link } from 'react-router'
 import { experience } from '../../content/experience'
 import { siteConfig } from '../../lib/site-config'
 import { SnapCarousel } from '../ui/SnapCarousel'
-import { CutLine } from '../ui/CutLine'
 
 // Páginas dos jogos gratuitos sobre um arco no amarelo da marca, passando dele (responsável, 2026-10-20), sem legenda
 // (2026-10-21). Só os gratuitos e numa imagem só, pequena demais para imprimir; dos pagos, nenhuma página (2026-10-16).
-// A linha de recorte entra aqui, logo depois da hero (DESIGN.md › The Three Cuts Rule).
+// Sem a linha de recorte depois da hero desde 2026-10-24 (responsável): ela fica só no rodapé.
 export function ProductExperience() {
-  return <section className="page-section experience-section" aria-labelledby="experiencia"><CutLine /><div className="content-width experience-layout">
+  return <section className="page-section experience-section" aria-labelledby="experiencia"><div className="content-width experience-layout">
     <figure className="experience-art"><div className="experience-pages"><img src="/media/experience/gratuitos-paginas-780.webp" srcSet="/media/experience/gratuitos-paginas-560.webp 560w, /media/experience/gratuitos-paginas-780.webp 780w" sizes="(max-width: 767px) calc(100vw - 32px), 560px" alt="Páginas dos jogos gratuitos Hora dos Artistas e Pote de Planos" width="780" height="910" loading="lazy" decoding="async" /></div></figure>
     <div className="experience-copy"><h2 id="experiencia" tabIndex={-1}>A próxima rodada sai da impressora.</h2><p className="lead">Cartas na mesa, uma tentativa duvidosa e aquela vontade de jogar de novo.</p><p>Um dia é desenho, no outro é tabuleiro ou investigação. Vocês imprimem em casa e o resto fica com a dupla.</p><Link className="button button-primary" to="/loja">Ver os jogos</Link></div>
   </div></section>
