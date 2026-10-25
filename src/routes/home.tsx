@@ -7,7 +7,7 @@ import { ProductExperience, Testimonials } from '../components/sections/Experien
 import { ShopShowcase } from '../components/sections/ShopShowcase'
 import { FreebieSection } from '../components/shop/FreebieSection'
 import { experience } from '../content/experience'
-import { useRef } from 'react'
+import { useRef, useSyncExternalStore } from 'react'
 import { useScrollReveal } from '../lib/use-scroll-reveal'
 import { readBlogPosts, summarizeBlogPost } from '../lib/blog.server'
 import { FromBlog } from '../components/sections/FromBlog'
@@ -25,10 +25,14 @@ export default function Home() {
   const headlineRest = experience.headline[1].endsWith(experience.highlight) ? experience.headline[1].slice(0, -experience.highlight.length) : `${experience.headline[1]} `
   // O reveal anima o conteúdo de cada folha, nunca o fundo da seção.
   useScrollReveal(main, '.page-section > .content-width')
+  // Capa em comparação (temporário): a 2 por padrão; ?capa=N troca depois de abrir.
+  const capaId = useSyncExternalStore(() => () => {}, () => new URLSearchParams(window.location.search).get('capa'), () => null)
+  const capa = experience.capas.find(item => item.id === capaId) ?? experience.capas[1]
+  const largest = capa.widths[capa.widths.length - 1]
   return <main id="conteudo" tabIndex={-1} ref={main}>
-    <div className="hero">
+    <div className="hero" data-tone={capa.tone} data-capa={capa.id}>
       {/* A foto é o maior elemento da hero no celular: prioridade alta, sem carregamento tardio (docs/desempenho.md). */}
-      <div className="hero-media"><img className="hero-photo" src="/media/hero/foto-mesma-folha-1008.webp" srcSet="/media/hero/foto-mesma-folha-640.webp 640w, /media/hero/foto-mesma-folha-1008.webp 1008w" sizes="(max-width: 1023px) 100vw, 60vw" width="1008" height="567" alt={experience.photo.alt} fetchPriority="high" decoding="async" /></div>
+      <div className="hero-media"><img key={capa.id} className="hero-photo" src={`/media/hero/${capa.photo}-${largest}.webp`} srcSet={capa.widths.map(width => `/media/hero/${capa.photo}-${width}.webp ${width}w`).join(', ')} sizes={capa.tone === 'escuro' ? '100vw' : '(max-width: 1023px) 100vw, 60vw'} width={largest} height={capa.height} alt={capa.alt} fetchPriority="high" decoding="async" /></div>
       <div className="hero-panel"><div className="hero-stack">
         <section className="hero-copy" aria-labelledby="hero-title">
           <h1 id="hero-title">{experience.headline[0]}{' '}<span>{headlineRest}<mark>{experience.highlight}</mark></span></h1>

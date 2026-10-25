@@ -131,6 +131,27 @@ input, select, textarea { font: inherit; color: inherit; }
 .hero-scene { position: relative; flex: 1 0 auto; pointer-events: none; }
 /* O chão do Kito é o pé da hero (sem linha); a sombra em degraus o ancora. */
 .hero-scene .ground { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-height); }
+/* Capa escura (em comparação, 2026-10-24): a foto atrás da hero inteira, cabeçalho incluído; degradê de Tinta em curva
+   atrás do texto, que some no pé da hero (a foto aparece embaixo, onde não há texto), e uma sombra curta no topo para o
+   cabeçalho. Texto em Papel; "encontro." em Marca-texto, sem o traço. */
+.hero[data-tone="escuro"] { background: var(--color-ink); color: var(--color-paper); }
+.hero[data-tone="escuro"] .hero-media { inset: 0; }
+.hero[data-tone="escuro"] .hero-photo { object-position: 70% 50%; }
+.hero[data-tone="escuro"]::after { inset: 0; -webkit-mask-image: linear-gradient(180deg, #000 58%, transparent 100%); mask-image: linear-gradient(180deg, #000 58%, transparent 100%); background: linear-gradient(180deg, color-mix(in srgb, var(--color-ink) 70%, transparent), transparent calc(var(--header-height) + 96px)), linear-gradient(90deg, var(--color-ink) calc(var(--hero-fade) - 420px), color-mix(in srgb, var(--color-ink) 96%, transparent) calc(var(--hero-fade) - 160px), color-mix(in srgb, var(--color-ink) 86%, transparent) calc(var(--hero-fade) - 40px), color-mix(in srgb, var(--color-ink) 66%, transparent) calc(var(--hero-fade) + 60px), color-mix(in srgb, var(--color-ink) 40%, transparent) calc(var(--hero-fade) + 170px), color-mix(in srgb, var(--color-ink) 18%, transparent) calc(var(--hero-fade) + 290px), transparent calc(var(--hero-fade) + 420px)); }
+.hero[data-tone="escuro"] h1, .hero[data-tone="escuro"] .hero-description { color: var(--color-paper); }
+.hero[data-tone="escuro"] mark { background: none; color: var(--color-highlight); padding: 0; }
+.hero[data-tone="escuro"] .hero-cta { background: var(--color-paper); color: var(--color-ink); }
+.hero[data-tone="escuro"] .hero-cta:hover { background: var(--color-sky); }
+.hero[data-tone="escuro"] .hero-secondary { color: var(--color-paper); background-image: none; text-decoration-color: currentColor; }
+.hero[data-tone="escuro"] .hero-secondary:hover { color: var(--color-highlight); }
+.hero[data-tone="escuro"] :focus-visible { outline-color: var(--color-paper); }
+.hero[data-tone="escuro"] .kito-shadow { opacity: .5; }
+/* O cabeçalho no topo da capa escura: transparente, com texto em Papel (rolado, volta ao normal). */
+body:has(.hero[data-tone="escuro"]) .site-header-shell[data-home="true"]:not([data-scrolled="true"]) { --color-ink-wash: color-mix(in srgb, var(--color-paper) 14%, transparent); }
+body:has(.hero[data-tone="escuro"]) .site-header-shell[data-home="true"]:not([data-scrolled="true"]) :is(.nav-link, .icon-button, .account-trigger) { color: var(--color-paper); }
+body:has(.hero[data-tone="escuro"]) .site-header-shell[data-home="true"]:not([data-scrolled="true"]) :is(.desktop-nav, .desktop-action) > .nav-link:hover { color: var(--color-highlight); }
+body:has(.hero[data-tone="escuro"]) .site-header-shell[data-home="true"]:not([data-scrolled="true"]) :is(.desktop-nav, .desktop-action) > .nav-link[aria-current]::after { background: var(--color-paper); }
+body:has(.hero[data-tone="escuro"]) .site-header-shell[data-home="true"]:not([data-scrolled="true"]) :focus-visible { outline-color: var(--color-paper); }
 .footer-ground { --scene-soil: #684839; --scene-soil-light: #a16c4e; --scene-grass: #77a85b; --scene-grass-light: #acd475; --scene-grass-dark: #3f7957; }
 .footer-ground .ground { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-height); background: var(--scene-soil); }
 .ground-grass { position: absolute; top: 0; width: 100%; height: 14px; background: var(--scene-grass); border-top: 5px solid var(--scene-grass-light); border-bottom: 4px solid var(--scene-grass-dark); }
@@ -172,6 +193,11 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .hero-panel { flex: 0 0 auto; }
   .hero-stack { width: min(640px, 100%); }
   .hero-copy { padding-top: 0; margin-top: -24px; }
+  .hero[data-tone="escuro"] .hero-media { inset: auto; }
+  .hero[data-tone="escuro"]::after { content: none; }
+  .hero[data-tone="escuro"] .hero-media::after { background: linear-gradient(0deg, var(--color-ink), color-mix(in srgb, var(--color-ink) 78%, transparent) 22%, color-mix(in srgb, var(--color-ink) 44%, transparent) 48%, color-mix(in srgb, var(--color-ink) 16%, transparent) 74%, transparent); }
+  .hero[data-tone="escuro"] .hero-media::before { content: ''; position: absolute; z-index: 1; inset: 0 0 auto; height: calc(var(--header-height) + 48px); background: linear-gradient(180deg, color-mix(in srgb, var(--color-ink) 70%, transparent), transparent); pointer-events: none; }
+  .hero[data-tone="escuro"] .hero-media { margin-top: calc(-1 * var(--header-height)); flex-basis: calc(clamp(200px, 30svh, 420px) + var(--header-height)); }
 }
 @media (max-width: 767px) {
   .hero h1 { font-size: var(--text-display-mobile); margin: 12px 0 20px; }

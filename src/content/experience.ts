@@ -10,9 +10,16 @@ export const experience = {
   description: 'Jogos para imprimir, puxar uma cadeira e descobrir o quanto vocês se divertem juntos.',
   cta: { label: 'Ver os jogos', href: '/loja' },
   secondary: { label: 'Como funciona', href: '/#como-funciona' },
-  // Hero com foto (responsável, 2026-10-24: o site estava lúdico demais para a persona). As folhas da foto não dão para
+  // Hero com foto (responsável, 2026-10-24: o site estava lúdico demais para a persona). As folhas das fotos não dão para
   // ler: nenhuma página do PDF vai para o site.
-  photo: { alt: 'Casal à mesa com folhas impressas, lápis de cor e uma taça de vinho' },
+  // Capas para o responsável comparar no teste (?capa=1 a 5; temporário): depois da escolha, fica só a escolhida.
+  capas: [
+    { id: '1', name: 'Claro, olhando a mesma folha', tone: 'claro', photo: 'foto-mesma-folha', widths: [640, 1008], height: 567, alt: 'Casal à mesa com folhas impressas, lápis de cor e uma taça de vinho' },
+    { id: '2', name: 'Escuro, olhando a mesma folha', tone: 'escuro', photo: 'foto-mesma-folha', widths: [640, 1008], height: 567, alt: 'Casal à mesa com folhas impressas, lápis de cor e uma taça de vinho' },
+    { id: '3', name: 'Escuro, mãos e papel', tone: 'escuro', photo: 'foto-maos-e-papel', widths: [640, 1280, 1600], height: 900, alt: 'Casal à mesa com folhas e cartas impressas, lápis de cor, taças de vinho e uma vela' },
+    { id: '4', name: 'Escuro, noite a dois', tone: 'escuro', photo: 'foto-noite-a-dois', widths: [640, 930], height: 523, alt: 'Mesa à luz de vela com folhas impressas, lápis de cor e uma taça de vinho' },
+    { id: '5', name: 'Claro, mãos e papel', tone: 'claro', photo: 'foto-maos-e-papel', widths: [640, 1280, 1600], height: 900, alt: 'Casal à mesa com folhas e cartas impressas, lápis de cor, taças de vinho e uma vela' },
+  ],
   steps: [
     { title: 'Escolham.', text: 'Um jogo ou o pacote vai para a sacola. Para pagar, é preciso entrar na conta.', icon: 'sacola' },
     { title: 'Imprimam.', text: 'O PDF fica em Meus jogos e chega por e-mail. Papel A4 comum resolve.', icon: 'impressora' },
