@@ -56,7 +56,9 @@ end $$;
 
 -- ===== backup ======================================================================================
 -- Desde 20261025120000: sem pg_read_all_data. Lê as tabelas da loja e, pelas funções, auth.users e auth.identities; não
--- lê sessões, tokens, Vault nem a fila do pg_net (to_regclass: tabelas que só existem no Supabase de verdade).
+-- lê sessões, tokens, MFA nem o Vault (to_regclass: tabelas que só existem no Supabase de verdade). A fila do pg_net
+-- (net.http_request_queue) a própria extensão abre para PUBLIC, fora do alcance do postgres; o que passa por ela é o
+-- DISPATCH_SECRET, sem poder no banco.
 select pg_temp.assert('backup_ro entra, passa pela RLS, sem pg_read_all_data e com até 3 conexões',
   (select rolcanlogin and rolbypassrls and not rolsuper and not rolcreaterole and rolconnlimit = 3 from pg_roles where rolname = 'backup_ro')
   and not pg_has_role('backup_ro', 'pg_read_all_data', 'member'));
@@ -70,12 +72,11 @@ select pg_temp.assert('backup_ro lê auth.users e auth.identities só pelas fun�
   and has_function_privilege('backup_ro', 'private.backup_auth_users()', 'EXECUTE')
   and has_function_privilege('backup_ro', 'private.backup_auth_identities()', 'EXECUTE')
   and not has_function_privilege('service_role', 'private.backup_auth_users()', 'EXECUTE'));
-select pg_temp.assert('backup_ro não lê sessões, tokens, MFA, Vault nem a fila do pg_net',
+select pg_temp.assert('backup_ro não lê sessões, tokens, MFA nem o Vault',
   not coalesce(has_table_privilege('backup_ro', to_regclass('auth.refresh_tokens'), 'SELECT'), false)
   and not coalesce(has_table_privilege('backup_ro', to_regclass('auth.sessions'), 'SELECT'), false)
   and not coalesce(has_table_privilege('backup_ro', to_regclass('auth.mfa_factors'), 'SELECT'), false)
-  and not coalesce(has_table_privilege('backup_ro', to_regclass('vault.decrypted_secrets'), 'SELECT'), false)
-  and not coalesce(has_table_privilege('backup_ro', to_regclass('net.http_request_queue'), 'SELECT'), false));
+  and not coalesce(has_table_privilege('backup_ro', to_regclass('vault.decrypted_secrets'), 'SELECT'), false));
 select pg_temp.assert('backup_ro só executa o registro da cópia; service_role não registra',
   has_function_privilege('backup_ro', 'private.record_backup(text, bigint)', 'EXECUTE')
   and not has_function_privilege('backup_ro', 'private.confirmed_email(uuid)', 'EXECUTE')
