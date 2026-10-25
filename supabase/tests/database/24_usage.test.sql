@@ -19,7 +19,8 @@ insert into pg_temp.res select 'antes', jsonb_build_object(
 do $fx$
 begin
   perform pg_temp.mk_user('uadm'); perform pg_temp.mk_user('ucomum');
-  update auth.users set raw_app_meta_data = raw_app_meta_data || '{"admin": true}' where id = pg_temp.uid('uadm');
+  -- No Supabase de verdade o raw_app_meta_data de quem foi inserido direto começa NULL (no PGlite, '{}').
+  update auth.users set raw_app_meta_data = coalesce(raw_app_meta_data, '{}') || '{"admin": true}' where id = pg_temp.uid('uadm');
   update auth.users set last_sign_in_at = now() where id in (pg_temp.uid('uadm'), pg_temp.uid('ucomum'));
   perform public.record_api_usage('public'); perform public.record_api_usage('public'); perform public.record_api_usage('admin');
   -- uma linha de 401 dias atrás: a primeira chamada de uma hora nova a apaga
