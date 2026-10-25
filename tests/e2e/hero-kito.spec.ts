@@ -27,8 +27,9 @@ test('desktop: persegue o cursor pelo chão, vai no colo e volta ao chão', asyn
   const hitbox = (await page.locator('.kito-hitbox').boundingBox())!
   await page.mouse.move(hitbox.x + hitbox.width / 2, hitbox.y + hitbox.height / 3)
   await page.mouse.down()
-  // Solto à direita do título: embaixo de x = 700 há palavra (o Kito pararia nela, e a barrinha do cupom mexe a altura).
-  await page.mouse.move(1300, 320, { steps: 12 })
+  // Solto abaixo do botão e da palavra (de cima ele pararia num deles), dentro da coluna do texto: desde 2026-10-24 a
+  // foto ocupa a direita da hero e o Kito anda só na coluna.
+  await page.mouse.move(450, 560, { steps: 12 })
   await expect(sprite(page)).toHaveAttribute('data-mode', 'carried')
   await expect(page.locator('html')).toHaveAttribute('data-kito-carrying', 'true')
   expect(await aboveGround(page)).toBeLessThan(-100)
@@ -58,7 +59,7 @@ test('desktop: aponta o botão e fica em cima dele quando solto ali', async ({ p
   await page.waitForTimeout(200)
   await page.mouse.up()
   await expect.poll(() => sprite(page).getAttribute('data-mode'), { timeout: 5_000 }).toMatch(/^(idle|hello|love|point)$/)
-  await page.mouse.move(1200, 680, { steps: 4 })
+  await page.mouse.move(700, 620, { steps: 4 })
   await page.waitForTimeout(2_000)
   const feetOnButton = (await kito(page)).bottom - cta.y
   expect(feetOnButton).toBeGreaterThanOrEqual(0)

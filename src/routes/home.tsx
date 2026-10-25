@@ -27,12 +27,16 @@ export default function Home() {
   useScrollReveal(main, '.page-section > .content-width')
   return <main id="conteudo" tabIndex={-1} ref={main}>
     <div className="hero">
-      <section className="hero-copy" aria-labelledby="hero-title">
-        <h1 id="hero-title">{experience.headline[0]}{' '}<span>{headlineRest}<mark>{experience.highlight}</mark></span></h1>
-        <p className="hero-description">{experience.description}</p>
-        <div className="hero-actions"><Link className="button button-primary hero-cta" to={experience.cta.href}>{experience.cta.label}</Link><a className="inline-link hero-secondary" href={experience.secondary.href}>{experience.secondary.label}</a></div>
-      </section>
-      <HeroScene obscured={menuOpen} />
+      {/* A foto é o maior elemento da hero no celular: prioridade alta, sem carregamento tardio (docs/desempenho.md). */}
+      <div className="hero-media"><img className="hero-photo" src="/media/hero/foto-mesma-folha-1008.webp" srcSet="/media/hero/foto-mesma-folha-640.webp 640w, /media/hero/foto-mesma-folha-1008.webp 1008w" sizes="(max-width: 1023px) 100vw, 60vw" width="1008" height="567" alt={experience.photo.alt} fetchPriority="high" decoding="async" /></div>
+      <div className="hero-panel"><div className="hero-stack">
+        <section className="hero-copy" aria-labelledby="hero-title">
+          <h1 id="hero-title">{experience.headline[0]}{' '}<span>{headlineRest}<mark>{experience.highlight}</mark></span></h1>
+          <p className="hero-description">{experience.description}</p>
+          <div className="hero-actions"><Link className="button button-primary hero-cta" to={experience.cta.href}>{experience.cta.label}</Link><a className="inline-link hero-secondary" href={experience.secondary.href}>{experience.secondary.label}</a></div>
+        </section>
+        <HeroScene obscured={menuOpen} />
+      </div></div>
     </div>
     {/* Início como landing (decisão 9): a oferta e a folha completa ficam só na Loja. */}
     <ProductExperience /><HowItWorks /><Testimonials /><ShopShowcase /><div className="page-section"><div className="content-width"><FreebieSection /></div></div><FaqSection /><FromBlog posts={posts} /><ClosingCta />

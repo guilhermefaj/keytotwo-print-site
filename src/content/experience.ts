@@ -10,6 +10,9 @@ export const experience = {
   description: 'Jogos para imprimir, puxar uma cadeira e descobrir o quanto vocês se divertem juntos.',
   cta: { label: 'Ver os jogos', href: '/loja' },
   secondary: { label: 'Como funciona', href: '/#como-funciona' },
+  // Hero com foto (responsável, 2026-10-24: o site estava lúdico demais para a persona). As folhas da foto não dão para
+  // ler: nenhuma página do PDF vai para o site.
+  photo: { alt: 'Casal à mesa com folhas impressas, lápis de cor e uma taça de vinho' },
   steps: [
     { title: 'Escolham.', text: 'Um jogo ou o pacote vai para a sacola. Para pagar, é preciso entrar na conta.', icon: 'sacola' },
     { title: 'Imprimam.', text: 'O PDF fica em Meus jogos e chega por e-mail. Papel A4 comum resolve.', icon: 'impressora' },

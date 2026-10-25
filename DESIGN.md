@@ -161,7 +161,7 @@ components:
 
 **Creative North Star: "Folha de recorte"**
 
-O que o casal compra é papel. A hero é a janela para o mundo do Kito: céu, horizonte baixo, chão até as bordas e um único pinguim que brinca com quem chega. Logo abaixo do chão passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, cards de fio fino de Tinta, réguas contínuas e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
+O que o casal compra é papel. A hero mostra um casal à mesa com as folhas (desde 2026-10-24, responsável: o site estava lúdico demais para a persona): o texto à esquerda, sobre o Céu, a foto à direita, e o Kito, menor, andando num fio fino embaixo do texto. Logo abaixo da hero passa uma linha de recorte com tesoura, e dali em diante a página é a própria folha impressa do jogo: Papel branco dominante, cards de fio fino de Tinta, réguas contínuas e um traço de marca-texto Damasco atrás de uma palavra. Nada brilha, nada flutua: a página parece ter saído da impressora e estar pronta para a tesoura.
 
 A hero vende a marca e uma forma de pensar (sair do automático, fazer algo juntos), não um produto específico. A folha abaixo vende o catálogo: hoje a Coleção KeyToTwo: Fundadores, amanhã outros pacotes e um freebie. Por isso o sistema é feito de cartas, fichas e folhas que aceitam qualquer quantidade de itens. O tom é adulto, divertido e direto; o acabamento é o de um objeto gráfico bem impresso, não o de um app.
 
@@ -200,7 +200,7 @@ Uma folha branca com tinta verde-azulada escura, linhas de corte turquesa e um �
 - **Régua de tinta** (`{colors.ink-rule}`): divisórias sólidas de 1 px em listas, tabelas e rodapé, e o fio dos cards (Tinta a 18 %). Entre seções vale só a linha de recorte, nos dois lugares da The Two Cuts Rule.
 - **Erro** (`{colors.error}`): mensagens de erro e borda de campo inválido. 7,30:1 sobre Papel.
 
-A paisagem da hero tem a própria paleta de cena (terra `#684839`, grama `#77A85B` / `#ACD475` / `#3F7957`, mato distante `#CFE6D7`, sulco `#A16C4E`), confinada aos blocos `.hero-scene` e `.footer-ground` (o chão que fecha o rodapé). Esses valores não saem da cena.
+O chão do rodapé tem a própria paleta de cena (terra `#684839`, grama `#77A85B` / `#ACD475` / `#3F7957`, sulco `#A16C4E`), confinada ao bloco `.footer-ground`. Esses valores não saem dali. Desde 2026-10-24 a hero não tem mais paisagem (nuvens, mato e grama): o chão do Kito é o fio de Tinta dos cards.
 
 ### Cor do jogo
 
@@ -253,7 +253,7 @@ Números (preço, contagem, data) usam `font-variant-numeric: tabular-nums`. O p
 
 A página é uma pilha de folhas. Cada seção é uma folha de Papel com `padding-block: {spacing.section}`. A **linha de recorte** (2 px tracejada Turquesa J001, largura total, com a tesoura encostada na margem esquerda do contêiner) corta a página em **dois lugares**: depois da hero (entra a folha dos jogos) e antes do rodapé. Seções do mesmo assunto (prévia, como funciona, relatos; dúvidas, blog, fechamento) separam-se só por espaço. A tesoura nunca aparece dentro de uma seção.
 
-Contêiner de conteúdo: `min(1140px, 100% − 80px)` no desktop, `100% − 48px` até 1050 px, `100% − 40px` até 767 px. O cabeçalho usa `min(1280px, 100% − 64px)`. Hero e cena ocupam a largura total; o chão vai até as bordas da janela.
+Contêiner de conteúdo: `min(1140px, 100% − 80px)` no desktop, `100% − 48px` até 1050 px, `100% − 40px` até 767 px. O cabeçalho usa `min(1280px, 100% − 64px)`. A hero ocupa a largura total: o texto fica no contêiner e a foto vai até a borda direita da janela.
 
 Grade: 12 colunas com divisões assimétricas. Título e apoio à esquerda em 7/12 (ou 1,2fr/0,8fr), card ou objeto à direita. A grade de cards de jogo tem até 3 colunas (mínimo 300 px); a vitrine do Início põe os jogos numa linha a partir de 1024 px e vira carrossel com snap abaixo disso.
 
@@ -437,7 +437,8 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 
 ### Kito (uso do personagem)
 
-- **Hero (2026-10-18):** o único lugar onde o Kito se move, e ele interage com quem chega. Pixel art real em 256 px (`art-source/kito-pixel/`), servida num atlas WebP sem perda gerado por `scripts/prepare-kito-pixel.mjs` (posições em `src/kito-sprites.ts`, gerado; não editar à mão). Só os quadros virados para a direita entram; a esquerda é espelho no CSS. Tamanho: 192 px no desktop (×0,75) e 128 px no celular (×0,5, 1:1 em tela 2×); vizinho mais próximo quando a tela tem pixels de sobra, redução filtrada abaixo disso.
+- **Hero com foto (2026-10-24, responsável):** no desktop (a partir de 1024 px), a coluna do texto (até 620 px, no contêiner) fica sobre o Céu e a foto (`foto-mesma-folha`, 640 e 1008 px em WebP, `object-fit: cover`) ocupa da borda da coluna até a borda direita da janela, abaixo do cabeçalho; um degradê de Céu para transparente, de até 260 px, cobre a borda esquerda da foto. O texto fica no meio da altura que sobra acima do fio do Kito. Até 1023 px a foto vai para cima, em 16:9 na largura toda (no máximo 56 % da altura da tela), e o degradê sobe do pé dela até o texto. A foto tem prioridade alta (é o maior elemento no celular) e as folhas nela não dão para ler: nenhuma página do PDF vai para o site. O título da hero vai até 56 px no desktop (`clamp(2.625rem, 1rem + 2.6vw, 3.5rem)`), em duas linhas.
+- **Hero (2026-10-18):** o único lugar onde o Kito se move, e ele interage com quem chega. Desde 2026-10-24 anda só na coluna do texto, num fio de Régua de tinta embaixo dela, com a sombra em degraus em Tinta a 14 %; o cursor fora da coluna (sobre a foto) liga o piloto automático. Pixel art real em 256 px (`art-source/kito-pixel/`), servida num atlas WebP sem perda gerado por `scripts/prepare-kito-pixel.mjs` (posições em `src/kito-sprites.ts`, gerado; não editar à mão). Só os quadros virados para a direita entram; a esquerda é espelho no CSS. Tamanho: 128 px no desktop (×0,5, 1:1 em tela 2×) e 96 px no celular (desde 2026-10-24; antes 192 e 128); vizinho mais próximo quando a tela tem pixels de sobra, redução filtrada abaixo disso.
   - **Mouse:** o Kito persegue o cursor pelo chão. Caminha perto, corre a meia distância e dispara de longe; a cadência dos pés acompanha a velocidade. Vira de frente para trocar de lado, às vezes tropeça ao virar em sprint. Ao alcançar, pula ou acena; com o cursor em cima, acena enquanto o cursor estiver ali; clicado, saltita segurando o coração; com o cursor parado, cochila em pé, respirando, e acorda num susto quando o cursor se mexe. Cursor além da borda: empurra a borda.
   - **Botão "Ver os jogos":** com o cursor ou o foco do teclado no botão, o Kito corre até embaixo dele e aponta, com brilhos, enquanto o cursor estiver lá. No piloto automático ele também vai até o botão e aponta por um instante.
   - **Plataformas:** o botão e a palavra destacada ("encontro.") são plataformas. Solto em cima deles (ou com os pés um pouco abaixo da borda, sem arremesso), o Kito fica ali até alguém carregá-lo de volta: anda só em cima da plataforma e, no piloto automático, só faz ações paradas. Não há animação de descida (decisão do responsável em 2026-10-18).
@@ -464,7 +465,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - **Erro:** uma única mensagem em Body com `role="alert"`, em Tinta (não em cor de erro quando não há culpa da pessoa), seguida de **um** botão secundário "Tentar novamente". Sem título em Display, sem segunda mensagem genérica. Falha de pagamento e 404 usam o Kito tonto.
 - **Desabilitado:** aguada de Tinta + Tinta suave; sempre com a razão em Caption ao lado quando não for óbvia.
 - **Foco:** contorno de 3 px Tinta com offset em tudo que recebe foco, inclusive cartas com `tabindex`, abas e a trilha do carrossel.
-- **Movimento reduzido:** nenhuma entrada, nenhum deslocamento, carrossel instantâneo, Kito da hero parado de frente e nuvens paradas.
+- **Movimento reduzido:** nenhuma entrada, nenhum deslocamento, carrossel instantâneo e o Kito da hero parado de frente.
 
 ### Movimento (tokens)
 
@@ -497,7 +498,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 
 - **Don't** usar rótulo, kicker ou caixa alta com tracking acima de um título de seção ou de página (o jeito de jogar nos cards é a única caixa alta).
 - **Don't** usar Turquesa J001 em texto, ícone informativo ou borda única de controle.
-- **Don't** usar Céu ou Marca-texto fora da hero (exceções: o arco dos gratuitos, o selo "Preço de lançamento" e o código do cupom), nem a paleta da paisagem fora da hero e do chão do rodapé (o marca-texto só atrás de uma palavra).
+- **Don't** usar Céu ou Marca-texto fora da hero (exceções: o arco dos gratuitos, o selo "Preço de lançamento" e o código do cupom), nem a paleta da paisagem fora do chão do rodapé (o marca-texto só atrás de uma palavra).
 - **Don't** escrever texto na cor do jogo nem marcar um jogo do pacote como "Em breve".
 - **Don't** usar cápsula (999 px), sombra dura (`0 3px 0`), borda lateral colorida ou card com borda mais sombra.
 - **Don't** colocar o Kito como ícone ou em erro com expressão triste. A exceção é a arte oficial das capas.

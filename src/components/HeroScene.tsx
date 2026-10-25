@@ -55,7 +55,7 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
     let cancelled = false
     if (kito.current) kito.current.setRunning(true)
     else loadKito().then(startKito => {
-      const hero = region.current?.closest<HTMLElement>('.hero')
+      const hero = region.current?.closest<HTMLElement>('.hero-stack')
       if (cancelled || !hero || !layer.current || !sprite.current || !hitbox.current || !shadow.current) return
       kito.current = startKito({ hero, layer: layer.current, sprite: sprite.current, hitbox: hitbox.current, shadow: shadow.current })
       kito.current.setRunning(true)
@@ -68,19 +68,9 @@ export function HeroScene({ obscured = false }: { obscured?: boolean }) {
 
   return (
     <div ref={region} className="hero-scene-region" data-running={running} data-visible={visible} data-in-view={inView}>
-      {/* Desempenho: a cena é decorativa; a pose do Kito é leve e entra com prioridade baixa, depois do título. */}
-      <div ref={stage} className="hero-scene" aria-hidden="true">
-        <img className="cloud cloud-left" src="/media/hero/cloud-a.webp" width="280" height="117" alt="" fetchPriority="low" />
-        <img className="cloud cloud-right" src="/media/hero/cloud-b.webp" width="208" height="88" alt="" fetchPriority="low" />
-        <img className="cloud cloud-far" src="/media/hero/cloud-a.webp" width="280" height="117" alt="" fetchPriority="low" />
-        <svg className="distant-land" width="1440" height="96" viewBox="0 0 1440 96" preserveAspectRatio="none">
-          <path d="M0 24h72v12h56v16h64v-8h48v16h100v12h96v-8h88v16h112v-8h88v8h100v-16h64v-8h88v12h56v-20h80v-12h64v-8h80V8h84V0h100v96H0Z" fill="#CFE6D7" />
-        </svg>
-        <img className="landscape landscape-left" src="/media/hero/foliage-left.webp" width="360" height="119" alt="" fetchPriority="low" />
-        <img className="landscape landscape-right" src="/media/hero/foliage-right.webp" width="720" height="298" alt="" fetchPriority="low" />
-        <div className="ground"><div className="ground-grass" /><div className="ground-soil" /></div>
-      </div>
-      {/* A camada do Kito cobre a hero inteira: ele anda no chão da cena, mas pode ser carregado por cima do texto. */}
+      {/* Desde 2026-10-24 sem paisagem: o Kito anda num fio fino embaixo do texto (DESIGN.md › Hero). */}
+      <div ref={stage} className="hero-scene" aria-hidden="true"><div className="ground" /></div>
+      {/* A camada do Kito cobre a coluna do texto: ele anda no fio, mas pode ser carregado por cima do texto. */}
       <div ref={layer} className="kito-layer" aria-hidden="true">
         <div ref={shadow} className="kito-shadow" />
         <div ref={sprite} className="kito-sprite"><div ref={hitbox} className="kito-hitbox" /></div>
