@@ -10,7 +10,7 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY admin/ ./admin/
 # O que o admin usa da loja: os tokens da marca, as primitivas (botões, campos), o estilo e o topo do post do blog
-# (prévia), os formatos, o download de JSON, o logo e o G do Google; da API, as regras do post do blog.
+# (prévia), os formatos, o download de JSON e o G do Google; da API, as regras do post do blog.
 COPY src/tokens.css src/primitives.css src/blog.css ./src/
 COPY src/lib/format.ts src/lib/save-json.ts ./src/lib/
 COPY src/components/blog/PostHeader.tsx ./src/components/blog/
