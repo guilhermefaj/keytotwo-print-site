@@ -11,7 +11,10 @@ test.skip(() => !existsSync('admin/dist/index.html'), 'Requires `npm run build:a
 function metrics(days: number) {
   const daily = Array.from({ length: days }, (_, i) => ({ date: new Date(Date.UTC(2026, 9, 23 - (days - 1) + i)).toISOString().slice(0, 10), orders: i === days - 1 ? 2 : 0, revenue: i === days - 1 ? 1980 : 0, accounts: i % 2 }))
   return { days, since: daily[0].date, until: daily.at(-1)!.date, livemode: true, sales: { orders: 2, revenue: 1980, currency: 'brl' }, accounts: 3, funnel: { cart: 10, checkout: 6, paid: 2 }, downloads: { paid: 4, free: 9 }, free_unlocks: 5, newsletter: { subscribed: 12 }, daily,
-    marketing: { codes: [{ code: 'ANA10', orders: 1, revenue: 891, discount: 99 }], partners: [{ name: 'Ana Souza', slug: 'ana-souza', orders: 1, revenue: 891 }], campaigns: [] } }
+    marketing: { codes: [{ code: 'ANA10', orders: 1, revenue: 891, discount: 99 }], partners: [{ name: 'Ana Souza', slug: 'ana-souza', orders: 1, revenue: 891 }], campaigns: [] },
+    usage: { month_start: '2026-10-01', calls_month: 412_345, by_area: { public: 300_000, account: 100_000, admin: 2_345, webhooks: 1_000, schedule: 9_000 },
+      daily: daily.map((item, i) => ({ date: item.date, calls: 1000 + i })), peak_hour: { hour: '2026-10-23T17:00:00Z', calls: 1234 },
+      database_bytes: 47_396_864, active_accounts_month: 37 } }
 }
 
 // Auth e API simulados. `stored`: a sessão que já está no navegador; `factors`: os fatores do usuário no Auth.
@@ -156,15 +159,23 @@ test('métricas: barra lateral com as seções, 7 e 30 dias, celular sem rolagem
   await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Atenção', 'Pedidos e reembolsos', 'Catálogo', 'Cupons e parceiros', 'Usuários', 'Blog'])
   await expect(nav.getByRole('link', { name: 'Métricas' })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('region', { name: 'Vendas' }).locator('.cards dd')).toHaveText(['R$ 19,80', '2', 'R$ 9,90'])
-  await expect(page.locator('.bars span')).toHaveCount(7)
+  await expect(page.getByRole('region', { name: 'Vendas' }).locator('.bars span')).toHaveCount(7)
   await expect(page.locator('.funnel-share')).toHaveText(['60% da sacola', '20% da sacola'])
   const marketing = page.getByRole('region', { name: 'Cupons e parceiros' })
   await expect(marketing.getByRole('table', { name: 'Vendas por cupom' })).toContainText(/ANA10\s*1\s*R\$\s8,91\s*R\$\s0,99/)
   await expect(marketing.getByRole('table', { name: 'Vendas por parceiro' })).toContainText('Ana Souza')
   await expect(marketing.getByRole('table', { name: 'Vendas por campanha' })).toHaveCount(0)
   await axe(page)
+  // Uso da infraestrutura (2026-10-25): o mês contra o plano grátis, por dia e por tipo; 80% ou mais avisa.
+  const usage = page.getByRole('region', { name: 'Uso da infraestrutura' })
+  await expect(usage.locator('.meters li strong')).toHaveText(['412.345 de 500 mil', '45,2 MB de 500 MB', '37 de 50 mil'])
+  await expect(usage.locator('.meter-share')).toHaveText(['82% do limite: perto de acabar', '9% do limite', '0% do limite'])
+  await expect(usage.locator('.bars span')).toHaveCount(7)
+  await expect(usage.getByRole('table', { name: 'Chamadas neste mês, por tipo' })).toContainText(/Admin\s*2\.345/)
+  await expect(usage.getByText('Hora mais movimentada nas últimas 24 horas: 1.234 chamadas, às 14h.')).toBeVisible()
   await page.getByRole('button', { name: '30 dias' }).click()
-  await expect(page.locator('.bars span')).toHaveCount(30)
+  await expect(page.getByRole('region', { name: 'Vendas' }).locator('.bars span')).toHaveCount(30)
+  await expect(usage.locator('.bars span')).toHaveCount(30)
   expect(calls.filter(call => call.path.startsWith('api/admin/metrics')).map(call => call.path)).toEqual(['api/admin/metrics?days=7', 'api/admin/metrics?days=30'])
   // os alertas da barra lateral: uma busca só, não uma por troca de período
   expect(calls.filter(call => call.path === 'api/admin/alerts')).toHaveLength(1)

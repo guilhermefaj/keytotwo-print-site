@@ -2,7 +2,8 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assertEquals, assertExists } from '@std/assert'
-import { captureErrors, onPrice, onRpc, request, rpcCalls, sessionToken, userId, contractTest } from './contract-helpers.ts'
+import { captureErrors, onPrice, onRpc, request, rpcCalls, sessionToken, usageCalls, userId, contractTest } from './contract-helpers.ts'
+import { apiArea } from '../_shared/usage.ts'
 import { handleRequest } from '../api/router.ts'
 
 const GAME = { code: 'J001', name: 'Jogo [TESTE]' }
@@ -284,26 +285,27 @@ contractTest('KT009 vira 403 EMAIL_NOT_CONFIRMED; outra falha de RPC vira 500 se
   assertEquals(logs[0].includes('PGRST202'), true)
 })
 
-contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, com cupons e parceiros; 403 sem segundo fator ou sem admin', async () => {
+contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, com cupons, parceiros e o uso; 403 sem segundo fator ou sem admin', async () => {
   const token = await sessionToken({ aal: 'aal2' })
   const METRICS = { days: 30, sales: { orders: 2, revenue: 1980, currency: 'brl' }, daily: [] }
   const MARKETING = { codes: [{ code: 'ANA10', orders: 1 }], partners: [], campaigns: [] }
-  onRpc((fn) => ({ status: 200, body: [fn === 'admin_marketing_metrics' ? { outcome: 'ok', result: MARKETING } : { outcome: 'ok', metrics: METRICS }] }))
+  const USAGE = { calls_month: 1234, by_area: { public: 1000 }, daily: [], peak_hour: null, database_bytes: 4096, active_accounts_month: 3 }
+  onRpc((fn) => ({ status: 200, body: [fn === 'admin_marketing_metrics' ? { outcome: 'ok', result: MARKETING } : fn === 'admin_usage_metrics' ? { outcome: 'ok', result: USAGE } : { outcome: 'ok', metrics: METRICS }] }))
   const res = await handleRequest(request('/admin/metrics?days=30', { token }))
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Cache-Control'), 'no-store')
-  assertEquals(await res.json(), { ...METRICS, marketing: MARKETING })
+  assertEquals(await res.json(), { ...METRICS, marketing: MARKETING, usage: USAGE })
   const args = { p_user_id: userId(token), p_days: 30, p_livemode: false }
-  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['get_admin_metrics', args], ['admin_marketing_metrics', args]])
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['get_admin_metrics', args], ['admin_marketing_metrics', args], ['admin_usage_metrics', { p_user_id: userId(token), p_days: 30 }]])
   assertEquals((await handleRequest(request('/admin/metrics', { token }))).status, 200)
-  assertEquals(rpcCalls[2].args.p_days, 7)
+  assertEquals(rpcCalls[3].args.p_days, 7)
 
   for (const days of ['0', '14', '366', 'sete', '']) {
     const invalid = await handleRequest(request(`/admin/metrics?days=${days}`, { token }))
     assertEquals(invalid.status, 400, days)
     assertEquals((await invalid.json()).error.code, 'INVALID_REQUEST')
   }
-  assertEquals(rpcCalls.length, 4)
+  assertEquals(rpcCalls.length, 6)
 
   // Sessão só com o primeiro fator (aal1), mesmo de admin, ou com o código do app confirmado há mais de 12 horas (ou sem
   // ele no amr): nem chega ao banco.
@@ -313,10 +315,14 @@ contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, com
     assertEquals(single.status, 403)
     assertEquals((await single.json()).error.code, 'MFA_REQUIRED')
   }
-  assertEquals(rpcCalls.length, 4)
+  assertEquals(rpcCalls.length, 6)
   const recent = await sessionToken({ aal: 'aal2', amr: [{ method: 'totp', timestamp: hours(11.9) }, { method: 'totp', timestamp: hours(30) }] })
   assertEquals((await handleRequest(request('/admin/metrics?days=7', { token: recent }))).status, 200)
-  assertEquals(rpcCalls.length, 6)
+  assertEquals(rpcCalls.length, 9)
+  // Toda chamada conta no uso, inclusive as recusadas (período inválido, sem o segundo fator).
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  assertEquals(usageCalls.length, 13)
+  assertEquals(new Set(usageCalls), new Set(['admin']))
 
   onRpc(() => ({ status: 200, body: [{ outcome: 'forbidden', metrics: null, result: null }] }))
   const forbidden = await handleRequest(request('/admin/metrics?days=7', { token }))
@@ -357,4 +363,15 @@ contractTest('POST /csp-report (pública): só a diretiva, a origem barrada e o 
   }
   assertEquals(logs, ['csp: barraria script-src-elem https://evil.example em /email/preferencias', 'csp: barrou script-src-elem inline em /pagamento'])
   assertEquals(rpcCalls.length, 0)
+})
+
+contractTest('uso: o tipo de cada rota da api, para o contador das Métricas', () => {
+  const cases: [string, string][] = [
+    ['/catalog', 'public'], ['/cart/quote', 'public'], ['/free-games', 'public'], ['/blog/posts', 'public'], ['/blog/version', 'public'],
+    ['/referral/visit', 'public'], ['/csp-report', 'public'], ['/email/unsubscribe', 'public'], ['/d/abc.def', 'public'], ['/nada', 'public'], ['/', 'public'],
+    ['/cart', 'account'], ['/cart/items/P001', 'account'], ['/cart/merge', 'account'], ['/account', 'account'], ['/account/export', 'account'],
+    ['/library', 'account'], ['/checkout', 'account'], ['/checkout/terms', 'account'], ['/order-status', 'account'], ['/download-url', 'account'], ['/free-download', 'account'],
+    ['/admin/metrics', 'admin'], ['/admin/users/x/block', 'admin'], ['/internal/discounts/tick', 'schedule'],
+  ]
+  for (const [path, area] of cases) assertEquals(apiArea(path), area, path)
 })

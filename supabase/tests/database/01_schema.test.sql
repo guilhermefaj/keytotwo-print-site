@@ -110,7 +110,7 @@ select pg_temp.expect('order_items: valor sem moeda', $q$update public.order_ite
 select pg_temp.expect('entitlements: item inexistente', format($q$insert into public.entitlements (order_id,product_id,user_id) select o.id, p.id, %L from public.orders o, public.products p where o.stripe_checkout_session_id='cs_test_PGTAP_FX1' and p.code='SG2'$q$, pg_temp.uid('u1')), '23503');
 select pg_temp.expect('entitlements: user_id diferente do dono do pedido', format($q$insert into public.entitlements (order_id,product_id,user_id) select o.id, i.product_id, %L from public.orders o join public.order_items i on i.order_id=o.id where o.stripe_checkout_session_id='cs_test_PGTAP_FX2'$q$, pg_temp.uid('u1')), '23503');
 select pg_temp.expect('entitlements: direito repetido por item', $q$insert into public.entitlements (order_id,product_id,user_id) select e.order_id, e.product_id, e.user_id from public.entitlements e limit 1$q$, '23505');
-select pg_temp.expect('entitlements: revogado sem motivo', $q$update public.entitlements set status='revoked' where id = (select id from public.entitlements limit 1)$q$, '23514');
+select pg_temp.expect('entitlements: revogado sem motivo', $q$update public.entitlements set status='revoked' where id = (select id from public.entitlements where status = 'active' order by id limit 1)$q$, '23514');
 select pg_temp.expect('entitlements: motivo inválido', $q$update public.entitlements set status='revoked', revoked_at=now(), revoke_reason='x' where id = (select id from public.entitlements limit 1)$q$, '23514');
 
 -- ===== funil e fila ===============================================================================

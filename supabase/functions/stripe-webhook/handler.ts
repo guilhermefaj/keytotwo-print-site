@@ -5,6 +5,7 @@ import { ConfigError, env } from '../_shared/env.ts'
 import { applySession, idOf, loadSession, orderIdFromSession, type OrderOutcome, setStatus } from '../_shared/fulfillment.ts'
 import { errorLabel, errorResponse, HttpError, isUuid, json, postOnly } from '../_shared/http.ts'
 import { cryptoProvider, isStripeError, stripe, stripeErrorLabel } from '../_shared/stripe.ts'
+import { countCall } from '../_shared/usage.ts'
 
 // Erros de contrato que um reenvio da Stripe não resolve: 200 com log (docs/api-contract.md 9).
 const FINAL_ERRORS = new Set(['KT001', 'KT002', 'KT004', 'KT005', 'KT007', 'KT012', '23505', 'EMAIL_NOT_CONFIRMED'])
@@ -87,6 +88,7 @@ function codeOf(error: unknown): string | null {
 }
 
 export async function handleStripeWebhook(req: Request): Promise<Response> {
+  countCall('webhooks')
   if (req.method !== 'POST') return postOnly()
   const signature = req.headers.get('Stripe-Signature')
   const payload = await req.text()

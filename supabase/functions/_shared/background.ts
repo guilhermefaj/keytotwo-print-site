@@ -15,6 +15,11 @@ export function runInBackground(name: string, work: () => Promise<unknown>): voi
   runner(work().catch((error) => console.error(`${name}: falhou em segundo plano (${errorLabel(error)})`)))
 }
 
+// O mesmo, sempre pelo runtime: para o que os testes não acompanham (o contador de uso, usage.ts).
+export function runDetached(name: string, work: () => Promise<unknown>): void {
+  defaultRunner(work().catch((error) => console.error(`${name}: falhou em segundo plano (${errorLabel(error)})`)))
+}
+
 export function setBackgroundRunner(next: Runner | null): void {
   runner = next ?? defaultRunner
 }

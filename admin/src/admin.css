@@ -104,11 +104,14 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .daily th, .daily td { padding: 8px 12px; border-bottom: var(--line-rule); text-align: right; white-space: nowrap; }
 .daily th:first-child { text-align: left; }
 .daily thead th { color: var(--color-ink-soft); font-weight: 600; }
-.funnel { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
-.funnel li { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 4px 16px; padding: 16px 20px; border: var(--line-rule); border-radius: var(--radius-md); }
-.funnel strong { font-family: var(--font-display); font-size: var(--text-title-lg); font-variant-numeric: tabular-nums; }
-.funnel-share { grid-column: 1 / -1; color: var(--color-ink-soft); font-size: var(--text-caption); }
-.funnel-bar { grid-column: 1 / -1; height: 8px; margin-top: 4px; border-radius: 4px; background: linear-gradient(var(--color-deep-teal), var(--color-deep-teal)) 0 0 / var(--bar) 100% no-repeat, var(--color-ink-wash); }
+/* O funil e os medidores do uso (2026-10-25) têm a mesma forma: rótulo, número e a barra da parte. */
+.funnel, .meters { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.funnel li, .meters li { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 4px 16px; padding: 16px 20px; border: var(--line-rule); border-radius: var(--radius-md); }
+.funnel strong, .meters strong { font-family: var(--font-display); font-size: var(--text-title-lg); font-variant-numeric: tabular-nums; }
+.funnel-share, .meter-share { grid-column: 1 / -1; color: var(--color-ink-soft); font-size: var(--text-caption); }
+.funnel-bar, .meter-bar { grid-column: 1 / -1; height: 8px; margin-top: 4px; border-radius: 4px; background: linear-gradient(var(--color-deep-teal), var(--color-deep-teal)) 0 0 / var(--bar) 100% no-repeat, var(--color-ink-wash); }
+.meters + .chart { margin-top: 24px; }
+.table-wrap + .note { margin-top: 12px; }
 
 /* Peças comuns das seções */
 .page-heading-actions { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px; }

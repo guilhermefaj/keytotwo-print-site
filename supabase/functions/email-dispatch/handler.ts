@@ -2,9 +2,11 @@ import { sameSecret } from '../_shared/compare.ts'
 import { dispatchEmails } from '../_shared/email.ts'
 import { env } from '../_shared/env.ts'
 import { errorResponse, HttpError, isUuid, json, postOnly, toErrorResponse } from '../_shared/http.ts'
+import { countCall } from '../_shared/usage.ts'
 
 // email-dispatch (interna): chamada pelo pg_cron/pg_net e em segundo plano pela api e pelo webhook.
 export async function handleEmailDispatch(req: Request): Promise<Response> {
+  countCall('schedule')
   if (req.method !== 'POST') return postOnly()
   try {
     if (!(await sameSecret(req.headers.get('apikey') ?? '', env.dispatchKey()))) throw new HttpError(401, 'UNAUTHENTICATED', 'Chave inválida.')
