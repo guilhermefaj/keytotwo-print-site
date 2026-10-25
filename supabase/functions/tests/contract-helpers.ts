@@ -98,11 +98,14 @@ type Reply = { status: number; body: unknown; headers?: Record<string, string> }
 export const ok = (body: unknown): Reply => ({ status: 200, body })
 export const row = (body: Record<string, unknown>) => ok([body])
 export const rpcCalls: RpcCall[] = []
+// O contador de uso (record_api_usage, em segundo plano a cada chamada) fica à parte: não muda as listas dos testes.
+export const usageCalls: string[] = []
 let rpcReply: (fn: string, args: Record<string, unknown>) => Reply = () => ({ status: 200, body: null })
 let priceReply: (id: string) => Reply = () => ({ status: 404, body: {} })
 
 export function onRpc(reply: (fn: string, args: Record<string, unknown>) => Reply) {
   rpcCalls.length = 0
+  usageCalls.length = 0
   rpcReply = reply
 }
 
@@ -185,6 +188,10 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
     return Promise.resolve(respond({ status: 200, body: { keys: [publicJwk] } }))
   }
   const rpcMatch = url.href.startsWith(`${SUPABASE_URL}/rest/v1/rpc/`) ? url.pathname.split('/').pop()! : null
+  if (rpcMatch === 'record_api_usage') {
+    usageCalls.push(String(JSON.parse(String(init?.body ?? '{}')).p_area))
+    return Promise.resolve(respond({ status: 200, body: null }))
+  }
   if (rpcMatch) {
     const headers = new Headers(init?.headers)
     const args = JSON.parse(String(init?.body ?? '{}'))

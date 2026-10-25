@@ -2,6 +2,7 @@ import { RpcError, rpcRow } from '../_shared/admin.ts'
 import { sameSecret } from '../_shared/compare.ts'
 import { env } from '../_shared/env.ts'
 import { HttpError, json, postOnly, readJson, toErrorResponse } from '../_shared/http.ts'
+import { countCall } from '../_shared/usage.ts'
 
 // brevo-webhook (I5): eventos transacionais da Brevo → record_email_event (docs/api-contract.md 8.1).
 // Autenticação: Authorization: Bearer <BREVO_WEBHOOK_SECRET> (webhook criado com auth.type = bearer).
@@ -64,6 +65,7 @@ async function record(event: BrevoEvent): Promise<boolean> {
 }
 
 export async function handleBrevoWebhook(req: Request): Promise<Response> {
+  countCall('webhooks')
   if (req.method !== 'POST') return postOnly()
   try {
     const auth = req.headers.get('Authorization') ?? ''

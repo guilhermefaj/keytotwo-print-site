@@ -24,7 +24,33 @@ type Metrics = {
     partners: { name: string; slug: string; orders: number; revenue: number }[]
     campaigns: { source: string | null; campaign: string | null; orders: number; revenue: number }[]
   }
+  // Uso da infraestrutura (2026-10-25); a API antiga não manda.
+  usage?: Usage
 }
+
+type UsageArea = 'public' | 'account' | 'admin' | 'webhooks' | 'schedule'
+type Usage = {
+  month_start: string
+  calls_month: number
+  by_area: Record<UsageArea, number>
+  daily: { date: string; calls: number }[]
+  peak_hour: { hour: string; calls: number } | null
+  database_bytes: number
+  active_accounts_month: number
+}
+
+// Limites do plano grátis do Supabase (2026-10): mudar aqui se o plano mudar.
+const FREE_PLAN = { calls: 500_000, databaseBytes: 500 * 1024 * 1024, activeAccounts: 50_000 }
+const AREAS: [UsageArea, string][] = [
+  ['public', 'Loja, sem login'],
+  ['account', 'Contas, com login'],
+  ['admin', 'Admin'],
+  ['webhooks', 'Avisos da Stripe e da Brevo'],
+  ['schedule', 'Agenda do banco'],
+]
+const megabytes = (bytes: number) => new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(bytes / 1024 / 1024)
+const thousands = (value: number) => `${count(value / 1000)} mil`
+const hourOf = (value: string) => new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', timeZone: 'America/Sao_Paulo' }).format(new Date(value))
 
 const periods = [7, 30] as const
 // As datas já são dias de Brasília (AAAA-MM-DD); meio-dia em UTC não muda o dia em nenhum fuso.
@@ -105,7 +131,46 @@ function Dashboard({ data }: { data: Metrics }) {
         <div><dt>Jogos gratuitos</dt><dd>{count(data.downloads.free)}</dd></div>
       </dl>
     </section>
+    {data.usage && <UsageSection usage={data.usage} />}
   </>
+}
+
+// Uso da infraestrutura (2026-10-25): o que a loja usa do plano grátis do Supabase no mês, contado pelas próprias
+// funções (private.api_usage); o tamanho do banco e as contas que entraram vêm do banco na hora.
+function UsageSection({ usage }: { usage: Usage }) {
+  const meters = [
+    { label: 'Chamadas às funções', value: `${count(usage.calls_month)} de ${thousands(FREE_PLAN.calls)}`, part: usage.calls_month, whole: FREE_PLAN.calls },
+    { label: 'Tamanho do banco', value: `${megabytes(usage.database_bytes)} MB de ${megabytes(FREE_PLAN.databaseBytes)} MB`, part: usage.database_bytes, whole: FREE_PLAN.databaseBytes },
+    { label: 'Contas que entraram no mês', value: `${count(usage.active_accounts_month)} de ${thousands(FREE_PLAN.activeAccounts)}`, part: usage.active_accounts_month, whole: FREE_PLAN.activeAccounts },
+  ]
+  const peak = Math.max(...usage.daily.map(item => item.calls), 0)
+  const first = usage.daily[0]?.date
+  const last = usage.daily.at(-1)?.date
+  return <section className="section" aria-labelledby="metricas-uso">
+    <h2 id="metricas-uso">Uso da infraestrutura</h2>
+    <p className="note">O que a loja usa do plano grátis do Supabase neste mês, desde o dia 1º. As chamadas são contadas pela própria loja; o painel do Supabase pode mostrar números um pouco diferentes.</p>
+    <ul className="meters">{meters.map(meter => {
+      const percent = share(meter.part, meter.whole)
+      return <li key={meter.label} style={{ '--bar': `${meter.part > 0 ? Math.max(percent, 1) : 0}%` } as CSSProperties}>
+        <span>{meter.label}</span>
+        <strong>{meter.value}</strong>
+        <span className="meter-share">{percent >= 80 ? `${percent}% do limite: perto de acabar` : `${percent}% do limite`}</span>
+        <span className="meter-bar" aria-hidden="true" />
+      </li>
+    })}</ul>
+    {first && last && <figure className="chart">
+      <figcaption>Chamadas por dia</figcaption>
+      <div className="bars" aria-hidden="true">{usage.daily.map(item => <span key={item.date} title={`${day(item.date)}: ${count(item.calls)} ${item.calls === 1 ? 'chamada' : 'chamadas'}`} style={{ '--bar': `${share(item.calls, peak)}%` } as CSSProperties} />)}</div>
+      <div className="chart-axis" aria-hidden="true"><span>{day(first)}</span><span>{day(last)}</span></div>
+    </figure>}
+    <div className="table-wrap"><table className="data-table" aria-label="Chamadas neste mês, por tipo">
+      <thead><tr><th scope="col">Tipo</th><th scope="col">Chamadas</th></tr></thead>
+      <tbody>{AREAS.map(([area, label]) => <tr key={area}><th scope="row">{label}</th><td>{count(usage.by_area[area] ?? 0)}</td></tr>)}</tbody>
+    </table></div>
+    <p className="note">{usage.peak_hour
+      ? `Hora mais movimentada nas últimas 24 horas: ${count(usage.peak_hour.calls)} ${usage.peak_hour.calls === 1 ? 'chamada' : 'chamadas'}, às ${hourOf(usage.peak_hour.hour)}h.`
+      : 'Nenhuma chamada nas últimas 24 horas.'}</p>
+  </section>
 }
 
 // Cupons, parceiros e campanhas (2026-10-24): as vendas pagas do período que usaram um cupom, vieram de um parceiro
@@ -113,7 +178,7 @@ function Dashboard({ data }: { data: Metrics }) {
 function Marketing({ data }: { data: Metrics }) {
   const { codes, partners, campaigns } = data.marketing
   const currency = data.sales.currency
-  const table = (label: string, head: string, rows: { key: string; name: string; orders: number; revenue: number; extra?: string }[], extra?: string) => rows.length > 0 && <div className="table-wrap"><table aria-label={label}>
+  const table = (label: string, head: string, rows: { key: string; name: string; orders: number; revenue: number; extra?: string }[], extra?: string) => rows.length > 0 && <div className="table-wrap"><table className="data-table" aria-label={label}>
     <thead><tr><th scope="col">{head}</th><th scope="col">Pedidos</th><th scope="col">Receita</th>{extra && <th scope="col">{extra}</th>}</tr></thead>
     <tbody>{rows.map(row => <tr key={row.key}><th scope="row">{row.name}</th><td>{count(row.orders)}</td><td>{money(row.revenue, currency)}</td>{extra && <td>{row.extra}</td>}</tr>)}</tbody>
   </table></div>

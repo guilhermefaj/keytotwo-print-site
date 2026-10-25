@@ -18,6 +18,7 @@ import { adminOrder, adminOrders, adminReconcileOrder, adminRefundOrder } from '
 import { adminCreateDiscount, adminDiscounts, adminDiscountState, internalDiscountsTick } from './routes/discounts.ts'
 import { adminPartner, adminPartnerExport, adminPartnerPayout, adminPartners, adminSavePartner, referralVisit } from './routes/partners.ts'
 import { adminAddPackGame, adminCatalog, adminProductListPrice, adminProductPrice, adminProductStatus, adminRemovePackGame } from './routes/products.ts'
+import { apiArea, countCall } from '../_shared/usage.ts'
 
 type Params = Record<string, string>
 type Handler = (req: Request, url: URL, params: Params) => Response | Promise<Response>
@@ -134,6 +135,8 @@ async function handle(req: Request): Promise<Response> {
 
 export async function handleRequest(req: Request): Promise<Response> {
   let origin: string | null = null
+  // Toda chamada conta no uso do mês (Métricas do admin), inclusive a recusada.
+  countCall(apiArea(routePath(new URL(req.url))))
   try {
     origin = allowedOrigin(req)
     if (req.method === 'OPTIONS') return preflight(origin)
