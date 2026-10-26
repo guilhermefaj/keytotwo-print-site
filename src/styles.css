@@ -304,19 +304,23 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .site-footer[data-focus="true"] { padding-bottom: 28px; }
 .site-footer[data-focus="true"] .site-footer-rule { margin-bottom: 0; }
 .site-footer[data-focus="true"] .footer-bottom { border-top: 0; margin-top: 0; }
-/* O Kito solto fecha o rodapé (2026-10-26, sem chão): sentado na borda de baixo da tela, com um balão de fio fino ao lado. */
-.footer-hello { --kito-height: 96px; display: flex; justify-content: flex-end; align-items: center; gap: 20px; margin-top: 24px; overflow: hidden; }
-.footer-bubble { position: relative; max-width: 290px; margin: 0 0 calc(var(--kito-height) / 4); padding: 12px 16px; border: var(--line-card); border-radius: var(--radius-md); background: var(--color-paper); font-size: var(--text-small); line-height: 1.5; }
-/* A ponta do balão: um quadrado girado com o fio em dois lados, apontando para o Kito. */
-.footer-bubble::after { content: ''; position: absolute; top: 50%; right: -7px; width: 12px; height: 12px; border-top: var(--line-card); border-right: var(--line-card); background: var(--color-paper); transform: translateY(-50%) rotate(45deg); }
-/* Kito sentado (scripts/prepare-kito-pixel.mjs): fileira de nove quadros de 201×208, com o chão a 7 px da base, que fica
-   na borda da tela. A caixa mostra um quadro; o balanço dos pés (data-swing, SiteFooter) anda a fileira de quadro em quadro. */
-.footer-kito { flex: none; align-self: flex-end; height: var(--kito-height); aspect-ratio: 201 / 208; overflow: hidden; margin-bottom: calc(var(--kito-height) * -7 / 208); }
-.footer-kito img { width: auto; max-width: none; height: 100%; }
-.footer-kito[data-swing] img { animation: kito-swing .9s steps(9) var(--swings, 1); }
-.footer-kito[data-swing='2'] { --swings: 2; }
-@keyframes kito-swing { to { transform: translateX(-100%); } }
-@media (prefers-reduced-motion: reduce) { .footer-kito img { animation: none; } }
+/* A onda fecha o rodapé (2026-10-26): as cristas (SiteFooter) esticam na largura com a altura fixa, e o corpo, em degradê
+   do Céu ao Turquesa profundo misturado ao Céu, cresce com a linha legal. A crista da frente tem a cor do topo do corpo.
+   Camadas: crista de trás, Kito, crista da frente e corpo, linha legal. */
+.footer-wave { --crest: 72px; --kito-height: 128px; --wave-top: var(--color-sky); --wave-back: color-mix(in srgb, var(--color-deep-teal) 8%, var(--color-sky)); --wave-bottom: color-mix(in srgb, var(--color-deep-teal) 18%, var(--color-sky)); position: relative; isolation: isolate; margin-top: 96px; padding-top: var(--crest); }
+.footer-wave::before { content: ''; position: absolute; inset: var(--crest) 0 0; z-index: 2; background: linear-gradient(var(--wave-top), var(--wave-bottom)); }
+.footer-wave-back, .footer-wave-front { position: absolute; left: 0; width: 100%; height: var(--crest); }
+.footer-wave-back { top: -14px; z-index: 0; fill: var(--wave-back); }
+.footer-wave-front { top: 0; z-index: 2; fill: var(--wave-top); }
+.footer-wave .footer-bottom { position: relative; z-index: 3; border-top: 0; margin-top: 0; padding: 4px 0 28px; }
+/* Kito de braços para cima (scripts/prepare-kito-pixel.mjs, 174×201): no meio, com a crista da frente cobrindo do peito para
+   baixo; o pulinho (data-hop, SiteFooter) sobe e volta. */
+.footer-kito { position: absolute; z-index: 1; top: calc(var(--crest) * .46 - var(--kito-height) * .74); left: 50%; translate: -50% 0; height: var(--kito-height); aspect-ratio: 174 / 201; }
+.footer-kito img { display: block; width: 100%; height: 100%; }
+.footer-kito[data-hop] { animation: kito-hop .7s ease-out var(--hops, 1); }
+.footer-kito[data-hop='2'] { --hops: 2; }
+@keyframes kito-hop { 40% { transform: translateY(-12px); } }
+@media (prefers-reduced-motion: reduce) { .footer-kito { animation: none; } }
 
 /* --------------------------------------------------------------------------
    Páginas de leitura (ajuda, termos, privacidade, jogo gratuito, e-mail)
@@ -500,7 +504,7 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .footer-bottom { margin-top: 32px; }
   .footer-legal { flex-direction: column; }
   .footer-legal span + span::before { content: none; }
-  .footer-hello { --kito-height: 80px; gap: 14px; margin-top: 16px; }
+  .footer-wave { --crest: 52px; --kito-height: 96px; margin-top: 72px; }
   /* Os quatro links legais em duas colunas: nenhum fica sozinho na linha. */
   .footer-bottom nav { display: grid; grid-template-columns: repeat(2, minmax(0, auto)); justify-content: start; gap: 12px 32px; }
   .reading-page, .cart-page, .account-page { padding-block: 32px 56px; }

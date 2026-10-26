@@ -333,6 +333,6 @@ test('rodapé: a tesoura e o Kito também em Entrar e na Sacola', async ({ page 
   for (const route of ['/entrar', '/carrinho']) {
     await page.goto(route)
     await expect(page.locator('.site-footer .cut-line'), route).toHaveCount(1)
-    await expect(page.locator('.site-footer .footer-hello'), route).toHaveCount(1)
+    await expect(page.locator('.site-footer .footer-wave'), route).toHaveCount(1)
   }
 })
