@@ -304,23 +304,34 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .site-footer[data-focus="true"] { padding-bottom: 28px; }
 .site-footer[data-focus="true"] .site-footer-rule { margin-bottom: 0; }
 .site-footer[data-focus="true"] .footer-bottom { border-top: 0; margin-top: 0; }
-/* A onda fecha o rodapé (2026-10-26): as cristas (SiteFooter) esticam na largura com a altura fixa, e o corpo, em degradê
-   do Céu ao Turquesa profundo misturado ao Céu, cresce com a linha legal. A crista da frente tem a cor do topo do corpo.
-   Camadas: crista de trás, Kito, crista da frente e corpo, linha legal. */
-.footer-wave { --crest: 72px; --kito-height: 128px; --wave-top: var(--color-sky); --wave-back: color-mix(in srgb, var(--color-deep-teal) 8%, var(--color-sky)); --wave-bottom: color-mix(in srgb, var(--color-deep-teal) 18%, var(--color-sky)); position: relative; isolation: isolate; margin-top: 96px; padding-top: var(--crest); }
-.footer-wave::before { content: ''; position: absolute; inset: var(--crest) 0 0; z-index: 2; background: linear-gradient(var(--wave-top), var(--wave-bottom)); }
+/* A onda fecha o rodapé (2026-10-26): as cristas (SiteFooter) esticam na largura com a altura fixa, e o corpo cresce com a
+   linha legal. Tons do Turquesa J001 (a cor do Kito) misturado ao Céu e ao Papel, só aqui. A crista da frente sai mais
+   turquesa no alto (--wave-crest) e clareia até o pé (--wave-mid), de onde o corpo segue até o Céu, sem emenda. A de
+   trás é mais clara, quase Papel. Camadas: crista de trás, Kito, crista da frente e corpo, linha legal. */
+.footer-wave { --crest: 72px; --kito-height: 128px; --wave-crest: color-mix(in srgb, var(--color-line) 20%, var(--color-sky)); --wave-mid: color-mix(in srgb, var(--color-line) 9%, var(--color-sky)); --wave-back: color-mix(in srgb, var(--color-line) 9%, var(--color-paper)); --wave-back-foot: color-mix(in srgb, var(--color-line) 6%, var(--color-paper)); position: relative; isolation: isolate; margin-top: 96px; padding-top: var(--crest); }
+.footer-wave::before { content: ''; position: absolute; inset: var(--crest) 0 0; z-index: 2; background: linear-gradient(var(--wave-mid), var(--color-sky)); }
 .footer-wave-back, .footer-wave-front { position: absolute; left: 0; width: 100%; height: var(--crest); }
-.footer-wave-back { top: -14px; z-index: 0; fill: var(--wave-back); }
-.footer-wave-front { top: 0; z-index: 2; fill: var(--wave-top); }
+.footer-wave-back { top: -14px; z-index: 0; }
+.footer-wave-front { top: 0; z-index: 2; }
+.footer-wave-back stop:first-child { stop-color: var(--wave-back); }
+.footer-wave-back stop:last-child { stop-color: var(--wave-back-foot); }
+.footer-wave-front stop:first-child { stop-color: var(--wave-crest); }
+.footer-wave-front stop:last-child { stop-color: var(--wave-mid); }
 .footer-wave .footer-bottom { position: relative; z-index: 3; border-top: 0; margin-top: 0; padding: 4px 0 28px; }
-/* Kito de braços para cima (scripts/prepare-kito-pixel.mjs, 174×201): no meio, com a crista da frente cobrindo do peito para
-   baixo; o pulinho (data-hop, SiteFooter) sobe e volta. */
-.footer-kito { position: absolute; z-index: 1; top: calc(var(--crest) * .46 - var(--kito-height) * .74); left: 50%; translate: -50% 0; height: var(--kito-height); aspect-ratio: 174 / 201; }
+/* Kito no alto do pulo, de braços para cima (scripts/prepare-kito-pixel.mjs, 202×211), no meio, onde a crista da frente
+   está a 31 % da altura (WAVE_FRONT): ela cobre da barriga para baixo. O pulinho (data-hop, SiteFooter) sobe e volta. */
+.footer-kito { position: absolute; z-index: 1; top: calc(var(--crest) * .31 - var(--kito-height) * .8); left: 50%; translate: -50% 0; height: var(--kito-height); aspect-ratio: 202 / 211; }
 .footer-kito img { display: block; width: 100%; height: 100%; }
 .footer-kito[data-hop] { animation: kito-hop .7s ease-out var(--hops, 1); }
 .footer-kito[data-hop='2'] { --hops: 2; }
 @keyframes kito-hop { 40% { transform: translateY(-12px); } }
-@media (prefers-reduced-motion: reduce) { .footer-kito { animation: none; } }
+/* O coraçãozinho nas cores do sprite do Kito (contorno, corpo, brilho), ao lado da cabeça, flutuando devagar. */
+.kito-heart { position: absolute; left: 96%; top: 6%; width: calc(var(--kito-height) / 4); height: auto; animation: kito-heart 2.6s ease-in-out infinite; }
+.kito-heart-edge { fill: #015367; }
+.kito-heart-body { fill: #03b9c3; }
+.kito-heart-shine { fill: #63d8dc; }
+@keyframes kito-heart { 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .footer-kito, .kito-heart { animation: none; } }
 
 /* --------------------------------------------------------------------------
    Páginas de leitura (ajuda, termos, privacidade, jogo gratuito, e-mail)

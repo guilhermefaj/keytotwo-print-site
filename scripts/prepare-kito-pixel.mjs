@@ -127,9 +127,10 @@ animations.carry = { start: kitoFrames.length, count: carry.length, ground: 0, a
 kitoFrames.push(...carry.map(frame => frame.pixels))
 
 
-// Kito do rodapé (2026-10-26): de frente, com os dois braços para cima (hanging_on_the_edge), espiando por trás da onda.
+// Kito do rodapé (2026-10-26): de frente, no alto do pulo com os dois braços para cima (quadro 4 do Two-Footed_Jump),
+// espiando por trás da onda.
 // Recortado no contorno com 2 px de folga, para o vizinho não vazar na escala.
-const armsUp = await readFrame('art-source/kito-pixel', 'hanging_on_the_edge/rotations/south.png', KITO)
+const armsUp = await readFrame('art-source/kito-pixel', frame('Idle/animations/Two-Footed_Jump', 'south', 4), KITO)
 const armsBox = bounds(armsUp, KITO)
 const armsLeft = armsBox.left - 2, armsTop = armsBox.top - 2, armsWidth = armsBox.right + 3 - armsLeft, armsHeight = armsBox.bottom + 3 - armsTop
 const armsCrop = Buffer.alloc(armsWidth * armsHeight * 4)
