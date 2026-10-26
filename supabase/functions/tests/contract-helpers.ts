@@ -12,6 +12,7 @@ export const WEBHOOK_SECRET = 'segredo-webhook-de-teste'
 export const TERMS_VERSION = 'termos-teste-1'
 export const LINK_SECRET = 'segredo-dos-links-de-teste'
 const MAILPIT_URL = 'http://mailpit.teste'
+const SITE_URL = 'http://127.0.0.1:5176'
 export const BREVO_WEBHOOK_SECRET = 'segredo-webhook-brevo-teste'
 
 const contractEnv: Record<string, string> = {
@@ -20,7 +21,7 @@ const contractEnv: Record<string, string> = {
   SUPABASE_SECRET_KEYS: JSON.stringify({ default: SECRET_KEY }),
   STRIPE_SECRET_KEY: 'stripe-chave-de-teste',
   STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
-  SITE_URL: 'http://127.0.0.1:5176',
+  SITE_URL,
   ADMIN_URL: 'http://127.0.0.1:5179',
   TERMS_VERSION,
   ALLOWED_ORIGINS: 'http://127.0.0.1:5173',
@@ -179,6 +180,13 @@ export function onB2(reply: (call: B2Call) => Reply) {
   b2Reply = reply
 }
 
+// O site, que a checagem de fora do ar abre (2026-10-26): o corpo vem como HTML; a resposta pode lançar (sem conexão).
+let siteReply: () => { status: number; body: string } = () => ({ status: 200, body: '<title>KeyToTwo</title>' })
+
+export function onSite(reply: () => { status: number; body: string }) {
+  siteReply = reply
+}
+
 const respond = ({ status, body }: Reply) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 
@@ -234,6 +242,12 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
       status: reply.status,
       headers: { 'Content-Type': text ? 'application/xml' : 'application/json', ...reply.headers },
     }))
+  }
+  if (url.origin === SITE_URL) {
+    return Promise.resolve().then(() => {
+      const reply = siteReply()
+      return new Response(reply.body, { status: reply.status, headers: { 'Content-Type': 'text/html' } })
+    })
   }
   return Promise.reject(new Error(`fetch não simulado: ${url.origin}${url.pathname}`))
 }

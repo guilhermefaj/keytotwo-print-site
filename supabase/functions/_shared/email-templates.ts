@@ -6,7 +6,7 @@ import { DELIVERY_TTL_SECONDS, signDeliveryToken, signUnsubscribeToken } from '.
 type Named = { code: string; name: string | null }
 
 // Um alerta como a varredura do banco fotografa (private.alert_json).
-type Alert = { kind: string; order_id: string | null; order_ref: string | null; livemode: boolean | null; details: Record<string, unknown> }
+type Alert = { kind: string; order_id: string | null; order_ref: string | null; livemode: boolean | null; details: Record<string, unknown>; resolved_at?: string | null }
 
 export interface OutboxRow {
   id: string
@@ -23,6 +23,7 @@ export interface OutboxRow {
     items?: Named[]
     games?: (Named & { entitlement_id?: string; game_id?: number })[]
     alerts?: Alert[]
+    back?: boolean
   }
   attempts: number
 }
@@ -290,20 +291,64 @@ function alertCopy(alert: Alert): { text: string; links: { href: string; label: 
       return { text: 'A cópia de segurança do banco não roda há mais de 26 horas.', links }
     case 'terms_missing':
       return { text: `O pedido ${ref} foi pago sem o "Li e aceito" gravado: alguém destravou o formulário à mão. Guarde isto para um pedido de reembolso ou uma contestação.`, links }
+    case 'site_down':
+      return siteDownCopy(alert, false)
+    default:
+      throw new PermanentEmailError('alerta_desconhecido')
+  }
+}
+
+// Fora do ar (2026-10-26): o que parou, desde quando e onde conferir; no e-mail de volta (back), quando voltou e mais ou
+// menos quanto durou (a checagem roda a cada 5 minutos).
+const STATUS_SUPABASE = { href: 'https://status.supabase.com', label: 'Status da Supabase' }
+const STATUS_STRIPE = { href: 'https://status.stripe.com', label: 'Status da Stripe' }
+const moment = (value: unknown) =>
+  new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(new Date(String(value)))
+
+function duration(ms: number): string {
+  const minutes = Math.max(1, Math.round(ms / 60_000))
+  const unit = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+  if (minutes < 60) return unit(minutes, 'minuto', 'minutos')
+  const rest = minutes % 60
+  return `${unit(Math.floor(minutes / 60), 'hora', 'horas')}${rest ? ` e ${unit(rest, 'minuto', 'minutos')}` : ''}`
+}
+
+function siteDownCopy(alert: Alert, back: boolean): { text: string; links: { href: string; label: string }[] } {
+  const d = alert.details
+  const since = moment(d.since)
+  const problem = typeof d.error === 'string' && d.error ? ` (${d.error})` : ''
+  const at = back ? moment(alert.resolved_at) : ''
+  const lasted = back ? `, depois de cerca de ${duration(Date.parse(String(alert.resolved_at)) - Date.parse(String(d.since)))}` : ''
+  switch (alert.kind === 'site_down' ? d.target : null) {
+    case 'site':
+      return back
+        ? { text: `O site voltou a abrir em ${at}${lasted} fora do ar.`, links: [] }
+        : { text: `O site não abre desde ${since}${problem}: ninguém consegue ver a loja. Confira a VPS no painel da Hostinger.`, links: [{ href: 'https://hpanel.hostinger.com', label: 'Abrir a Hostinger' }] }
+    case 'store':
+      return back
+        ? { text: `A loja voltou a mostrar os produtos com preço em ${at}${lasted}.`, links: [] }
+        : { text: `A loja não mostra os produtos com preço desde ${since}${problem}: ninguém consegue comprar. Confira o status da Supabase e da Stripe.`, links: [STATUS_SUPABASE, STATUS_STRIPE] }
+    case 'monitor':
+      return back
+        ? { text: `A checagem automática do site voltou em ${at}.`, links: [] }
+        : { text: `A checagem automática do site parou de chegar depois de ${since}: a API da loja pode estar fora do ar. Confira o status da Supabase.`, links: [STATUS_SUPABASE] }
     default:
       throw new PermanentEmailError('alerta_desconhecido')
   }
 }
 
 async function adminAlert(row: OutboxRow): Promise<Message> {
-  const alerts = (row.payload.alerts ?? []).map(alertCopy)
+  const back = row.payload.back === true
+  const list = row.payload.alerts ?? []
+  const alerts = list.map((alert) => (back ? siteDownCopy(alert, true) : alertCopy(alert)))
   if (!alerts.length) throw new PermanentEmailError('alerta_sem_itens')
   const page = `${env.adminUrl()}/atencao`
   const count = alerts.length
-  const subject = `Admin KeyToTwo: ${count} ${count > 1 ? 'alertas novos' : 'alerta novo'}`
-  const heading = 'Precisa de atenção'
-  const intro = count > 1 ? `Apareceram ${count} alertas novos no admin da KeyToTwo.` : 'Apareceu um alerta novo no admin da KeyToTwo.'
-  const why = 'Você recebe este aviso porque é admin da KeyToTwo. Cada alerta avisa uma vez só.'
+  const down = !back && list.some((alert) => alert.kind === 'site_down')
+  const subject = back ? 'Admin KeyToTwo: voltou a funcionar' : down ? 'Admin KeyToTwo: o site está fora do ar' : `Admin KeyToTwo: ${count} ${count > 1 ? 'alertas novos' : 'alerta novo'}`
+  const heading = back ? 'Voltou a funcionar' : 'Precisa de atenção'
+  const intro = back ? 'O que estava fora do ar voltou a funcionar.' : count > 1 ? `Apareceram ${count} alertas novos no admin da KeyToTwo.` : 'Apareceu um alerta novo no admin da KeyToTwo.'
+  const why = `Você recebe este aviso porque é admin da KeyToTwo.${back ? '' : down ? ' Outro e-mail avisa quando voltar.' : ' Cada alerta avisa uma vez só.'}`
   const html = layout(subject, heading, [
     paragraph(escapeHtml(intro)),
     ...alerts.map((a) => paragraph(`${escapeHtml(a.text)}${a.links.map((l) => ` ${link(l.href, l.label)}`).join(' ·')}`)),

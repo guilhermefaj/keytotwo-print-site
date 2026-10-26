@@ -243,6 +243,40 @@ contractTest('email-dispatch: alerta dos admins (admin_alert, 2026-10-24) com o 
   assertEquals([rpcCalls[1].args.p_status, rpcCalls[1].args.p_error], ['rejected', 'alerta_sem_itens'])
 })
 
+contractTest('email-dispatch: fora do ar (site_down, 2026-10-26) avisa o que parou e, no e-mail de volta, quanto durou', async () => {
+  Deno.env.set('EMAIL_MODE', 'log')
+  const down = (target: string, extra: Record<string, unknown> = {}) =>
+    ({ kind: 'site_down', order_id: null, order_ref: null, livemode: null, details: { target, since: '2026-10-26T17:20:00Z', ...extra } })
+  const send = async (payload: Record<string, unknown>) => {
+    dispatchRpc([{ ...DELIVERY_ROW, kind: 'admin_alert', order_id: null, to_email: 'admin@example.com', payload }])
+    onExternal(() => ok({ ID: 'mailpit-5' }))
+    await captureErrors(async () => await (await dispatchRequest({ outbox_id: OUTBOX_ID })).json())
+    return externalCalls[0].body as { Subject: string; Text: string }
+  }
+  const opened = await send({ alerts: [down('site', { error: 'HTTP 502' }), down('store', { error: 'sem preço: J001' }), down('monitor')] })
+  assertEquals(opened.Subject, 'Admin KeyToTwo: o site está fora do ar')
+  for (const line of [
+    '- O site não abre desde 26/10, 14:20 (HTTP 502): ninguém consegue ver a loja. Confira a VPS no painel da Hostinger.',
+    '  Abrir a Hostinger: https://hpanel.hostinger.com',
+    '- A loja não mostra os produtos com preço desde 26/10, 14:20 (sem preço: J001): ninguém consegue comprar. Confira o status da Supabase e da Stripe.',
+    '  Status da Stripe: https://status.stripe.com',
+    '- A checagem automática do site parou de chegar depois de 26/10, 14:20: a API da loja pode estar fora do ar. Confira o status da Supabase.',
+    'Outro e-mail avisa quando voltar.',
+  ]) assert(opened.Text.includes(line), line)
+
+  const back = await send({ back: true, alerts: [
+    { ...down('site'), resolved_at: '2026-10-26T17:32:00Z' },
+    { ...down('store'), resolved_at: '2026-10-26T18:25:00Z' },
+    { ...down('monitor'), resolved_at: '2026-10-26T17:40:00Z' },
+  ] })
+  assertEquals(back.Subject, 'Admin KeyToTwo: voltou a funcionar')
+  for (const line of [
+    '- O site voltou a abrir em 26/10, 14:32, depois de cerca de 12 minutos fora do ar.',
+    '- A loja voltou a mostrar os produtos com preço em 26/10, 15:25, depois de cerca de 1 hora e 5 minutos.',
+    '- A checagem automática do site voltou em 26/10, 14:40.',
+  ]) assert(back.Text.includes(line), line)
+})
+
 contractTest('email-dispatch modo brevo: chave v3, lista de teste, recusa definitiva e falha transitória', async () => {
   Deno.env.set('EMAIL_MODE', 'brevo')
   const run = async () => {
