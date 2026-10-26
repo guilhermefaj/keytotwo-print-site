@@ -141,11 +141,6 @@ input, select, textarea { font: inherit; color: inherit; }
 .hero-scene .ground { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-height); }
 /* O cabeçalho no topo da Início: branco, separado da foto, como rolado (sem a sombra). */
 .site-header-shell[data-home="true"]:not([data-scrolled="true"]) { background: var(--color-paper); }
-.footer-ground { --scene-soil: #684839; --scene-soil-light: #a16c4e; --scene-grass: #77a85b; --scene-grass-light: #acd475; --scene-grass-dark: #3f7957; }
-.footer-ground .ground { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-height); background: var(--scene-soil); }
-.ground-grass { position: absolute; top: 0; width: 100%; height: 14px; background: var(--scene-grass); border-top: 5px solid var(--scene-grass-light); border-bottom: 4px solid var(--scene-grass-dark); }
-.ground-grass::after { content: ''; position: absolute; inset: 9px 0 auto; height: 5px; background: repeating-linear-gradient(90deg, var(--scene-grass-dark) 0 12px, transparent 12px 38px, var(--scene-grass-dark) 38px 54px, transparent 54px 88px); }
-.ground-soil { position: absolute; inset: 23px 0 0; opacity: .5; background: repeating-linear-gradient(90deg, transparent 0 54px, var(--scene-soil-light) 54px 62px, transparent 62px 130px); height: 5px; }
 /* --foot-sink: os pés pisam um pouco abaixo da borda do chão; a arte é em três-quartos e vê o chão de cima. */
 /* O Kito da hero: a camada cobre a coluna do texto para ele ser carregado por cima dele; só o corpo recebe o ponteiro.
    O servidor desenha a pose de frente a 64 % da largura, com os pés no chão; o motor (src/lib/kito-playground.ts)
@@ -309,9 +304,16 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .site-footer[data-focus="true"] { padding-bottom: 28px; }
 .site-footer[data-focus="true"] .site-footer-rule { margin-bottom: 0; }
 .site-footer[data-focus="true"] .footer-bottom { border-top: 0; margin-top: 0; }
-/* O chão volta: a faixa de chão da hero fecha o rodapé, com um arbusto e o Kito sentado na grama. */
+/* A geleira fecha o rodapé: a plataforma de gelo de borda a borda, um iceberg atrás dela e o Kito sentado no topo. */
 .footer-ground { --floor-height: 40px; --foot-sink: 8px; --kito-height: 120px; position: relative; height: calc(var(--floor-height) + var(--kito-height)); margin-top: 16px; overflow: hidden; pointer-events: none; }
-.footer-foliage { position: absolute; width: 240px; height: auto; left: -24px; bottom: calc(var(--floor-height) - 9px); image-rendering: pixelated; }
+/* Gelo facetado (SiteFooter): luz em Céu, meio em aguada de Tinta, sombra em régua de Tinta e o fio de Tinta por cima.
+   Só cores da paleta; a base do iceberg afunda no topo da plataforma como os pés do Kito. */
+.footer-berg { position: absolute; left: -6px; bottom: calc(var(--floor-height) - var(--foot-sink)); width: 192px; height: auto; }
+.footer-ice { position: absolute; left: 0; bottom: 0; width: 100%; height: var(--floor-height); }
+.ice-sky { fill: var(--color-sky); }
+.ice-mid { fill: var(--color-ink-wash); }
+.ice-dark { fill: var(--color-ink-rule); }
+.ice-edge { fill: none; stroke: var(--color-ink-rule); stroke-width: 1px; }
 /* Kito sentado (scripts/prepare-kito-pixel.mjs): fileira de nove quadros de 201×208, com o chão a 7 px da base. A caixa
    mostra um quadro; o balanço dos pés (data-swing, SiteFooter) anda a fileira de quadro em quadro. */
 .footer-kito { position: absolute; right: max(24px, calc(50% - var(--container) / 2 + 16px)); bottom: calc(var(--floor-height) - var(--foot-sink) - var(--kito-height) * 7 / 208); height: var(--kito-height); aspect-ratio: 201 / 208; overflow: hidden; z-index: 1; }
@@ -504,7 +506,7 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .footer-legal { flex-direction: column; }
   .footer-legal span + span::before { content: none; }
   .footer-ground { --floor-height: 32px; --foot-sink: 6px; --kito-height: 96px; margin-top: 8px; }
-  .footer-foliage { width: 176px; left: -36px; bottom: calc(var(--floor-height) - 7px); }
+  .footer-berg { width: 144px; }
   .footer-kito { right: 20px; }
   /* Os quatro links legais em duas colunas: nenhum fica sozinho na linha. */
   .footer-bottom nav { display: grid; grid-template-columns: repeat(2, minmax(0, auto)); justify-content: start; gap: 12px 32px; }

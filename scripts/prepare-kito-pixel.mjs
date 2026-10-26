@@ -139,7 +139,7 @@ sitFrames.forEach((pixels, index) => {
   const bytes = Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength)
   for (let y = 0; y < sitHeight; y++) bytes.copy(sitStrip, (y * sitFrames.length + index) * sitWidth * 4, ((sitTop + y) * KITO + sitLeft) * 4, ((sitTop + y) * KITO + sitLeft + sitWidth) * 4)
 })
-// O chão é a mediana da base, como nas animações da hero: o corpo assenta nela e os pés esticados afundam na grama.
+// O chão é a mediana da base, como nas animações da hero: o corpo assenta nela e os pés esticados afundam no topo da geleira.
 const sitGround = sitBounds.map(box => box.bottom + 1).sort((a, b) => a - b)[4] - sitTop
 
 const kitoAtlas = await pack(kitoFrames, KITO, 12)

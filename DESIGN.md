@@ -200,7 +200,7 @@ Uma folha branca com tinta verde-azulada escura, linhas de corte turquesa e um �
 - **Régua de tinta** (`{colors.ink-rule}`): divisórias sólidas de 1 px em listas, tabelas e rodapé, e o fio dos cards (Tinta a 18 %). Entre seções vale só a linha de recorte, no lugar da The One Cut Rule.
 - **Erro** (`{colors.error}`): mensagens de erro e borda de campo inválido. 7,30:1 sobre Papel.
 
-O chão do rodapé tem a própria paleta de cena (terra `#684839`, grama `#77A85B` / `#ACD475` / `#3F7957`, sulco `#A16C4E`), confinada ao bloco `.footer-ground`. Esses valores não saem dali. Desde 2026-10-24 a hero não tem mais paisagem (nuvens, mato e grama).
+A geleira do rodapé (desde 2026-10-26, no lugar da grama) usa só a paleta: Céu na face iluminada, aguada de Tinta na face do meio, régua de Tinta na sombra e o fio de Tinta no contorno. Não há mais paleta de cena. Desde 2026-10-24 a hero não tem paisagem (nuvens, mato e grama).
 
 **Preto na hero (2026-10-24, pedido do responsável).** A vinheta da foto da hero, a sombra do Kito sobre ela e a sombra do texto usam preto em transparência (`rgb(0 0 0 / …)`), fora da paleta. Só ali.
 
@@ -293,7 +293,7 @@ Cantos discretos, como papel cortado com cuidado: `{rounded.sm}` (6 px) em botõ
 
 A linguagem de forma é a da folha impressa: retângulos de fio fino, a linha de recorte com a tesoura de dois círculos e duas lâminas (antes do rodapé), e o traço de marca-texto que ocupa de 58 % a 92 % da altura da linha atrás da palavra.
 
-A cena do Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelated`, nenhum raio.
+O Kito é a exceção pixel: bordas em degrau, `image-rendering: pixelated`, nenhum raio. A geleira em que ele senta no rodapé é vetor, em faces retas com o fio fino do site (responsável, 2026-10-26: mais limpa).
 
 ## Icons
 
@@ -457,7 +457,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 - **Erro, falha de pagamento e 404:** o Kito tonto, com estrelinhas na cabeça (`.kito-dizzy`, responsável, 2026-10-22; substitui a pose neutra do atlas da hero). É uma tira de 9 quadros de `Kito.zip` (animação *wobbles*, de frente) gerada por `scripts/prepare-kito-tonto.mjs`, passada com `steps(9, jump-none)` em 1,1 s, 160 px de largura (128 px no celular), pixelada; com movimento reduzido, fica no primeiro quadro. Decorativo (`aria-hidden`).
 - **Favicon:** o Kito em pixel art (`kito_favicon.png` do Drive), de frente e sorrindo, é o ícone do site: `favicon.ico` (16/32/48), `kito-192.png` e o ícone da tela inicial do iPhone sobre Céu. Gerados por `scripts/prepare-favicon.mjs`; não se edita à mão.
 - **Área privada:** Kito acenando pequeno (56–64 px), ao lado do nome na saudação.
-- **Rodapé:** o chão da hero volta como faixa de borda a borda (`.footer-ground`: grama, terra, um arbusto da cena) e o Kito sentado de frente na grama (`kito-pixel-sit`, 120 px de altura; 96 px no celular), que de vez em quando balança os pés uma ou duas vezes; com movimento reduzido, fica parado. Decorativo (`aria-hidden`). Desde 2026-10-24 entra em todas as páginas, com a linha de recorte em cima, fora o pagamento (modo foco).
+- **Rodapé:** uma geleira fecha a página (`.footer-ground`, responsável, 2026-10-26: a grama era infantil, e o Kito é um pinguim): a plataforma de gelo de borda a borda, com o topo de 8 px e a face cortada em planos de luz e sombra, uma fileira de 960 px que se repete, e um iceberg facetado atrás dela, à esquerda; os dois em SVG no próprio rodapé, com as cores por classe (`.ice-*`). O Kito senta de frente no topo (`kito-pixel-sit`, 120 px de altura; 96 px no celular), que de vez em quando balança os pés uma ou duas vezes; com movimento reduzido, fica parado. Decorativo (`aria-hidden`). Desde 2026-10-24 entra em todas as páginas, com a linha de recorte em cima, fora o pagamento (modo foco).
 - **Linha legal (todo rodapé, inclusive o do pagamento):** © KeyToTwo, uma marca da Chalk Labs · CNPJ, numa linha só e alinhada aos links legais; no celular o CNPJ desce para a linha de baixo. O e-mail de atendimento fica na Ajuda e nos textos jurídicos.
 
 ### Estados
@@ -501,7 +501,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 
 - **Don't** usar rótulo, kicker ou caixa alta com tracking acima de um título de seção ou de página (o jeito de jogar nos cards é a única caixa alta).
 - **Don't** usar Turquesa J001 em texto, ícone informativo ou borda única de controle.
-- **Don't** usar Marca-texto fora da hero (exceções: o arco dos gratuitos, o selo "Preço de lançamento" e o código do cupom) nem preto fora da vinheta da hero, nem a paleta da paisagem fora do chão do rodapé (o marca-texto só atrás de uma palavra).
+- **Don't** usar Marca-texto fora da hero (exceções: o arco dos gratuitos, o selo "Preço de lançamento" e o código do cupom) nem preto fora da vinheta da hero (o marca-texto só atrás de uma palavra).
 - **Don't** escrever texto na cor do jogo nem marcar um jogo do pacote como "Em breve".
 - **Don't** usar cápsula (999 px), sombra dura (`0 3px 0`), borda lateral colorida ou card com borda mais sombra.
 - **Don't** colocar o Kito como ícone ou em erro com expressão triste. A exceção é a arte oficial das capas.

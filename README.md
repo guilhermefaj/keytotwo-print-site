@@ -69,7 +69,6 @@ Rodados à mão quando a arte muda; a saída vai para `public/media/` e entra no
 
 | Script | Origem | Saída |
 | --- | --- | --- |
-| `npm run assets:prepare` (`prepare-hero-assets.mjs`) | `art-source/hero/` (logo, nuvens, paisagem) | `public/media/hero/` (logo, nuvens, folhagem da hero e do rodapé) |
 | `prepare-kito-pixel.mjs` | `art-source/kito-pixel/` (o Kito.zip de 2026-10-18) | atlas e pose de frente da hero, `src/kito-sprites.ts` (gerado) |
 | `prepare-kito-tonto.mjs`, `prepare-kito-cookie.mjs` | animações do Kito.zip e do Kito-eating_a_cookie.zip (Drive) | Kito tonto e Kito do cookie em `public/media/experience/` |
 | `prepare-kito-empty.mjs` | Kito na caixa (Drive) | `public/media/experience/` |
