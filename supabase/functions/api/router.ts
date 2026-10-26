@@ -13,6 +13,7 @@ import { deliveryLink, downloadUrl } from './routes/downloads.ts'
 import { freeDownload, freeGames } from './routes/free.ts'
 import { orderStatus } from './routes/order-status.ts'
 import { unsubscribe, unsubscribePage } from './routes/unsubscribe.ts'
+import { internalUptime } from './routes/uptime.ts'
 import { library } from './routes/library.ts'
 import { adminOrder, adminOrders, adminReconcileOrder, adminRefundOrder } from './routes/orders.ts'
 import { adminCreateDiscount, adminDiscounts, adminDiscountState, internalDiscountsTick } from './routes/discounts.ts'
@@ -64,6 +65,7 @@ const routes: Route[] = [
   route('/referral/visit', { POST: referralVisit }),
   route('/csp-report', { POST: cspReport }),
   route('/internal/discounts/tick', { POST: internalDiscountsTick }),
+  route('/internal/uptime', { POST: internalUptime }),
   route('/admin/metrics', { GET: adminMetrics }),
   route('/admin/blog/posts', { GET: adminBlogPosts, POST: adminCreateBlogPost }),
   route('/admin/blog/posts/:id', { GET: adminBlogPost, PUT: adminUpdateBlogPost, DELETE: adminDeleteBlogPost }),

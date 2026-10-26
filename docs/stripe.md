@@ -41,5 +41,5 @@ Automatizados em `supabase/functions/tests`: contrato sem rede (`checkout-webhoo
 
 ## Em aberto
 
-- **CSP do site:** o `nginx.conf` ainda não manda `Content-Security-Policy` (ver `docs/api-contract.md` 6.5.2).
+- **CSP do site:** o `nginx.conf` manda `Content-Security-Policy` com nonce e `'strict-dynamic'` desde 2026-10-26: o Stripe.js entra pelo script do site, sem lista de domínios (ver `docs/api-contract.md` 6.5.2).
 - **Formulário em preview:** `custom_checkout_payment_form_preview=v1` é recurso em prévia da Stripe; se mudar, o plano B é o Checkout hospedado, trocando só a rota e a página.

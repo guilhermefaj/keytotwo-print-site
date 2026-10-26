@@ -371,7 +371,7 @@ contractTest('uso: o tipo de cada rota da api, para o contador das Métricas', (
     ['/referral/visit', 'public'], ['/csp-report', 'public'], ['/email/unsubscribe', 'public'], ['/d/abc.def', 'public'], ['/nada', 'public'], ['/', 'public'],
     ['/cart', 'account'], ['/cart/items/P001', 'account'], ['/cart/merge', 'account'], ['/account', 'account'], ['/account/export', 'account'],
     ['/library', 'account'], ['/checkout', 'account'], ['/checkout/terms', 'account'], ['/order-status', 'account'], ['/download-url', 'account'], ['/free-download', 'account'],
-    ['/admin/metrics', 'admin'], ['/admin/users/x/block', 'admin'], ['/internal/discounts/tick', 'schedule'],
+    ['/admin/metrics', 'admin'], ['/admin/users/x/block', 'admin'], ['/internal/discounts/tick', 'schedule'], ['/internal/uptime', 'schedule'],
   ]
   for (const [path, area] of cases) assertEquals(apiArea(path), area, path)
 })
