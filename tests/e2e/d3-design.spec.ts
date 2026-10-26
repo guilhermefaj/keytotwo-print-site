@@ -153,11 +153,12 @@ test('vitrine com os jogos do pacote na home; carrossel e relatos só por ação
   await expect(page.locator('.social-metrics')).toHaveCount(0)
 })
 
-test('home sem escrita na API, com o chão do Kito no rodapé; só posts publicados entram', async ({ page }) => {
+test('home sem escrita na API, com o Kito e o balão dele no rodapé; só posts publicados entram', async ({ page }) => {
   const writes: string[] = []
   page.on('request', request => { if (['POST', 'PUT'].includes(request.method()) && request.url().includes('/api/')) writes.push(request.url()) })
   await page.goto('/')
-  await expect(page.locator('.footer-ground .footer-kito')).toHaveCount(1)
+  await expect(page.locator('.footer-hello .footer-kito')).toHaveCount(1)
+  await expect(page.locator('.footer-hello .footer-bubble')).toHaveText('Oi, eu sou o Kito! Vou te acompanhar em novas aventuras.')
   expect(writes).toEqual([])
   // The build's real published feed is the source of truth, not the draft listing.
   const { readBlogPosts } = await import('../../src/lib/blog.server')
@@ -171,9 +172,9 @@ test('logged-in: Conta keeps the e-mail preference, payment footer stays minimal
   test.skip(!stageTest, 'Stage test fixture')
   await fixture(page)
   await page.route('**/api/account', route => route.fulfill({ json: { email: 'qa@example.test', marketing: { opted_in: false }, orders: [] } }))
-  // Pagamento em modo foco: só a linha legal, sem o chão nem os convites do rodapé público.
+  // Pagamento em modo foco: só a linha legal, sem o Kito nem os convites do rodapé público.
   await page.goto('/pagamento')
-  await expect(page.locator('footer .footer-ground')).toHaveCount(0)
+  await expect(page.locator('footer .footer-hello')).toHaveCount(0)
   await expect(page.getByRole('navigation', { name: 'Informações legais', exact: true }).getByRole('link')).toHaveText(['Termos de uso', 'Reembolsos', 'Privacidade', 'Ajuda'])
   await expect(page.locator('footer')).toContainText('CNPJ 66.782.936/0001-20')
   await page.goto('/conta')
@@ -208,7 +209,7 @@ for (const width of [390, 1440]) test(`home carousel and footer captures plus ax
     await mkdir('.maestri/design-review/d3', { recursive: true })
     await page.locator('.shop-showcase').evaluate(el => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 120))
     await page.locator('.shop-showcase').screenshot({ path: `.maestri/design-review/d3/vitrine-${width}.png`, animations: 'disabled' })
-    await page.locator('.footer-ground').scrollIntoViewIfNeeded()
+    await page.locator('.footer-hello').scrollIntoViewIfNeeded()
     await page.locator('.site-footer').screenshot({ path: `.maestri/design-review/d3/rodape-${width}.png`, animations: 'disabled' })
   }
   await axe(page)
