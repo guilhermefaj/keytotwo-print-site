@@ -1,6 +1,7 @@
 import { mkdir, readFile } from 'node:fs/promises'
 import { readdirSync } from 'node:fs'
 import { expect, test, type Page } from './fixtures/test'
+import { publicPages } from '../../src/content/site'
 
 // Checks for the public sales pages, run against the prerendered build (build/client).
 // Stage-specific assertions follow the stage the build was made for (robots.txt tells which).
@@ -204,9 +205,11 @@ test.describe('stage', () => {
       expect(robots).not.toMatch(/Sitemap:/)
       expect(locs).toEqual([])
     } else {
-      expect(locs.length).toBe(5 + blogRoutes.length)
+      expect(locs.length).toBe(Object.keys(publicPages).length + blogRoutes.length)
       for (const route of privateRoutes) expect(sitemap).not.toContain(`${route}</loc>`)
-      expect(robots).toMatch(/Disallow: \/carrinho/)
+      // Toda página privada cai numa regra do robots (/pedido/ e /email/ valem pelo prefixo).
+      const disallowed = [...robots.matchAll(/^Disallow: (\S+)$/gm)].map(match => match[1])
+      for (const route of privateRoutes) expect(disallowed.some(rule => route.startsWith(rule)), route).toBe(true)
     }
   })
 
