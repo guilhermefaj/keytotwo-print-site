@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assertEquals } from '@std/assert'
-import { captureErrors, onPrice, onRpc, onStripe, request, rpcCalls, sessionToken, type StripeCall, stripeCalls, tampered, TERMS_VERSION, userId, WEBHOOK_SECRET, contractTest, ok, row } from './contract-helpers.ts'
+import { captureErrors, onPrice, onRpc, onSalesOpening, onStripe, request, rpcCalls, sessionToken, type StripeCall, stripeCalls, tampered, TERMS_VERSION, userId, WEBHOOK_SECRET, contractTest, ok, row } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { handleStripeWebhook } from '../stripe-webhook/handler.ts'
 import { cryptoProvider, stripe } from '../_shared/stripe.ts'
@@ -108,6 +108,17 @@ contractTest('checkout/terms: grava o aceite no pedido aberto da pessoa; versão
   onRpc((fn) => (fn === 'create_order_from_cart' ? row({ outcome: 'cart_empty', order_id: null, email: null, stripe_customer_id: null, items: null, reused: false, detail: null }) : ok(null)))
   await handleRequest(request('/checkout', { method: 'POST', token, body: { ...checkoutBody, terms_accepted: true } }))
   assertEquals(rpcCalls.at(-1)!.args.p_terms_accepted, true)
+})
+
+contractTest('checkout: na prévia do lançamento, 409 SALES_NOT_OPEN com a hora da abertura, sem pedido nem Stripe', async () => {
+  const token = await sessionToken()
+  onStripe(() => ok({}))
+  onRpc(() => row({ outcome: 'ok', order_id: ORDER_ID, email: 'teste@example.com', stripe_customer_id: null, items: [{ product_code: 'P001', stripe_price_id: PRICE }], reused: false, detail: null }))
+  onSalesOpening('2026-11-09T22:00:00+00:00')
+  const res = await handleRequest(request('/checkout', { method: 'POST', token, body: checkoutBody }))
+  const json = await res.json()
+  assertEquals([res.status, json.error.code, json.error.details], [409, 'SALES_NOT_OPEN', { sales_open_at: '2026-11-09T22:00:00.000Z' }])
+  assertEquals([rpcCalls.length, stripeCalls.length], [0, 0])
 })
 
 contractTest('checkout: recusas do carrinho viram 409 com details, sem chamar a Stripe', async () => {

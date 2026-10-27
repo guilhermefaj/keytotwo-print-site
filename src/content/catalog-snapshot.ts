@@ -12,3 +12,5 @@ export const catalogSnapshot: readonly CatalogEntry[] = [
 ]
 
 export const promoBanner: PromoBanner | null = {"code":"PRIMEIRA10","text":"Primeira compra? Usem o cupom {cupom} no pagamento e ganhem 10% de desconto."}
+
+export const salesOpenAt: string | null = null

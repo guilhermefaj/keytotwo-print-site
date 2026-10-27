@@ -39,6 +39,9 @@ main:focus, [tabindex='-1']:focus { outline: none; }
 .promo-bar { background: var(--color-ink); color: var(--color-paper); }
 .promo-bar p { margin: 0 auto; padding: 8px 16px; max-width: var(--container-wide); text-align: center; font-size: var(--text-label); line-height: 1.5; }
 .promo-code { color: var(--color-highlight); font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
+/* Prévia do lançamento: o cronômetro não muda de largura a cada segundo; o convite aos gratuitos sublinhado em Papel. */
+.promo-countdown { font-variant-numeric: tabular-nums; }
+.promo-link { color: inherit; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 
 /* --------------------------------------------------------------------------
    Tipografia
@@ -263,6 +266,7 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .offer-cart-action .button { width: 100%; }
 .offer-cart-action > *, .offer-cart-action .button span { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 .offer-cart-action > p { margin-bottom: 0; font-size: var(--text-label); }
+.offer-cart-action > .shop-opening { color: var(--color-ink); font-weight: 600; }
 .legal-links { display: flex; flex-wrap: wrap; gap: 12px 22px; margin-top: 24px; font-size: var(--text-label); }
 .legal-links a { padding-block: 8px; }
 .faq-section { border: 0; }

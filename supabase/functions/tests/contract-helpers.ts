@@ -102,12 +102,20 @@ export const rpcCalls: RpcCall[] = []
 // O contador de uso (record_api_usage, em segundo plano a cada chamada) fica à parte: não muda as listas dos testes.
 export const usageCalls: string[] = []
 let rpcReply: (fn: string, args: Record<string, unknown>) => Reply = () => ({ status: 200, body: null })
+// A abertura das vendas (get_sales_opening, no /catalog e no POST /checkout) também fica à parte: null (a loja aberta),
+// a não ser que o teste chame onSalesOpening depois do onRpc.
+let salesOpening: string | null = null
 let priceReply: (id: string) => Reply = () => ({ status: 404, body: {} })
 
 export function onRpc(reply: (fn: string, args: Record<string, unknown>) => Reply) {
   rpcCalls.length = 0
   usageCalls.length = 0
+  salesOpening = null
   rpcReply = reply
+}
+
+export function onSalesOpening(opensAt: string | null) {
+  salesOpening = opensAt
 }
 
 export function onPrice(reply: (id: string) => Reply) {
@@ -200,6 +208,7 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
     usageCalls.push(String(JSON.parse(String(init?.body ?? '{}')).p_area))
     return Promise.resolve(respond({ status: 200, body: null }))
   }
+  if (rpcMatch === 'get_sales_opening') return Promise.resolve(respond({ status: 200, body: salesOpening }))
   if (rpcMatch) {
     const headers = new Headers(init?.headers)
     const args = JSON.parse(String(init?.body ?? '{}'))

@@ -11,6 +11,7 @@ import { useAuth } from '../lib/auth-context'
 import { apiErrorMessage, type CartItem } from '../lib/api'
 import { money } from '../lib/format'
 import { useShop } from '../lib/shop-context'
+import { openingLabel, useSalesOpening } from '../lib/sales-opening'
 import { canCheckout, checkoutMock } from '../lib/checkout'
 import { isProductCode } from '../lib/guest-cart'
 import { loginDestination } from '../lib/supabase'
@@ -36,6 +37,7 @@ function CartItemRow({ item, items, busy, onRemove }: { item: CartItem; items: C
 
 export default function Carrinho() {
   const { cart, add, remove, busy } = useShop()
+  const opening = useSalesOpening()
   const { session, ready } = useAuth()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
@@ -79,7 +81,7 @@ export default function Carrinho() {
     </section><aside className="cart-summary" aria-labelledby="cart-summary-title"><h2 id="cart-summary-title">Resumo</h2><p className="cart-subtotal">Subtotal <strong>{cart.loading ? 'Atualizando…' : cart.data?.subtotal ? money(cart.data.subtotal.amount, cart.data.subtotal.currency) : 'A confirmar'}</strong></p>
       {!cart.loading && !canCheckout(cart.data) && <p>{items!.some(item => item.status === 'ok') ? <>Não conseguimos conferir todos os preços. <button className="text-button inline-link" onClick={cart.reload}>Carregar novamente</button></> : 'Não há nada a pagar nesta sacola.'}</p>}
       <p className="field-help">Tem cupom? Aplique no pagamento.</p>
-      <button className="button button-primary" disabled={busy || Boolean(cart.error) || !canCheckout(cart.data)} onClick={() => navigate(checkoutPath)} aria-describedby="checkout-help">Finalizar compra</button><p id="checkout-help" className="field-help">{checkoutMock ? 'Demonstração de pagamento. Nenhuma cobrança será feita.' : session ? 'Assim que o pagamento for confirmado, os jogos aparecem em Meus jogos.' : 'Para pagar, você entra ou cria sua conta com um código enviado ao seu e-mail. A sacola continua aqui.'}</p>{checkoutMock && !canCheckout(cart.data) && <Link className="inline-link" to="/pagamento">Ver demonstração do pagamento</Link>}
+      <button className="button button-primary" disabled={busy || Boolean(cart.error) || !canCheckout(cart.data) || Boolean(opening)} onClick={() => navigate(checkoutPath)} aria-describedby="checkout-help">Finalizar compra</button><p id="checkout-help" className="field-help">{opening ? `As compras abrem em ${openingLabel(opening)}.` : checkoutMock ? 'Demonstração de pagamento. Nenhuma cobrança será feita.' : session ? 'Assim que o pagamento for confirmado, os jogos aparecem em Meus jogos.' : 'Para pagar, você entra ou cria sua conta com um código enviado ao seu e-mail. A sacola continua aqui.'}</p>{checkoutMock && !canCheckout(cart.data) && <Link className="inline-link" to="/pagamento">Ver demonstração do pagamento</Link>}
     </aside></div>}
     {Boolean(items?.length) && <p className="cart-legal">{refundNotice} <Link className="inline-link" to="/reembolsos">Política de reembolso</Link></p>}
   </main>

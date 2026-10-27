@@ -5,6 +5,7 @@ import { money } from '../../lib/format'
 import { canCheckout } from '../../lib/checkout'
 import { useAuth } from '../../lib/auth-context'
 import { useShop } from '../../lib/shop-context'
+import { openingLabel, useSalesOpening } from '../../lib/sales-opening'
 import { KitoEmpty } from '../ui/KitoEmpty'
 import { ItemPrice, PurchaseThumbnail } from '../checkout/PurchaseUi'
 import { itemNote } from '../checkout/purchase-names'
@@ -16,6 +17,7 @@ import { emptyCart } from '../../content/site'
 export function CartDrawer() {
   const { session } = useAuth()
   const { cart, cartOpen, cartOpener, setCartOpen, remove, busy } = useShop()
+  const opening = useSalesOpening()
   const [error, setError] = useState('')
   const navigating = useRef(false)
   const items = cart.data?.items ?? []
@@ -51,8 +53,8 @@ export function CartDrawer() {
       </div>
       {items.length > 0 && !cart.error && <div className="drawer-summary">
         <p className="drawer-total">Total <strong>{cart.loading ? 'Atualizando…' : cart.data?.subtotal ? money(cart.data.subtotal.amount, cart.data.subtotal.currency) : 'Preço indisponível agora'}</strong></p>
-        {canCheckout(cart.data) && !cart.loading && !busy ? <SheetClose asChild><Link className="button button-primary" to={session ? '/pagamento' : loginDestination('/pagamento')} onClick={navigateAway}>Finalizar compra</Link></SheetClose>
-          : <><button className="button button-primary" disabled>Finalizar compra</button><p className="field-help">{cart.loading || busy ? 'Atualizando sua sacola…' : items.some(item => item.status === 'ok') ? 'Confira os itens na sacola para continuar.' : 'Não há nada a pagar nesta sacola.'}</p></>}
+        {canCheckout(cart.data) && !opening && !cart.loading && !busy ? <SheetClose asChild><Link className="button button-primary" to={session ? '/pagamento' : loginDestination('/pagamento')} onClick={navigateAway}>Finalizar compra</Link></SheetClose>
+          : <><button className="button button-primary" disabled>Finalizar compra</button><p className="field-help">{opening ? `As compras abrem em ${openingLabel(opening)}.` : cart.loading || busy ? 'Atualizando sua sacola…' : items.some(item => item.status === 'ok') ? 'Confira os itens na sacola para continuar.' : 'Não há nada a pagar nesta sacola.'}</p></>}
         <SheetClose asChild><Link className="text-button" to="/carrinho" onClick={navigateAway}>Ver sacola</Link></SheetClose>
       </div>}
     </SheetContent>

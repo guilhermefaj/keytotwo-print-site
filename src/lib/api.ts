@@ -10,7 +10,7 @@ export type Marketing = { opted_in: boolean; updated_at: string | null; text_ver
 export type Account = { email: string; marketing: Marketing; free_games_unlocked?: boolean; orders: { ref: string; kind?: 'purchase' | 'courtesy'; created_at: string; paid_at: string | null; status: string; amount_total: number; currency: string; items: { code: string; name: string; unit_amount: number; currency: string }[] }[] }
 export type Library = { games: { code: string; name: string; acquired_at: string; products: { code: string; name: string }[]; files: { id: string; kind: string; version: string; size_bytes: number }[] }[]; pending: { ref: string; created_at: string; products: { code: string; name: string }[] }[] }
 
-export type CatalogResponse = { products: CatalogProduct[]; banner?: { code: string; text: string } | null }
+export type CatalogResponse = { products: CatalogProduct[]; banner?: { code: string; text: string } | null; sales_open_at?: string | null }
 
 export class ApiError extends Error {
   constructor(public code: string) { super(code) }

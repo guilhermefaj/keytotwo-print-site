@@ -181,6 +181,24 @@ test('barrinha do cupom: a faixa do /catalog e o cupom do parceiro do link', asy
   expect([stored.partner, stored.utm_source, stored.path, stored.token]).toEqual(['ana-souza', 'instagram', '/loja', 'comprovante-da-visita'])
 })
 
+// Prévia do lançamento (2026-10-27): até a abertura, o /catalog leva a hora. A barrinha vira o cronômetro, a compra vira
+// a data e a sacola não finaliza; na hora marcada, abre sem recarregar e a faixa do cupom volta.
+test('prévia do lançamento: cronômetro na barrinha, a data no lugar da compra; abre sozinha na hora', async ({ page }) => {
+  test.skip(stage === 'preview', 'Preview não consulta a API')
+  await page.clock.install({ time: new Date('2026-11-09T21:59:30Z') })
+  await page.route('**/functions/v1/api/catalog', route => route.fulfill({ json: { products: [single], banner: { code: 'PRIMEIRA10', text: 'Primeira compra? Usem o cupom {cupom}.' }, sales_open_at: '2026-11-09T22:00:00.000Z' } }))
+  await page.goto('/loja/rabisque-e-adivinhe')
+  await page.clock.pauseAt(new Date('2026-11-09T21:59:50Z'))
+  const bar = page.getByRole('complementary', { name: 'Abertura da loja' })
+  await expect(bar).toHaveText('A loja abre em 9 de novembro, às 19h. Faltam 0d 00h 00min 10s. Enquanto isso, baixem os gratuitos.')
+  await expect(bar.getByRole('link', { name: 'baixem os gratuitos' })).toHaveAttribute('href', '/gratuitos')
+  await expect(page.locator('.shop-purchase')).toContainText('À venda a partir de 9 de novembro, às 19h.')
+  await expect(page.getByRole('button', { name: 'Adicionar à sacola' })).toHaveCount(0)
+  await page.clock.runFor(10_000)
+  await expect(page.getByRole('complementary', { name: 'Cupom de desconto' })).toHaveText('Primeira compra? Usem o cupom PRIMEIRA10.')
+  await expect(page.getByRole('button', { name: 'Adicionar à sacola' })).toBeEnabled()
+})
+
 test('produto listado sem preço não oferece compra; falha permite retry', async ({ page }) => {
   test.skip(stage === 'preview', 'Preview não consulta disponibilidade comercial na tela')
   let fail = true

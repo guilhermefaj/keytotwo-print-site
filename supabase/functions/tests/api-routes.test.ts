@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assertEquals, assertExists } from '@std/assert'
-import { captureErrors, onPrice, onRpc, request, rpcCalls, sessionToken, usageCalls, userId, contractTest } from './contract-helpers.ts'
+import { captureErrors, onPrice, onRpc, onSalesOpening, request, rpcCalls, sessionToken, usageCalls, userId, contractTest } from './contract-helpers.ts'
 import { apiArea } from '../_shared/usage.ts'
 import { handleRequest } from '../api/router.ts'
 
@@ -42,6 +42,14 @@ contractTest('GET /catalog é pública, lê preço da Stripe e não expõe o str
   assertEquals(body.banner, BANNER)
   assertEquals(domainCalls().map((c) => c.fn), ['get_catalog', 'get_promo_banner'])
   assertEquals(rpcCalls[0].secretKeyOk && !rpcCalls[0].hasAuthorization, true)
+  assertEquals(body.sales_open_at, null)
+})
+
+contractTest('GET /catalog: na prévia do lançamento leva a hora da abertura das vendas', async () => {
+  onRpc((fn) => ({ status: 200, body: fn === 'get_promo_banner' ? null : CATALOG }))
+  onSalesOpening('2026-11-09T22:00:00+00:00')
+  const body = await (await handleRequest(request('/catalog'))).json()
+  assertEquals([body.sales_open_at, body.products.length], ['2026-11-09T22:00:00.000Z', 2])
 })
 
 contractTest('preços: vêm do banco sem ir à Stripe; o que falta vem da Stripe e fica guardado', async () => {

@@ -71,9 +71,10 @@ select pg_temp.assert('cupons: o código em maiúsculas, único para sempre; par
   pg_temp.out('ana10') = 'ok' and pg_temp.out('black') = 'ok' and pg_temp.out('código repetido') = 'code_taken' and pg_temp.out('sem parceiro') = 'partner_not_found'
   and (pg_temp.discount('ANA10')).partner_id = pg_temp.partner('ana-souza') and (pg_temp.discount('ANA10')).state = 'active'
   and (pg_temp.discount('NATAL26')).state = 'scheduled');
-select pg_temp.assert('faixa do topo: o cupom ativo com faixa, sem parceiro e no prazo; a versão do catálogo cobre a faixa',
+select pg_temp.assert('faixa do topo: o cupom ativo com faixa, sem parceiro e no prazo; a versão do catálogo cobre a faixa (e a abertura das vendas, 26_sales_opening)',
   public.get_promo_banner() = '{"code": "BLACK26", "text": "Black Friday: 30% em tudo com {cupom}"}'::jsonb
-  and public.get_catalog_version() = md5(public.get_catalog()::text || public.get_promo_banner()::text));
+  and public.get_catalog_version() = md5(public.get_catalog()::text || public.get_promo_banner()::text
+    || coalesce(extract(epoch from public.get_sales_opening())::text, '')));
 
 insert into pg_temp.res select 'pausar', to_jsonb(r) from public.admin_set_discount_state(pg_temp.uid('dadm'), (pg_temp.discount('BLACK26')).id, 'paused', 'Fim de semana') r;
 select pg_temp.assert('pausado: sai da faixa',
