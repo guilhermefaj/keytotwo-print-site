@@ -141,11 +141,6 @@ input, select, textarea { font: inherit; color: inherit; }
 .hero-scene .ground { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-height); }
 /* O cabeçalho no topo da Início: branco, separado da foto, como rolado (sem a sombra). */
 .site-header-shell[data-home="true"]:not([data-scrolled="true"]) { background: var(--color-paper); }
-.footer-ground { --scene-soil: #684839; --scene-soil-light: #a16c4e; --scene-grass: #77a85b; --scene-grass-light: #acd475; --scene-grass-dark: #3f7957; }
-.footer-ground .ground { position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-height); background: var(--scene-soil); }
-.ground-grass { position: absolute; top: 0; width: 100%; height: 14px; background: var(--scene-grass); border-top: 5px solid var(--scene-grass-light); border-bottom: 4px solid var(--scene-grass-dark); }
-.ground-grass::after { content: ''; position: absolute; inset: 9px 0 auto; height: 5px; background: repeating-linear-gradient(90deg, var(--scene-grass-dark) 0 12px, transparent 12px 38px, var(--scene-grass-dark) 38px 54px, transparent 54px 88px); }
-.ground-soil { position: absolute; inset: 23px 0 0; opacity: .5; background: repeating-linear-gradient(90deg, transparent 0 54px, var(--scene-soil-light) 54px 62px, transparent 62px 130px); height: 5px; }
 /* --foot-sink: os pés pisam um pouco abaixo da borda do chão; a arte é em três-quartos e vê o chão de cima. */
 /* O Kito da hero: a camada cobre a coluna do texto para ele ser carregado por cima dele; só o corpo recebe o ponteiro.
    O servidor desenha a pose de frente a 64 % da largura, com os pés no chão; o motor (src/lib/kito-playground.ts)
@@ -309,17 +304,34 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
 .site-footer[data-focus="true"] { padding-bottom: 28px; }
 .site-footer[data-focus="true"] .site-footer-rule { margin-bottom: 0; }
 .site-footer[data-focus="true"] .footer-bottom { border-top: 0; margin-top: 0; }
-/* O chão volta: a faixa de chão da hero fecha o rodapé, com um arbusto e o Kito sentado na grama. */
-.footer-ground { --floor-height: 40px; --foot-sink: 8px; --kito-height: 120px; position: relative; height: calc(var(--floor-height) + var(--kito-height)); margin-top: 16px; overflow: hidden; pointer-events: none; }
-.footer-foliage { position: absolute; width: 240px; height: auto; left: -24px; bottom: calc(var(--floor-height) - 9px); image-rendering: pixelated; }
-/* Kito sentado (scripts/prepare-kito-pixel.mjs): fileira de nove quadros de 201×208, com o chão a 7 px da base. A caixa
-   mostra um quadro; o balanço dos pés (data-swing, SiteFooter) anda a fileira de quadro em quadro. */
-.footer-kito { position: absolute; right: max(24px, calc(50% - var(--container) / 2 + 16px)); bottom: calc(var(--floor-height) - var(--foot-sink) - var(--kito-height) * 7 / 208); height: var(--kito-height); aspect-ratio: 201 / 208; overflow: hidden; z-index: 1; }
-.footer-kito img { width: auto; max-width: none; height: 100%; }
-.footer-kito[data-swing] img { animation: kito-swing .9s steps(9) var(--swings, 1); }
-.footer-kito[data-swing='2'] { --swings: 2; }
-@keyframes kito-swing { to { transform: translateX(-100%); } }
-@media (prefers-reduced-motion: reduce) { .footer-kito img { animation: none; } }
+/* A onda fecha o rodapé (2026-10-26): as cristas (SiteFooter) esticam na largura com a altura fixa, e o corpo cresce com a
+   linha legal. Tons do Turquesa J001 (a cor do Kito) misturado ao Céu e ao Papel, só aqui. A crista da frente sai mais
+   turquesa no alto (--wave-crest) e clareia até o pé (--wave-mid), de onde o corpo segue até o Céu, sem emenda. A de
+   trás é mais clara, quase Papel. Camadas: crista de trás, Kito, crista da frente e corpo, linha legal. */
+.footer-wave { --crest: 72px; --kito-height: 128px; --wave-crest: color-mix(in srgb, var(--color-line) 20%, var(--color-sky)); --wave-mid: color-mix(in srgb, var(--color-line) 9%, var(--color-sky)); --wave-back: color-mix(in srgb, var(--color-line) 9%, var(--color-paper)); --wave-back-foot: color-mix(in srgb, var(--color-line) 6%, var(--color-paper)); position: relative; isolation: isolate; margin-top: 96px; padding-top: var(--crest); }
+.footer-wave::before { content: ''; position: absolute; inset: var(--crest) 0 0; z-index: 2; background: linear-gradient(var(--wave-mid), var(--color-sky)); }
+.footer-wave-back, .footer-wave-front { position: absolute; left: 0; width: 100%; height: var(--crest); }
+.footer-wave-back { top: -14px; z-index: 0; }
+.footer-wave-front { top: 0; z-index: 2; }
+.footer-wave-back stop:first-child { stop-color: var(--wave-back); }
+.footer-wave-back stop:last-child { stop-color: var(--wave-back-foot); }
+.footer-wave-front stop:first-child { stop-color: var(--wave-crest); }
+.footer-wave-front stop:last-child { stop-color: var(--wave-mid); }
+.footer-wave .footer-bottom { position: relative; z-index: 3; border-top: 0; margin-top: 0; padding: 4px 0 28px; }
+/* Kito no alto do pulo, de braços para cima (scripts/prepare-kito-pixel.mjs, 202×211), no meio, onde a crista da frente
+   está a 31 % da altura (WAVE_FRONT): ela cobre da barriga para baixo. O pulinho (data-hop, SiteFooter) sobe e volta. */
+.footer-kito { position: absolute; z-index: 1; top: calc(var(--crest) * .31 - var(--kito-height) * .8); left: 50%; translate: -50% 0; height: var(--kito-height); aspect-ratio: 202 / 211; }
+.footer-kito img { display: block; width: 100%; height: 100%; }
+.footer-kito[data-hop] { animation: kito-hop .7s ease-out var(--hops, 1); }
+.footer-kito[data-hop='2'] { --hops: 2; }
+@keyframes kito-hop { 40% { transform: translateY(-12px); } }
+/* O coraçãozinho nas cores do sprite do Kito (contorno, corpo, brilho), ao lado da cabeça, flutuando devagar. */
+.kito-heart { position: absolute; left: 96%; top: 6%; width: calc(var(--kito-height) / 4); height: auto; animation: kito-heart 2.6s ease-in-out infinite; }
+.kito-heart-edge { fill: #015367; }
+.kito-heart-body { fill: #03b9c3; }
+.kito-heart-shine { fill: #63d8dc; }
+@keyframes kito-heart { 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .footer-kito, .kito-heart { animation: none; } }
 
 /* --------------------------------------------------------------------------
    Páginas de leitura (ajuda, termos, privacidade, jogo gratuito, e-mail)
@@ -503,9 +515,7 @@ html[data-kito-carrying], html[data-kito-carrying] * { cursor: grabbing !importa
   .footer-bottom { margin-top: 32px; }
   .footer-legal { flex-direction: column; }
   .footer-legal span + span::before { content: none; }
-  .footer-ground { --floor-height: 32px; --foot-sink: 6px; --kito-height: 96px; margin-top: 8px; }
-  .footer-foliage { width: 176px; left: -36px; bottom: calc(var(--floor-height) - 7px); }
-  .footer-kito { right: 20px; }
+  .footer-wave { --crest: 52px; --kito-height: 96px; margin-top: 72px; }
   /* Os quatro links legais em duas colunas: nenhum fica sozinho na linha. */
   .footer-bottom nav { display: grid; grid-template-columns: repeat(2, minmax(0, auto)); justify-content: start; gap: 12px 32px; }
   .reading-page, .cart-page, .account-page { padding-block: 32px 56px; }

@@ -14,7 +14,6 @@
     "preview": "sirv build/client --host 127.0.0.1 --port 4174 --single __spa-fallback.html",
     "typecheck": "react-router typegen && tsc --noEmit",
     "lint": "eslint . --ignore-pattern build/** --ignore-pattern .react-router/**",
-    "assets:prepare": "node scripts/prepare-hero-assets.mjs",
     "test:e2e": "playwright test",
     "test:unit": "node --test tests/unit/*.test.mjs",
     "verificar": "node scripts/verificar.mjs"

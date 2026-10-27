@@ -127,26 +127,21 @@ animations.carry = { start: kitoFrames.length, count: carry.length, ground: 0, a
 kitoFrames.push(...carry.map(frame => frame.pixels))
 
 
-// Kito sentado do rodapé (Kito-sitting_down_the_ch.zip, 2026-10-20): de frente, balançando os pés; o quadro 0 é a pose
-// parada. Os nove quadros numa fileira, recortados no contorno comum com 2 px de folga, para o vizinho não vazar na escala.
-const sitFrames = []
-for (let i = 0; i < 9; i++) sitFrames.push(await readFrame('art-source/kito-pixel', frame('sitting_down_the_ch/animations/The_character_sits_firmly_rhythmically_swinging_bo', 'south', i), KITO))
-const sitBounds = sitFrames.map(pixels => bounds(pixels, KITO))
-const sitLeft = Math.min(...sitBounds.map(box => box.left)) - 2, sitTop = Math.min(...sitBounds.map(box => box.top)) - 2
-const sitWidth = Math.max(...sitBounds.map(box => box.right)) + 3 - sitLeft, sitHeight = Math.max(...sitBounds.map(box => box.bottom)) + 3 - sitTop
-const sitStrip = Buffer.alloc(sitWidth * sitFrames.length * sitHeight * 4)
-sitFrames.forEach((pixels, index) => {
-  const bytes = Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength)
-  for (let y = 0; y < sitHeight; y++) bytes.copy(sitStrip, (y * sitFrames.length + index) * sitWidth * 4, ((sitTop + y) * KITO + sitLeft) * 4, ((sitTop + y) * KITO + sitLeft + sitWidth) * 4)
-})
-// O chão é a mediana da base, como nas animações da hero: o corpo assenta nela e os pés esticados afundam na grama.
-const sitGround = sitBounds.map(box => box.bottom + 1).sort((a, b) => a - b)[4] - sitTop
+// Kito do rodapé (2026-10-26): de frente, no alto do pulo com os dois braços para cima (quadro 4 do Two-Footed_Jump),
+// espiando por trás da onda.
+// Recortado no contorno com 2 px de folga, para o vizinho não vazar na escala.
+const armsUp = await readFrame('art-source/kito-pixel', frame('Idle/animations/Two-Footed_Jump', 'south', 4), KITO)
+const armsBox = bounds(armsUp, KITO)
+const armsLeft = armsBox.left - 2, armsTop = armsBox.top - 2, armsWidth = armsBox.right + 3 - armsLeft, armsHeight = armsBox.bottom + 3 - armsTop
+const armsCrop = Buffer.alloc(armsWidth * armsHeight * 4)
+const armsBytes = Buffer.from(armsUp.buffer, armsUp.byteOffset, armsUp.byteLength)
+for (let y = 0; y < armsHeight; y++) armsBytes.copy(armsCrop, y * armsWidth * 4, ((armsTop + y) * KITO + armsLeft) * 4, ((armsTop + y) * KITO + armsLeft + armsWidth) * 4)
 
 const kitoAtlas = await pack(kitoFrames, KITO, 12)
 const files = {
   'public/media/hero/kito-pixel-atlas.webp': kitoAtlas.webp,
   'public/media/hero/kito-pixel-pose.webp': await webp(Buffer.from(kitoFrames[animations.front.start].buffer), KITO, KITO),
-  'public/media/hero/kito-pixel-sit.webp': await webp(sitStrip, sitWidth * sitFrames.length, sitHeight),
+  'public/media/hero/kito-pixel-arms-up.webp': await webp(armsCrop, armsWidth, armsHeight),
 }
 await mkdir(path.join(root, 'public/media/hero'), { recursive: true })
 for (const [file, buffer] of Object.entries(files)) {
@@ -156,5 +151,5 @@ for (const [file, buffer] of Object.entries(files)) {
 const sprites = { atlas: '/media/hero/kito-pixel-atlas.webp', cell: KITO, columns: 12, rows: kitoAtlas.rows, animations }
 await writeFile(path.join(root, 'src/kito-sprites.ts'), `// Gerado por scripts/prepare-kito-pixel.mjs a partir de art-source/kito-pixel/. Não editar à mão.\nexport const kitoSprites = ${JSON.stringify(sprites, null, 2)} as const\n`)
 console.log(`src/kito-sprites.ts: Kito ${kitoFrames.length} quadros (12×${kitoAtlas.rows})`)
-// O rodapé (SiteFooter e .footer-kito) usa estes números à mão; se mudarem, atualizar lá.
-console.log(`Kito sentado: ${sitFrames.length} quadros de ${sitWidth}×${sitHeight}, chão a ${sitHeight - sitGround} px da base`)
+// O rodapé (SiteFooter e .footer-kito) usa este tamanho à mão; se mudar, atualizar lá.
+console.log(`Kito do rodapé: ${armsWidth}×${armsHeight}`)
