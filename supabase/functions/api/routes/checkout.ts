@@ -99,6 +99,9 @@ const termsChanged = (termsVersion: string) =>
 // descarta o que não vale, e uma falha aqui não impede o pagamento.
 export async function checkout(req: Request): Promise<Response> {
   const user = await requireSessionUser(req)
+  // A prévia do lançamento (2026-10-27): antes da abertura das vendas, nenhum pedido nasce.
+  const opening = await rpc<string | null>('get_sales_opening')
+  if (opening) throw new HttpError(409, 'SALES_NOT_OPEN', 'A loja ainda não abriu.', { details: { sales_open_at: new Date(opening).toISOString() } })
   const body = await readJsonObject(req)
   const termsVersion = env.termsVersion()
   if (body.terms_version !== termsVersion) throw termsChanged(termsVersion)

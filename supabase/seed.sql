@@ -207,3 +207,6 @@ begin
   where o.id in ('a1000001-0000-4000-8000-000000000001', 'a1000002-0000-4000-8000-000000000002');
 end
 $seed$;
+
+-- A prévia do lançamento (migração 20261027120000) vale só no hospedado: aqui a loja fica aberta.
+delete from private.sales_opening;

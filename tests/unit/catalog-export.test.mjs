@@ -14,12 +14,12 @@ const single = { code: 'J001', kind: 'single', name: 'A', price: { unit_amount: 
 
 const BANNER = { code: 'BLACK26', text: 'Black Friday: 30% com {cupom}' }
 
-function fakeFetch({ products = [pack, single], banner = BANNER, version = VERSION, status = 200 } = {}) {
+function fakeFetch({ products = [pack, single], banner = BANNER, salesOpenAt, version = VERSION, status = 200 } = {}) {
   const calls = []
   const fetch = async (url, init = {}) => {
     calls.push({ url, method: init.method ?? 'GET', apikey: new Headers(init.headers).get('apikey') })
     if (url.endsWith('/rest/v1/rpc/get_catalog_version')) return new Response(JSON.stringify(version))
-    return new Response(JSON.stringify({ products, banner }), { status })
+    return new Response(JSON.stringify({ products, banner, ...(salesOpenAt === undefined ? {} : { sales_open_at: salesOpenAt }) }), { status })
   }
   return { fetch, calls }
 }
@@ -45,12 +45,22 @@ test('catálogo: a versão (antes) e o /catalog viram o retrato do build e o /ca
     ])
     assert.deepEqual(JSON.parse(await readFile(path.join(root, 'public/catalogo/versao.json'), 'utf8')), { version: VERSION })
     // O arquivo gerado é TypeScript de verdade: o tipo vem de catalog.ts, que aqui não existe; o Node só tira os tipos.
-    const { catalogSnapshot, promoBanner } = await import(pathToFileURL(path.join(root, 'src/content/catalog-snapshot.ts')).href)
+    const { catalogSnapshot, promoBanner, salesOpenAt } = await import(pathToFileURL(path.join(root, 'src/content/catalog-snapshot.ts')).href)
     assert.deepEqual(catalogSnapshot, [
       { code: 'P001', price: { unit_amount: 2990, currency: 'brl' }, list_price: { amount: 3990, label: 'Preço de lançamento' }, games: ['J001', 'J004'] },
       { code: 'J001', price: { unit_amount: 990, currency: 'brl' }, list_price: null, games: ['J001'] },
     ])
     assert.deepEqual(promoBanner, BANNER)
+    // A API de antes da prévia não manda a abertura: a loja fica aberta.
+    assert.equal(salesOpenAt, null)
+  })
+})
+
+test('catálogo: na prévia do lançamento, o build guarda a abertura das vendas', async () => {
+  await withRoot(async (root) => {
+    await exportCatalog({ root, supabaseUrl: SUPABASE, apiKey: 'k', fetch: fakeFetch({ salesOpenAt: '2026-11-09T22:00:00.000Z' }).fetch })
+    const { salesOpenAt } = await import(pathToFileURL(path.join(root, 'src/content/catalog-snapshot.ts')).href)
+    assert.equal(salesOpenAt, '2026-11-09T22:00:00.000Z')
   })
 })
 
@@ -70,6 +80,7 @@ test('catálogo: resposta ruim para o build sem gravar nada', async () => {
     ['preço inválido', { products: [{ ...single, price: { unit_amount: '990', currency: 'brl' } }] }],
     ['riscado sem rótulo', { products: [{ ...pack, list_price: { amount: 3990, label: ' ' } }] }],
     ['faixa sem código', { banner: { code: 'black 26', text: 'Black Friday' } }],
+    ['abertura que não é data', { salesOpenAt: 'amanhã' }],
   ]) {
     await withRoot(async (root) => {
       await assert.rejects(exportCatalog({ root, supabaseUrl: SUPABASE, apiKey: 'k', fetch: fakeFetch(options).fetch }), /Catálogo:/, label)
