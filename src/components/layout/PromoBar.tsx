@@ -18,8 +18,9 @@ export function PromoBar() {
   const { catalog } = useShop()
   const opening = useSalesOpening()
   if (privateRoutes.some(route => pathname.startsWith(route))) return null
+  // O convite aos gratuitos some na própria página; no pré-render o caminho chega com a barra no fim (/gratuitos/).
   if (opening) {
-    return <aside className="promo-bar" aria-label="Abertura da loja"><p>A loja abre em {openingLabel(opening)}. <Countdown to={opening} />{pathname !== '/gratuitos' && <> Enquanto isso, <Link className="promo-link" to="/gratuitos">baixem os gratuitos</Link>.</>}</p></aside>
+    return <aside className="promo-bar" aria-label="Abertura da loja"><p>A loja abre em {openingLabel(opening)}. <Countdown to={opening} />{pathname.replace(/\/+$/, '') !== '/gratuitos' && <> Enquanto isso, <Link className="promo-link" to="/gratuitos">baixem os gratuitos</Link>.</>}</p></aside>
   }
   const code = <strong className="promo-code">{referral?.code ?? ''}</strong>
   if (referral?.name && referral.code && referral.percent_off) {
