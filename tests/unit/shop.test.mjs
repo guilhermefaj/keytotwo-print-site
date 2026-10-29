@@ -43,7 +43,18 @@ test('sitemap live inclui Loja e produtos; preview e test continuam sem URLs ind
       if (stage === 'live') {
         for (const route of ['/loja', '/loja/colecao-fundadores', '/loja/rabisque-e-adivinhe']) assert.ok(sitemap.includes(`<loc>https://example.test${route}</loc>`))
         assert.doesNotMatch(sitemap, /hora-dos-artistas|\/loja\/p001|\/loja\/j00|jogo-4|jogo-5/)
-      } else assert.doesNotMatch(sitemap, /<loc>/)
+        // llms.txt: os produtos com o endereço e o preço do catálogo do build, os gratuitos e o contato.
+        const llms = await readFile(path.join(root, 'build/client/llms.txt'), 'utf8')
+        assert.match(llms, /^# KeyToTwo\n\n> /)
+        assert.ok(llms.includes('- [Rabisque e Adivinhe](https://example.test/loja/rabisque-e-adivinhe): '))
+        assert.match(llms, /\[Rabisque e Adivinhe\][^\n]* R\$ 9,90\.\n/)
+        assert.match(llms, /\[Coleção KeyToTwo: Fundadores\][^\n]* De R\$ 39,90 por R\$ 29,90 \(Preço de lançamento\)\.\n/)
+        assert.ok(llms.includes('- [Hora dos Artistas](https://example.test/gratuitos): '))
+        assert.ok(llms.includes('contato@keytotwo.com.br'))
+      } else {
+        assert.doesNotMatch(sitemap, /<loc>/)
+        await assert.rejects(readFile(path.join(root, 'build/client/llms.txt')), 'fora de live, sem llms.txt (preços de teste)')
+      }
     }
   } finally {
     assert.equal(path.dirname(path.resolve(root)), path.resolve(tmpdir()))

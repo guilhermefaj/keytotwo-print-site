@@ -24,6 +24,10 @@ export type BlogPost = BlogPostSummary & { html: string; wordCount: number }
 
 export const instagramProfile = (handle: string) => `https://www.instagram.com/${handle}/`
 
+// O <title> do post: o título com o nome do site, sem repetir a marca quando o título do Google já a traz
+// ("… | KeyToTwo — KeyToTwo" saiu assim no post da CNV, 2026-10-29).
+export const blogPageTitle = (title: string) => /keytotwo/i.test(title) ? title : `${title} — KeyToTwo`
+
 // Até 3 posts com tema em comum, do que divide mais temas ao mais novo. Sem tema em comum, nenhum.
 export function relatedPosts<T extends BlogPostSummary>(post: BlogPostSummary, posts: T[], limit = 3): T[] {
   const tags = new Set(post.tags.map(tag => tag.toLowerCase()))

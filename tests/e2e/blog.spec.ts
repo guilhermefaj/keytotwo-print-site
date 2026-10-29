@@ -141,7 +141,7 @@ test('navega da lista ao post e volta com metadados próprios e foco visível', 
   expect(json.datePublished).toBe('2026-10-09')
   expect(json.author).toEqual({ '@type': 'Person', name: 'Equipe KeyToTwo', sameAs: ['https://www.instagram.com/keytotwo/'] })
   await page.getByRole('link', { name: 'Voltar ao blog' }).first().click()
-  await expect(page).toHaveTitle('Blog — KeyToTwo')
+  await expect(page).toHaveTitle('Blog sobre vida a dois e passatempos para casais — KeyToTwo')
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0)
 })
 

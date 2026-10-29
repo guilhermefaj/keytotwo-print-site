@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
+import { catalogEntry } from '../../content/catalog'
 import type { Product } from '../../content/products'
 import { money } from '../../lib/format'
 import { siteConfig } from '../../lib/site-config'
@@ -19,11 +20,13 @@ export function CatalogFeedback({ quietLoading = false }: { quietLoading?: boole
 // Conteúdo não concede disponibilidade: o catálogo aplica a completude e publicação dos jogos. Produto lançado que não
 // está no /catalog (pausado no admin) fica "Indisponível no momento"; o que ainda não foi lançado, "Em breve".
 // `fallback` substitui esses avisos quando o jogo ainda se compra de outro jeito (no pacote).
+// Enquanto o /catalog não chega, e no HTML do build, vale o preço do build (2026-10-29): quem lê a página sem
+// JavaScript, como os robôs de busca e de IA, também vê o preço. A compra espera o /catalog, que tem a palavra final.
 export function ProductAvailability({ product, detail = false, fallback }: { product?: Product; detail?: boolean; fallback?: ReactNode }) {
   const { catalog } = useShop()
   if (!product || product.availability !== 'sale' || !siteConfig.showCartAccess) return fallback ?? <p className="shop-soon">Em breve</p>
-  if (catalog.loading || catalog.error) return detail ? <CatalogFeedback /> : null
-  const listed = catalog.data?.products.find(item => item.code === product.code)
+  const listed = catalog.loading ? catalogEntry(product.code) : catalog.data?.products.find(item => item.code === product.code)
+  if (catalog.error || (catalog.loading && !listed?.price)) return detail ? <CatalogFeedback /> : null
   if (!listed) return fallback ?? <p className="shop-soon">Indisponível no momento</p>
   if (!listed.price) return <p className="shop-status">Não conseguimos carregar o preço.</p>
   // Preço de tabela riscado (a promoção, no admin): só em real e só se for maior que o cobrado pela Stripe.
@@ -33,8 +36,8 @@ export function ProductAvailability({ product, detail = false, fallback }: { pro
     {struck && <p className="shop-price-tag">{struck.label}</p>}
     <p className="shop-price">{struck && <><s className="shop-price-list"><span className="sr-only">De </span>{money(struck.amount, listed.price.currency)}</s><span className="sr-only"> por</span> </>}{money(listed.price.unit_amount, listed.price.currency)}</p>
     {siteConfig.stage === 'test' && <p className="shop-price-note">Valor de teste</p>}
-    {detail
-      ? <ProductPurchaseAction code={product.code} />
+    {catalog.loading ? detail && <CatalogFeedback />
+      : detail ? <ProductPurchaseAction code={product.code} />
       : <><ProductPurchaseAction code={product.code} name={product.title} compact /><Link className="inline-link shop-details" to={`/loja/${product.slug}`} aria-label={`Ver detalhes: ${product.title}`}>Ver detalhes</Link></>}
   </div>
 }

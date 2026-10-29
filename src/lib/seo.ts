@@ -2,18 +2,22 @@ import { otherPages, publicPages } from '../content/site.ts'
 import { productPages, type Product } from '../content/products.ts'
 import { supportEmail } from '../content/help.ts'
 import { instagram, tiktok } from '../content/gratuitos.ts'
-import { instagramProfile, type BlogPostSummary } from './blog.ts'
+import { blogPageTitle, instagramProfile, type BlogPostSummary } from './blog.ts'
+import { company } from '../content/legal.ts'
 import { catalogEntry } from '../content/catalog.ts'
 import { siteConfig } from './site-config.ts'
+
+// Página indexável: a imagem pode aparecer grande na busca e no Discover (Google, meta robots).
+const indexable = 'index, follow, max-image-preview:large'
 
 export function pageSeo(pathname: string, post?: BlogPostSummary) {
   const path = pathname.replace(/\/+$/, '') || '/'
   if (post && path === `/blog/${post.slug}`) {
     return {
       // Os campos do Google, quando preenchidos no admin, valem mais que o título e o resumo do post.
-      title: `${post.seoTitle || post.title} — KeyToTwo`, description: post.seoDescription || post.description,
+      title: blogPageTitle(post.seoTitle || post.title), description: post.seoDescription || post.description,
       canonical: new URL(path, siteConfig.origin).href,
-      robots: siteConfig.stage === 'live' && !post.draft ? 'index, follow' : 'noindex, nofollow',
+      robots: siteConfig.stage === 'live' && !post.draft ? indexable : 'noindex, nofollow',
     }
   }
   const pages: Record<string, { title: string; description: string }> = { ...publicPages, ...otherPages }
@@ -21,7 +25,7 @@ export function pageSeo(pathname: string, post?: BlogPostSummary) {
   return {
     ...page,
     canonical: new URL(pages[path] ? path : '/404', siteConfig.origin).href,
-    robots: siteConfig.stage === 'live' && Object.hasOwn(publicPages, path) ? 'index, follow' : 'noindex, nofollow',
+    robots: siteConfig.stage === 'live' && Object.hasOwn(publicPages, path) ? indexable : 'noindex, nofollow',
   }
 }
 
@@ -42,9 +46,13 @@ export function shareImage(pathname: string) {
   }
 }
 
+// Quem vende: loja on-line (OnlineStore, no Google), com a razão social e o CNPJ do rodapé e dos Termos e a política de
+// reembolso valendo para a loja toda (o link, sem resumir a política em categorias).
 const organization = () => ({
-  '@type': 'Organization', '@id': `${siteConfig.origin}/#organizacao`, name: 'KeyToTwo', url: siteConfig.origin,
-  logo: new URL('/media/brand/keytotwo-wordmark.png', siteConfig.origin).href, email: supportEmail, sameAs: [instagram.href, tiktok.href],
+  '@type': 'OnlineStore', '@id': `${siteConfig.origin}/#organizacao`, name: 'KeyToTwo', legalName: company.legalName, taxID: company.cnpj,
+  url: siteConfig.origin, logo: new URL('/media/brand/keytotwo-wordmark.png', siteConfig.origin).href, email: supportEmail,
+  sameAs: [instagram.href, tiktok.href],
+  hasMerchantReturnPolicy: { '@type': 'MerchantReturnPolicy', applicableCountry: 'BR', merchantReturnLink: new URL('/reembolsos', siteConfig.origin).href },
 })
 
 // Página inicial: quem é a KeyToTwo e o site.
@@ -90,7 +98,7 @@ export function blogPostingJsonLd(post: BlogPostSummary) {
     author: post.author
       ? { '@type': 'Person', name: post.author, ...(post.authorInstagram ? { sameAs: [instagramProfile(post.authorInstagram)] } : {}) }
       : { '@type': 'Organization', name: 'KeyToTwo', url: siteConfig.origin },
-    publisher: { '@type': 'Organization', name: 'KeyToTwo', url: siteConfig.origin },
+    publisher: organization(),
     ...(post.cover ? { image: new URL(post.cover, siteConfig.origin).href } : {}),
     ...(post.tags.length ? { keywords: post.tags.join(', ') } : {}),
   }

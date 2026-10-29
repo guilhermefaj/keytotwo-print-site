@@ -1,4 +1,4 @@
-import { supportEmail } from './help'
+import { supportEmail } from './help.ts'
 
 // Termos, Política de reembolso e Política de privacidade (responsável, 2026-10-19). Fatos conferidos no código:
 // tabelas do banco (docs/data-contract.md), funções (docs/api-contract.md) e o que o navegador guarda.

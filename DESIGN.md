@@ -463,7 +463,7 @@ A partir de 4 relatos, uma faixa de borda a borda desliza devagar e sem parar (9
 
 ### Estados
 
-- **Carregando:** esqueleto em aguada de Tinta com `role="status"` ("Carregando sua sacola"); preço em "Consultando o preço…" em Body Tinta suave, nunca em Display.
+- **Carregando:** esqueleto em aguada de Tinta com `role="status"` ("Carregando sua sacola"); preço em "Consultando o preço…" em Body Tinta suave, nunca em Display. Na Loja, no Início e na página do jogo, o preço do build aparece desde o HTML (2026-10-29, para quem lê sem JavaScript); o botão de compra espera o /catalog.
 - **O que depende da URL** (2026-10-25): o HTML pré-renderizado não conhece a consulta, então o que muda com ela entra depois da hidratação (`useHydrated`). Nas Preferências de e-mail, o cartão mantém o título e "Minha conta" e troca o texto e o botão por um esqueleto (duas linhas e a forma do botão, em aguada de Tinta, com `role="status"`) até o navegador ler o token. A 404 que o nginx entrega num endereço que não existe hidrata como veio, com cabeçalho e rodapé, até a rota do endereço assumir.
 - **Vazio:** Kito na caixa + título Title + uma frase + o botão primário com o nome real da ação ("Ver os jogos").
 - **Erro:** uma única mensagem em Body com `role="alert"`, em Tinta (não em cor de erro quando não há culpa da pessoa), seguida de **um** botão secundário "Tentar novamente". Sem título em Display, sem segunda mensagem genérica. Falha de pagamento e 404 usam o Kito tonto.

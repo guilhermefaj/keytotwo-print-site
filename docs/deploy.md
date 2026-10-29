@@ -123,7 +123,7 @@ Para voltar, ponha um `live-<commit>` anterior no `IMAGE_TAG` de `producao/.env`
 5. **Compra real pequena** (um jogo avulso, cartão ou Pix):
    - pedido pago, jogo em Meus jogos e e-mail de confirmação;
    - em seguida, o reembolso total pelo Dashboard. O webhook `charge.refunded` marca o pedido como reembolsado.
-6. **Search Console:** enviar `https://keytotwo.com.br/sitemap.xml`.
+6. **Search Console:** enviar `https://keytotwo.com.br/sitemap.xml` e conferir se o site está incluído nos recursos de IA generativa da Pesquisa (o Google exige isso para aparecer nas Visões gerais criadas por IA e no Modo IA).
 
 **Depois da virada:** o teste e o dev local continuam no mesmo Supabase, agora com a Stripe live. Dá para navegar, entrar e baixar por eles, mas o pagamento não funciona, porque o site em stage test recusa sessões live. Para voltar a testar compras fora da produção, o teste precisa de um projeto Supabase próprio, com a Stripe de teste.
 

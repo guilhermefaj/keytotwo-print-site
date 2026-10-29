@@ -4,6 +4,7 @@ import { Link, useBlocker, useNavigate, useParams } from 'react-router'
 import { api, ApiError, apiMessage, useResource } from '../api'
 import { acceptedImages, BLOG_LIMITS, deletedNotice, imagePathsIn, instagramHandle, isInstagramHandle, mediaUrl, SEO_IDEAL, slugify, today, uploadImage, type BlogList, type BlogPost, type BlogPostInput, type BlogProblem } from '../blog'
 import { PostHeader } from '../../../src/components/blog/PostHeader'
+import { blogPageTitle } from '../../../src/lib/blog'
 import { problemsOf, readingMinutesOf, renderMarkdown } from '../blog-markdown'
 import { SiteStatus } from '../SiteStatus'
 import { siteUrl } from '../supabase'
@@ -393,7 +394,7 @@ const cut = (text: string, max: number) => (text.length > max ? `${text.slice(0,
 function SeoFields({ form, field, problem }: { form: Form; field: (key: 'seo_title' | 'seo_description') => FieldAttrs; problem: (key: Field) => string | undefined }) {
   const [open, setOpen] = useState(() => Boolean(form.seo_title || form.seo_description))
   const shown = open || Boolean(problem('seo_title') || problem('seo_description'))
-  const title = `${form.seo_title || form.title || 'Sem título'} — KeyToTwo`
+  const title = blogPageTitle(form.seo_title || form.title || 'Sem título')
   const description = form.seo_description || form.description
   const long = (count: number, ideal: number) => (count > ideal ? ` Passou de ${ideal}: o Google deve cortar o fim.` : '')
   return <details className="field-wide seo-box" open={shown} onToggle={event => setOpen(event.currentTarget.open)}>
