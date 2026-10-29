@@ -47,8 +47,10 @@ main() {
       echo "$(date -Is) $site: sem commit registrado; rode o atualizar.sh dele uma vez" >&2
       continue
     fi
-    echo "$(date -Is) $site: $now → $want; reconstruindo o commit $commit"
-    if sh "$base/repo/deploy/$site/atualizar.sh" "$commit"; then
+    echo "$(date -Is) $site: $now → $want; reconstruindo o commit registrado (agora $commit)"
+    # "registrado": o atualizar.sh lê o commit só depois de ter a vez; se um deploy terminar enquanto este espera, vale o
+    # commit novo, e o deploy não é desfeito.
+    if sh "$base/repo/deploy/$site/atualizar.sh" registrado; then
       rm -f "$base/blog/$site.falhou"
       echo "$(date -Is) $site: no ar com o banco de agora"
     else
