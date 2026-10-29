@@ -11,7 +11,7 @@ const BLOG_KEY_ID = Deno.env.get('B2_BLOG_KEY_ID')
 function post(extra: Record<string, unknown> = {}) {
   return { slug: 'jogos-para-casais', title: 'Jogos para casais', description: 'Ideias para a noite.', author: 'Equipe KeyToTwo',
     date: '2026-10-23', cover: null, cover_alt: '', tags: ['Jogos'], body: 'Texto do post.\n\n![Mesa com o jogo](/images/blog/2026/10/ab12cd34-mesa.webp)', status: 'published',
-    seo_title: '', seo_description: '', ...extra }
+    seo_title: '', seo_description: '', author_instagram: '', ...extra }
 }
 const stored = (extra: Record<string, unknown> = {}) => ({ id: ID, ...post(), published_at: SAVED_AT, created_at: SAVED_AT, updated_at: SAVED_AT, ...extra })
 
@@ -74,20 +74,29 @@ contractTest('publicar exige o post completo e as regras do build, sem chegar ao
   }
   const incomplete = await send('/admin/blog/posts', { method: 'POST', token, body: { post: post({ description: '', author: '', body: '' }) } })
   assertEquals(incomplete.body.error.details.problems.map((p: { field: string }) => p.field), ['description', 'author', 'body'])
-  // Admin antigo, sem os campos do Google: grava vazio. Campo do Google que não é texto: post inválido.
+  // Admin antigo, sem os campos do Google e o Instagram: grava vazio. Campo do Google que não é texto: post inválido.
   const older: Record<string, unknown> = post({ status: 'draft' })
   delete older.seo_title
   delete older.seo_description
+  delete older.author_instagram
   await send('/admin/blog/posts', { method: 'POST', token, body: { post: older } })
   assertEquals((rpcCalls.at(-2)!.args.p_post as Record<string, unknown>).seo_title, '')
+  assertEquals((rpcCalls.at(-2)!.args.p_post as Record<string, unknown>).author_instagram, '')
+  // Instagram de quem escreveu: o @ e o link do perfil viram o nome de usuário; com espaço, não é um nome de usuário.
+  for (const [value, handle] of [['@Equipe.KeyToTwo', 'equipe.keytotwo'], ['https://www.instagram.com/keytotwo/?igsh=abc', 'keytotwo'], ['instagram.com/key_to_two', 'key_to_two']]) {
+    await send('/admin/blog/posts', { method: 'POST', token, body: { post: post({ status: 'draft', author_instagram: value }) } })
+    assertEquals((rpcCalls.at(-2)!.args.p_post as Record<string, unknown>).author_instagram, handle, value)
+  }
+  const instagram = await send('/admin/blog/posts', { method: 'POST', token, body: { post: post({ author_instagram: 'nome com espaço' }) } })
+  assertEquals(instagram.body.error.details.problems.map((p: { field: string }) => p.field), ['author_instagram'])
   const seo = await send('/admin/blog/posts', { method: 'POST', token, body: { post: post({ seo_title: 'x'.repeat(81), seo_description: 'y'.repeat(201) }) } })
   assertEquals(seo.body.error.details.problems.map((p: { field: string }) => p.field), ['seo_title', 'seo_description'])
-  for (const body of [{}, { post: { ...post(), status: 'arquivado' } }, { post: { ...post(), tags: 'Jogos' } }, { post: { ...post(), seo_title: 5 } }]) {
+  for (const body of [{}, { post: { ...post(), status: 'arquivado' } }, { post: { ...post(), tags: 'Jogos' } }, { post: { ...post(), seo_title: 5 } }, { post: { ...post(), author_instagram: 5 } }]) {
     assertEquals((await send('/admin/blog/posts', { method: 'POST', token, body })).body.error.message, 'Post inválido.')
   }
   // Rascunho guarda mesmo com imagem de fora: a regra só vale para publicar.
   await send('/admin/blog/posts', { method: 'POST', token, body: { post: post({ status: 'draft', body: '![Foto](https://exemplo.test/foto.png)' }) } })
-  assertEquals(rpcCalls.map((c) => c.fn), ['admin_save_blog_post', 'get_blog_version', 'admin_save_blog_post', 'get_blog_version'])
+  assertEquals(rpcCalls.map((c) => c.fn), Array(5).fill(['admin_save_blog_post', 'get_blog_version']).flat())
 })
 
 contractTest('PUT /admin/blog/posts/:id: grava com a versão aberta; conflito, endereço repetido e fixo viram 409', async () => {

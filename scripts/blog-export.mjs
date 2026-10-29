@@ -29,6 +29,7 @@ export async function exportBlog({ root, apiUrl, apiKey, fetch = globalThis.fetc
     const shareImage = post.cover ? `/images/blog/og/${post.slug}.jpg` : undefined
     const front = {
       title: post.title, description: post.description, date: post.date, author: post.author,
+      ...(post.author_instagram ? { authorInstagram: post.author_instagram } : {}),
       ...(post.cover ? { cover: post.cover } : {}), coverAlt: post.cover_alt ?? '', tags: post.tags ?? [], draft: false,
       ...(post.seo_title ? { seoTitle: post.seo_title } : {}), ...(post.seo_description ? { seoDescription: post.seo_description } : {}),
       ...(shareImage ? { shareImage } : {}),

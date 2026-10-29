@@ -21,7 +21,8 @@ for (const width of [320, 390, 768, 1280]) {
       await expect(page.locator('main h1')).toBeVisible()
       if (route !== '/blog') {
         await expect(page.locator('.blog-draft')).toHaveText('Rascunho')
-        await expect(page.locator('.blog-author')).toHaveText('Por Equipe KeyToTwo')
+        await expect(page.locator('.blog-author')).toHaveText('Por Equipe KeyToTwo · @keytotwo')
+        await expect(page.locator('.blog-author').getByRole('link', { name: '@keytotwo no Instagram (abre em nova aba)' })).toHaveAttribute('href', 'https://www.instagram.com/keytotwo/')
         await expect(page.locator('.blog-prose h2')).toHaveCount(3)
         await expect(page.locator('.blog-prose blockquote')).toBeVisible()
         await expect(page.locator('.blog-package a')).toHaveAttribute('href', '/loja')
@@ -138,7 +139,7 @@ test('navega da lista ao post e volta com metadados próprios e foco visível', 
   expect(json['@type']).toBe('BlogPosting')
   expect(json.headline).toBe('Como publicar pelo painel do blog')
   expect(json.datePublished).toBe('2026-10-09')
-  expect(json.author).toEqual({ '@type': 'Person', name: 'Equipe KeyToTwo' })
+  expect(json.author).toEqual({ '@type': 'Person', name: 'Equipe KeyToTwo', sameAs: ['https://www.instagram.com/keytotwo/'] })
   await page.getByRole('link', { name: 'Voltar ao blog' }).first().click()
   await expect(page).toHaveTitle('Blog — KeyToTwo')
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0)

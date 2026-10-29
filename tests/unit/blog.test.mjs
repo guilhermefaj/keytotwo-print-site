@@ -77,6 +77,16 @@ test('autor: opcional, aparado, e vira o author do JSON-LD (sem autor, a KeyToTw
   assert.throws(() => parseBlogPost(source({ author: 42 }), 'artigo.md'), /author deve ser texto/)
 })
 
+test('Instagram de quem escreveu: opcional, vai para o resumo e para o sameAs do JSON-LD', () => {
+  const post = parseBlogPost(source({ author: 'Equipe KeyToTwo', authorInstagram: 'keytotwo' }), 'com-instagram.md')
+  assert.equal(summarizeBlogPost(post).authorInstagram, 'keytotwo')
+  assert.deepEqual(blogPostingJsonLd(post).author, { '@type': 'Person', name: 'Equipe KeyToTwo', sameAs: ['https://www.instagram.com/keytotwo/'] })
+  assert.equal(parseBlogPost(source({ authorInstagram: '' }), 'vazio.md').authorInstagram, '')
+  for (const authorInstagram of ['@keytotwo', 'Key To Two', 'x'.repeat(31), 5]) {
+    assert.throws(() => parseBlogPost(source({ authorInstagram }), 'artigo.md'), /authorInstagram deve ser o nome de usuário/)
+  }
+})
+
 test('desliga HTML cru e links executáveis; mantém texto escapado', () => {
   const { html } = parseBlogPost(source({}, '<script>alert(1)</script>\n\n[clique](javascript:alert(1))\n\n<img src=x onerror=alert(1)>'), 'seguro.md')
   assert.doesNotMatch(html, /<script>|<img |href="javascript:/)

@@ -6,6 +6,8 @@ export type BlogPostSummary = {
   date: string
   // Quem escreveu; vazio nos arquivos antigos (a página não mostra a linha e o JSON-LD usa a KeyToTwo).
   author: string
+  // O Instagram de quem escreveu, sem o @ (2026-10-29); vazio, o post mostra só o nome.
+  authorInstagram: string
   cover?: string
   coverAlt: string
   tags: string[]
@@ -19,6 +21,8 @@ export type BlogPostSummary = {
 }
 
 export type BlogPost = BlogPostSummary & { html: string; wordCount: number }
+
+export const instagramProfile = (handle: string) => `https://www.instagram.com/${handle}/`
 
 // Até 3 posts com tema em comum, do que divide mais temas ao mais novo. Sem tema em comum, nenhum.
 export function relatedPosts<T extends BlogPostSummary>(post: BlogPostSummary, posts: T[], limit = 3): T[] {

@@ -3,6 +3,7 @@ title: "Como publicar pelo painel do blog"
 description: "Guia de exemplo para escrever, revisar e publicar um artigo pelo admin da KeyToTwo."
 date: "2026-10-09"
 author: "Equipe KeyToTwo"
+authorInstagram: "keytotwo"
 coverAlt: ""
 tags:
   - Guia de publicação

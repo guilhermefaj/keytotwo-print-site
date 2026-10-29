@@ -38,7 +38,7 @@ export default function BlogPost() {
   return <main id="conteudo" tabIndex={-1} className="blog-page blog-post content-width">
     <BackLink to="/blog">Voltar ao blog</BackLink>
     <article>
-      <PostHeader draft={post.draft} date={post.date} readingMinutes={post.readingMinutes} author={post.author} title={<h1>{post.title}</h1>} description={post.description} tags={post.tags}>
+      <PostHeader draft={post.draft} date={post.date} readingMinutes={post.readingMinutes} author={post.author} authorInstagram={post.authorInstagram} title={<h1>{post.title}</h1>} description={post.description} tags={post.tags}>
         <ShareLinks ref={shareStart} title={post.title} url={url} label="Compartilhar" />
       </PostHeader>
       {post.cover && <img className="blog-post-cover" src={post.cover} alt={post.coverAlt} width="1200" height="800" fetchPriority="high" />}
