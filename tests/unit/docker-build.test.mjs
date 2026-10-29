@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import path from 'node:path'
 import test from 'node:test'
 
 // O `docker build` só enxerga o que o .dockerignore libera e o Dockerfile copia. Um script novo no `npm run build`
@@ -35,7 +36,20 @@ function ignored(file) {
   return excluded
 }
 
-const copied = read('Dockerfile').split(/\r?\n/).filter(line => /^COPY\s/.test(line) && !line.includes('--from=')).flatMap(line => line.split(/\s+/).slice(1, -1))
+const copiedBy = dockerfile => read(dockerfile).split(/\r?\n/).filter(line => /^COPY\s/.test(line) && !line.includes('--from=')).flatMap(line => line.split(/\s+/).slice(1, -1))
+const copied = copiedBy('Dockerfile')
+
+// Arquivos que um arquivo importa por caminho relativo, seguindo os imports do código (.ts, .tsx, .mjs).
+function localImports(file, found = new Set()) {
+  for (const [, spec] of read(file).matchAll(/(?:from|import)\s+['"](\.{1,2}\/[^'"]+)['"]/g)) {
+    const base = path.posix.join(path.posix.dirname(file), spec)
+    const target = [base, `${base}.ts`, `${base}.tsx`].find(candidate => existsSync(new URL(candidate, root)) && statSync(new URL(candidate, root)).isFile())
+    if (!target || found.has(target)) continue
+    found.add(target)
+    if (/\.(?:tsx?|mjs)$/.test(target)) localImports(target, found)
+  }
+  return found
+}
 
 test('o build cita scripts que existem e os conhecemos', () => {
   const used = buildScripts('build')
@@ -61,4 +75,17 @@ test('os scripts que o Dockerfile roda também entram na imagem', () => {
 
 test('o .dockerignore continua barrando segredos e o que não vai para a imagem', () => {
   for (const file of ['.env.local', 'supabase/functions/api/index.ts', 'tests/unit/shop.test.mjs', 'scripts/verificar.mjs', 'node_modules/react/index.js']) assert.equal(ignored(file), true, file)
+})
+
+// O admin importa alguns arquivos do site e do _shared; um import novo de fora de admin/ que o admin/Dockerfile não
+// copia quebra a imagem do admin (aconteceu com src/lib/blog.ts, 2026-10-29).
+test('admin: tudo de fora de admin/ que o código do admin importa é copiado pelo admin/Dockerfile', () => {
+  const adminCopied = copiedBy('admin/Dockerfile')
+  const sources = readdirSync(new URL('admin/src/', root), { recursive: true }).filter(file => /\.tsx?$/.test(file)).map(file => `admin/src/${file.replaceAll('\\', '/')}`)
+  const outside = [...new Set(sources.flatMap(file => [...localImports(file)]))].filter(file => !file.startsWith('admin/'))
+  assert.ok(outside.includes('src/components/blog/PostHeader.tsx'), 'segue os imports até o topo do post')
+  for (const file of outside) {
+    assert.ok(adminCopied.includes(file), `admin/Dockerfile copia ${file}`)
+    assert.equal(ignored(file), false, `.dockerignore libera ${file}`)
+  }
 })
