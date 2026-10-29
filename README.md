@@ -29,7 +29,7 @@ O dev fala com o Supabase hospedado (o mesmo da produção), então a origem pre
 - **test:** o teste.keytotwo.com.br e o build local: faixa "Ambiente de teste", conteúdo de exemplo (relatos, rascunhos do blog), sacola e pagamento contra a API de verdade. Como a Stripe é live, o pagamento não fecha.
 - **live:** o domínio. O build passa pela trava `scripts/check-release.mjs` (sem `PENDENTE`, com preços aprovados); com pendência, a imagem não é criada.
 
-Fora de live, toda página tem `noindex`, o `robots.txt` bloqueia tudo e o sitemap sai vazio. Em live, entram no sitemap as páginas públicas, os produtos e os posts publicados; sacola, entrar, área privada e 404 continuam `noindex`. Cada página tem `og:image` 1200 × 630 (`public/media/og`, de `scripts/prepare-og-images.mjs`), e há JSON-LD de organização, site, produto (com o preço em BRL) e post. As URLs antigas de produto (`/loja/p001`…) voltam com 301 pelo `nginx.conf`.
+Fora de live, toda página tem `noindex`, o `robots.txt` bloqueia tudo e o sitemap sai vazio. Em live, entram no sitemap as páginas públicas, os produtos e os posts publicados; sacola, entrar, área privada e 404 continuam `noindex`. Cada página tem `og:image` 1200 × 630 (`public/media/og`, de `scripts/prepare-og-images.mjs`), e há JSON-LD da loja (OnlineStore, com razão social, CNPJ e o link da política de reembolso), site, produto (com o preço em BRL) e post. Em live sai também o `llms.txt`, o resumo da loja em texto simples para assistentes de IA, gerado do conteúdo e do catálogo do build. As URLs antigas de produto (`/loja/p001`…) voltam com 301 pelo `nginx.conf`.
 
 ## Variáveis do build (`VITE_*`, públicas)
 

@@ -214,7 +214,7 @@ test('produto listado sem preço não oferece compra; falha permite retry', asyn
   await expect(page.getByRole('button', { name: 'Adicionar à sacola' })).toHaveCount(0)
 })
 
-test('carregamento não antecipa preço nem compra', async ({ page }) => {
+test('carregamento mostra o preço do build, mas não antecipa a compra', async ({ page }) => {
   test.skip(stage === 'preview', 'Preview sem catálogo remoto')
   let release!: () => void
   const gate = new Promise<void>(resolve => { release = resolve })
@@ -223,8 +223,10 @@ test('carregamento não antecipa preço nem compra', async ({ page }) => {
   try {
     await expect(page.locator('.shop-purchase [role="status"]')).toContainText('Consultando o preço…')
     await expect(page.locator('.shop-purchase button')).toHaveCount(0)
-    await expect(page.locator('.shop-price')).toHaveCount(0)
+    // O preço do build já vem no HTML (robôs sem JavaScript também o leem); quem decide é o /catalog.
+    await expect(page.locator('.shop-purchase .shop-price')).toHaveText(/^R\$\s9,90$/)
   } finally { release() }
+  await expect(page.locator('.shop-price')).toHaveCount(0)
   // Fora do catálogo que chegou: o avulso lançado fica indisponível, sem compra.
   await expect(page.locator('.shop-purchase')).toContainText('Indisponível no momento')
 })
@@ -255,7 +257,9 @@ test('compartilhamento e dados estruturados: imagem 1200×630, cartão grande e 
   expect(home).toMatch(/<meta property="og:image" content="https?:\/\/[^"]+\/media\/og\/p001\.jpg"/)
   expect(home).toContain('<meta property="og:image:width" content="1200"/>')
   expect(home).toContain('<meta name="twitter:card" content="summary_large_image"/>')
-  expect(jsonLd(home)[0]['@graph'].map((node: { '@type': string }) => node['@type'])).toEqual(['Organization', 'WebSite'])
+  const [store] = jsonLd(home)[0]['@graph']
+  expect(jsonLd(home)[0]['@graph'].map((node: { '@type': string }) => node['@type'])).toEqual(['OnlineStore', 'WebSite'])
+  expect([store.legalName, store.taxID, store.hasMerchantReturnPolicy.merchantReturnLink]).toEqual(['CHALK LABS CONSULTORIA EM TI LTDA', '66.782.936/0001-20', expect.stringMatching(/\/reembolsos$/)])
   const pack = await readFile('build/client/loja/colecao-fundadores/index.html', 'utf8')
   expect(pack).toMatch(/<meta property="og:image" content="[^"]+\/media\/og\/p001\.jpg"/)
   const [product, breadcrumb] = jsonLd(pack)[0]['@graph']

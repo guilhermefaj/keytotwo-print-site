@@ -149,6 +149,9 @@ test('campos do Google: opcionais, valem mais que título e resumo no <title> e 
   assert.deepEqual([seo.title, seo.description], ['Título curto — KeyToTwo', 'Para o Google.'])
   assert.deepEqual([blogPostingJsonLd(post).headline, blogPostingJsonLd(post).description], ['Título de teste', 'Para o Google.'])
   assert.equal(summarizeBlogPost(post).seoTitle, 'Título curto')
+  // Título do Google que já traz a marca não ganha outra (o post da CNV saiu "… | KeyToTwo — KeyToTwo").
+  const branded = parseBlogPost(source({ seoTitle: 'CNV para casais | KeyToTwo' }), 'com-marca.md')
+  assert.equal(pageSeo('/blog/com-marca', branded).title, 'CNV para casais | KeyToTwo')
   assert.throws(() => parseBlogPost(source({ seoTitle: 5 }), 'x.md'), /seoTitle deve ser texto/)
 })
 

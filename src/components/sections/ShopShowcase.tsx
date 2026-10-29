@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router'
+import { catalogEntry } from '../../content/catalog'
 import { bundleFor, products, singleFor } from '../../content/products'
 import { packageGames, type Game } from '../../content/games'
 import { money } from '../../lib/format'
@@ -13,12 +14,13 @@ import { SnapCarousel } from '../ui/SnapCarousel'
 // que levam à página de cada jogo. Os cards completos, com compra, ficam na Loja.
 const showcaseGames = packageGames.filter(game => game.confirmed)
 
-// Preço do avulso só quando o /catalog confirma; sem ele, o jogo se apresenta como parte do pacote.
+// Preço do avulso: o do build enquanto o /catalog carrega (e no HTML, para quem lê sem JavaScript), depois o do
+// /catalog; fora dele, o jogo se apresenta como parte do pacote.
 function TilePrice({ code }: { code: string }) {
   const { catalog } = useShop()
-  const listed = siteConfig.showCartAccess ? catalog.data?.products.find(item => item.code === code) : undefined
-  // Enquanto o catálogo carrega, a linha fica reservada e vazia: nada de "No pacote" piscando antes do preço.
-  return <span className="cover-tile-meta">{catalog.loading ? ' ' : listed?.price ? money(listed.price.unit_amount, listed.price.currency) : 'No pacote'}</span>
+  const listed = !siteConfig.showCartAccess ? undefined : catalog.loading ? catalogEntry(code) : catalog.data?.products.find(item => item.code === code)
+  // Sem preço do build, a linha fica reservada e vazia enquanto carrega: nada de "No pacote" piscando antes do preço.
+  return <span className="cover-tile-meta">{listed?.price ? money(listed.price.unit_amount, listed.price.currency) : catalog.loading ? ' ' : 'No pacote'}</span>
 }
 
 function CoverTile({ game, order }: { game: Game; order: number }) {

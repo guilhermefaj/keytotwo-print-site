@@ -272,7 +272,8 @@ test('home: matriz responsiva, texto 200%, cena preservada e capturas', async ({
         for (const [el, size] of sizes) el.style.fontSize = `${size * 2}px`
       })
       const overflow = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('body *')].filter(el => {
-        if (!el.checkVisibility() || el.closest('[aria-hidden="true"]') || el.classList.contains('skip-link')) return false
+        // Texto só para leitor de tela (sr-only) fica recortado em 1 px de propósito, como o "De … por" do preço riscado.
+        if (!el.checkVisibility() || el.closest('[aria-hidden="true"]') || el.classList.contains('skip-link') || el.classList.contains('sr-only')) return false
         const rect = el.getBoundingClientRect()
         // Cards outside a scroll-snap viewport (carousels, testimonial row) are intentional; text must still fit each card.
         // Folha de recortar: a carta inclinada passa alguns px da coluna de propósito; o texto é conferido na própria carta.
