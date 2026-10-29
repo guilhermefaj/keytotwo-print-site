@@ -10,6 +10,8 @@ export interface BlogPostInput {
   title: string
   description: string
   author: string
+  // O Instagram de quem escreveu (2026-10-29), opcional: o nome de usuário, sem o @.
+  author_instagram: string
   date: string
   cover: string | null
   cover_alt: string
@@ -40,10 +42,19 @@ export const BLOG_LIMITS = { slug: 80, title: 120, description: 300, author: 80,
 export const SEO_IDEAL = { title: 60, description: 155 }
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const datePattern = /^\d{4}-\d{2}-\d{2}$/
+const instagramPattern = /^[a-z0-9._]{1,30}$/
 // A trava do build live recusa conteúdo publicado com esta marcação.
 const pendingMarker = /\bPENDENTE\b/i
 
 export const isBlogSlug = (value: string) => slugPattern.test(value)
+export const isInstagramHandle = (value: string) => instagramPattern.test(value)
+
+// "@Fulana", "instagram.com/fulana/" e "https://www.instagram.com/fulana?igsh=…" viram "fulana".
+export function instagramHandle(value: string): string {
+  const text = value.trim()
+  const profile = text.match(/^(?:https?:\/\/)?(?:www\.)?instagram\.com\/([^/?#]*)/i)
+  return (profile ? profile[1] : text).replace(/^@/, '').toLowerCase()
+}
 
 // Imagens só da pasta do blog (no site, /images/blog; no admin, a mesma chave no bucket público).
 export const isBlogImagePath = (value: string) =>
@@ -70,13 +81,15 @@ export function readBlogPostInput(value: unknown): BlogPostInput | null {
   // Os campos do Google chegaram depois: quem não manda (admin antigo) grava vazio.
   const seoTitle = fields.seo_title === undefined ? '' : text('seo_title')
   const seoDescription = fields.seo_description === undefined ? '' : text('seo_description')
+  const authorInstagram = fields.author_instagram === undefined ? '' : text('author_instagram')
   const tags = fields.tags
   const status = fields.status
-  if ([slug, title, description, author, date, coverAlt, body, cover, seoTitle, seoDescription].some(item => item === null)) return null
+  if ([slug, title, description, author, date, coverAlt, body, cover, seoTitle, seoDescription, authorInstagram].some(item => item === null)) return null
   if (!Array.isArray(tags) || tags.some(tag => typeof tag !== 'string')) return null
   if (status !== 'draft' && status !== 'published') return null
   return {
-    slug: slug!.trim(), title: title!.trim(), description: description!.trim(), author: author!.trim(), date: date!.trim(),
+    slug: slug!.trim(), title: title!.trim(), description: description!.trim(), author: author!.trim(),
+    author_instagram: instagramHandle(authorInstagram!), date: date!.trim(),
     cover: cover!.trim() || null, cover_alt: coverAlt!.trim(), tags: (tags as string[]).map(tag => tag.trim()).filter(Boolean),
     body: body!, status, seo_title: seoTitle!.trim(), seo_description: seoDescription!.trim(),
   }
@@ -130,6 +143,7 @@ export function blogProblems(post: BlogPostInput, images: BlogImage[]): BlogProb
   if (post.seo_description.length > BLOG_LIMITS.seoDescription) add('seo_description', `Use até ${BLOG_LIMITS.seoDescription} caracteres na descrição do Google.`)
   if (post.author.length > BLOG_LIMITS.author) add('author', `Use até ${BLOG_LIMITS.author} caracteres no autor.`)
   else if (publishing && !post.author) add('author', 'Diga quem escreveu antes de publicar.')
+  if (post.author_instagram && !isInstagramHandle(post.author_instagram)) add('author_instagram', 'Use o nome de usuário do Instagram: até 30 letras, números, pontos ou sublinhados.')
   if (!isValidDate(post.date)) add('date', 'Escolha uma data válida.')
   if (post.cover && !isBlogImagePath(post.cover)) add('cover', 'Envie a capa pelo botão. Ela precisa ficar na pasta do blog.')
   if (post.cover_alt.length > BLOG_LIMITS.coverAlt) add('cover_alt', `Use até ${BLOG_LIMITS.coverAlt} caracteres na descrição da capa.`)

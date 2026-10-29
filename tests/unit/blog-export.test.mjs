@@ -61,14 +61,14 @@ test('troca os arquivos do repositório pelos publicados, baixa as imagens e gra
   assert.equal(read.shareImage, '/images/blog/og/jogos-para-casais.jpg')
   const share = await sharp(path.join(root, 'public/images/blog/og/jogos-para-casais.jpg')).metadata()
   assert.deepEqual([share.format, share.width, share.height], ['jpeg', 1200, 630])
-  assert.deepEqual([read.seoTitle, read.seoDescription], ['', ''])
+  assert.deepEqual([read.seoTitle, read.seoDescription, read.authorInstagram], ['', '', ''])
 }))
 
-test('campos do Google vão para o frontmatter; post sem capa não ganha imagem de compartilhar', () => withRoot(async root => {
-  const { fetch } = fakeFetch({ posts: [post({ cover: null, cover_alt: '', body: 'Texto.', seo_title: 'Título curto', seo_description: 'Para o Google.' })] })
+test('campos do Google e o Instagram vão para o frontmatter; post sem capa não ganha imagem de compartilhar', () => withRoot(async root => {
+  const { fetch } = fakeFetch({ posts: [post({ cover: null, cover_alt: '', body: 'Texto.', seo_title: 'Título curto', seo_description: 'Para o Google.', author_instagram: 'keytotwo' })] })
   await exportBlog({ root, apiUrl: 'https://api.teste/functions/v1/api', apiKey: 'chave', fetch })
   const [read] = await readBlogPosts({ root, stage: 'live' })
-  assert.deepEqual([read.seoTitle, read.seoDescription, read.shareImage], ['Título curto', 'Para o Google.', undefined])
+  assert.deepEqual([read.seoTitle, read.seoDescription, read.shareImage, read.authorInstagram], ['Título curto', 'Para o Google.', undefined, 'keytotwo'])
   assert.equal(existsSync(path.join(root, 'public/images/blog/og')), false)
 }))
 

@@ -2,7 +2,7 @@ import { otherPages, publicPages } from '../content/site.ts'
 import { productPages, type Product } from '../content/products.ts'
 import { supportEmail } from '../content/help.ts'
 import { instagram, tiktok } from '../content/gratuitos.ts'
-import type { BlogPostSummary } from './blog.ts'
+import { instagramProfile, type BlogPostSummary } from './blog.ts'
 import { catalogEntry } from '../content/catalog.ts'
 import { siteConfig } from './site-config.ts'
 
@@ -87,7 +87,9 @@ export function blogPostingJsonLd(post: BlogPostSummary) {
     headline: post.title, description: post.seoDescription || post.description,
     datePublished: post.date, inLanguage: 'pt-BR',
     url: canonical, mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
-    author: post.author ? { '@type': 'Person', name: post.author } : { '@type': 'Organization', name: 'KeyToTwo', url: siteConfig.origin },
+    author: post.author
+      ? { '@type': 'Person', name: post.author, ...(post.authorInstagram ? { sameAs: [instagramProfile(post.authorInstagram)] } : {}) }
+      : { '@type': 'Organization', name: 'KeyToTwo', url: siteConfig.origin },
     publisher: { '@type': 'Organization', name: 'KeyToTwo', url: siteConfig.origin },
     ...(post.cover ? { image: new URL(post.cover, siteConfig.origin).href } : {}),
     ...(post.tags.length ? { keywords: post.tags.join(', ') } : {}),

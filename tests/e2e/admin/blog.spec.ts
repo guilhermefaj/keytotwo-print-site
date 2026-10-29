@@ -161,10 +161,13 @@ test('novo post: endereço sai do título, prévia ao lado, publicar incompleto 
   await expect(page.getByRole('status').filter({ hasText: 'Rascunho salvo.' })).toBeVisible()
   await expect(page).toHaveURL(/\/blog\/novo2$/)
   const created = calls.find(call => call.method === 'POST')!
-  expect(created.body).toEqual({ post: { slug: 'jogos-para-casais-5-ideias', title: 'Jogos para casais: 5 ideias!', description: '', author: '', date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), cover: null, cover_alt: '', tags: [], body: '# Primeira ideia\n\nUm parágrafo com **negrito**.', status: 'draft', seo_title: '', seo_description: '' } })
+  expect(created.body).toEqual({ post: { slug: 'jogos-para-casais-5-ideias', title: 'Jogos para casais: 5 ideias!', description: '', author: '', date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), cover: null, cover_alt: '', tags: [], body: '# Primeira ideia\n\nUm parágrafo com **negrito**.', status: 'draft', seo_title: '', seo_description: '', author_instagram: '' } })
 
   await page.getByLabel('Resumo').fill('Cinco ideias para a noite.')
   await page.getByLabel('Autor').fill('Ana Souza')
+  // O link do perfil colado vira o nome de usuário, na prévia e no que vai para a API.
+  await page.getByLabel('Instagram de quem escreveu').fill('https://www.instagram.com/Ana.Souza/')
+  await expect(preview.locator('.blog-author')).toHaveText('Por Ana Souza · @ana.souza')
   await page.getByLabel('Temas').fill('Jogos, Casal')
   await page.getByRole('button', { name: 'Publicar' }).click()
   await expect(page.locator('.notice')).toHaveText('Publicado.')
@@ -172,7 +175,7 @@ test('novo post: endereço sai do título, prévia ao lado, publicar incompleto 
   await expect(page.getByRole('status').filter({ hasText: 'Atualizando o site' })).toBeVisible()
   const put = calls.find(call => call.method === 'PUT')!
   expect(put.path).toBe('/admin/blog/posts/novo2')
-  expect(put.body).toMatchObject({ expected_updated_at: expect.stringMatching(/^2026-10-23T12:00:\d{2}\.123456\+00:00$/), post: { status: 'published', author: 'Ana Souza', tags: ['Jogos', 'Casal'] } })
+  expect(put.body).toMatchObject({ expected_updated_at: expect.stringMatching(/^2026-10-23T12:00:\d{2}\.123456\+00:00$/), post: { status: 'published', author: 'Ana Souza', author_instagram: 'ana.souza', tags: ['Jogos', 'Casal'] } })
   await expect(page.locator('.editor-heading .badge')).toHaveText('Publicado')
   await expect(page.getByLabel('Endereço')).toHaveAttribute('readonly', '')
   await expect(page.getByRole('button', { name: 'Salvar e atualizar o site' })).toBeVisible()

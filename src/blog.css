@@ -15,6 +15,10 @@
 .blog-entry p { max-width: 65ch; margin: 0; }
 .blog-list-cover { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--radius-md); }
 .blog-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; font-size: var(--text-label); line-height: 1.6; color: var(--color-ink-soft); }
+/* O Instagram de quem escreveu, ao lado do nome: ícone e @, sublinhado como os links do texto. */
+.blog-author a { color: var(--color-deep-teal); text-decoration: underline; text-underline-offset: 4px; white-space: nowrap; }
+.blog-author a:hover { text-decoration-thickness: 2px; }
+.blog-author svg { display: inline-block; margin-right: 4px; vertical-align: -3px; }
 .blog-draft { padding: 2px 8px; border: 1.5px solid var(--color-ink); border-radius: var(--radius-sm); color: var(--color-ink); font-weight: 600; }
 .blog-tags { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 0; margin: 20px 0 0; font-size: var(--text-label); color: var(--color-deep-teal); }
 .blog-tags li { max-width: 100%; overflow-wrap: anywhere; }

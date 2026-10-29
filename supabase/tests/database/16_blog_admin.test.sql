@@ -149,6 +149,20 @@ select pg_temp.assert('sem os campos do Google, ficam vazios', (select post->>'s
 select pg_temp.expect('título do Google com mais de 80 caracteres: 23514',
   $q$update private.blog_posts set seo_title = repeat('x', 81) where slug = 'com-seo'$q$, '23514');
 
+-- ===== Instagram de quem escreveu (migração 20261029120000) ==============================================
+select pg_temp.assert('Instagram: grava com o post',
+  pg_temp.save('insta', 'adm', null, pg_temp.post('com-instagram', 'draft', '{"author_instagram": "equipe.keytotwo"}'), null) = 'ok');
+select pg_temp.assert('Instagram volta no JSON do post e fica na tabela; sem ele, vazio',
+  (select post->>'author_instagram' = 'equipe.keytotwo' from pg_temp.saved where name = 'insta')
+  and exists (select 1 from private.blog_posts b where b.slug = 'com-instagram' and b.author_instagram = 'equipe.keytotwo')
+  and (select post->>'author_instagram' = '' from pg_temp.saved where name = 'rasc'));
+select pg_temp.assert('Instagram: editar troca o nome de usuário',
+  pg_temp.save('insta', 'adm', pg_temp.saved_id('insta'), pg_temp.post('com-instagram', 'draft', '{"author_instagram": "outra_conta"}'), pg_temp.saved_at('insta')) = 'ok');
+select pg_temp.assert('Instagram editado fica na tabela',
+  exists (select 1 from private.blog_posts b where b.slug = 'com-instagram' and b.author_instagram = 'outra_conta'));
+select pg_temp.expect('Instagram com @ ou maiúscula: 23514',
+  $q$update private.blog_posts set author_instagram = '@Equipe' where slug = 'com-instagram'$q$, '23514');
+
 -- ===== galeria e apagar imagens (migrações 20261023160000 e 20261023180000) ===============================
 select pg_temp.assert('galeria: rascunho com a capa repetida no texto e outra imagem',
   pg_temp.save('img', 'adm', null, pg_temp.post('com-imagens', 'draft', jsonb_build_object(

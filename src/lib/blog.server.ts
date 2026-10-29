@@ -4,7 +4,7 @@ import MarkdownIt from 'markdown-it'
 import { parseDocument } from 'yaml'
 import type { BlogPost, BlogPostSummary } from './blog.ts'
 // As regras do post são as mesmas da API e do editor do admin.
-import { isBlogImagePath, isBlogSlug, isValidDate, markdownImages, prepareMarkdownTokens, readingMinutes, readingWords } from '../../supabase/functions/_shared/blog-rules.ts'
+import { isBlogImagePath, isBlogSlug, isInstagramHandle, isValidDate, markdownImages, prepareMarkdownTokens, readingMinutes, readingWords } from '../../supabase/functions/_shared/blog-rules.ts'
 
 type BlogStage = 'live' | 'preview' | 'test'
 
@@ -32,6 +32,8 @@ export function parseBlogPost(source: string, filename: string): BlogPost {
   if (fields.coverAlt !== undefined && typeof fields.coverAlt !== 'string') fail('coverAlt deve ser texto.')
   if (fields.author !== undefined && typeof fields.author !== 'string') fail('author deve ser texto.')
   const author = ((fields.author ?? '') as string).trim()
+  if (fields.authorInstagram !== undefined && fields.authorInstagram !== '' && (typeof fields.authorInstagram !== 'string' || !isInstagramHandle(fields.authorInstagram))) fail('authorInstagram deve ser o nome de usuário do Instagram, sem o @.')
+  const authorInstagram = (fields.authorInstagram ?? '') as string
   for (const name of ['seoTitle', 'seoDescription']) if (fields[name] !== undefined && typeof fields[name] !== 'string') fail(`${name} deve ser texto.`)
   const seoTitle = ((fields.seoTitle ?? '') as string).trim()
   const seoDescription = ((fields.seoDescription ?? '') as string).trim()
@@ -61,7 +63,7 @@ export function parseBlogPost(source: string, filename: string): BlogPost {
   prepareMarkdownTokens(tokens)
   const wordCount = readingWords(tokens)
   return {
-    slug, title, description, date, author, ...(cover ? { cover } : {}), coverAlt, seoTitle, seoDescription, ...(shareImage ? { shareImage } : {}),
+    slug, title, description, date, author, authorInstagram, ...(cover ? { cover } : {}), coverAlt, seoTitle, seoDescription, ...(shareImage ? { shareImage } : {}),
     tags: (tags as string[]).map(tag => tag.trim()), draft: fields.draft as boolean,
     wordCount, readingMinutes: readingMinutes(wordCount),
     html: markdown.renderer.render(tokens, markdown.options, {}),
@@ -90,6 +92,6 @@ export async function readBlogPosts({ stage, root = process.cwd() }: { stage: Bl
 }
 
 export function summarizeBlogPost(post: BlogPost): BlogPostSummary {
-  const { slug, title, description, date, author, cover, coverAlt, tags, draft, readingMinutes, seoTitle, seoDescription, shareImage } = post
-  return { slug, title, description, date, author, cover, coverAlt, tags, draft, readingMinutes, seoTitle, seoDescription, ...(shareImage ? { shareImage } : {}) }
+  const { slug, title, description, date, author, authorInstagram, cover, coverAlt, tags, draft, readingMinutes, seoTitle, seoDescription, shareImage } = post
+  return { slug, title, description, date, author, authorInstagram, cover, coverAlt, tags, draft, readingMinutes, seoTitle, seoDescription, ...(shareImage ? { shareImage } : {}) }
 }

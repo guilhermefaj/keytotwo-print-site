@@ -2,7 +2,7 @@ import { IconArrowLeft, IconExternalLink, IconLibraryPhoto, IconPhoto } from '@t
 import { useDeferredValue, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Link, useBlocker, useNavigate, useParams } from 'react-router'
 import { api, ApiError, apiMessage, useResource } from '../api'
-import { acceptedImages, BLOG_LIMITS, deletedNotice, imagePathsIn, mediaUrl, SEO_IDEAL, slugify, today, uploadImage, type BlogList, type BlogPost, type BlogPostInput, type BlogProblem } from '../blog'
+import { acceptedImages, BLOG_LIMITS, deletedNotice, imagePathsIn, instagramHandle, isInstagramHandle, mediaUrl, SEO_IDEAL, slugify, today, uploadImage, type BlogList, type BlogPost, type BlogPostInput, type BlogProblem } from '../blog'
 import { PostHeader } from '../../../src/components/blog/PostHeader'
 import { problemsOf, readingMinutesOf, renderMarkdown } from '../blog-markdown'
 import { SiteStatus } from '../SiteStatus'
@@ -18,11 +18,12 @@ type Status = BlogPostInput['status']
 type Form = Omit<BlogPostInput, 'status' | 'tags'> & { tags: string }
 type Field = BlogProblem['field']
 
-const formOf = (post: BlogPost | null, author = ''): Form => post
-  ? { slug: post.slug, title: post.title, description: post.description, author: post.author, date: post.date, cover: post.cover, cover_alt: post.cover_alt, tags: post.tags.join(', '), body: post.body,
+const formOf = (post: BlogPost | null, author = '', authorInstagram = ''): Form => post
+  ? { slug: post.slug, title: post.title, description: post.description, author: post.author, author_instagram: post.author_instagram ?? '', date: post.date, cover: post.cover, cover_alt: post.cover_alt, tags: post.tags.join(', '), body: post.body,
       seo_title: post.seo_title ?? '', seo_description: post.seo_description ?? '' }
-  : { slug: '', title: '', description: '', author, date: today(), cover: null, cover_alt: '', tags: '', body: '', seo_title: '', seo_description: '' }
-const inputOf = (form: Form, status: Status): BlogPostInput => ({ ...form, tags: form.tags.split(',').map(tag => tag.trim()).filter(Boolean), status })
+  : { slug: '', title: '', description: '', author, author_instagram: authorInstagram, date: today(), cover: null, cover_alt: '', tags: '', body: '', seo_title: '', seo_description: '' }
+const inputOf = (form: Form, status: Status): BlogPostInput =>
+  ({ ...form, author_instagram: instagramHandle(form.author_instagram), tags: form.tags.split(',').map(tag => tag.trim()).filter(Boolean), status })
 const sameForm = (a: Form, b: Form) => JSON.stringify(a) === JSON.stringify(b)
 
 // Logo depois de criar, o post passa direto para o editor do endereço novo, uma vez só (recarregar busca na API).
@@ -49,8 +50,9 @@ function NewPost() {
   const { data, error, loading, reload } = useResource<BlogList>('/admin/blog/posts')
   if (loading) return <Loading />
   if (error !== undefined) return <PostLoadError error={error} reload={reload} />
-  // O autor do último post editado já vem preenchido.
-  return <Editor initial={null} mediaBase={data!.media_base} defaultAuthor={data!.posts.find(post => post.author)?.author ?? ''} />
+  // O autor do último post editado já vem preenchido, com o Instagram dele.
+  const last = data!.posts.find(post => post.author)
+  return <Editor initial={null} mediaBase={data!.media_base} defaultAuthor={last?.author ?? ''} defaultInstagram={last?.author_instagram ?? ''} />
 }
 
 function ExistingPost({ id }: { id: string }) {
@@ -77,10 +79,10 @@ type Message = { kind: 'ok' | 'error'; text: string; conflict?: BlogPost }
 // Depois de salvar algo que muda o site: a versão do blog que o site precisa ter e o aviso de quando tiver.
 type Site = { version: string; synced: string }
 
-function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice, site: initialSite = null }: { initial: BlogPost | null; mediaBase: string | null; defaultAuthor?: string; notice?: string; site?: Site | null }) {
+function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', defaultInstagram = '', notice, site: initialSite = null }: { initial: BlogPost | null; mediaBase: string | null; defaultAuthor?: string; defaultInstagram?: string; notice?: string; site?: Site | null }) {
   const navigate = useNavigate()
   const [saved, setSaved] = useState(initial)
-  const [form, setForm] = useState(() => formOf(initial, defaultAuthor))
+  const [form, setForm] = useState(() => formOf(initial, defaultAuthor, defaultInstagram))
   const [mediaBase, setMediaBase] = useState(initialMedia)
   const [slugTouched, setSlugTouched] = useState(Boolean(initial))
   const [attempt, setAttempt] = useState<Status | null>(null)
@@ -100,7 +102,7 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice, 
   const status: Status = saved?.status ?? 'draft'
   const published = status === 'published'
   const slugLocked = Boolean(saved?.published_at)
-  const dirty = !sameForm(form, formOf(saved, saved ? '' : defaultAuthor))
+  const dirty = !sameForm(form, saved ? formOf(saved) : formOf(null, defaultAuthor, defaultInstagram))
   const problems = attempt ? mergeProblems(problemsOf(inputOf(form, attempt)), serverProblems) : []
   const problem = (field: Field) => problems.find(item => item.field === field)?.message
 
@@ -251,16 +253,22 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', notice, 
           <FieldError field="author" text={problem('author')} />
         </div>
         <div className="field">
-          <label htmlFor="campo-date">Data</label>
-          <input {...field('date')} type="date" />
-          <p className="field-help" id="ajuda-date">A data mostrada no post e na ordem da lista.</p>
-          <FieldError field="date" text={problem('date')} />
+          <label htmlFor="campo-author_instagram">Instagram de quem escreveu <span className="field-optional">(opcional)</span></label>
+          <div className="slug-input"><span aria-hidden="true">@</span><input {...field('author_instagram')} autoComplete="off" spellCheck={false} /></div>
+          <p className="field-help" id="ajuda-author_instagram">Aparece ao lado do nome, com link para o perfil. Pode colar o link.</p>
+          <FieldError field="author_instagram" text={problem('author_instagram')} />
         </div>
         <div className="field field-wide">
           <label htmlFor="campo-description">Resumo</label>
           <textarea {...field('description')} rows={2} />
           <p className="field-help" id="ajuda-description">Aparece na lista do blog e no Google. {form.description.length}/300</p>
           <FieldError field="description" text={problem('description')} />
+        </div>
+        <div className="field">
+          <label htmlFor="campo-date">Data</label>
+          <input {...field('date')} type="date" />
+          <p className="field-help" id="ajuda-date">A data mostrada no post e na ordem da lista.</p>
+          <FieldError field="date" text={problem('date')} />
         </div>
         <div className="field">
           <label htmlFor="campo-tags">Temas</label>
@@ -417,11 +425,12 @@ function SeoFields({ form, field, problem }: { form: Form; field: (key: 'seo_tit
 function Preview({ form, status, mediaBase }: { form: Form; status: Status; mediaBase: string | null }) {
   const body = useDeferredValue(form.body)
   const tags = form.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+  const instagram = instagramHandle(form.author_instagram)
   // tabIndex: a prévia rola sozinha, então precisa receber foco para rolar pelo teclado.
   return <section className="preview" aria-label="Prévia do post" tabIndex={0}>
     <article className="blog-post">
       <PostHeader draft={status === 'draft'} date={/^\d{4}-\d{2}-\d{2}$/.test(form.date) ? form.date : undefined} readingMinutes={readingMinutesOf(body)}
-        author={form.author.trim()} title={<p className="preview-title">{form.title || 'Sem título'}</p>} description={form.description} tags={tags} />
+        author={form.author.trim()} authorInstagram={isInstagramHandle(instagram) ? instagram : ''} title={<p className="preview-title">{form.title || 'Sem título'}</p>} description={form.description} tags={tags} />
       {form.cover && <img className="blog-post-cover" src={mediaUrl(form.cover, mediaBase)} alt={form.cover_alt} width="1200" height="800" />}
       {/* Só o HTML do markdown-it com HTML cru desligado, como no site. */}
       {body.trim() ? <div className="blog-prose" dangerouslySetInnerHTML={{ __html: renderMarkdown(body, mediaBase) }} /> : <p className="preview-empty">O texto aparece aqui enquanto você escreve.</p>}
