@@ -15,6 +15,10 @@ main() {
   # Um deploy por vez (este, o da produção ou o vigia do blog): todos usam o mesmo checkout em repo/.
   exec 9>"$base/.deploy.lock"
   flock 9
+  # "registrado" (o vigia): o commit gravado por último, lido só agora, com a vez garantida. Lido antes da vez, um
+  # deploy que terminasse enquanto o vigia esperava seria desfeito (2026-10-29: a produção voltou duas vezes ao commit
+  # anterior quando um post mudou no meio do deploy).
+  if [ "$ref" = registrado ]; then ref=$(cat "$base/teste/commit"); fi
   git -C "$base/repo" fetch --quiet --depth 1 origin "$ref"
   git -C "$base/repo" checkout --quiet --detach FETCH_HEAD
   # O commit completo sai já: o vigia reconstrói o que for gravado no fim, e outro deploy não muda isso.
