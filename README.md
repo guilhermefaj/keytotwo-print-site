@@ -1,6 +1,6 @@
 # KeyToTwo
 
-Loja de jogos de papel para casais imprimirem em casa (keytotwo.com.br). Site em React Router 8 pré-renderizado (SSG) com Vite e Tailwind só na base, admin à parte em `admin/`, e backend no Supabase hospedado (Auth, Postgres e Edge Functions em `supabase/`), com Stripe, Brevo e Backblaze B2. Direção visual em [DESIGN.md](DESIGN.md).
+Loja de jogos de papel para casais imprimirem em casa (keytotwo.com.br). Site em React Router 8 pré-renderizado (SSG) com Vite e Tailwind só na base, admin à parte em `admin/`, e backend no Supabase hospedado (Auth, Postgres e Edge Functions em `supabase/`), com Stripe, Plunk (e-mail, pelo Amazon SES) e Backblaze B2. Direção visual em [DESIGN.md](DESIGN.md).
 
 ## Rodar
 
@@ -84,7 +84,7 @@ Os scripts do build (`seo-files`, `html-priorities`, `blog-export`, `check-relea
 
 - [docs/deploy.md](docs/deploy.md): CI, contêiner, VPS, teste, produção, admin e blog.
 - [docs/api-contract.md](docs/api-contract.md) e [docs/data-contract.md](docs/data-contract.md): rotas da API e o banco.
-- [docs/auth-setup.md](docs/auth-setup.md): Brevo, login com Google e templates do Auth.
+- [docs/auth-setup.md](docs/auth-setup.md): SMTP do Auth (Amazon SES), login com Google e templates do Auth.
 - [docs/stripe.md](docs/stripe.md): pagamento.
 - [docs/desempenho.md](docs/desempenho.md): Lighthouse e como medir.
 - [docs/third-party-notices.md](docs/third-party-notices.md): avisos de licença de terceiros.

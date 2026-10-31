@@ -41,30 +41,6 @@ async function sendLog(message: Message, rowId: string): Promise<string> {
   return `log-${body.ID ?? crypto.randomUUID()}`
 }
 
-// Modo brevo: API v3 (as funções não podem usar SMTP). Só com chave v3 e, fora da produção, só para a lista de teste.
-async function sendBrevo(message: Message): Promise<string> {
-  const key = env.brevoApiKey()
-  if (!key.startsWith('xkeysib-')) throw new PermanentEmailError('brevo_chave_nao_v3')
-  const allowed = env.emailAllowedRecipients()
-  if (allowed.length && !allowed.includes(message.to.toLowerCase())) throw new PermanentEmailError('fora_da_lista_de_teste')
-  const from = env.emailFrom()
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: { 'api-key': key, 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({
-      sender: { email: from.email, name: from.name }, to: [{ email: message.to }], subject: message.subject,
-      htmlContent: message.html, textContent: message.text, tags: [message.tag], ...(message.headers ? { headers: message.headers } : {}),
-    }),
-    signal: AbortSignal.timeout(10_000),
-  })
-  const body = await res.json().catch(() => ({}))
-  if (res.ok && typeof body.messageId === 'string') return body.messageId
-  const code = `brevo_http_${res.status}${typeof body.code === 'string' ? `_${body.code}` : ''}`
-  // 401/403 são configuração (chave, IP não autorizado): a fila tenta de novo depois da correção.
-  if (res.status === 401 || res.status === 403 || res.status === 429 || res.status >= 500) throw new TransientEmailError(code)
-  throw new PermanentEmailError(code)
-}
-
 // Modo plunk: API do Plunk na VPS (POST /v1/send), que envia pelo Amazon SES. Contato novo entra lá como não inscrito,
 // e os headers da mensagem (o List-Unsubscribe do site) passam por cima dos do Plunk. Fora da produção, só para a lista
 // de teste. O texto simples o Plunk tira do HTML.
@@ -93,7 +69,6 @@ async function sendPlunk(message: Message): Promise<string> {
 // Envia pelo modo configurado (EMAIL_MODE) e devolve o id do provedor.
 async function sendMessage(message: Message, rowId: string): Promise<string> {
   switch (env.emailMode()) {
-    case 'brevo': return await sendBrevo(message)
     case 'plunk': return await sendPlunk(message)
     default: return await sendLog(message, rowId)
   }

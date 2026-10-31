@@ -4,7 +4,7 @@ Projeto: `keytotwo-print-db` (ref `oqizkhjosplnedddaakb`, sa-east-1), o backend 
 
 **Segredos:** os valores ficam só em `D:/Maestri/keytotwo-print-site-secrets/.env`, fora do repositório. Este guia cita apenas os nomes das variáveis. Nunca cole valores em arquivos do repositório, em issues ou no chat.
 
-Os nomes de menu do Supabase, da Brevo e do Google mudam com frequência. Se um item não estiver no lugar indicado, procure pelo nome do campo.
+Os nomes de menu do Supabase, da AWS e do Google mudam com frequência. Se um item não estiver no lugar indicado, procure pelo nome do campo.
 
 ## 1. E-mail: Amazon SES (desde 2026-10-31)
 
@@ -15,13 +15,9 @@ Os e-mails do Auth (código de acesso, confirmação e nova senha) saem pelo SMT
 3. **Avisos de bounce e reclamação:** a identidade tem `plunk-no-tracking` como conjunto padrão (sem rastreio de abertura e clique). Os avisos vão ao tópico SNS e viram supressão no banco pela `ses-events`. O Plunk informa o conjunto dele em cada envio, que tem prioridade sobre o padrão.
 4. **Trocar a chave a cada 90 dias:** crie a nova no IAM, derive a senha, troque no Supabase (passo 2.1), peça um código de acesso para conferir e só então apague a antiga.
 
-### Antes de 2026-10-31: Brevo
+### Antes: Brevo (encerrada em 2026-10-31)
 
-1. **Domínio do remetente.** Em Brevo > *Senders, Domains & Dedicated IPs* > *Domains*, adicione o domínio do e-mail que vai em `EMAIL_FROM` e publique no DNS os registros indicados (SPF, DKIM e DMARC). Espere a Brevo marcar o domínio como autenticado. Sem isso, os códigos caem no spam.
-2. **Remetente.** Cadastre `EMAIL_FROM` como remetente, com o nome de `EMAIL_FROM_NAME`.
-3. **Chave SMTP**, usada pelo Supabase Auth. Em Brevo > *SMTP & API* > aba *SMTP*, anote o servidor, a porta e o login, e gere uma *SMTP key*. Preencha `BREVO_SMTP_HOST`, `BREVO_SMTP_PORT`, `BREVO_SMTP_LOGIN` e `BREVO_SMTP_KEY`. O servidor costuma ser `smtp-relay.brevo.com`, na porta 587; vale o que o painel mostrar.
-4. **Chave de API**, usada no I4 pelo e-mail de acesso à compra, que sai das Edge Functions. Na aba *API keys*, gere uma chave e preencha `BREVO_API_KEY`.
-5. **Rastreamento de links.** Se a conta reescreve links de e-mails transacionais para medir cliques, desligue. Links reescritos podem quebrar o botão de confirmação.
+Até 2026-10-31 o SMTP do Auth e os e-mails das funções saíam pela Brevo. A conta foi encerrada e os registros de DNS dela saíram (`docs/deploy.md`, "Brevo desligada").
 
 ## 2. Supabase: e-mail e senha
 

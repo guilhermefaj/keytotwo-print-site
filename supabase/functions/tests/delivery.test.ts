@@ -287,43 +287,6 @@ contractTest('email-dispatch: fora do ar (site_down, 2026-10-26) avisa o que par
   ]) assert(back.Text.includes(line), line)
 })
 
-contractTest('email-dispatch modo brevo: chave v3, lista de teste, recusa definitiva e falha transitória', async () => {
-  Deno.env.set('EMAIL_MODE', 'brevo')
-  const run = async () => {
-    dispatchRpc([DELIVERY_ROW])
-    const { result } = await captureErrors(async () => await (await dispatchRequest({})).json())
-    return { summary: result, mark: rpcCalls[1].args }
-  }
-
-  Deno.env.set('BREVO_API_KEY', 'chave-antiga-smtp')
-  assertEquals((await run()).mark, { p_id: OUTBOX_ID, p_status: 'rejected', p_provider_message_id: null, p_error: 'brevo_chave_nao_v3' })
-
-  Deno.env.set('BREVO_API_KEY', 'xkeysib-teste-ficticia')
-  Deno.env.set('EMAIL_ALLOWED_RECIPIENTS', 'responsavel@example.com')
-  assertEquals((await run()).mark.p_error, 'fora_da_lista_de_teste')
-  Deno.env.set('EMAIL_ALLOWED_RECIPIENTS', 'comprador@example.com')
-
-  onExternal(() => ({ status: 201, body: { messageId: '<msg-1@brevo>' } }))
-  const sent = await run()
-  assertEquals([sent.summary.sent, sent.mark.p_status, sent.mark.p_provider_message_id], [1, 'sent', '<msg-1@brevo>'])
-  const call = externalCalls[0]
-  assertEquals([call.headers.get('api-key'), (call.body.sender as { email: string }).email, (call.body.to as { email: string }[])[0].email], ['xkeysib-teste-ficticia', 'acesso@example.com', 'comprador@example.com'])
-
-  onExternal(() => ({ status: 400, body: { code: 'invalid_parameter' } }))
-  assertEquals((await run()).mark, { p_id: OUTBOX_ID, p_status: 'rejected', p_provider_message_id: null, p_error: 'brevo_http_400_invalid_parameter' })
-  onExternal(() => ({ status: 503, body: {} }))
-  assertEquals((await run()).mark.p_status, 'failed')
-  onExternal(() => ({ status: 401, body: { code: 'unauthorized' } }))
-  assertEquals((await run()).mark, { p_id: OUTBOX_ID, p_status: 'failed', p_provider_message_id: null, p_error: 'brevo_http_401_unauthorized' })
-
-  dispatchRpc([{ ...DELIVERY_ROW, kind: 'outro' }])
-  await captureErrors(() => dispatchRequest({}))
-  assertEquals([rpcCalls[1].args.p_status, rpcCalls[1].args.p_error], ['rejected', 'kind_desconhecido'])
-
-  Deno.env.delete('EMAIL_ALLOWED_RECIPIENTS')
-  Deno.env.set('EMAIL_MODE', 'log')
-})
-
 contractTest('email-dispatch modo plunk: chave secreta, lista de teste, id do Plunk, recusa definitiva e falha transitória', async () => {
   Deno.env.set('EMAIL_MODE', 'plunk')
   Deno.env.set('PLUNK_API_URL', `${PLUNK_URL}/`)
@@ -359,6 +322,11 @@ contractTest('email-dispatch modo plunk: chave secreta, lista de teste, id do Pl
     onExternal(() => ({ status, body: {} }))
     assertEquals([(await run()).mark.p_status, rpcCalls[1].args.p_error], ['failed', `plunk_http_${status}`])
   }
+
+  // Tipo de e-mail sem modelo: recusa definitiva, sem chamar o Plunk.
+  dispatchRpc([{ ...DELIVERY_ROW, kind: 'outro' }])
+  await captureErrors(() => dispatchRequest({}))
+  assertEquals([rpcCalls[1].args.p_status, rpcCalls[1].args.p_error], ['rejected', 'kind_desconhecido'])
 
   Deno.env.delete('PLUNK_API_URL')
   Deno.env.delete('PLUNK_SECRET_KEY')

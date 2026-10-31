@@ -37,7 +37,7 @@ export interface Message {
   headers?: Record<string, string>
 }
 
-// Falha que um novo envio não resolve (ex.: 4xx da Brevo, destinatário fora da lista de teste).
+// Falha que um novo envio não resolve (ex.: 4xx do Plunk, destinatário fora da lista de teste).
 export class PermanentEmailError extends Error {
   constructor(readonly code: string) {
     super(code)
