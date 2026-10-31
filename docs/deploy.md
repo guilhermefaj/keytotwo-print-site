@@ -64,7 +64,7 @@ ssh deploy@<VPS_HOST> sh /opt/keytotwo-site/repo/deploy/teste/atualizar.sh   # o
 
 O script traz o commit, constrói a imagem na própria VPS (cerca de 70 s), marca a imagem com o commit, grava o commit no `IMAGE_TAG` e recria o contêiner. Para voltar a uma versão anterior, troque o `IMAGE_TAG` do `.env` por um commit cuja imagem ainda exista (`docker images keytotwo-site`) e rode `docker compose up -d` na pasta `teste`.
 
-**Limpeza (desde 2026-10-31):** no fim, cada `atualizar.sh` (teste, produção e admin) guarda só as três imagens mais novas do seu site: a do ar e duas para voltar sem build. O docker não apaga imagem em uso, então a do ar nunca sai. Também apaga as imagens sem nome (o vigia refaz a mesma tag a cada post) e o cache de build com mais de uma semana. Para voltar a uma versão mais antiga, rode o `atualizar.sh` com o commit dela, que refaz a imagem. Se a limpeza falhar, o script só avisa: o site já está no ar.
+**Limpeza (desde 2026-10-31):** no fim, cada `atualizar.sh` (teste, produção e admin) guarda só três imagens do seu site: a do ar e as duas mais novas, para voltar sem build. A do ar fica pelo nome, não pela data, porque um build igual a um antigo reaproveita a imagem e a data dela. Também apaga as imagens sem nome (o vigia refaz a mesma tag a cada post) e o cache de build com mais de uma semana. Para voltar a uma versão mais antiga, rode o `atualizar.sh` com o commit dela, que refaz a imagem. Se a limpeza falhar, o script só avisa: o site já está no ar.
 
 **Primeira instalação** (feita em 2026-10-21): `git clone --depth 1` do repositório em `/opt/keytotwo-site/repo`, o `build.env` com as variáveis públicas e o `teste/.env` com `chmod 600`. Se o repositório voltar a ser privado, a VPS precisa de uma chave de deploy só de leitura para o `git fetch`.
 
@@ -86,7 +86,7 @@ Mesmo padrão do teste, na mesma VPS e no mesmo Traefik, com `deploy/producao/co
 ssh deploy@<VPS_HOST> sh /opt/keytotwo-site/repo/deploy/producao/atualizar.sh   # ou com um ref
 ```
 
-Para voltar, ponha um `live-<commit>` anterior no `IMAGE_TAG` de `producao/.env` e rode `docker compose up -d` na pasta `producao`. Ficam as três `live-` mais novas (veja a limpeza no teste); uma mais antiga se refaz com `atualizar.sh <commit>`.
+Para voltar, ponha um `live-<commit>` anterior no `IMAGE_TAG` de `producao/.env` e rode `docker compose up -d` na pasta `producao`. Ficam três `live-`, a do ar e as duas mais novas (veja a limpeza no teste); uma mais antiga se refaz com `atualizar.sh <commit>`.
 
 ### Antes do lançamento
 

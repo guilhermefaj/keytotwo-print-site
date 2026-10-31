@@ -33,10 +33,11 @@ main() {
   cp "$base/repo/deploy/admin/compose.yaml" "$base/admin/compose.yaml"
   if [ -f "$base/admin/.env" ]; then sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$sha/" "$base/admin/.env"; else echo "IMAGE_TAG=$sha" > "$base/admin/.env"; fi
   docker compose --project-directory "$base/admin" up -d --wait
-  # Limpeza (2026-10-31): ficam as três imagens do admin mais novas, a do ar e duas para voltar sem build. O docker não
-  # apaga imagem de contêiner, então a do ar nunca sai.
+  # Limpeza (2026-10-31): ficam três imagens do admin, a do ar e as duas mais novas para voltar sem build. A do ar sai da
+  # lista pelo nome, não pela data: um build igual a um antigo reaproveita a imagem e a data dela.
   {
-    docker images keytotwo-admin --format '{{.CreatedAt}}|{{.Tag}}' | sort -r | sed -n 's/^.*|//p' | tail -n +4 \
+    docker images keytotwo-admin --format '{{.CreatedAt}}|{{.Tag}}' | sort -r | sed -n 's/^.*|//p' \
+      | grep -vx "$sha" | tail -n +3 \
       | while read -r tag; do docker image rm "keytotwo-admin:$tag" >/dev/null 2>&1 || true; done
     docker image prune -f >/dev/null
     docker builder prune -f --filter until=168h >/dev/null
