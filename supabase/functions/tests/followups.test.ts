@@ -94,7 +94,10 @@ async function unsubscribeTokenOf(mail: MailpitBody): Promise<string> {
   const verified = await verifyUnsubscribeToken(token)
   assert(verified.ok && verified.claims.u === USER)
   assert(mail.HTML.includes(`${SITE}/email/preferencias?token=${encodeURIComponent(token)}`), 'rodapé sem o link de descadastro')
-  assert(mail.Text.includes(`Descadastrar (vale na hora): ${SITE}/email/preferencias?token=`))
+  assert(mail.Text.includes(`Sair da lista (vale na hora): ${SITE}/email/preferencias?token=`))
+  // O motivo do envio e a saída da lista fecham o e-mail, depois da assinatura e do CNPJ (2026-10-31).
+  const exit = mail.HTML.lastIndexOf('Sair da lista')
+  assert(exit > mail.HTML.lastIndexOf('Um pinguim numa tela') && exit > mail.HTML.lastIndexOf('CNPJ'), 'a saída da lista é a última linha')
   return token
 }
 
@@ -104,8 +107,9 @@ contractTest('lembrete de carrinho: itens, botão do carrinho, rodapé e headers
   onExternal(() => ok({ ID: 'mp-1' }))
   assertEquals(await dispatch(), { claimed: 1, sent: 1, failed: 0, rejected: 0 })
   const mail = externalCalls[0].body as unknown as MailpitBody
-  assertEquals([mail.Subject, mail.Tags], ['Esqueceram algo na sacola', ['cart_reminder']])
+  assertEquals([mail.Subject, mail.Tags], ['Pacote <inicial> ficou na sacola', ['cart_reminder']])
   assert(mail.HTML.includes('Pacote &lt;inicial&gt;') && mail.HTML.includes(`${SITE}/carrinho`))
+  assert(mail.HTML.includes(`${SITE}/media/email/kito-na-caixa.png`), 'o Kito do marketing, servido pelo site')
   assertEquals(mail.Headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click')
   await unsubscribeTokenOf(mail)
 })

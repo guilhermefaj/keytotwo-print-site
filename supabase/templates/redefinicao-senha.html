@@ -3,31 +3,44 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
 <title>Redefina sua senha da KeyToTwo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: light only; supported-color-schemes: light; }
+  @media (max-width:620px) { .k-sheet { padding:28px 22px 24px !important; } h1 { font-size:25px !important; } }
+</style>
 </head>
-<!-- Visual da marca (DESIGN.md › E-mails), igual ao de supabase/functions/_shared/email.ts. -->
-<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#123a3d;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;"><tr><td align="center" style="padding:24px 12px;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;border:2px solid #1bb8c4;border-radius:14px;">
-      <tr><td style="background:#ecfaf7;padding:24px 28px 20px;border-radius:12px 12px 0 0;">
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:bold;letter-spacing:-0.5px;color:#123a3d;">KeyToTwo</p>
-        <p style="margin:2px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#345b5d;">jogos para casais</p>
-      </td></tr>
-      <tr><td style="border-top:2px dashed #1bb8c4;padding:28px 28px 12px;">
-        <h1 style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:24px;line-height:1.2;letter-spacing:-0.3px;color:#123a3d;">Redefinir sua senha</h1>
-        <p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#123a3d;">Recebemos um pedido para criar uma nova senha. Digite este código na página do site:</p>
-        <p style="margin:0 0 16px;"><span style="display:inline-block;padding:12px 20px;border:2px dashed #1bb8c4;border-radius:6px;font-family:'Courier New',Courier,monospace;font-size:32px;font-weight:bold;letter-spacing:6px;color:#123a3d;">{{ .Token }}</span></p>
-        <p style="margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#123a3d;">Ou use o botão:</p>
-        <p style="margin:0 0 24px;"><a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 22px;background:#006970;color:#ffffff;text-decoration:none;border-radius:6px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;">Criar nova senha</a></p>
-        <p style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#345b5d;">O código e o botão valem por 10 minutos e só podem ser usados uma vez.</p>
-        <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#345b5d;">Se você não pediu uma nova senha, ignore este e-mail. Sua senha atual continua valendo.</p>
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#345b5d;">Precisa de ajuda? <a href="{{ .SiteURL }}/ajuda" style="color:#006970;font-weight:bold;">{{ .SiteURL }}/ajuda</a></p>
-      </td></tr>
-      <tr><td style="padding:16px 28px 24px;border-top:1px solid #d1dbdb;">
-        <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#345b5d;">KeyToTwo: jogos para casais imprimirem em casa.</p>
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#345b5d;">Dúvidas? Escrevam para <a href="mailto:contato@keytotwo.com.br" style="color:#006970;font-weight:bold;">contato@keytotwo.com.br</a>.</p>
-      </td></tr>
-    </table>
-  </td></tr></table>
+<!-- Visual "Bilhete de recorte" (2026-10-31), o mesmo de supabase/functions/_shared/email-templates.ts. -->
+<body style="margin:0;padding:0;background:#ffffff;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;color:#ffffff;">O código e o botão valem por 10 minutos.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;"><tr><td align="center" style="padding:28px 12px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+    <tr><td style="padding:0 6px 14px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="font-family:'Bricolage Grotesque','Trebuchet MS',Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.6px;color:#123a3d;"><a href="{{ .SiteURL }}" style="color:#123a3d;text-decoration:none;">KeyToTwo</a></td>
+        <td align="right" style="font-family:'IBM Plex Mono','Courier New',monospace;font-size:12px;letter-spacing:0.6px;color:#345b5d;">CONTA</td>
+      </tr></table>
+    </td></tr>
+    <tr><td class="k-sheet" style="background:#ffffff;border-top:2px dashed #1bb8c4;border-bottom:2px dashed #1bb8c4;padding:36px 32px 28px;">
+        <h1 style="margin:0 0 18px;font-family:'Bricolage Grotesque','Trebuchet MS',Arial,sans-serif;font-size:30px;line-height:1.18;font-weight:800;letter-spacing:-0.6px;color:#123a3d;">Redefinir sua <span style="background:#ffb866;color:#123a3d;padding:0 6px;border-radius:3px;white-space:nowrap;">senha</span>.</h1>
+        <p style="margin:0 0 8px;font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65;color:#123a3d;">Recebemos um pedido para criar uma nova senha. Digite este código na página do site:</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 20px;"><tr>
+          <td style="background:#fff8eb;border:2px dashed #123a3d;border-radius:8px;padding:14px 22px;font-family:'IBM Plex Mono','Courier New',monospace;font-size:30px;font-weight:500;letter-spacing:6px;color:#123a3d;">{{ .Token }}</td>
+        </tr></table>
+        <p style="margin:0 0 8px;font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65;color:#123a3d;">Ou use o botão:</p>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 22px;"><tr>
+          <td align="center" bgcolor="#006970" style="border-radius:6px;"><a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:15px 26px;font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;line-height:1;color:#ffffff;text-decoration:none;border-radius:6px;">Criar nova senha</a></td>
+        </tr></table>
+        <p style="margin:0 0 12px;font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:#345b5d;">O código e o botão valem por 10 minutos e só podem ser usados uma vez.</p>
+        <p style="margin:0 0 0px;font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:#345b5d;">Se você não pediu uma nova senha, ignore este e-mail. Sua senha atual continua valendo.</p>
+        <div style="margin:26px 0;border-top:2px dashed #1bb8c4;line-height:0;font-size:0;">&nbsp;</div>
+        <p style="margin:0 0 8px;font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:#345b5d;">Dúvidas? É só responder este e-mail ou escrever para <a href="mailto:contato@keytotwo.com.br" style="font-family:'DM Sans',Arial,Helvetica,sans-serif;color:#006970;font-weight:700;text-decoration:underline;">contato@keytotwo.com.br</a>.</p>
+        <p style="margin:0 0 8px;font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:#345b5d;">KeyToTwo: jogos para casais imprimirem em casa.</p>
+        <p style="margin:0;font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:#345b5d;">KeyToTwo é uma marca da Chalk Labs Consultoria em TI Ltda., CNPJ 66.782.936/0001-20.</p>
+    </td></tr>
+  </table>
+</td></tr></table>
 </body>
 </html>

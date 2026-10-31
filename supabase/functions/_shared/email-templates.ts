@@ -48,26 +48,59 @@ export class PermanentEmailError extends Error {
 const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
-// Visual da marca (DESIGN.md › E-mails): Papel, Tinta, Turquesa profundo nas ações, a linha de recorte
-// tracejada em Turquesa J001 e o Céu só na faixa do topo. Estilos inline e tabelas, para os clientes de e-mail.
+// Visual "Bilhete de recorte" (2026-10-31, aprovado pelo responsável): folha de papel com a linha de recorte tracejada,
+// um traço de marca-texto atrás de uma palavra do título, o Kito em três quartos só no marketing e só o tema claro. Cores
+// do site (tokens.css) e fontes da marca com reserva para os clientes que não carregam fonte. Estilos inline e tabelas.
 const INK = '#123a3d'
 const INK_SOFT = '#345b5d'
 const ACTION = '#006970'
 const LINE = '#1bb8c4'
+const MARK = '#ffb866'
 const SKY = '#ecfaf7'
 const RULE = '#d1dbdb'
-const FONT = 'Arial,Helvetica,sans-serif'
+const DISPLAY = "'Bricolage Grotesque','Trebuchet MS',Arial,sans-serif"
+const FONT = "'DM Sans',Arial,Helvetica,sans-serif"
+const MONO = "'IBM Plex Mono','Courier New',monospace"
+const FONTS_CSS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Sans:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap'
 const SUPPORT_EMAIL = 'contato@keytotwo.com.br'
+const LEGAL = 'KeyToTwo é uma marca da Chalk Labs Consultoria em TI Ltda., CNPJ 66.782.936/0001-20.'
 // Validade dos links de baixar, a mesma do token de entrega.
 const LINK_DAYS = DELIVERY_TTL_SECONDS / 86_400
 
-const button = (href: string, label: string) =>
-  `<p style="margin:0 0 12px;"><a href="${escapeHtml(href)}" style="display:inline-block;padding:14px 22px;background:${ACTION};color:#ffffff;text-decoration:none;border-radius:6px;font-family:${FONT};font-size:16px;font-weight:bold;">${escapeHtml(label)}</a></p>`
+const button = (href: string, label: string) => `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 22px;"><tr>
+      <td align="center" bgcolor="${ACTION}" style="border-radius:6px;"><a href="${escapeHtml(href)}" style="display:inline-block;padding:15px 26px;font-family:${FONT};font-size:16px;font-weight:700;line-height:1;color:#ffffff;text-decoration:none;border-radius:6px;">${escapeHtml(label)}</a></td>
+    </tr></table>`
 
-const paragraph = (html: string, muted = false) =>
-  `<p style="margin:0 0 16px;font-family:${FONT};font-size:${muted ? 14 : 16}px;line-height:1.6;color:${muted ? INK_SOFT : INK};">${html}</p>`
+const paragraph = (html: string, muted = false, last = false) =>
+  `<p style="margin:0 0 ${last ? 0 : muted ? 12 : 16}px;font-family:${FONT};font-size:${muted ? 14 : 16}px;line-height:1.65;color:${muted ? INK_SOFT : INK};">${html}</p>`
 
-const link = (href: string, label: string) => `<a href="${escapeHtml(href)}" style="color:${ACTION};font-weight:bold;">${escapeHtml(label)}</a>`
+const link = (href: string, label: string) => `<a href="${escapeHtml(href)}" style="font-family:${FONT};color:${ACTION};font-weight:700;text-decoration:underline;">${escapeHtml(label)}</a>`
+
+// Título com um traço de marca-texto atrás de uma palavra (a regra do site: um por página); as palavras marcadas não se
+// separam na quebra de linha. Os pedaços já vêm sem HTML.
+const title = (before: string, marked: string, after = '') =>
+  `<h1 style="margin:0 0 18px;font-family:${DISPLAY};font-size:30px;line-height:1.18;font-weight:800;letter-spacing:-0.6px;color:${INK};">${escapeHtml(before)}<span style="background:${MARK};color:${INK};padding:0 6px;border-radius:3px;white-space:nowrap;">${escapeHtml(marked)}</span>${escapeHtml(after)}</h1>`
+
+// Abertura do marketing: o título à esquerda e o Kito em três quartos à direita, olhando para o texto.
+const kitoTitle = (h1: string, pose: string, alt: string) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 6px;"><tr>
+      <td valign="bottom" style="padding:0 12px 0 0;">${h1}</td>
+      <td valign="bottom" width="120" style="width:120px;padding:0 0 14px;"><img class="k-kito" src="${env.siteUrl()}/media/email/kito-${pose}.png" width="120" height="120" alt="${escapeHtml(alt)}" style="display:block;width:120px;height:120px;border:0;"></td>
+    </tr></table>`
+
+// Lista de jogos: o nome e, quando há, o link de baixar na mesma linha, separados por fio claro.
+const gameRows = (items: { name: string; note?: string; href?: string }[]) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 22px;border-top:1px solid ${RULE};">
+      ${items.map((item) => `<tr><td style="padding:14px 0;border-bottom:1px solid ${RULE};">
+        <p style="margin:0;font-family:${DISPLAY};font-size:17px;font-weight:700;color:${INK};">${escapeHtml(item.name)}</p>${item.note ? `
+        <p style="margin:4px 0 0;font-family:${FONT};font-size:14px;line-height:1.5;color:${INK_SOFT};">${escapeHtml(item.note)}</p>` : ''}
+      </td>${item.href ? `<td align="right" valign="middle" style="padding:14px 0 14px 12px;border-bottom:1px solid ${RULE};white-space:nowrap;">${link(item.href, 'Baixar')}</td>` : ''}</tr>`).join('\n      ')}
+    </table>`
+
+const tips = (list: [string, string][]) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 20px;">
+      ${list.map(([lead, rest], i) => `<tr><td valign="top" width="34" style="padding:0 0 14px;font-family:${MONO};font-size:14px;color:${ACTION};">${String(i + 1).padStart(2, '0')}</td>
+        <td style="padding:0 0 14px;"><p style="margin:0;font-family:${FONT};font-size:16px;line-height:1.55;color:${INK};"><strong>${escapeHtml(lead)}</strong> ${escapeHtml(rest)}</p></td></tr>`).join('\n      ')}
+    </table>`
+
+const ps = (html: string) => `<p style="margin:18px 0 0;font-family:${FONT};font-size:15px;line-height:1.6;color:${INK};"><strong>P.S.</strong> ${html}</p>`
 
 const displayName = (item: Named) => item.name ?? item.code
 
@@ -81,55 +114,94 @@ function listNames(names: string[]): string {
 const KITO_SIGNATURE = 'Um pinguim numa tela pedindo para vocês saírem dela.'
 const SERVICE_SIGNATURE = 'KeyToTwo: jogos para casais imprimirem em casa.'
 
-function layout(subject: string, heading: string, body: string, footer = ''): string {
+interface Unsubscribe {
+  html: string
+  text: string[]
+  headers: Record<string, string>
+}
+
+// Rodapé: no serviço, ajuda (responder cai no atendimento), assinatura e quem é a empresa; no marketing, a assinatura do
+// Kito, as redes e, por último e em letra pequena, o motivo do envio e a saída da lista.
+function footer(unsubscribe?: Unsubscribe): string {
+  const small = (html: string, mb = 8) => `<p style="margin:0 0 ${mb}px;font-family:${FONT};font-size:13px;line-height:1.6;color:${INK_SOFT};">${html}</p>`
+  if (!unsubscribe) {
+    return [
+      small(`Dúvidas? É só responder este e-mail ou escrever para ${link(`mailto:${SUPPORT_EMAIL}`, SUPPORT_EMAIL)}.`),
+      small(SERVICE_SIGNATURE),
+      small(LEGAL, 0),
+    ].join('\n      ')
+  }
+  const site = env.siteUrl()
+  return [
+    `<p style="margin:0 0 12px;font-family:${DISPLAY};font-size:15px;font-weight:700;color:${INK};">${KITO_SIGNATURE}</p>`,
+    small(`${link('https://www.instagram.com/keytotwo/', 'Instagram')} &nbsp;·&nbsp; ${link('https://www.tiktok.com/@keytotwo', 'TikTok')} &nbsp;·&nbsp; ${link(site, 'keytotwo.com.br')}`, 14),
+    small(LEGAL, 18),
+    unsubscribe.html,
+  ].join('\n      ')
+}
+
+function layout(o: { subject: string; preheader: string; marker: string; body: string[]; unsubscribe?: Unsubscribe }): string {
+  const outer = o.unsubscribe ? SKY : '#ffffff'
   return `<!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(subject)}</title></head>
-<body style="margin:0;padding:0;background:#ffffff;font-family:${FONT};color:${INK};">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;"><tr><td align="center" style="padding:24px 12px;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;border:2px solid ${LINE};border-radius:14px;">
-      <tr><td style="background:${SKY};padding:24px 28px 20px;border-radius:12px 12px 0 0;">
-        <p style="margin:0;font-family:${FONT};font-size:22px;font-weight:bold;letter-spacing:-0.5px;color:${INK};">KeyToTwo</p>
-        <p style="margin:2px 0 0;font-family:${FONT};font-size:13px;color:${INK_SOFT};">jogos para casais</p>
-      </td></tr>
-      <tr><td style="border-top:2px dashed ${LINE};padding:28px 28px 12px;">
-        <h1 style="margin:0 0 16px;font-family:${FONT};font-size:24px;line-height:1.2;letter-spacing:-0.3px;color:${INK};">${escapeHtml(heading)}</h1>
-        ${body}
-        ${footer}
-      </td></tr>
-      <tr><td style="padding:16px 28px 24px;border-top:1px solid ${RULE};">
-        <p style="margin:0 0 6px;font-family:${FONT};font-size:13px;line-height:1.5;color:${INK_SOFT};">${footer ? KITO_SIGNATURE : SERVICE_SIGNATURE}</p>
-        <p style="margin:0;font-family:${FONT};font-size:13px;line-height:1.5;color:${INK_SOFT};">Dúvidas? Escrevam para ${link(`mailto:${SUPPORT_EMAIL}`, SUPPORT_EMAIL)}.</p>
-      </td></tr>
-    </table>
-  </td></tr></table>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
+<title>${escapeHtml(o.subject)}</title>
+<link href="${FONTS_CSS}" rel="stylesheet">
+<style>
+  :root { color-scheme: light only; supported-color-schemes: light; }
+  body { margin:0; padding:0; -webkit-text-size-adjust:100%; }
+  @media (max-width:620px) { .k-sheet { padding:28px 22px 24px !important; } .k-wrap { padding:12px 8px !important; } h1 { font-size:25px !important; } .k-kito { width:88px !important; height:88px !important; } }
+</style>
+</head>
+<body style="margin:0;padding:0;background:${outer};">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;color:${outer};">${escapeHtml(o.preheader)}${'&#8199;&#65279;&#847; '.repeat(40)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${outer};"><tr><td align="center" class="k-wrap" style="padding:28px 12px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+    <tr><td style="padding:0 6px 14px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td style="font-family:${DISPLAY};font-size:22px;font-weight:800;letter-spacing:-0.6px;color:${INK};"><a href="${env.siteUrl()}" style="color:${INK};text-decoration:none;">KeyToTwo</a></td>
+        <td align="right" style="font-family:${MONO};font-size:12px;letter-spacing:0.6px;color:${INK_SOFT};">${escapeHtml(o.marker)}</td>
+      </tr></table>
+    </td></tr>
+    <tr><td class="k-sheet" style="background:#ffffff;border-top:2px dashed ${LINE};border-bottom:2px dashed ${LINE};padding:36px 32px 28px;">
+      ${o.body.join('\n      ')}
+      <div style="margin:26px 0;border-top:2px dashed ${LINE};line-height:0;font-size:0;">&nbsp;</div>
+      ${footer(o.unsubscribe)}
+    </td></tr>
+  </table>
+</td></tr></table>
 </body>
 </html>`
 }
 
 // Assinatura do texto puro, a mesma do rodapé em HTML (a do Kito só no marketing).
-const textSignature = (marketing: boolean) => ['', '--', marketing ? KITO_SIGNATURE : SERVICE_SIGNATURE, `Dúvidas? Escrevam para ${SUPPORT_EMAIL}.`]
+const textSignature = (marketing: boolean) => ['', '--', marketing ? KITO_SIGNATURE : SERVICE_SIGNATURE, `Dúvidas? É só responder este e-mail ou escrever para ${SUPPORT_EMAIL}.`]
 
-// Rodapé e headers de descadastro de todo e-mail de marketing (RFC 8058: POST em 1 clique pelo provedor;
-// o link do rodapé abre a página de preferências, que confirma e chama o POST).
-async function unsubscribeParts(row: OutboxRow) {
+// Motivo do envio e descadastro de todo e-mail de marketing (RFC 8058: POST em 1 clique pelo provedor; o link do rodapé
+// abre a página de preferências, que confirma e chama o POST). No HTML, a última linha, em letra pequena.
+async function unsubscribeParts(row: OutboxRow): Promise<Unsubscribe> {
   if (!row.user_id) throw new PermanentEmailError('marketing_sem_usuario')
   const token = encodeURIComponent(await signUnsubscribeToken(row.user_id))
   const page = `${env.siteUrl()}/email/preferencias?token=${token}`
   const account = `${env.siteUrl()}/conta`
-  const footer = `<hr style="margin:24px 0 16px;border:0;border-top:2px dashed ${LINE};">
-    ${paragraph(`Você recebe este e-mail porque aceitou receber novidades da KeyToTwo. Para parar, é só ${link(page, 'descadastrar')} (vale na hora) ou ajustar em ${link(account, 'Minha conta')}.`, true)}`
-  const text = ['', '--', 'Você recebe este e-mail porque aceitou receber novidades da KeyToTwo.', `Descadastrar (vale na hora): ${page}`, `Minha conta: ${account}`]
+  const small = (href: string, label: string) => `<a href="${escapeHtml(href)}" style="font-family:${FONT};color:${INK_SOFT};text-decoration:underline;">${label}</a>`
+  const html = `<p style="margin:0;font-family:${FONT};font-size:11px;line-height:1.5;color:${INK_SOFT};">Vocês recebem este e-mail porque aceitaram receber novidades da KeyToTwo. ${small(page, 'Sair da lista')} · ${small(account, 'Minha conta')}</p>`
+  const text = ['', 'Vocês recebem este e-mail porque aceitaram receber novidades da KeyToTwo.', `Sair da lista (vale na hora): ${page}`, `Minha conta: ${account}`]
   const headers = {
     'List-Unsubscribe': `<${env.apiPublicUrl()}/email/unsubscribe?token=${token}>`,
     'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
   }
-  return { footer, text, headers }
+  return { html, text, headers }
 }
 
-// Entrega e presente (transacionais, pt-BR): um botão por jogo (link /d/{token}) e o botão Meus jogos. O presente
-// (2026-10-23, pedido de cortesia do admin) não fala em valor nem em pedido: não houve compra.
-async function downloadsEmail(row: OutboxRow, copy: { subject: string; heading: string; missing: string; intro: (names: string[]) => string }): Promise<Message> {
+// Entrega e presente (transacionais, sem imagem, voz neutra): uma linha por jogo com o link /d/{token} e o botão Meus
+// jogos. O presente (2026-10-23, pedido de cortesia do admin) não fala em valor nem em pedido: não houve compra.
+async function downloadsEmail(row: OutboxRow, copy: { subject: (names: string[]) => string; preheader: string; marker: string; missing: string; heading: (names: string[]) => [string, string, string]; intro: (names: string[]) => string }): Promise<Message> {
   const games = (row.payload.games ?? []).filter((g) => g.entitlement_id && Number.isSafeInteger(g.game_id))
   if (!games.length) throw new PermanentEmailError(copy.missing)
   const api = env.apiPublicUrl()
@@ -139,97 +211,133 @@ async function downloadsEmail(row: OutboxRow, copy: { subject: string; heading: 
   })))
   const site = env.siteUrl()
   const library = `${site}/meus-jogos`
-  const help = `${site}/ajuda`
-  const intro = copy.intro(links.map((l) => l.name))
-  const keep = `Os jogos ficam sempre em Meus jogos: é só entrar com este e-mail.`
-  const html = layout(copy.subject, copy.heading, [
-    paragraph(escapeHtml(intro)),
-    links.map((l) => button(l.url, `Baixar ${l.name}`)).join('\n    '),
-    paragraph(`Estes botões valem por ${LINK_DAYS} dias. ${keep}`, true),
-    button(library, 'Abrir Meus jogos'),
-    paragraph(`Precisa de ajuda? ${link(help, help)}`, true),
-  ].join('\n    '))
+  const printing = `${site}/ajuda#impressao`
+  const names = links.map((l) => l.name)
+  const subject = copy.subject(names)
+  const intro = copy.intro(names)
+  const validity = `Os botões deste e-mail valem por ${LINK_DAYS} dias. Em Meus jogos, os arquivos ficam sem prazo: é só entrar com este e-mail.`
+  const print = 'Na hora de imprimir: A4 comum, tamanho real (100%) e uma face por folha.'
+  const html = layout({
+    subject, preheader: copy.preheader, marker: copy.marker,
+    body: [
+      title(...copy.heading(names)),
+      paragraph(escapeHtml(intro)),
+      gameRows(links.map((l) => ({ name: l.name, note: 'PDF para imprimir em A4', href: l.url }))),
+      button(library, 'Abrir Meus jogos'),
+      paragraph(validity, true),
+      paragraph(`${print} O resto está no ${link(printing, 'guia de impressão')}.`, true, true),
+    ],
+  })
   const text = [
-    'KeyToTwo', '', copy.heading, '',
+    'KeyToTwo', '', copy.heading(names).join(''), '',
     intro, '',
     ...links.map((l) => `Baixar ${l.name}: ${l.url}`), '',
-    `Estes links valem por ${LINK_DAYS} dias. ${keep}`,
+    validity,
     `Meus jogos: ${library}`, '',
-    `Precisa de ajuda? ${help}`,
+    `${print} Guia de impressão: ${printing}`,
     ...textSignature(false),
   ].join('\n')
-  return { to: row.to_email, subject: copy.subject, html, text, tag: row.kind }
+  return { to: row.to_email, subject, html, text, tag: row.kind }
 }
 
 function delivery(row: OutboxRow): Promise<Message> {
   const ref = row.payload.order_ref ?? ''
   return downloadsEmail(row, {
-    subject: ref ? `Seus jogos chegaram (pedido ${ref})` : 'Seus jogos chegaram',
-    heading: 'Seus jogos chegaram',
+    subject: () => (ref ? `Seus jogos chegaram (pedido ${ref})` : 'Seus jogos chegaram'),
+    preheader: 'Os PDFs estão prontos para baixar e imprimir em A4.',
+    marker: ref ? `PEDIDO ${ref}` : 'PEDIDO',
     missing: 'entrega_sem_jogos',
-    intro: () => `O pagamento${ref ? ` do pedido ${ref}` : ''} foi confirmado e os jogos já são de vocês. É só baixar, imprimir e jogar.`,
+    heading: () => ['Pagamento confirmado. Os jogos já são ', 'de vocês', '.'],
+    intro: () => `Recebemos o pagamento${ref ? ` do pedido ${ref}` : ''}. Cada jogo tem o seu botão de baixar logo abaixo.`,
   })
 }
 
 function gift(row: OutboxRow): Promise<Message> {
-  const subject = 'Um jogo de presente para vocês'
   return downloadsEmail(row, {
-    subject,
-    heading: subject,
+    subject: (names) => (names.length === 1 ? `${names[0]} foi liberado em Meus jogos` : 'Jogos de presente em Meus jogos'),
+    preheader: 'É presente da KeyToTwo, sem nada a pagar.',
+    marker: 'PRESENTE',
     missing: 'presente_sem_jogos',
-    intro: (names) => `A KeyToTwo deu ${listNames(names)} para vocês. ${names.length > 1 ? 'Já são' : 'Já é'} de vocês: é só baixar, imprimir e jogar.`,
+    heading: (names) => [names.length === 1 ? 'Tem um jogo ' : 'Tem jogos ', 'de presente', ' em Meus jogos.'],
+    intro: (names) => `A KeyToTwo deu ${listNames(names)} para vocês. É presente, sem nada a pagar: é só baixar, imprimir e jogar.`,
   })
 }
 
-// Lembrete de sacola (marketing): o que ficou na sacola e o botão de volta. Sem preço nem condição nova.
+// Lembrete de sacola (marketing, 1º toque): o que ficou na sacola, as dúvidas mais comuns e o botão de volta. Sem preço
+// nem cupom (o cupom fica para o 2º toque, só para quem nunca comprou).
 async function cartReminder(row: OutboxRow): Promise<Message> {
   const items = row.payload.items ?? []
   if (!items.length) throw new PermanentEmailError('lembrete_sem_itens')
   const cart = `${env.siteUrl()}/carrinho`
-  const { footer, text: footerText, headers } = await unsubscribeParts(row)
-  const subject = 'Esqueceram algo na sacola'
-  const names = listNames(items.map(displayName))
-  const waiting = `${items.length > 1 ? 'continuam' : 'continua'} na sacola, esperando a próxima vez que alguém perguntar "o que a gente faz hoje?".`
-  const html = layout(subject, subject, [
-    paragraph(`${escapeHtml(names)} ${waiting}`),
-    button(cart, 'Voltar à sacola'),
-    paragraph('Se já resolveram isso por outro caminho, podem ignorar este e-mail.', true),
-  ].join('\n    '), footer)
+  const unsubscribe = await unsubscribeParts(row)
+  const names = items.map(displayName)
+  const subject = names.length === 1 ? `${names[0]} ficou na sacola` : 'Esqueceram algo na sacola'
+  const waiting = `${items.length > 1 ? 'Estes jogos continuam' : 'Este jogo continua'} lá, esperando a próxima vez que alguém perguntar "o que a gente faz hoje?":`
+  const doubts = 'Não precisa de impressora em casa: uma gráfica ou papelaria imprime o PDF em A4 comum. O pagamento é por Pix ou cartão, e os jogos aparecem em Meus jogos assim que ele é confirmado.'
+  const help = 'Ficou alguma dúvida antes de pagar? É só responder este e-mail. Se já resolveram por outro caminho, podem ignorar.'
+  const html = layout({
+    subject, preheader: 'Pix ou cartão, e os PDFs ficam em Meus jogos sem prazo.', marker: 'SACOLA', unsubscribe,
+    body: [
+      kitoTitle(title('A sacola ficou ', 'esperando', '.'), 'na-caixa', 'Kito dentro de uma caixa de papelão'),
+      paragraph(escapeHtml(waiting)),
+      gameRows(names.map((name) => ({ name }))),
+      paragraph(doubts),
+      button(cart, 'Voltar à sacola'),
+      paragraph(help, true, true),
+    ],
+  })
   const text = [
-    'KeyToTwo', '', subject, '',
-    `${names} ${waiting}`, '',
+    'KeyToTwo', '', 'A sacola ficou esperando.', '',
+    waiting, ...names.map((name) => `- ${name}`), '',
+    doubts, '',
     `Voltar à sacola: ${cart}`, '',
-    'Se já resolveram isso por outro caminho, podem ignorar este e-mail.',
-    ...footerText,
+    help,
     ...textSignature(true),
+    ...unsubscribe.text,
   ].join('\n')
-  return { to: row.to_email, subject, html, text, tag: row.kind, headers }
+  return { to: row.to_email, subject, html, text, tag: row.kind, headers: unsubscribe.headers }
 }
 
-// Pós-compra (marketing): convite para jogar, Meus jogos e dicas de impressão.
+// Pós-compra (marketing, D+3): os lembretes de impressão e o convite para contar como foi, respondendo o e-mail.
 async function postPurchase(row: OutboxRow): Promise<Message> {
   const games = row.payload.games ?? []
   if (!games.length) throw new PermanentEmailError('pos_compra_sem_jogos')
   const library = `${env.siteUrl()}/meus-jogos`
   const printing = `${env.siteUrl()}/ajuda#impressao`
-  const { footer, text: footerText, headers } = await unsubscribeParts(row)
+  const unsubscribe = await unsubscribeParts(row)
   const subject = 'Já rolou a primeira partida?'
   const names = listNames(games.map(displayName))
-  const invite = `Se ainda não ${games.length > 1 ? 'saíram' : 'saiu'} da pasta de downloads, fica o convite: imprimam, escolham quem começa e deixem as notificações para depois.`
-  const html = layout(subject, subject, [
-    paragraph(`Faz alguns dias que ${escapeHtml(names)} ${games.length > 1 ? 'chegaram' : 'chegou'}. ${invite}`),
-    button(library, 'Abrir Meus jogos'),
-    paragraph(`Os arquivos ficam sempre em Meus jogos. Dicas para imprimir: ${link(printing, 'Ajuda')}.`, true),
-  ].join('\n    '), footer)
+  const many = games.length > 1
+  const intro = `Faz alguns dias que ${names} ${many ? 'chegaram' : 'chegou'}. Se ainda ${many ? 'estão' : 'está'} na pasta de downloads, três lembretes do`
+  const reminders: [string, string][] = [
+    ['Papel A4 comum.', 'Não precisa de papel especial.'],
+    ['Tamanho real (100%).', 'Nada de "Ajustar à página", para as peças saírem do tamanho certo.'],
+    ['Uma face por folha.', 'Assim nada aparece no verso das cartas.'],
+  ]
+  const ask = 'Já jogaram? Respondam este e-mail e contem como foi: o que fez rir, onde travou, o que vocês mudariam. Quem lê é a equipe, e as respostas ajudam a fazer os próximos jogos.'
+  const permission = 'Se um dia quisermos mostrar no site o que vocês escreveram, a gente pede antes.'
+  const html = layout({
+    subject, preheader: 'Se já jogaram, contem como foi. Se não, três lembretes para imprimir.', marker: row.payload.order_ref ? `PEDIDO ${row.payload.order_ref}` : 'PÓS-COMPRA', unsubscribe,
+    body: [
+      kitoTitle(title('Já rolou a ', 'primeira', ' partida?'), 'tabuleiro', 'Kito ao lado de uma mesinha com um jogo de tabuleiro'),
+      paragraph(`${escapeHtml(intro)} ${link(printing, 'guia de impressão')}:`),
+      tips(reminders),
+      button(library, 'Abrir Meus jogos'),
+      paragraph(ask, false, true),
+      ps(permission),
+    ],
+  })
   const text = [
     'KeyToTwo', '', subject, '',
-    `Faz alguns dias que ${names} ${games.length > 1 ? 'chegaram' : 'chegou'}. ${invite}`, '',
-    `Meus jogos: ${library}`,
-    `Dicas para imprimir: ${printing}`,
-    ...footerText,
+    `${intro} guia de impressão (${printing}):`,
+    ...reminders.map(([lead, rest], i) => `${i + 1}. ${lead} ${rest}`), '',
+    `Meus jogos: ${library}`, '',
+    ask, '',
+    `P.S. ${permission}`,
     ...textSignature(true),
+    ...unsubscribe.text,
   ].join('\n')
-  return { to: row.to_email, subject, html, text, tag: row.kind, headers }
+  return { to: row.to_email, subject, html, text, tag: row.kind, headers: unsubscribe.headers }
 }
 
 // Reembolso (transacional, 2026-10-24, Fase 3): o pedido inteiro devolvido, pelo admin ou direto na Stripe. Diz o valor,
@@ -239,19 +347,15 @@ async function refund(row: OutboxRow): Promise<Message> {
   if (!ref || !Number.isSafeInteger(amount) || !currency) throw new PermanentEmailError('reembolso_sem_valor')
   const value = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: currency.toUpperCase() }).format(amount! / 100)
   const names = listNames((row.payload.items ?? []).map(displayName))
-  const help = `${env.siteUrl()}/ajuda`
   const subject = `Reembolso do pedido ${ref}`
-  const heading = 'Reembolso feito'
   const intro = `Fizemos o reembolso do pedido ${ref}${names ? ` (${names})` : ''}. O valor de ${value} volta pelo mesmo meio de pagamento.`
   const timing = 'O prazo para aparecer no extrato ou na fatura depende do banco ou do cartão.'
   const access = 'Os jogos deste pedido saíram de Meus jogos, e os links de baixar não funcionam mais.'
-  const html = layout(subject, heading, [
-    paragraph(escapeHtml(intro)),
-    paragraph(timing, true),
-    paragraph(access),
-    paragraph(`Precisa de ajuda? ${link(help, help)}`, true),
-  ].join('\n    '))
-  const text = ['KeyToTwo', '', heading, '', intro, '', timing, '', access, '', `Precisa de ajuda? ${help}`, ...textSignature(false)].join('\n')
+  const html = layout({
+    subject, preheader: `O valor de ${value} volta pelo mesmo meio de pagamento.`, marker: `PEDIDO ${ref}`,
+    body: [title('Reembolso ', 'feito', '.'), paragraph(escapeHtml(intro)), paragraph(timing, true), paragraph(access, false, true)],
+  })
+  const text = ['KeyToTwo', '', 'Reembolso feito.', '', intro, '', timing, '', access, ...textSignature(false)].join('\n')
   return { to: row.to_email, subject, html, text, tag: row.kind }
 }
 
@@ -349,12 +453,16 @@ async function adminAlert(row: OutboxRow): Promise<Message> {
   const heading = back ? 'Voltou a funcionar' : 'Precisa de atenção'
   const intro = back ? 'O que estava fora do ar voltou a funcionar.' : count > 1 ? `Apareceram ${count} alertas novos no admin da KeyToTwo.` : 'Apareceu um alerta novo no admin da KeyToTwo.'
   const why = `Você recebe este aviso porque é admin da KeyToTwo.${back ? '' : down ? ' Outro e-mail avisa quando voltar.' : ' Cada alerta avisa uma vez só.'}`
-  const html = layout(subject, heading, [
-    paragraph(escapeHtml(intro)),
-    ...alerts.map((a) => paragraph(`${escapeHtml(a.text)}${a.links.map((l) => ` ${link(l.href, l.label)}`).join(' ·')}`)),
-    button(page, 'Abrir Atenção no admin'),
-    paragraph(why, true),
-  ].join('\n    '))
+  const html = layout({
+    subject, preheader: intro, marker: 'ADMIN',
+    body: [
+      `<h1 style="margin:0 0 18px;font-family:${DISPLAY};font-size:30px;line-height:1.18;font-weight:800;letter-spacing:-0.6px;color:${INK};">${escapeHtml(heading)}</h1>`,
+      paragraph(escapeHtml(intro)),
+      ...alerts.map((a) => paragraph(`${escapeHtml(a.text)}${a.links.map((l) => ` ${link(l.href, l.label)}`).join(' ·')}`)),
+      button(page, 'Abrir Atenção no admin'),
+      paragraph(why, true, true),
+    ],
+  })
   const text = [
     'KeyToTwo', '', heading, '', intro, '',
     ...alerts.flatMap((a) => [`- ${a.text}`, ...a.links.map((l) => `  ${l.label}: ${l.href}`)]), '',
