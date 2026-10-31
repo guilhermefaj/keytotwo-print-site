@@ -319,7 +319,7 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
 .plain-list { margin: 0; padding: 0; list-style: none; border-top: var(--line-rule); }
 .plain-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 4px; border-bottom: var(--line-rule); }
 .plain-row-main { display: grid; flex: 1 1 260px; gap: 2px; min-width: 0; }
-.plain-row-sub { color: var(--color-ink-soft); font-size: var(--text-caption); }
+.plain-row-sub { overflow-wrap: anywhere; color: var(--color-ink-soft); font-size: var(--text-caption); }
 .plain-row-amount { min-width: 80px; font-variant-numeric: tabular-nums; text-align: right; }
 .alert-links { display: flex; flex-wrap: wrap; gap: 0 16px; }
 .catalog-list-price { margin-right: 4px; color: var(--color-ink-soft); font-size: var(--text-caption); }
@@ -380,16 +380,12 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
   .user-row-meta { grid-column: 1 / -1; max-width: 560px; }
 }
 
-/* Celular: a barra lateral vira faixa no topo, com as seções numa linha que rola de lado. */
+/* Celular (revisão de UX, 2026-10-31): a barra lateral vira uma barra no topo com a marca e o botão Seções, que abre a
+   busca rápida, as seções e a conta numa lista. Antes era uma faixa que rolava de lado e escondia metade das seções. */
 @media (max-width: 899px) {
   .shell { grid-template-columns: minmax(0, 1fr); }
-  .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 16px; border-right: 0; border-bottom: var(--line-rule); overflow: visible; }
+  .sidebar { position: sticky; top: 0; z-index: 30; height: auto; display: block; padding: 8px 16px; border-right: 0; border-bottom: var(--line-rule); overflow: visible; }
   .sidebar-brand { padding: 0; }
-  .sidebar nav { order: 3; width: 100%; display: flex; align-items: center; gap: 2px; overflow-x: auto; }
-  .sidebar ul { display: flex; gap: 2px; }
-  .sidebar-item { width: auto; white-space: nowrap; }
-  .sidebar-account { order: 2; display: flex; margin: 0 0 0 auto; padding: 0; border: 0; }
-  .sidebar-account p, .sidebar-account a { display: none; }
   .content { padding-top: 24px; }
   .gate-card { padding: 24px; }
   .chart { padding: 16px; }
@@ -413,4 +409,96 @@ a.post-row-link:hover { background: var(--color-ink-wash); color: var(--color-de
   /* No celular o nome ocupa a linha; selo, valor e ação vão juntos para a de baixo, em toda linha igual. */
   .plain-row-main { flex-basis: 100%; }
   .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+}
+
+/* ===== Revisão de UX (2026-10-31): docs/admin-ux-2026-10-31.md ===== */
+/* Barra lateral: a marca e o botão do celular em cima; a busca rápida, as seções e a conta embaixo. */
+.sidebar-top { display: block; }
+.sidebar-toggle { display: none; align-items: center; gap: 8px; min-height: 44px; margin-left: auto; padding: 8px 12px; border: var(--line-rule); border-radius: var(--radius-sm); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-label); font-weight: 600; }
+.sidebar-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.sidebar-toggle .sidebar-badge { margin-left: 0; }
+.sidebar-body { display: flex; flex: 1; flex-direction: column; gap: 16px; min-height: 0; }
+.sidebar-search { flex: 0 0 auto; max-width: none; }
+.sidebar-search svg { left: 12px; }
+.sidebar-search input { min-height: 40px; padding-left: 36px; font-size: var(--text-label); }
+
+/* Ações: o botão compacto (as ações com motivo, as das linhas) e o contorno de perigo, em Erro (sem cor nova). */
+.button-small { min-height: 40px; gap: 6px; padding: 8px 14px; font-size: var(--text-label); }
+.button-danger-outline { color: var(--color-error); background: var(--color-paper); border-color: var(--color-error); }
+.button-danger-outline:hover { background: color-mix(in srgb, var(--color-error) 8%, var(--color-paper)); }
+.actions-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 12px; }
+.detail-section > .button { justify-self: start; }
+/* Zona de perigo das fichas: as ações sem volta juntas no fim, com o título em Erro. */
+.zone-danger h2 { color: var(--color-error); }
+.zone-danger > p { color: var(--color-ink-soft); font-size: var(--text-label); }
+
+/* Copiar um código. */
+.copy-button { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 4px 10px; border: var(--line-rule); border-radius: var(--radius-sm); background: var(--color-paper); color: var(--color-ink-soft); font-size: var(--text-caption); font-weight: 600; vertical-align: middle; }
+.copy-button:hover { color: var(--color-ink); background: var(--color-ink-wash); }
+.title-with-copy { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+
+/* Celular: a barra no topo com o botão Seções (o resto da barra só aparece aberto) e os filtros numa linha só, que rola
+   de lado (antes quebravam em até 3 linhas). Por último no arquivo, para valer sobre as regras acima. */
+@media (max-width: 899px) {
+  .sidebar-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .sidebar-toggle { display: inline-flex; }
+  .sidebar-body { display: none; max-height: calc(100svh - 64px); overflow-y: auto; padding: 12px 0 8px; }
+  .sidebar[data-open="true"] .sidebar-body { display: flex; }
+  .periods, .users-toolbar .periods { display: flex; flex-wrap: nowrap; max-width: 100%; overflow-x: auto; scrollbar-width: thin; }
+  .periods button { flex: 0 0 auto; white-space: nowrap; }
+}
+
+
+/* Fim da barra de ferramentas (Baixar CSV), à direita no desktop. */
+.toolbar-end { display: grid; justify-items: end; gap: 6px; margin-left: auto; }
+
+/* Telas (revisão de UX, 2026-10-31) */
+.heading-amount { color: var(--color-ink); font-weight: 600; }
+.zone-danger > p { flex-basis: 100%; }
+/* Métricas: alertas em destaque, a variação nos cartões, o maior dia no gráfico, os mais vendidos e o uso recolhido. */
+.alert-callout { display: grid; justify-items: start; gap: 8px; margin-bottom: 24px; padding: 16px 20px; border: 1.5px solid var(--color-error); border-radius: var(--radius-md); background: var(--color-paper); }
+.alert-callout h2 { font-size: var(--text-title-sm); color: var(--color-error); }
+.alert-callout ul { display: grid; gap: 6px; margin: 0; padding-left: 20px; }
+.alert-callout li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.notice-launch { display: flex; align-items: flex-start; gap: 10px; border-color: var(--color-deep-teal); background: var(--color-sky); }
+.notice-launch svg { flex-shrink: 0; margin-top: 2px; color: var(--color-deep-teal); }
+.cards .card-delta { margin-top: 4px; font-family: inherit; font-weight: 400; line-height: 1.5; color: var(--color-ink-soft); font-size: var(--text-caption); }
+.cards .card-delta-up { color: var(--color-deep-teal); font-weight: 600; }
+.cards .card-delta-down { color: var(--color-error); font-weight: 600; }
+.chart-peak { color: var(--color-ink-soft); font-weight: 400; }
+.ranking { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.ranking li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: baseline; }
+.ranking-name { color: var(--color-ink); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+.ranking-name:hover { color: var(--color-deep-teal); text-decoration: underline; text-underline-offset: 4px; }
+.ranking-value { color: var(--color-ink-soft); font-size: var(--text-label); font-variant-numeric: tabular-nums; }
+.ranking-bar { grid-column: 1 / -1; height: 8px; border-radius: 999px; background: linear-gradient(to right, var(--color-line) var(--bar), var(--color-ink-wash) var(--bar)); }
+.usage-details > summary { cursor: pointer; margin-bottom: 12px; color: var(--color-ink); font-weight: 600; }
+.usage-details[open] > summary { margin-bottom: 16px; }
+/* Atenção: o título com o selo do prazo. */
+.alert-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+/* Catálogo e Produto: a capa do site. */
+.catalog-thumb-frame { flex-shrink: 0; width: 96px; height: 54px; border-radius: var(--radius-sm); overflow: hidden; background: var(--color-ink-wash); }
+.catalog-thumb { display: block; width: 100%; height: 100%; object-fit: cover; }
+.product-heading { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 24px; }
+.product-cover { width: 240px; max-width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: var(--radius-md); object-fit: cover; border: var(--line-card); }
+/* Cupons: os usos de um cupom com limite. */
+.uses-meter { display: grid; gap: 4px; max-width: 280px; color: var(--color-ink-soft); font-size: var(--text-caption); }
+.uses-bar { height: 6px; border-radius: 999px; background: linear-gradient(to right, var(--color-deep-teal) var(--bar), var(--color-ink-wash) var(--bar)); }
+/* Conta: o resumo do topo. */
+.summary-cards { margin-bottom: 8px; }
+.summary-cards > div { padding: 14px 18px; }
+.summary-cards dd { font-size: var(--text-title); }
+/* Usuários: o cabeçalho das colunas, no desktop largo. */
+.user-list-head { display: none; }
+@media (min-width: 1200px) {
+  .user-list-head { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 460px); gap: 8px 24px; padding: 0 4px 8px; color: var(--color-ink-soft); font-size: var(--text-caption); font-weight: 600; }
+  .user-list-head > span:last-child { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .user-row-meta dt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+/* Acompanhamento: o e-mail com cara de link e o Escrever para a pessoa. */
+.person-link { color: var(--color-deep-teal); }
+.write-to { justify-self: start; margin-top: 6px; text-decoration: none; }
+@media (max-width: 899px) {
+  .catalog-thumb-frame { width: 72px; height: 40px; }
+  .product-cover { width: 100%; }
 }

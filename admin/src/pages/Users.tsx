@@ -23,6 +23,12 @@ export function UsersPage() {
   const filter = isFilter(params.get('filter')) ? params.get('filter') as UserFilter : 'all'
   const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1)
   const [draft, setDraft] = useState(query)
+  // A busca pode chegar de fora (a busca rápida da barra lateral): o campo acompanha.
+  const [seenQuery, setSeenQuery] = useState(query)
+  if (seenQuery !== query) {
+    setSeenQuery(query)
+    setDraft(query)
+  }
   const search = new URLSearchParams({ ...(query ? { q: query } : {}), filter, page: String(page) })
   const { data, previous, error, loading, reload } = useResource<UserList>(`/admin/users?${search}`)
   const list = data ?? (loading ? previous : undefined)
@@ -65,6 +71,9 @@ export function UsersPage() {
       ? <p className="status" role="status">{query ? 'Nenhuma conta com esse e-mail.' : 'Nenhuma conta neste filtro.'}</p>
       : <>
         <p className="range" role="status">{loading ? 'Atualizando…' : `${count(first)}–${count(last)} de ${count(list.total)} ${list.total === 1 ? 'conta' : 'contas'}`}</p>
+        {/* No desktop largo, os rótulos das colunas uma vez só, em cima (revisão de UX, 2026-10-31); nas linhas eles ficam só
+            para o leitor de tela. */}
+        <div className="user-list-head" aria-hidden="true"><span>Conta</span><span /><span><span>Último acesso</span><span>Compras</span><span>Jogos</span><span>Novidades</span></span></div>
         <ul className="user-list" aria-label="Contas" aria-busy={loading}>
           {list.users.map(user => <UserRow key={user.id} user={user} back={search.toString()} />)}
         </ul>

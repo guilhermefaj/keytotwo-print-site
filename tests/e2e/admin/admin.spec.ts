@@ -14,7 +14,10 @@ function metrics(days: number) {
     marketing: { codes: [{ code: 'ANA10', orders: 1, revenue: 891, discount: 99 }], partners: [{ name: 'Ana Souza', slug: 'ana-souza', orders: 1, revenue: 891 }], campaigns: [] },
     usage: { month_start: '2026-10-01', calls_month: 412_345, by_area: { public: 300_000, account: 100_000, admin: 2_345, webhooks: 1_000, schedule: 9_000 },
       daily: daily.map((item, i) => ({ date: item.date, calls: 1000 + i })), peak_hour: { hour: '2026-10-23T17:00:00Z', calls: 1234 },
-      database_bytes: 47_396_864, active_accounts_month: 37 } }
+      database_bytes: 47_396_864, active_accounts_month: 37 },
+    // Revisão de UX (2026-10-31): os mais vendidos e os mesmos dias logo antes do período.
+    top_products: [{ code: 'P001', name: 'Coleção KeyToTwo: Fundadores', kind: 'bundle', orders: 2, amount: 3980 }, { code: 'J001', name: 'Rabisque e Adivinhe', kind: 'single', orders: 1, amount: 990 }],
+    previous: { orders: 1, revenue: 990, accounts: 1 } }
 }
 
 // Auth e API simulados. `stored`: a sessão que já está no navegador; `factors`: os fatores do usuário no Auth.
@@ -49,6 +52,8 @@ async function fixture(page: Page, { stored, who = user() }: { stored?: ReturnTy
     calls.push({ method: route.request().method(), path: `api${url.pathname.split('/api')[1]}${url.search}`, body: null, auth: route.request().headers().authorization })
     if (url.pathname.includes('/admin/blog/')) return route.fulfill({ json: { version: '0'.repeat(32), posts: [], media_base: null } })
     if (url.pathname.endsWith('/admin/alerts')) return route.fulfill({ json: { open: [], resolved: [] } })
+    if (url.pathname.endsWith('/admin/orders')) return route.fulfill({ json: { total: 1, offset: 0, limit: 50, page: 1, orders: [{ id: 'pedido-1', ref: 'A1B2C3D4', kind: 'purchase', status: 'paid', email: 'casal@example.com', created_at: '2026-10-23T12:00:00Z', items: ['Coleção KeyToTwo: Fundadores'], promotion_code: null, amount_total: 1980, currency: 'brl' }] } })
+    if (url.pathname.endsWith('/catalog')) return route.fulfill({ json: { products: [], banner: null, sales_open_at: null } })
     return route.fulfill({ json: metrics(Number(url.searchParams.get('days'))) })
   })
   return calls
@@ -109,7 +114,7 @@ test('primeiro acesso de admin: cadastra o app autenticador pelo QR code e entra
   await expect(page.getByRole('heading', { level: 1, name: 'Métricas' })).toBeVisible()
   expect(calls.filter(call => call.method === 'POST' && call.path === '/factors')).toHaveLength(1)
   // A tela aparece antes da resposta: espera a chamada das métricas.
-  await expect.poll(() => calls.find(call => call.path.startsWith('api'))?.path).toBe('api/admin/metrics?days=7')
+  await expect.poll(() => calls.find(call => call.path.startsWith('api/admin/metrics'))?.path).toBe('api/admin/metrics?days=7')
   const api = calls.find(call => call.path.startsWith('api'))!
   expect(JSON.parse(Buffer.from(api.auth!.split('.')[1], 'base64url').toString()).aal).toBe('aal2')
 })
@@ -158,13 +163,17 @@ test('métricas: barra lateral com as seções, 7 e 30 dias, celular sem rolagem
   // Desde a Fase 3 (2026-10-24) todas as seções existem: sem o grupo "Em breve".
   await expect(nav.getByRole('link')).toHaveText(['Métricas', 'Atenção', 'Pedidos e reembolsos', 'Catálogo', 'Cupons e parceiros', 'Usuários', 'Blog'])
   await expect(nav.getByRole('link', { name: 'Métricas' })).toHaveAttribute('aria-current', 'page')
-  await expect(page.getByRole('region', { name: 'Vendas' }).locator('.cards dd')).toHaveText(['R$ 19,80', '2', 'R$ 9,90'])
+  await expect(page.getByRole('region', { name: 'Vendas' }).locator('.cards dd:not(.card-delta)')).toHaveText(['R$ 19,80', '2', 'R$ 9,90'])
   await expect(page.getByRole('region', { name: 'Vendas' }).locator('.bars span')).toHaveCount(7)
   await expect(page.locator('.funnel-share')).toHaveText(['60% da sacola', '20% da sacola'])
   const marketing = page.getByRole('region', { name: 'Cupons e parceiros' })
   await expect(marketing.getByRole('table', { name: 'Vendas por cupom' })).toContainText(/ANA10\s*1\s*R\$\s8,91\s*R\$\s0,99/)
   await expect(marketing.getByRole('table', { name: 'Vendas por parceiro' })).toContainText('Ana Souza')
   await expect(marketing.getByRole('table', { name: 'Vendas por campanha' })).toHaveCount(0)
+  // Revisão de UX (2026-10-31): os mais vendidos e os últimos pedidos pagos, com o link para a ficha.
+  await expect(page.getByRole('region', { name: 'Mais vendidos' }).getByRole('link')).toHaveText(['Coleção KeyToTwo: Fundadores', 'Rabisque e Adivinhe'])
+  await expect(page.getByRole('region', { name: 'Últimos pedidos pagos' }).getByRole('link', { name: 'Pedido A1B2C3D4' })).toHaveAttribute('href', '/pedidos/pedido-1')
+  await expect(page.getByRole('region', { name: 'Vendas' }).locator('.card-delta').first()).toHaveText('+100% sobre os 7 dias antes')
   await axe(page)
   // Uso da infraestrutura (2026-10-25): o mês contra o plano grátis, por dia e por tipo; 80% ou mais avisa.
   const usage = page.getByRole('region', { name: 'Uso da infraestrutura' })
@@ -189,6 +198,8 @@ test('métricas: barra lateral com as seções, 7 e 30 dias, celular sem rolagem
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
   }
   await axe(page)
+  // No celular, a conta e o Sair ficam no menu Seções (revisão de UX, 2026-10-31).
+  await page.getByRole('button', { name: /^Seções/ }).click()
   await page.getByRole('button', { name: 'Sair' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Entrar no admin' })).toBeVisible()
 })

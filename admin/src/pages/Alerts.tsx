@@ -1,7 +1,7 @@
 import { IconExternalLink } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { describeAlert, stripeAlertUrl, useAlertsContext, type Alert } from '../alerts'
+import { alertDeadline, byUrgency, describeAlert, stripeAlertUrl, useAlertsContext, type Alert } from '../alerts'
 import { api } from '../api'
 import { Section } from '../Detail'
 import { formatMoment } from '../format'
@@ -26,7 +26,7 @@ export function AlertsPage() {
       <Section id="abertos" title="Abertos" count={list.open.length}>
         {list.open.length === 0
           ? <div className="empty"><p><strong>Nada precisa de atenção agora.</strong></p><p>Quando algo aparecer, os admins recebem um e-mail e o alerta fica aqui.</p></div>
-          : <ul className="plain-list">{list.open.map(alert => <AlertRow key={alert.id} alert={alert} onResolved={resolved} />)}</ul>}
+          : <ul className="plain-list">{byUrgency(list.open).map(alert => <AlertRow key={alert.id} alert={alert} onResolved={resolved} />)}</ul>}
       </Section>
       <Section id="resolvidos" title="Resolvidos nos últimos 30 dias" count={list.resolved.length}>
         {list.resolved.length === 0 ? <p className="status">Nenhum alerta resolvido nos últimos 30 dias.</p>
@@ -39,9 +39,10 @@ export function AlertsPage() {
 function AlertRow({ alert, onResolved }: { alert: Alert; onResolved?: (alert: Alert) => void }) {
   const { title, hint } = describeAlert(alert)
   const stripe = stripeAlertUrl(alert)
+  const deadline = alertDeadline(alert)
   return <li className="plain-row">
     <div className="plain-row-main">
-      <strong>{title}</strong>
+      <span className="alert-title"><strong>{title}</strong>{deadline && <span className={`badge${deadline.urgent ? ' badge-danger' : ''}`}>{deadline.label}</span>}</span>
       {!alert.resolved_at && <span>{hint}</span>}
       <span className="plain-row-sub">{alert.resolved_at
         ? `Resolvido em ${formatMoment(alert.resolved_at)}: ${alert.resolved_by ? `${alert.resolution} · ${alert.resolved_by}` : 'fechou sozinho'}`

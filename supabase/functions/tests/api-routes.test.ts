@@ -298,22 +298,27 @@ contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, com
   const METRICS = { days: 30, sales: { orders: 2, revenue: 1980, currency: 'brl' }, daily: [] }
   const MARKETING = { codes: [{ code: 'ANA10', orders: 1 }], partners: [], campaigns: [] }
   const USAGE = { calls_month: 1234, by_area: { public: 1000 }, daily: [], peak_hour: null, database_bytes: 4096, active_accounts_month: 3 }
-  onRpc((fn) => ({ status: 200, body: [fn === 'admin_marketing_metrics' ? { outcome: 'ok', result: MARKETING } : fn === 'admin_usage_metrics' ? { outcome: 'ok', result: USAGE } : { outcome: 'ok', metrics: METRICS }] }))
+  const PRODUCTS = [{ code: 'P001', name: 'Coleção', kind: 'bundle', orders: 2, amount: 5980 }]
+  // A série do dobro do período: os 30 primeiros dias (os de antes do período) somam 3 pedidos, R$ 30 e 4 contas.
+  const DOUBLED = { ...METRICS, daily: Array.from({ length: 60 }, (_, i) => (i < 30 ? { orders: i < 3 ? 1 : 0, revenue: i < 3 ? 1000 : 0, accounts: i < 4 ? 1 : 0 } : { orders: 9, revenue: 9999, accounts: 9 })) }
+  onRpc((fn, args) => ({ status: 200, body: [fn === 'admin_marketing_metrics' ? { outcome: 'ok', result: MARKETING } : fn === 'admin_usage_metrics' ? { outcome: 'ok', result: USAGE }
+    : fn === 'admin_product_sales' ? { outcome: 'ok', result: PRODUCTS } : { outcome: 'ok', metrics: args.p_days === 60 ? DOUBLED : METRICS }] }))
   const res = await handleRequest(request('/admin/metrics?days=30', { token }))
   assertEquals(res.status, 200)
   assertEquals(res.headers.get('Cache-Control'), 'no-store')
-  assertEquals(await res.json(), { ...METRICS, marketing: MARKETING, usage: USAGE })
+  assertEquals(await res.json(), { ...METRICS, marketing: MARKETING, usage: USAGE, top_products: PRODUCTS, previous: { orders: 3, revenue: 3000, accounts: 4 } })
   const args = { p_user_id: userId(token), p_days: 30, p_livemode: false }
-  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['get_admin_metrics', args], ['admin_marketing_metrics', args], ['admin_usage_metrics', { p_user_id: userId(token), p_days: 30 }]])
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['get_admin_metrics', args], ['admin_marketing_metrics', args], ['admin_usage_metrics', { p_user_id: userId(token), p_days: 30 }],
+    ['admin_product_sales', args], ['get_admin_metrics', { ...args, p_days: 60 }]])
   assertEquals((await handleRequest(request('/admin/metrics', { token }))).status, 200)
-  assertEquals(rpcCalls[3].args.p_days, 7)
+  assertEquals(rpcCalls[5].args.p_days, 7)
 
   for (const days of ['0', '14', '366', 'sete', '']) {
     const invalid = await handleRequest(request(`/admin/metrics?days=${days}`, { token }))
     assertEquals(invalid.status, 400, days)
     assertEquals((await invalid.json()).error.code, 'INVALID_REQUEST')
   }
-  assertEquals(rpcCalls.length, 6)
+  assertEquals(rpcCalls.length, 10)
 
   // Sessão só com o primeiro fator (aal1), mesmo de admin, ou com o código do app confirmado há mais de 12 horas (ou sem
   // ele no amr): nem chega ao banco.
@@ -323,10 +328,10 @@ contractTest('GET /admin/metrics: período 7 ou 30, modo da chave da Stripe, com
     assertEquals(single.status, 403)
     assertEquals((await single.json()).error.code, 'MFA_REQUIRED')
   }
-  assertEquals(rpcCalls.length, 6)
+  assertEquals(rpcCalls.length, 10)
   const recent = await sessionToken({ aal: 'aal2', amr: [{ method: 'totp', timestamp: hours(11.9) }, { method: 'totp', timestamp: hours(30) }] })
   assertEquals((await handleRequest(request('/admin/metrics?days=7', { token: recent }))).status, 200)
-  assertEquals(rpcCalls.length, 9)
+  assertEquals(rpcCalls.length, 15)
   // Toda chamada conta no uso, inclusive as recusadas (período inválido, sem o segundo fator).
   await new Promise((resolve) => setTimeout(resolve, 0))
   assertEquals(usageCalls.length, 13)

@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { api, ApiError, useResource } from '../api'
 import { catalogActionLabel, parseReais, productState, stripePriceUrl, type CatalogList, type CatalogProduct } from '../catalog'
+import { coverOf, hideMissingCover } from '../covers'
 import { Fact, Section } from '../Detail'
 import { count, formatMoment, money } from '../format'
 import { LoadError } from '../LoadError'
@@ -36,11 +37,13 @@ function ProductPage({ code }: { code: string }) {
   }
 
   const state = productState(product)
+  const cover = coverOf(product.code)
   const post = (path: string, body: Record<string, unknown>) => api(`/admin/products/${product.code}/${path}`, { method: 'POST', body })
   return <>
     <title>{`${product.name ?? product.code} — Admin KeyToTwo`}</title>
     <BackToList />
-    <header className="page-heading user-heading">
+    <header className="page-heading user-heading product-heading">
+      <img className="product-cover" src={cover} alt="" width="240" height="135" onError={hideMissingCover} />
       <div>
         <p className="user-badges"><span className={`badge${state.tone ? ` badge-${state.tone}` : ''}`}>{state.label}</span></p>
         <h1>{product.name ?? product.code}</h1>
@@ -81,8 +84,9 @@ function ProductPage({ code }: { code: string }) {
         </li>)}</ul>}
     </Section>
 
-    <section className="danger-zone" aria-labelledby="acoes-produto">
-      <h2 id="acoes-produto">Situação</h2>
+    {/* Revisão de UX (2026-10-31): pausar tira da loja na hora, então fica na Zona de perigo; voltar a vender, não. */}
+    <section className={`danger-zone${product.status === 'active' ? ' zone-danger' : ''}`} aria-labelledby="acoes-produto">
+      <h2 id="acoes-produto">{product.status === 'active' ? 'Zona de perigo' : 'Situação'}</h2>
       {product.status === 'active'
         ? <ReasonAction label="Pausar a venda" confirm="Pausar" danger
             intro={`Sai da loja e ninguém consegue comprar até voltar. Quem já comprou continua com o jogo${product.kind === 'single' ? '; o pacote que o traz continua à venda' : ''}.`}

@@ -323,7 +323,7 @@ function Editor({ initial, mediaBase: initialMedia, defaultAuthor = '', defaultI
           <button className="button button-danger" type="button" disabled={busy !== null} onClick={() => void remove()}>{busy === 'delete' ? 'Excluindo…' : 'Excluir de vez'}</button>
           <button className="button button-secondary" type="button" disabled={busy !== null} onClick={() => setConfirmDelete(false)}>Cancelar</button>
         </div>
-        : <button className="text-button text-button-danger" type="button" onClick={() => setConfirmDelete(true)}>Excluir este post</button>}
+        : <button className="button button-small button-danger-outline" type="button" onClick={() => setConfirmDelete(true)}>Excluir este post</button>}
     </section>}
 
     {blocker.state === 'blocked' && <div className="leave-prompt" role="alertdialog" aria-modal="false" aria-labelledby="sair-titulo">

@@ -40,6 +40,10 @@ function UserPage({ id }: { id: string }) {
   const { account } = user
   const guarded = account.self || account.admin
   const livemode = user.orders[0]?.livemode ?? true
+  // O resumo do topo (revisão de UX, 2026-10-31): as compras pagas (sem presentes nem reembolsadas) e quanto somaram.
+  const purchases = user.orders.filter(order => order.kind === 'purchase' && (order.status === 'paid' || order.status === 'disputed'))
+  const spent = purchases.reduce((total, order) => total + (order.amount_total ?? 0), 0)
+  const currency = purchases.find(order => order.currency)?.currency ?? 'brl'
   return <>
     <title>{`${account.email} — Admin KeyToTwo`}</title>
     <BackToList />
@@ -55,6 +59,12 @@ function UserPage({ id }: { id: string }) {
         <p>{[account.name, `conta de ${formatMoment(account.created_at)}`, `entra com ${providersLabel(account.providers).replace('Código', 'código')}`].filter(Boolean).join(' · ')}</p>
       </div>
     </header>
+    <dl className="cards summary-cards">
+      <div><dt>Compras</dt><dd>{count(purchases.length)}</dd></div>
+      <div><dt>Gastou</dt><dd>{money(spent, currency)}</dd></div>
+      <div><dt>Jogos</dt><dd>{count(user.library.filter(entry => entry.status === 'active').length)}</dd></div>
+      <div><dt>Novidades</dt><dd>{user.newsletter.opted_in ? 'Recebe' : 'Não recebe'}</dd></div>
+    </dl>
     {notice && <p className="notice" role="status" ref={noticeRef} tabIndex={-1}>{notice}</p>}
     {guarded && <p className="note">{account.self ? 'Esta é a sua conta' : 'Esta é uma conta de admin'}: bloquear, excluir e retirar jogos não valem aqui.</p>}
 
@@ -67,6 +77,7 @@ function UserPage({ id }: { id: string }) {
           ? <a className="text-link" href={stripeCustomerUrl(account.stripe_customer_id, livemode)} target="_blank" rel="noopener">{account.stripe_customer_id}<IconExternalLink aria-hidden="true" size={14} stroke={1.75} /><span className="sr-only"> (abre a Stripe em nova aba)</span></a>
           : 'Ainda não pagou nada'}</Fact>
       </dl>
+      <ExportButton userId={account.id} confirmed={Boolean(account.confirmed_at)} onDone={() => setNotice('Os dados foram baixados. A exportação fica no histórico.')} />
     </Section>
 
     <Section id="jogos" title="Jogos" count={user.library.filter(entry => entry.status === 'active').length}>
@@ -111,17 +122,22 @@ function UserPage({ id }: { id: string }) {
         </li>)}</ul>}
     </Section>
 
-    <section className="danger-zone" aria-labelledby="acoes-conta">
-      <h2 id="acoes-conta">Dados e acesso</h2>
-      <ExportButton userId={account.id} confirmed={Boolean(account.confirmed_at)} onDone={() => setNotice('Os dados foram baixados. A exportação fica no histórico.')} />
-      {!guarded && (account.blocked
-        ? <ReasonAction label="Desbloquear o login" confirm="Desbloquear" intro="A pessoa volta a poder entrar na conta."
-          onConfirm={reason => api(`/admin/users/${account.id}/unblock`, { method: 'POST', body: { reason } }).then(() => done('O login foi desbloqueado.'))} />
-        : <ReasonAction label="Bloquear o login" confirm="Bloquear" danger intro="A pessoa não consegue mais entrar nem baixar os jogos. Uma sessão já aberta cai em até 1 hora."
-          onConfirm={reason => api(`/admin/users/${account.id}/block`, { method: 'POST', body: { reason } }).then(() => done('O login foi bloqueado.'))} />)}
-      {!account.self && <AdminRole account={account} onDone={done} />}
-      {!guarded && <DeleteAccount account={account} />}
-    </section>
+    {/* Revisão de UX (2026-10-31): o acesso (admin, desbloquear) separado do que não tem volta, na Zona de perigo. */}
+    {(!account.self || (!guarded && account.blocked)) && <section className="detail-section" aria-labelledby="acesso-conta">
+      <h2 id="acesso-conta">Acesso</h2>
+      <div className="actions-row">
+        {!guarded && account.blocked && <ReasonAction label="Desbloquear o login" confirm="Desbloquear" intro="A pessoa volta a poder entrar na conta."
+          onConfirm={reason => api(`/admin/users/${account.id}/unblock`, { method: 'POST', body: { reason } }).then(() => done('O login foi desbloqueado.'))} />}
+        {!account.self && <AdminRole account={account} onDone={done} />}
+      </div>
+    </section>}
+    {!guarded && <section className="danger-zone zone-danger" aria-labelledby="perigo-conta">
+      <h2 id="perigo-conta">Zona de perigo</h2>
+      <p>Bloquear tira o acesso da pessoa; excluir apaga a conta e não tem volta.</p>
+      {!account.blocked && <ReasonAction label="Bloquear o login" confirm="Bloquear" danger intro="A pessoa não consegue mais entrar nem baixar os jogos. Uma sessão já aberta cai em até 1 hora."
+        onConfirm={reason => api(`/admin/users/${account.id}/block`, { method: 'POST', body: { reason } }).then(() => done('O login foi bloqueado.'))} />}
+      <DeleteAccount account={account} />
+    </section>}
   </>
 }
 
@@ -181,7 +197,7 @@ function OrderRow({ order, userId, onDone }: { order: UserOrder; userId: string;
     </div>
     <span className={`badge${order.status === 'paid' ? ' badge-published' : ''}`}>{orderStatusLabel(order)}</span>
     <span className="plain-row-amount">{courtesy ? 'R$ 0' : order.amount_total !== null && order.currency ? money(order.amount_total, order.currency) : '—'}</span>
-    {order.deliverable && <button className="text-button" type="button" disabled={state.busy} onClick={() => void resend()}>
+    {order.deliverable && <button className="button button-secondary button-small" type="button" disabled={state.busy} onClick={() => void resend()}>
       {state.busy ? 'Reenviando…' : 'Reenviar o e-mail'}<span className="sr-only"> de acesso do pedido {order.ref}</span>
     </button>}
   </li>
@@ -264,7 +280,7 @@ function ExportButton({ userId, confirmed, onDone }: { userId: string; confirmed
   }
   if (!confirmed) return <p className="field-help">Exportar os dados vale só para contas com o e-mail confirmado.</p>
   return <div className="inline-action">
-    <button className="text-button" type="button" disabled={state.busy} onClick={() => void download()}>
+    <button className="button button-secondary button-small" type="button" disabled={state.busy} onClick={() => void download()}>
       <IconDownload aria-hidden="true" size={16} stroke={1.75} />{state.busy ? 'Preparando…' : 'Exportar os dados (LGPD)'}
     </button>
     {state.error && <p className="field-error" role="alert">{state.error}</p>}

@@ -82,3 +82,18 @@ export function stripeAlertUrl(alert: Alert): string | null {
   if (alert.kind === 'stripe_unmatched' && d.event_id) return `${base}events/${encodeURIComponent(text(d.event_id))}`
   return null
 }
+
+// Prazo de um alerta (revisão de UX, 2026-10-31): a contestação tem até quando mandar as provas na Stripe. Urgente com 3
+// dias ou menos. Os abertos vêm do mais urgente: os com prazo primeiro (o mais perto antes), depois o mais novo.
+export function alertDeadline(alert: Alert, now = Date.now()): { label: string; urgent: boolean } | null {
+  const due = typeof alert.details.due_by === 'string' ? Date.parse(alert.details.due_by) : Number.NaN
+  if (alert.resolved_at || Number.isNaN(due)) return null
+  const days = Math.ceil((due - now) / 86_400_000)
+  if (due <= now) return { label: 'Prazo vencido', urgent: true }
+  return { label: days <= 1 ? 'Prazo: termina em menos de 1 dia' : `Prazo: faltam ${days} dias`, urgent: days <= 3 }
+}
+
+export function byUrgency(list: Alert[]): Alert[] {
+  const due = (alert: Alert) => (typeof alert.details.due_by === 'string' ? Date.parse(alert.details.due_by) : Number.POSITIVE_INFINITY)
+  return [...list].sort((a, b) => due(a) - due(b) || Date.parse(b.opened_at) - Date.parse(a.opened_at))
+}

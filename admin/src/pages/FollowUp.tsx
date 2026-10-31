@@ -1,3 +1,4 @@
+import { IconMail } from '@tabler/icons-react'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { api, apiMessage, useResource } from '../api'
@@ -31,6 +32,10 @@ export function FollowUpPage() {
         <Person id={item.user_id} email={item.email} />
         <p className="follow-detail">Na sacola: {item.items.join(', ')} · desde {formatMoment(item.since)}</p>
         <p className="follow-hint">{item.reminded ? 'O lembrete automático já saiu.' : 'O lembrete automático só sai para quem aceitou as novidades. Vale escrever para a pessoa.'}</p>
+        {!item.reminded && <WriteTo email={item.email} subject="Sua sacola na KeyToTwo"
+          body={`Oi! Vimos que ficou na sua sacola: ${item.items.join(', ')}. Se ficou alguma dúvida sobre a impressão ou o pagamento, é só responder este e-mail.
+
+Equipe KeyToTwo`} />}
       </>}</FollowSection>
       <FollowSection {...sections[1]} list={follow.no_download}>{item => <>
         <Person id={item.user_id} email={item.email} />
@@ -54,6 +59,8 @@ export function FollowUpPage() {
         <Person id={item.user_id} email={item.email} />
         <p className="follow-detail">Conta criada em {formatMoment(item.created_at)} e nunca confirmada.</p>
         <p className="follow-hint">Ela confirma ao entrar pela primeira vez, com o código do e-mail ou o Google. Sem confirmar, não compra.</p>
+        <WriteTo email={item.email} subject="Sua conta na KeyToTwo"
+          body={'Oi! Sua conta na KeyToTwo ainda não foi confirmada. Para confirmar, é só entrar em keytotwo.com.br/entrar com este e-mail: chega um código de 6 números (ou use o Google).\n\nEquipe KeyToTwo'} />
       </>}</FollowSection>
     </>}
   </>
@@ -69,7 +76,14 @@ function FollowSection<T extends { user_id: string }>({ id, title, hint, list, c
   </section>
 }
 
-const Person = ({ id, email }: { id: string; email: string }) => <Link className="user-row-title" to={`/usuarios/${id}`}>{email}</Link>
+// O e-mail leva à conta e tem cara de link (revisão de UX, 2026-10-31).
+const Person = ({ id, email }: { id: string; email: string }) => <Link className="user-row-title person-link" to={`/usuarios/${id}`}>{email}</Link>
+
+// Escrever para a pessoa (revisão de UX, 2026-10-31): abre o e-mail com o assunto e um começo de texto, para editar.
+const WriteTo = ({ email, subject, body }: { email: string; subject: string; body: string }) =>
+  <a className="button button-secondary button-small write-to" href={`mailto:${email}?${new URLSearchParams({ subject, body }).toString().replace(/\+/g, '%20')}`}>
+    <IconMail aria-hidden="true" size={16} stroke={1.75} />Escrever para a pessoa<span className="sr-only"> ({email})</span>
+  </a>
 
 function ResendButton({ userId, orderId, orderRef }: { userId: string; orderId: string; orderRef: string }) {
   const [state, setState] = useState<{ busy: boolean; done?: boolean; error?: string }>({ busy: false })
@@ -84,7 +98,7 @@ function ResendButton({ userId, orderId, orderRef }: { userId: string; orderId: 
   }
   if (state.done) return <p className="follow-done" role="status">E-mail de acesso do pedido {orderRef} na fila de envio.</p>
   return <div className="inline-action">
-    <button className="text-button" type="button" disabled={state.busy} onClick={() => void resend()}>
+    <button className="button button-secondary button-small" type="button" disabled={state.busy} onClick={() => void resend()}>
       {state.busy ? 'Reenviando…' : 'Reenviar o e-mail de acesso'}<span className="sr-only"> do pedido {orderRef}</span>
     </button>
     {state.error && <p className="field-error" role="alert">{state.error}</p>}

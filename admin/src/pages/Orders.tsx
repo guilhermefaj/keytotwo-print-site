@@ -1,8 +1,9 @@
-import { IconSearch } from '@tabler/icons-react'
+import { IconDownload, IconSearch } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { useResource } from '../api'
-import { count, formatMoment, money } from '../format'
+import { api, apiMessage, useResource } from '../api'
+import { csvMoney, saveCsv } from '../csv'
+import { count, formatMoment, money, relativeMoment } from '../format'
 import type { OrderFilter, OrderList, OrderSummary } from '../orders'
 import { orderStatusLabel } from '../users'
 import { LoadError } from '../LoadError'
@@ -22,6 +23,12 @@ export function OrdersPage() {
   const filter = isFilter(params.get('filter')) ? params.get('filter') as OrderFilter : 'all'
   const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1)
   const [draft, setDraft] = useState(query)
+  // A busca pode chegar de fora (a busca rápida da barra lateral): o campo acompanha.
+  const [seenQuery, setSeenQuery] = useState(query)
+  if (seenQuery !== query) {
+    setSeenQuery(query)
+    setDraft(query)
+  }
   const search = new URLSearchParams({ ...(query ? { q: query } : {}), filter, page: String(page) })
   const { data, previous, error, loading, reload } = useResource<OrderList>(`/admin/orders?${search}`)
   const list = data ?? (loading ? previous : undefined)
@@ -59,6 +66,7 @@ export function OrdersPage() {
       <div className="periods" role="group" aria-label="Mostrar">
         {filters.map(({ value, label }) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => update({ filter: value, page: '1' })}>{label}</button>)}
       </div>
+      <ExportOrders query={query} filter={filter} disabled={!list?.total} />
     </div>
     {loading && !list && <p className="status" role="status">Carregando os pedidos…</p>}
     {!loading && error !== undefined && <LoadError error={error} retry={reload} />}
@@ -83,10 +91,42 @@ function OrderRow({ order, back }: { order: OrderSummary; back: string }) {
   return <li className="plain-row order-row">
     <div className="plain-row-main">
       <Link className="user-row-title" to={`/pedidos/${order.id}`} state={{ back }}>Pedido {order.ref}</Link>
-      <span className="plain-row-sub">{order.email ?? 'Conta excluída'} · {formatMoment(order.created_at)}</span>
+      <span className="plain-row-sub">{order.email ?? 'Conta excluída'} · {relativeMoment(order.created_at)}</span>
       <span className="plain-row-sub">{order.items.join(', ') || 'Sem itens'}{order.promotion_code ? ` · cupom ${order.promotion_code}` : ''}</span>
     </div>
     <span className={`badge${order.status === 'paid' ? ' badge-published' : order.status === 'refunded' || order.status.startsWith('dispute') ? ' badge-danger' : ''}`}>{orderStatusLabel(order)}</span>
     <span className="plain-row-amount">{courtesy ? 'R$ 0' : order.amount_total !== null && order.currency ? money(order.amount_total, order.currency) : '—'}</span>
   </li>
 }
+
+// Baixar CSV (revisão de UX, 2026-10-31): todos os pedidos da busca e do filtro de agora, página por página (até 2 mil),
+// numa planilha para a contabilidade.
+function ExportOrders({ query, filter, disabled }: { query: string; filter: OrderFilter; disabled: boolean }) {
+  const [state, setState] = useState<{ busy: boolean; error?: string }>({ busy: false })
+  async function download() {
+    setState({ busy: true })
+    try {
+      const orders: OrderSummary[] = []
+      for (let page = 1; page <= 40; page++) {
+        const list = await api<OrderList>(`/admin/orders?${new URLSearchParams({ ...(query ? { q: query } : {}), filter, page: String(page) })}`)
+        orders.push(...list.orders)
+        if (!list.orders.length || orders.length >= list.total) break
+      }
+      saveCsv(`pedidos-${filter}-${new Date().toISOString().slice(0, 10)}.csv`, [
+        ['Pedido', 'Data', 'E-mail', 'Situação', 'Itens', 'Cupom', 'Valor (R$)'],
+        ...orders.map(order => [order.ref, formatMoment(order.created_at), order.email ?? 'Conta excluída', orderStatusLabel(order), order.items.join(', '),
+          order.promotion_code ?? '', order.kind === 'courtesy' ? '0,00' : csvMoney(order.amount_total)]),
+      ])
+      setState({ busy: false })
+    } catch (error) {
+      setState({ busy: false, error: apiMessage(error) })
+    }
+  }
+  return <div className="toolbar-end">
+    <button className="button button-secondary button-small" type="button" disabled={disabled || state.busy} onClick={() => void download()}>
+      <IconDownload aria-hidden="true" size={16} stroke={1.75} />{state.busy ? 'Preparando…' : 'Baixar CSV'}
+    </button>
+    {state.error && <p className="field-error" role="alert">{state.error}</p>}
+  </div>
+}
+

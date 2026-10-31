@@ -3,8 +3,8 @@ import { apiMessage } from './api'
 
 // Ação com motivo (usuários, 2026-10-23): o botão abre no lugar um formulário com o aviso do que acontece, os campos a
 // mais (children), o motivo, que vai para o histórico do admin, e Confirmar/Cancelar.
-export function ReasonAction({ label, short, confirm, intro, danger = false, onConfirm, children, ready = true }: {
-  label: string; short?: string; confirm: string; intro: string; danger?: boolean; ready?: boolean
+export function ReasonAction({ label, short, confirm, intro, danger = false, primary = false, onConfirm, children, ready = true }: {
+  label: string; short?: string; confirm: string; intro: string; danger?: boolean; primary?: boolean; ready?: boolean
   onConfirm: (reason: string) => Promise<unknown>; children?: ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -44,7 +44,9 @@ export function ReasonAction({ label, short, confirm, intro, danger = false, onC
     }
   }
 
-  if (!open) return <button ref={opener} className={`text-button${danger ? ' text-button-danger' : ''}`} type="button" onClick={() => setOpen(true)} aria-label={short ? label : undefined}>{short ?? label}</button>
+  // Fechado, é um botão (revisão de UX, 2026-10-31): o principal da página, cheio; os outros, compactos de contorno; o
+  // perigoso, com o contorno em Erro.
+  if (!open) return <button ref={opener} className={primary ? 'button button-primary' : `button button-small ${danger ? 'button-danger-outline' : 'button-secondary'}`} type="button" onClick={() => setOpen(true)} aria-label={short ? label : undefined}>{short ?? label}</button>
   return <form ref={form} className={`reason-form${danger ? ' reason-form-danger' : ''}`} onSubmit={event => void submit(event)} aria-label={label} noValidate>
     <p>{intro}</p>
     {children}
