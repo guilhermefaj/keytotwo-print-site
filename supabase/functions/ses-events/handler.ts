@@ -1,4 +1,3 @@
-import { X509Certificate } from 'node:crypto'
 import { RpcError, rpcRow } from '../_shared/admin.ts'
 import { env } from '../_shared/env.ts'
 import { HttpError, json, postOnly, readText, toErrorResponse } from '../_shared/http.ts'
@@ -44,12 +43,43 @@ interface EventSummary {
   ignored: number
 }
 
+// Um elemento do DER (tag, comprimento, conteúdo): onde o conteúdo começa e onde o elemento acaba.
+function derItem(der: Uint8Array, at: number): { tag: number; start: number; end: number } {
+  if (at + 2 > der.length) throw new Error('certificado_der')
+  const tag = der[at]
+  let length = der[at + 1]
+  let start = at + 2
+  if (length & 0x80) {
+    const bytes = length & 0x7f
+    if (bytes < 1 || bytes > 4) throw new Error('certificado_der')
+    length = 0
+    for (let i = 0; i < bytes; i++) length = length * 256 + der[start + i]
+    start += bytes
+  }
+  const end = start + length
+  if (end > der.length) throw new Error('certificado_der')
+  return { tag, start, end }
+}
+
+// A chave pública (SubjectPublicKeyInfo) de um certificado X.509 em PEM, só com o DER e sem node:crypto, que o runtime
+// das funções pode não ter: Certificate → tbsCertificate → [versão], série, algoritmo, emissor, validade, titular → chave.
+export function spkiFromPem(pem: string): Uint8Array<ArrayBuffer> {
+  const der = Uint8Array.from(atob(pem.replace(/-----(BEGIN|END) CERTIFICATE-----/g, '').replace(/\s+/g, '')), (c) => c.charCodeAt(0))
+  const cert = derItem(der, 0)
+  const tbs = derItem(der, cert.start)
+  if (cert.tag !== 0x30 || tbs.tag !== 0x30) throw new Error('certificado_der')
+  let at = tbs.start
+  if (der[at] === 0xa0) at = derItem(der, at).end
+  for (let field = 0; field < 5; field++) at = derItem(der, at).end
+  const spki = derItem(der, at)
+  if (spki.tag !== 0x30 || spki.end > tbs.end) throw new Error('certificado_der')
+  return der.slice(at, spki.end)
+}
+
 // Chave pública do certificado do SNS. Os testes trocam fromPem, porque assinam com uma chave gerada na hora.
 export const snsKeys = {
-  fromPem: async (pem: string): Promise<CryptoKey> => {
-    const spki = new X509Certificate(pem).publicKey.export({ type: 'spki', format: 'der' })
-    return await crypto.subtle.importKey('spki', new Uint8Array(spki), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify'])
-  },
+  fromPem: async (pem: string): Promise<CryptoKey> =>
+    await crypto.subtle.importKey('spki', spkiFromPem(pem), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']),
 }
 
 // Um certificado por endereço, em memória enquanto a função vive; falhou, a próxima mensagem baixa de novo.

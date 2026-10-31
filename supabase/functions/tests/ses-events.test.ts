@@ -3,7 +3,48 @@
 // simulado vira essa chave. A leitura do certificado de verdade vale na confirmação da inscrição em produção.
 import { assert, assertEquals } from '@std/assert'
 import { captureErrors, contractTest, onRpc, onSns, row, rpcCalls, SES_TOPIC_ARN, snsCalls } from './contract-helpers.ts'
-import { handleSesEvents, snsKeys } from '../ses-events/handler.ts'
+import { X509Certificate } from 'node:crypto'
+import { handleSesEvents, snsKeys, spkiFromPem } from '../ses-events/handler.ts'
+
+// Certificado autoassinado de teste (só a parte pública, RSA 2048, com a versão v3 explícita, como os do SNS).
+const TEST_CERT = `-----BEGIN CERTIFICATE-----
+MIIDLTCCAhWgAwIBAgIUIzPRroNUgkKHMsZPewKK6WSJ25UwDQYJKoZIhvcNAQEL
+BQAwJjEkMCIGA1UEAwwbc25zLnVzLWVhc3QtMi5hbWF6b25hd3MuY29tMB4XDTI2
+MTAzMTE2NTIxOFoXDTM2MTAyODE2NTIxOFowJjEkMCIGA1UEAwwbc25zLnVzLWVh
+c3QtMi5hbWF6b25hd3MuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC
+AQEAi257ZGcrO04QsjkkVxhl2eplrjRCON0ycoxGH6SEXOJSQ1FqRQYUT78wBLtw
+BzriXQ2ExKOG240V4AaH4HIvWTBeAzbREW2X3h5uEG55YLrcULePmOBOoANpSSWL
+J67UGbzyRwSmghTtvc6v9+PGx/5i8z3Y22/8ATSMd8AY3mHvsieI9AaYhTXai2l/
+jQ0fGPFNbJkXwCQOoT67eEnnmtZi5Roh5LOLsVDdZwY/Ba7d3pAi7rLqjVxQClFJ
+roh4CCyBqQnz+hZuPxrhb4pWOqq/10jiahQS0ilacwMFxQLkmt27/PkODEHlVhC0
+R74V4rn+UaiPsYdoaezmGfLMhwIDAQABo1MwUTAdBgNVHQ4EFgQUfZAzjWq3BXzV
+SL/5Y9y6LTw+dbowHwYDVR0jBBgwFoAUfZAzjWq3BXzVSL/5Y9y6LTw+dbowDwYD
+VR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAKskfbPp9laIZRo6/ijm0
+ck2W5qNCUtxIyPhX2FYq4FZAs1ro0duORxUW0cBVvCJRwcR49TbBJsgsqjz5nxHU
+tFtgPyKtMrUlPNLVHuYXcmXPzDoCsVCjtDvrOgBMjWmWpGpyLQ4q2SzStmkXfoi+
+P9W5ceiNwTX0wdiiFhe+AFGUA1wxjrC/SHuPLmEvYPaDqqthedOF5GamCoeI3XWZ
+vCrlDHuMgMKugzgL4LV2i+t1xt/4rkDNhtKA7IGlH8RscBnoMVYsnbYwEz0E7A1S
+178wYR4wPBKv4e92X+UmWbzIVV9r0bVlleHInYFJGt3liZMhJKb7mi0d0ydIeryu
+6A==
+-----END CERTIFICATE-----`
+
+// A função lê a chave do certificado sem node:crypto; aqui o node:crypto (do Deno dos testes) confere o resultado.
+const realFromPem = snsKeys.fromPem
+
+contractTest('ses-events: a chave pública sai do certificado igual à do node:crypto e vira chave de verificação', async () => {
+  assertEquals(spkiFromPem(TEST_CERT), new Uint8Array(new X509Certificate(TEST_CERT).publicKey.export({ type: 'spki', format: 'der' })))
+  const key = await realFromPem(TEST_CERT)
+  assertEquals([key.type, key.algorithm.name, key.usages], ['public', 'RSASSA-PKCS1-v1_5', ['verify']])
+  for (const bad of ['', '-----BEGIN CERTIFICATE-----\nMAA=\n-----END CERTIFICATE-----', TEST_CERT.replace('MIIDLTCC', 'MIIDLTCD')]) {
+    let failed = false
+    try {
+      spkiFromPem(bad)
+    } catch {
+      failed = true
+    }
+    assert(failed, `deveria recusar: ${bad.slice(0, 40)}`)
+  }
+})
 
 const pair = await crypto.subtle.generateKey(
   { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
