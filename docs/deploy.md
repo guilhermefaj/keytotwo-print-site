@@ -140,6 +140,16 @@ App à parte (`admin/`), com imagem e contêiner próprios: mudar o admin não r
 - **Segundo fator:** na primeira entrada o admin cadastra o app autenticador. Perdeu o app: apague o fator em *Authentication > Users > a conta > MFA factors*; na próxima entrada o admin pede um cadastro novo.
 - **Local:** `npm run dev:admin` (porta 5179, com o `.env.local` da raiz). A 5179 precisa estar no `ALLOWED_ORIGINS` das funções locais.
 
+## E-mail: Plunk e Amazon SES (email.keytotwo.com.br)
+
+Desde 2026-10-31 o Plunk (código aberto, versão fixa no compose) roda na VPS e envia pelo Amazon SES. Ele vai substituir a Brevo; até a troca, os e-mails do site continuam saindo pela Brevo.
+
+- **Na VPS:** `/opt/keytotwo-site/plunk/compose.yaml` (cópia de `deploy/plunk/compose.yaml`) e o `.env` ao lado (600): `DB_PASSWORD`, `JWT_SECRET`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` (aleatórios, gerados na VPS), `AWS_SES_REGION`, `AWS_SES_ACCESS_KEY_ID`, `AWS_SES_SECRET_ACCESS_KEY` (as mesmas do arquivo de segredos) e `DISABLE_SIGNUPS=true`. Subir ou aplicar mudança: `docker compose --project-directory /opt/keytotwo-site/plunk up -d --wait`. Atualizar o Plunk: trocar a versão da imagem no compose depois de ler as notas da versão.
+- **Endereços** (DNS A para a VPS, só DNS): `email.` é o painel e as páginas de descadastro; `api.email.` é a API (o site e a AWS chamam); `arquivos.email.` serve só GET/HEAD em `/uploads/` (imagens dos e-mails, no MinIO). Nenhuma porta publicada: tudo passa pelo Traefik. O `POST /auth/login` tem limite de 10 pedidos por minuto por IP.
+- **Contas:** o cadastro fica fechado. Para mais alguém: `DISABLE_SIGNUPS=false` no `.env`, `up -d`, a pessoa se cadastra, volta para `true` e `up -d` de novo.
+- **AWS (projeto da AWS em us-east-2):** identidade `keytotwo.com.br` com DKIM (3 CNAME `<token>._domainkey`) e MAIL FROM `plunk.keytotwo.com.br` (MX `feedback-smtp.us-east-2.amazonses.com` e TXT `v=spf1 include:amazonses.com ~all`); conta fora do sandbox. Configuration sets `plunk-tracking` e `plunk-no-tracking`, que publicam os eventos no tópico SNS `plunk-ses-events` (só o SES publica, assinatura v2), inscrito em `https://api.email.keytotwo.com.br/webhooks/sns`. O usuário IAM `plunk-ses` (política `plunk-ses-send`) só envia como `keytotwo.com.br` e só saindo do IP da VPS: se a VPS mudar de IP, atualize o `aws:SourceIp` da política antes.
+- **Chave da AWS:** trocar a cada 90 dias (criar a nova no IAM, pôr no `.env` da VPS e no arquivo de segredos, `up -d`, conferir um envio e só então apagar a antiga).
+
 ## Backup do banco
 
 O plano grátis do Supabase não guarda backup. Desde 2026-10-24 (decisões do responsável) a VPS tira uma cópia por noite:
@@ -149,6 +159,7 @@ O plano grátis do Supabase não guarda backup. Desde 2026-10-24 (decisões do r
 - **`/opt/keytotwo-site/backup/backup.env`** (600, só do `deploy`; formato do `docker --env-file`, sem aspas): `BACKUP_DB_URL` (sem a senha), `BACKUP_DB_PASSWORD` (vai como `PGPASSWORD`, fora da lista de processos; a URL com a senha ainda funciona), `BACKUP_AGE_RECIPIENT` (a chave pública `age1…`), `B2_BACKUP_ENDPOINT`, `B2_BACKUP_REGION`, `B2_BACKUP_BUCKET`, `B2_BACKUP_KEY_ID` e `B2_BACKUP_APPLICATION_KEY`.
 - **Bucket:** privado, só para o backup, com a criptografia da B2 ligada e duas regras de validade: `diario/` some 30 dias depois do envio, `mensal/` em 365. A chave da VPS é restrita a esse bucket e só escreve: quem entrar na VPS não lê nem apaga as cópias.
 - **A chave secreta do `age`** fica só com o responsável (no arquivo de segredos e no gerenciador de senhas). Sem ela, nenhuma cópia abre.
+- **Plunk (desde 2026-10-31):** o mesmo `backup.sh`, numa etapa à parte depois da do Supabase (falhar uma não impede a outra), tira `pg_dump -Fc` do Postgres do Plunk, confere que a tabela `emails` veio, fecha com a mesma chave `age` e envia para `diario/plunk-<data>.dump.age` (no dia 1, também `mensal/`). A falha sai no `backup.log`, mas não abre o alerta do admin.
 - **Fica de fora** (já tem cópia em outro lugar): os PDFs dos jogos e as imagens do blog (B2, com os originais no Drive), o código (GitHub) e os segredos (arquivo de segredos). Desde 2026-10-25 também ficam de fora as sessões, os tokens e o app autenticador dos admins (`auth.mfa_factors`): depois de restaurar, cada pessoa entra de novo e cada admin cadastra o app outra vez na primeira entrada.
 
 **Recuperar** (num projeto Supabase novo; o mesmo vale para o ensaio, num banco descartável):
@@ -162,6 +173,8 @@ O plano grátis do Supabase não guarda backup. Desde 2026-10-24 (decisões do r
 - as RPCs voltavam abertas para `anon` (o projeto novo dá tudo em `public` por padrão e o `pg_dump` não tira): o `schema.sql` desliga esse padrão antes e o religa no fim;
 - os gatilhos da loja em `auth.users` (perfil e confirmação do e-mail) não vinham: entram no fim do `schema.sql`;
 - o Storage do Supabase (vazio; a loja usa a B2) e a permissão interna `ON PARAMETER` da plataforma travavam a restauração: saem da cópia.
+
+**Recuperar o Plunk:** abra a cópia (`age -d -i <chave-secreta> plunk-<data>.dump.age > plunk.dump`), pare o serviço `plunk` do compose e, com o `postgres` no ar, `docker compose exec -T postgres pg_restore -U plunk -d plunk --clean --if-exists --no-owner < plunk.dump`; depois `up -d`. Numa VPS nova, suba o compose com um `.env` novo antes (a senha do banco pode ser outra; o `JWT_SECRET` novo só desloga quem estava no painel). Ensaio de 2026-10-31: restaurado num `postgres:16-alpine` descartável, contagens iguais às do banco.
 
 Repetir o ensaio a cada 3 meses, ou depois de mudar o `backup.sh`. Precisa do Docker Desktop; no Windows, as portas 54275 a 54474 podem estar reservadas (`netsh int ipv4 show excludedportrange protocol=tcp`): troque as do `config.toml` da pasta do ensaio.
 

@@ -7,6 +7,8 @@
 # logins (auth.users e auth.identities); sessões, tokens e o app autenticador dos admins ficam de fora, como o backup_ro.
 # A senha vai em BACKUP_DB_PASSWORD (PGPASSWORD), fora da URL: assim não aparece na lista de processos.
 # No fim, registra a cópia no banco: o alerta "backup atrasado" do admin confere esse registro.
+# Desde 2026-10-31 copia também o banco do Plunk (e-mail, num contêiner desta VPS), numa etapa à parte: falhar uma
+# não impede a outra, e as duas falhas saem no log. A do Plunk não entra no alerta do admin.
 # Fica em /opt/keytotwo-site/backup/backup.sh (o deploy da produção copia a versão do repositório), com o backup.env
 # (600, só do deploy) ao lado. Cron do deploy, 03:30 em Brasília:
 #   30 6 * * * sh /opt/keytotwo-site/backup/backup.sh >> /opt/keytotwo-site/backup/backup.log 2>&1
@@ -137,5 +139,44 @@ echo "diario/$stamp.tar.gz.age ($bytes bytes)"
 CONTEINER
 }
 
-result=$(main) || { echo "$(date -Is) backup falhou" >&2; exit 1; }
-echo "$(date -Is) backup: $result"
+# O banco do Plunk (Postgres 16 em /opt/keytotwo-site/plunk) sai no formato do pg_restore, fechado com a mesma chave
+# age e enviado ao mesmo bucket, nas mesmas pastas (a validade da B2 é por prefixo), com o nome começando por plunk-.
+# O arquivo aberto fica no disco só até o envio, com permissão só do deploy. Aqui o set -e não vale (a função roda
+# dentro do if, como a main), por isso cada passo confere o próprio resultado.
+plunk() {
+  base=/opt/keytotwo-site/backup
+  dir=/opt/keytotwo-site/plunk
+  [ -f "$dir/compose.yaml" ] || return 0
+  exec 9>"$base/.backup.lock"
+  flock -n 9 || { echo "$(date -Is) a cópia anterior ainda está rodando" >&2; return 1; }
+  dump=$(umask 077 && mktemp "$base/plunk.XXXXXX") || return 1
+  stamp=$(date -u +%Y-%m-%dT%H%MZ)
+  ok=0
+  if docker compose --project-directory "$dir" exec -T postgres pg_dump -U plunk -d plunk -Fc --no-owner --no-privileges > "$dump" \
+    && docker compose --project-directory "$dir" exec -T postgres pg_restore -l < "$dump" | grep -qE 'TABLE DATA public emails( |$)' \
+    && docker run --rm -i --env-file "$base/backup.env" -e STAMP="$stamp" postgres:17-alpine sh -c '
+set -eu
+apk add --quiet --no-cache age curl >/dev/null
+cd "$(mktemp -d)"
+age -r "$BACKUP_AGE_RECIPIENT" > copia.dump.age
+put() {
+  printf "user = \"%s:%s\"\n" "$B2_BACKUP_KEY_ID" "$B2_BACKUP_APPLICATION_KEY" | curl -fsS --retry 3 --config - \
+    --aws-sigv4 "aws:amz:$B2_BACKUP_REGION:s3" -H "x-amz-content-sha256: $(sha256sum copia.dump.age | cut -d" " -f1)" \
+    -T copia.dump.age "https://$B2_BACKUP_ENDPOINT/$B2_BACKUP_BUCKET/$1"
+}
+put "diario/plunk-$STAMP.dump.age"
+if [ "$(date -u +%d)" = 01 ]; then put "mensal/plunk-$STAMP.dump.age"; fi
+echo "diario/plunk-$STAMP.dump.age ($(wc -c < copia.dump.age) bytes)"
+' < "$dump"; then ok=1; fi
+  rm -f "$dump"
+  [ "$ok" = 1 ]
+}
+
+status=0
+if result=$(main); then echo "$(date -Is) backup: $result"; else echo "$(date -Is) backup falhou" >&2; status=1; fi
+if result=$(plunk); then
+  [ -z "$result" ] || echo "$(date -Is) backup do Plunk: $result"
+else
+  echo "$(date -Is) backup do Plunk falhou" >&2; status=1
+fi
+exit "$status"
