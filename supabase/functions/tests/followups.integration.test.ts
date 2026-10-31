@@ -14,7 +14,8 @@ import { signUnsubscribeToken } from '../_shared/tokens.ts'
 
 const DB_CONTAINER = 'supabase_db_keytotwo-print-site'
 const FUNCTIONS_URL = `${Deno.env.get('API_URL') || 'http://127.0.0.1:54321'}/functions/v1`
-const REMINDER = 'Esqueceram algo na sacola'
+// Assunto do lembrete desde 2026-10-31: "<item> ficou na sacola" com um item. A busca do Mailpit é por trecho.
+const REMINDER = 'ficou na sacola'
 const POST_PURCHASE = 'Já rolou a primeira partida?'
 
 if (enabled) {
@@ -100,7 +101,7 @@ Deno.test({
         assertMatch(first[0].dedupe, new RegExp(`^cart_reminder:${b.id}:\\d+$`))
         assertEquals((await dispatchOne(first[0].id)).sent, 1)
         const mail = await lastMail(b.email, started)
-        assertEquals(mail.subject, REMINDER)
+        assert(mail.subject.endsWith(` ${REMINDER}`), mail.subject)
         const headers = await mailHeaders(b.email, REMINDER)
         assertMatch(headers['List-Unsubscribe'][0], /^<http:\/\/127\.0\.0\.1:54321\/functions\/v1\/api\/email\/unsubscribe\?token=/)
         assertEquals(headers['List-Unsubscribe-Post'][0], 'List-Unsubscribe=One-Click')
@@ -205,7 +206,8 @@ Deno.test({
         await sql('select private.dispatch_tick()')
         for (let i = 0; i < 40 && (await outbox(b.id))[0].status !== 'sent'; i++) await sleep(500)
         assertEquals((await outbox(b.id)).find((r) => r.id === row.id)!.status, 'sent')
-        assertEquals((await lastMail(b.email, started)).subject, REMINDER)
+        const scheduled = (await lastMail(b.email, started)).subject
+        assert(scheduled.endsWith(` ${REMINDER}`), scheduled)
       })
     } finally {
       if (scheduled) await sql(`select cron.schedule('email-dispatch-tick', '*/5 * * * *', 'select private.dispatch_tick()')`)
