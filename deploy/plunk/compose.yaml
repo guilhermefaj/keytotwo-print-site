@@ -1,0 +1,202 @@
+# Plunk (e-mail da KeyToTwo) na VPS, atrás do mesmo Traefik do site (rede host, provider docker, rotas só por
+# etiquetas). Parte do docker-compose.yml do Plunk 0.17.0, mas sem nenhuma porta publicada: o painel
+# (email.keytotwo.com.br) e a API (api.email.keytotwo.com.br) entram pelo nginx de dentro do contêiner, que separa
+# pelo Host; o MinIO só serve leitura das imagens dos e-mails (arquivos.email.keytotwo.com.br/uploads/...).
+# O envio sai pelo Amazon SES em us-east-2 (usuário IAM plunk-ses, que só funciona saindo do IP desta VPS).
+# Uso, em /opt/keytotwo-site/plunk: docker compose up -d --wait. O .env ao lado (chmod 600) guarda senhas e a
+# chave do SES. Para atualizar o Plunk, troque a versão da imagem abaixo depois de ler as notas da versão.
+name: plunk
+
+x-logs: &logs
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: plunk
+      POSTGRES_USER: plunk
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plunk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 512m
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - plunk
+    <<: *logs
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 256m
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - plunk
+    <<: *logs
+
+  # Imagens que entram nos e-mails. O console do MinIO não sai do contêiner; pela internet, só GET/HEAD em /uploads/.
+  minio:
+    image: pgsty/minio:RELEASE.2026-08-04T00-00-00Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?defina MINIO_ROOT_USER no .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?defina MINIO_ROOT_PASSWORD no .env}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    mem_limit: 512m
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - plunk
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.plunk-arquivos.rule: Host(`arquivos.email.keytotwo.com.br`) && PathPrefix(`/uploads/`) && (Method(`GET`) || Method(`HEAD`))
+      traefik.http.routers.plunk-arquivos.entrypoints: websecure
+      traefik.http.routers.plunk-arquivos.tls.certresolver: letsencrypt
+      traefik.http.routers.plunk-arquivos.middlewares: plunk-hsts
+      traefik.http.routers.plunk-arquivos.service: plunk-arquivos
+      traefik.http.services.plunk-arquivos.loadbalancer.server.port: "9000"
+    <<: *logs
+
+  # Avisos internos do Plunk (ex.: projeto suspenso). Fica só na rede interna.
+  ntfy:
+    image: binwiederhier/ntfy:v2.35.0
+    restart: unless-stopped
+    command: serve
+    environment:
+      TZ: UTC
+    volumes:
+      - ntfy_cache:/var/cache/ntfy
+      - ntfy_etc:/etc/ntfy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --tries=1 http://localhost:80/v1/health -O - | grep -Eo '\"healthy\"\\s*:\\s*true' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    mem_limit: 128m
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - plunk
+    <<: *logs
+
+  plunk:
+    image: ghcr.io/useplunk/plunk:0.17.0
+    restart: unless-stopped
+    environment:
+      SERVICE: all
+      NODE_ENV: production
+      DATABASE_URL: postgresql://plunk:${DB_PASSWORD}@postgres:5432/plunk
+      DIRECT_DATABASE_URL: postgresql://plunk:${DB_PASSWORD}@postgres:5432/plunk
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env}
+      NGINX_PORT: 80
+      # O nginx do contêiner separa pelo Host. Landing e documentação não têm rota no Traefik.
+      API_DOMAIN: api.email.keytotwo.com.br
+      DASHBOARD_DOMAIN: email.keytotwo.com.br
+      LANDING_DOMAIN: www.localhost
+      WIKI_DOMAIN: docs.localhost
+      USE_HTTPS: "true"
+      # Quem abre a raiz da API vai para o site, não para a landing do Plunk (que não está publicada).
+      LANDING_URI: https://keytotwo.com.br
+      AWS_SES_REGION: ${AWS_SES_REGION:?defina AWS_SES_REGION no .env}
+      AWS_SES_ACCESS_KEY_ID: ${AWS_SES_ACCESS_KEY_ID:?defina AWS_SES_ACCESS_KEY_ID no .env}
+      AWS_SES_SECRET_ACCESS_KEY: ${AWS_SES_SECRET_ACCESS_KEY:?defina AWS_SES_SECRET_ACCESS_KEY no .env}
+      SES_CONFIGURATION_SET: plunk-tracking
+      SES_CONFIGURATION_SET_NO_TRACKING: plunk-no-tracking
+      MAIL_FROM_SUBDOMAIN: plunk
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      S3_ACCESS_KEY_SECRET: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: uploads
+      S3_PUBLIC_URL: https://arquivos.email.keytotwo.com.br/uploads
+      S3_FORCE_PATH_STYLE: "true"
+      NTFY_URL: http://ntfy/plunk-notifications
+      # Um projeto só, de quem administra: o Plunk não suspende sozinho por taxa de bounce/reclamação.
+      AUTO_PROJECT_DISABLE: "false"
+      # false só até a primeira conta ser criada; depois true, e ninguém mais se cadastra.
+      DISABLE_SIGNUPS: ${DISABLE_SIGNUPS:-true}
+    volumes:
+      - plunk_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      ntfy:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    mem_limit: 2g
+    networks:
+      - plunk
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.plunk-painel.rule: Host(`email.keytotwo.com.br`)
+      traefik.http.routers.plunk-painel.entrypoints: websecure
+      traefik.http.routers.plunk-painel.tls.certresolver: letsencrypt
+      traefik.http.routers.plunk-painel.middlewares: plunk-hsts
+      traefik.http.routers.plunk-painel.service: plunk
+      # Roteador próprio para a API: cada nome tem o seu certificado, e um não trava o outro se o DNS demorar.
+      traefik.http.routers.plunk-api.rule: Host(`api.email.keytotwo.com.br`)
+      traefik.http.routers.plunk-api.entrypoints: websecure
+      traefik.http.routers.plunk-api.tls.certresolver: letsencrypt
+      traefik.http.routers.plunk-api.middlewares: plunk-hsts
+      traefik.http.routers.plunk-api.service: plunk
+      # O login tem limite por IP, contra quem tenta adivinhar senha: 10 pedidos por minuto (o navegador manda dois por
+      # tentativa, o OPTIONS e o POST). O resto da API fica livre para o site e para a AWS. A regra mais longa ganha.
+      traefik.http.routers.plunk-login.rule: Host(`api.email.keytotwo.com.br`) && Path(`/auth/login`)
+      traefik.http.routers.plunk-login.entrypoints: websecure
+      traefik.http.routers.plunk-login.tls.certresolver: letsencrypt
+      traefik.http.routers.plunk-login.middlewares: plunk-login-limite,plunk-hsts
+      traefik.http.routers.plunk-login.service: plunk
+      traefik.http.middlewares.plunk-login-limite.ratelimit.average: "10"
+      traefik.http.middlewares.plunk-login-limite.ratelimit.period: 1m
+      traefik.http.middlewares.plunk-login-limite.ratelimit.burst: "10"
+      traefik.http.middlewares.plunk-hsts.headers.stsSeconds: "31536000"
+      traefik.http.services.plunk.loadbalancer.server.port: "80"
+    <<: *logs
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  plunk_data:
+  ntfy_cache:
+  ntfy_etc:
+
+networks:
+  plunk:
