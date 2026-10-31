@@ -35,18 +35,29 @@ function plunkMode(fn: () => Promise<void>) {
   }
 }
 
-contractTest('contatos: a primeira inscrição vai pelo evento "inscricao" (as boas-vindas) e fica registrada', plunkMode(async () => {
+contractTest('contatos: a primeira inscrição inscreve o contato e manda o evento "inscricao" (as boas-vindas) com o id dele', plunkMode(async () => {
   contactsRpc([{ ...CONTACT, welcome: true }])
-  onExternal(() => ok({ success: true }))
+  onExternal((call) => ok(call.url.endsWith('/contacts') ? { id: 'c-1', email: 'casal@example.com' } : { id: 'ev-1' }))
   const summary = await dispatch()
   assertEquals(summary.contacts, { claimed: 1, synced: 1, failed: 0 })
   assertEquals(rpcCalls[0].fn, 'claim_email_batch')
   assertEquals(rpcCalls.find((c) => c.fn === 'claim_marketing_contacts')?.args, { p_limit: 20 })
-  assertEquals(externalCalls.length, 1)
-  const call = externalCalls[0]
-  assertEquals([call.url, call.method, call.headers.get('Authorization')], [`${PLUNK_URL}/v1/track`, 'POST', 'Bearer sk_teste_ficticia'])
-  assertEquals(call.body, { event: 'inscricao', email: 'casal@example.com', subscribed: true, data: DATA })
+  // Tudo com a chave secreta: o /v1/track do Plunk só aceita a pública.
+  assertEquals(externalCalls.map((c) => [c.url, c.method, c.headers.get('Authorization'), c.body]), [
+    [`${PLUNK_URL}/contacts`, 'POST', 'Bearer sk_teste_ficticia', { email: 'casal@example.com', data: DATA, subscribed: true }],
+    [`${PLUNK_URL}/events/track`, 'POST', 'Bearer sk_teste_ficticia', { name: 'inscricao', contactId: 'c-1' }],
+  ])
   assertEquals(marks(), [{ p_user_id: USER, p_email: 'casal@example.com', p_subscribed: true, p_welcomed: true }])
+
+  // Sem o id na resposta, ou com o evento recusado, fica para a próxima rodada (as boas-vindas não contam como enviadas).
+  contactsRpc([{ ...CONTACT, welcome: true }])
+  onExternal(() => ok({ success: true }))
+  await captureErrors(dispatch)
+  assertEquals([externalCalls.length, marks()[0].p_error], [1, 'plunk_contato_sem_id'])
+  contactsRpc([{ ...CONTACT, welcome: true }])
+  onExternal((call) => (call.url.endsWith('/contacts') ? ok({ id: 'c-1' }) : { status: 401, body: {} }))
+  await captureErrors(dispatch)
+  assertEquals(marks()[0].p_error, 'plunk_events_track_http_401')
 }))
 
 contractTest('contatos: atualização manda a inscrição só quando o banco pede (respeita a pausa feita no Plunk)', plunkMode(async () => {
