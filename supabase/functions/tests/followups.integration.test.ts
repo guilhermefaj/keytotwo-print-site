@@ -206,8 +206,8 @@ Deno.test({
         await sql('select private.dispatch_tick()')
         for (let i = 0; i < 40 && (await outbox(b.id))[0].status !== 'sent'; i++) await sleep(500)
         assertEquals((await outbox(b.id)).find((r) => r.id === row.id)!.status, 'sent')
-        const scheduled = (await lastMail(b.email, started)).subject
-        assert(scheduled.endsWith(` ${REMINDER}`), scheduled)
+        const reminder = (await lastMail(b.email, started)).subject
+        assert(reminder.endsWith(` ${REMINDER}`), reminder)
       })
     } finally {
       if (scheduled) await sql(`select cron.schedule('email-dispatch-tick', '*/5 * * * *', 'select private.dispatch_tick()')`)
