@@ -1,12 +1,21 @@
 # Configurar o login no Supabase — passo a passo do responsável
 
-Projeto: `keytotwo-print-db` (ref `oqizkhjosplnedddaakb`, sa-east-1), o backend de produção desde 2026-10-16 (o teste e o dev local usam o mesmo). Este guia cobre o que só o painel faz: SMTP da Brevo, login com Google, URLs de retorno e templates. No local, tudo isso já vem do `supabase/config.toml`.
+Projeto: `keytotwo-print-db` (ref `oqizkhjosplnedddaakb`, sa-east-1), o backend de produção desde 2026-10-16 (o teste e o dev local usam o mesmo). Este guia cobre o que só o painel faz: SMTP (Amazon SES desde 2026-10-31; antes, Brevo), login com Google, URLs de retorno e templates. No local, tudo isso já vem do `supabase/config.toml`.
 
 **Segredos:** os valores ficam só em `D:/Maestri/keytotwo-print-site-secrets/.env`, fora do repositório. Este guia cita apenas os nomes das variáveis. Nunca cole valores em arquivos do repositório, em issues ou no chat.
 
 Os nomes de menu do Supabase, da Brevo e do Google mudam com frequência. Se um item não estiver no lugar indicado, procure pelo nome do campo.
 
-## 1. Brevo (e-mail)
+## 1. E-mail: Amazon SES (desde 2026-10-31)
+
+Os e-mails do Auth (código de acesso, confirmação e nova senha) saem pelo SMTP do Amazon SES, a mesma conta e o mesmo domínio que o Plunk usa (`docs/deploy.md`, seção do Plunk):
+
+1. **Usuário só para o SMTP:** no IAM, `service/supabase-auth-smtp`, com a política `service/supabase-auth-smtp-send`: só `ses:SendRawEmail`, só da identidade `keytotwo.com.br` (e do conjunto `plunk-no-tracking`), só com o remetente `contato@keytotwo.com.br` e só em us-east-2. Sem trava de IP: o Auth do Supabase não tem IP fixo.
+2. **Credenciais:** o usuário SMTP é o id da chave de acesso e a senha é derivada da chave secreta (algoritmo da AWS, "Obtaining Amazon SES SMTP credentials"). Ficam no arquivo de segredos como `SES_SMTP_HOST` (`email-smtp.us-east-2.amazonaws.com`), `SES_SMTP_PORT` (587), `SES_SMTP_USERNAME` e `SES_SMTP_PASSWORD`. A chave secreta original não é guardada.
+3. **Avisos de bounce e reclamação:** a identidade tem `plunk-no-tracking` como conjunto padrão (sem rastreio de abertura e clique). Os avisos vão ao tópico SNS e viram supressão no banco pela `ses-events`. O Plunk informa o conjunto dele em cada envio, que tem prioridade sobre o padrão.
+4. **Trocar a chave a cada 90 dias:** crie a nova no IAM, derive a senha, troque no Supabase (passo 2.1), peça um código de acesso para conferir e só então apague a antiga.
+
+### Antes de 2026-10-31: Brevo
 
 1. **Domínio do remetente.** Em Brevo > *Senders, Domains & Dedicated IPs* > *Domains*, adicione o domínio do e-mail que vai em `EMAIL_FROM` e publique no DNS os registros indicados (SPF, DKIM e DMARC). Espere a Brevo marcar o domínio como autenticado. Sem isso, os códigos caem no spam.
 2. **Remetente.** Cadastre `EMAIL_FROM` como remetente, com o nome de `EMAIL_FROM_NAME`.
@@ -22,12 +31,12 @@ No painel do projeto `keytotwo-print-db`:
 
    | Campo | Valor |
    | --- | --- |
-   | Sender email | `EMAIL_FROM` |
-   | Sender name | `EMAIL_FROM_NAME` |
-   | Host | `BREVO_SMTP_HOST` |
-   | Port | `BREVO_SMTP_PORT` |
-   | Username | `BREVO_SMTP_LOGIN` |
-   | Password | `BREVO_SMTP_KEY` |
+   | Sender email | `contato@keytotwo.com.br` |
+   | Sender name | `KeyToTwo` |
+   | Host | `SES_SMTP_HOST` |
+   | Port | `SES_SMTP_PORT` |
+   | Username | `SES_SMTP_USERNAME` |
+   | Password | `SES_SMTP_PASSWORD` |
    | Minimum interval between emails | 60 segundos |
 
 2. **Authentication > Sign In / Providers > Email**, os mesmos valores do local:
