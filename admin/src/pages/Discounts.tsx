@@ -1,7 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
 import { Link, NavLink } from 'react-router'
 import { api, useResource } from '../api'
 import { parseReais } from '../catalog'
+import { CopyButton } from '../CopyButton'
 import { Section } from '../Detail'
 import { commissionLabel, discountState, discountWindow, endOfDay, partnerLink, percent, startOfDay, type Discount, type DiscountList, type PartnerFields, type PartnerRow } from '../discounts'
 import { count, money } from '../format'
@@ -68,8 +69,13 @@ export function DiscountRow({ discount, onDone }: { discount: Discount; onDone?:
     api(`/admin/discounts/${discount.id}/state`, { method: 'POST', body: { state: next, reason } }).then(() => onDone?.(text))
   return <li className="plain-row">
     <div className="plain-row-main">
-      <strong>{discount.code}</strong>
+      <span className="title-with-copy"><strong>{discount.code}</strong><CopyButton value={discount.code} label="Copiar o cupom" /></span>
       <span className="plain-row-sub">{discountRules(discount)}</span>
+      {/* Cupom com limite (revisão de UX, 2026-10-31): quantos usos já foram, numa barra. */}
+      {discount.max_redemptions !== null && discount.max_redemptions > 0 && <span className="uses-meter" style={{ '--bar': `${Math.min(100, Math.round(discount.stats.orders / discount.max_redemptions * 100))}%` } as CSSProperties}>
+        <span>{count(discount.stats.orders)} de {count(discount.max_redemptions)} usos{discount.stats.orders >= discount.max_redemptions ? ': esgotado' : ''}</span>
+        <span className="uses-bar" aria-hidden="true" />
+      </span>}
       <span className="plain-row-sub">
         {count(discount.stats.orders)} {discount.stats.orders === 1 ? 'venda' : 'vendas'} · {money(discount.stats.revenue, 'brl')} cobrados · {money(discount.stats.discount, 'brl')} de desconto
         {discount.campaign && ` · ${discount.campaign}`}
@@ -114,7 +120,7 @@ function NewDiscount({ list, onDone }: { list: DiscountList; onDone: (text: stri
     && (!endsOn || !startsOn || endsOn >= startsOn) && (!banner.trim() || banner.includes('{cupom}'))
   const sellable = list.products.filter(item => item.stripe_product)
   const toggle = (value: string, on: boolean) => setProducts(current => on ? [...current, value] : current.filter(item => item !== value))
-  return <ReasonAction label="Novo cupom" confirm="Criar o cupom" ready={valid}
+  return <ReasonAction label="Novo cupom" confirm="Criar o cupom" ready={valid} primary
     intro="Cria o cupom na Stripe. Ele vale no pagamento a partir do início (ou na hora, sem início)."
     onConfirm={reason => api<{ state: string }>('/admin/discounts', { method: 'POST', body: {
       code: cleanCode, percent_off: percentValue, product_codes: products.length ? products : null,
@@ -190,7 +196,7 @@ export function PartnerForm({ partner, onDone }: { partner?: PartnerFields & { i
   const [notes, setNotes] = useState(partner?.notes ?? '')
   const commissionValue = Number(commission.replace(',', '.'))
   const valid = name.trim().length >= 2 && (partner || /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) && commission.trim() !== '' && commissionValue >= 0 && commissionValue <= 100
-  return <ReasonAction label={partner ? 'Editar o parceiro' : 'Novo parceiro'} confirm={partner ? 'Salvar' : 'Cadastrar'} ready={valid}
+  return <ReasonAction label={partner ? 'Editar o parceiro' : 'Novo parceiro'} confirm={partner ? 'Salvar' : 'Cadastrar'} ready={valid} primary={!partner}
     intro={partner ? 'Muda o cadastro. A comissão nova vale para os meses ainda não pagos.' : 'Cadastra o parceiro e o link dele. O cupom com desconto se cria em Cupons, escolhendo o parceiro.'}
     onConfirm={reason => api(partner ? `/admin/partners/${partner.id}` : '/admin/partners', { method: 'POST', body: {
       slug, name: name.trim(), handle: handle.trim() || null, contact: contact.trim() || null, commission_percent: commissionValue,

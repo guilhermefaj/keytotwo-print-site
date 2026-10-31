@@ -57,7 +57,10 @@ test('atenção: o número na barra lateral e o aviso nas Métricas levam à lis
   await page.goto('/')
   const nav = page.getByRole('navigation', { name: 'Seções do admin' })
   await expect(nav.getByRole('link', { name: 'Atenção 2 abertos' })).toBeVisible()
-  await page.getByRole('link', { name: '2 alertas precisam de atenção' }).click()
+  // Nas Métricas, os abertos em destaque, com o título de cada um (revisão de UX, 2026-10-31).
+  const callout = page.getByRole('region', { name: '2 alertas precisam de atenção' })
+  await expect(callout.getByRole('listitem')).toHaveCount(2)
+  await callout.getByRole('link', { name: 'Ver em Atenção' }).click()
   await expect(page).toHaveURL(/\/atencao$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Atenção' })).toBeVisible()
   await expect(nav.getByRole('link', { name: /^Atenção/ })).toHaveAttribute('aria-current', 'page')

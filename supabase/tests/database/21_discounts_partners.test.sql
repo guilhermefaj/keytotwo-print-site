@@ -206,5 +206,15 @@ select pg_temp.assert('ficha do pedido: a origem com o parceiro, por onde e a ca
   (select r.result->'origin' @> '{"partner": {"slug": "ana-souza"}, "source": "code"}'::jsonb from public.admin_get_order(pg_temp.uid('dadm'), pg_temp.oid('codigo')) r)
   and (select r.result->'origin' @> '{"partner": {"slug": "ana-souza"}, "source": "link", "utm_campaign": "lancamento"}'::jsonb from public.admin_get_order(pg_temp.uid('dadm'), pg_temp.oid('link')) r));
 
+-- Mais vendidos (2026-10-31): os produtos dos pedidos pagos do período, do que mais vendeu ao que menos
+select pg_temp.assert('mais vendidos: lista dos produtos que venderam, com pedidos e soma dos itens, em ordem',
+  (select jsonb_typeof(r.result) = 'array' and jsonb_array_length(r.result) > 0
+          and not exists (select 1 from jsonb_array_elements(r.result) e where (e->>'orders')::int < 1 or e->>'code' is null or (e->>'amount')::bigint < 0)
+          and (select bool_and(a >= b) from (select (e->>'orders')::int as a, lead((e->>'orders')::int) over () as b from jsonb_array_elements(r.result) e) o where b is not null) is not false
+     from public.admin_product_sales(pg_temp.uid('dadm'), 7, false) r));
+select pg_temp.assert('mais vendidos: quem não é admin recebe forbidden',
+  (select r.outcome = 'forbidden' and r.result is null from public.admin_product_sales(pg_temp.uid('dana'), 7, false) r));
+select pg_temp.expect('mais vendidos: período fora de 7 ou 30', $q$select * from public.admin_product_sales(gen_random_uuid(), 14, false)$q$, 'KT001');
+
 select * from finish();
 rollback;

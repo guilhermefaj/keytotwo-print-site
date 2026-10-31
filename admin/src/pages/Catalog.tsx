@@ -1,9 +1,11 @@
 import { Link } from 'react-router'
 import { useResource } from '../api'
 import { productState, type CatalogList, type CatalogProduct } from '../catalog'
+import { coverOf, hideMissingCover } from '../covers'
 import { Section } from '../Detail'
 import { count, formatMoment, money } from '../format'
 import { LoadError } from '../LoadError'
+import { SalesOpening } from '../SalesOpening'
 import { SiteStatus } from '../SiteStatus'
 
 // Catálogo (2026-10-24): cada produto com a situação, o preço da Stripe (e o riscado), os jogos e as vendas, e os jogos
@@ -13,6 +15,7 @@ export function CatalogPage() {
   return <>
     <title>Catálogo — Admin KeyToTwo</title>
     <header className="page-heading"><h1>Catálogo</h1><p>O que está à venda, por quanto e o que vem em cada pacote.</p></header>
+    <SalesOpening />
     {!data ? (error ? <LoadError error={error} retry={reload} /> : <p className="status" role="status">Carregando o catálogo…</p>) : <>
       <SiteStatus version={data.version} path="/catalogo/versao.json" synced="A loja está em dia com o catálogo." />
       <Section id="produtos" title="Produtos" count={data.products.length}>
@@ -38,7 +41,10 @@ export function CatalogPage() {
 
 function ProductRow({ product }: { product: CatalogProduct }) {
   const state = productState(product)
+  const cover = coverOf(product.code)
   return <li className="plain-row">
+    {/* A capa do site (revisão de UX, 2026-10-31): o produto se reconhece de relance. */}
+    <span className="catalog-thumb-frame" aria-hidden="true"><img className="catalog-thumb" src={cover} alt="" width="96" height="54" loading="lazy" onError={hideMissingCover} /></span>
     <div className="plain-row-main">
       <Link className="user-row-title" to={`/catalogo/${product.code}`}>{product.name ?? product.code}</Link>
       <span className="plain-row-sub">{product.code} · {product.kind === 'bundle' ? `Pacote com ${product.games.length} jogos` : 'Jogo avulso'}</span>

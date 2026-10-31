@@ -99,7 +99,7 @@ const BackToList = () => <Link className="back-link" to="/cupons/parceiros"><Ico
 function CopyLink({ link }: { link: string }) {
   const [copied, setCopied] = useState(false)
   return <span className="copy-link"><span>{link}</span>
-    <button className="text-button" type="button" onClick={() => navigator.clipboard?.writeText(link).then(() => setCopied(true), () => setCopied(false))}>{copied ? 'Copiado' : 'Copiar'}</button>
+    <button className="button button-secondary button-small" type="button" onClick={() => navigator.clipboard?.writeText(link).then(() => setCopied(true), () => setCopied(false))}>{copied ? 'Copiado' : 'Copiar'}</button>
   </span>
 }
 
@@ -114,7 +114,7 @@ function MonthActions({ partnerId, slug, month, owed, onDone }: { partnerId: str
         intro={`Registra o repasse de ${money(month.commission, 'brl')} de ${monthLabel(month.month)}. O pagamento em si é por fora (Pix ou transferência).`}
         onConfirm={reason => api(`/admin/partners/${partnerId}/payouts`, { method: 'POST', body: { month: key, reason } }).then(() => onDone(`${monthLabel(month.month)} ficou como pago.`))} />
         : <span className="plain-row-sub">{month.closed ? 'Nada a pagar' : 'O mês ainda não fechou'}</span>)}
-    {month.orders > 0 && <button className="text-button" type="button" onClick={download}>Baixar planilha</button>}
+    {month.orders > 0 && <button className="button button-secondary button-small" type="button" onClick={download}>Baixar planilha</button>}
     {error && <span className="field-error" role="alert">{error}</span>}
   </div>
 }

@@ -5,6 +5,7 @@ import { api, apiMessage, useResource } from '../api'
 import { count, formatMoment, money } from '../format'
 import { eventLabel, stripePaymentUrl, type OrderDetail } from '../orders'
 import { actionLabel, emailKindLabel, emailStatusLabel, orderStatusLabel, revokeReasonLabel, stripeCustomerUrl } from '../users'
+import { CopyButton } from '../CopyButton'
 import { ReasonAction } from '../ReasonAction'
 import { LoadError } from '../LoadError'
 import { Fact, Section } from '../Detail'
@@ -46,9 +47,9 @@ function OrderPage({ id }: { id: string }) {
           <span className={`badge${order.status === 'paid' ? ' badge-published' : order.status === 'refunded' || order.status.startsWith('dispute') ? ' badge-danger' : ''}`}>{orderStatusLabel(order)}</span>
           {!order.livemode && <span className="badge">Teste</span>}
         </p>
-        <h1>Pedido {order.ref}</h1>
+        <div className="title-with-copy"><h1>Pedido {order.ref}</h1><CopyButton value={order.ref} label="Copiar o código do pedido" /></div>
         <p>
-          {formatMoment(order.created_at)} · {person.exists && person.id
+          {!courtesy && order.amount_total !== null && <><strong className="heading-amount">{amount(order.amount_total)}</strong> · </>}{formatMoment(order.created_at)} · {person.exists && person.id
             ? <Link className="text-link" to={`/usuarios/${person.id}`}>{person.email}</Link>
             : `conta excluída${person.order_email ? ` (${person.order_email})` : ''}`}
         </p>
@@ -78,14 +79,17 @@ function OrderPage({ id }: { id: string }) {
       </dl>
     </Section>
 
-    {(order.deliverable || order.reconcilable || order.refundable) && <section className="danger-zone" aria-labelledby="acoes-pedido">
+    {/* Revisão de UX (2026-10-31): as ações do dia a dia em botões logo aqui; o reembolso, que não tem volta, na Zona de
+        perigo do fim da ficha. */}
+    {((order.deliverable && person.exists && person.id) || order.reconcilable) && <section className="detail-section" aria-labelledby="acoes-pedido">
       <h2 id="acoes-pedido">Ações</h2>
-      {order.deliverable && person.exists && person.id && <Resend order={order} userId={person.id} onDone={done} />}
-      {order.reconcilable && <ReasonAction label="Conferir com a Stripe" confirm="Conferir agora"
-        intro="Busca a sessão de pagamento na Stripe e aplica o que ela diz, como o aviso da Stripe faria: paga libera os jogos e manda o acesso; sem pagamento, nada muda."
-        onConfirm={reason => api<{ status: string }>(`/admin/orders/${order.id}/reconcile`, { method: 'POST', body: { reason } })
-          .then(result => done(`Conferido com a Stripe: o pedido está ${orderStatusLabel({ kind: order.kind, status: result.status }).toLowerCase()}.`))} />}
-      {order.refundable && <Refund order={order} onDone={done} />}
+      <div className="actions-row">
+        {order.deliverable && person.exists && person.id && <Resend order={order} userId={person.id} onDone={done} />}
+        {order.reconcilable && <ReasonAction label="Conferir com a Stripe" confirm="Conferir agora"
+          intro="Busca a sessão de pagamento na Stripe e aplica o que ela diz, como o aviso da Stripe faria: paga libera os jogos e manda o acesso; sem pagamento, nada muda."
+          onConfirm={reason => api<{ status: string }>(`/admin/orders/${order.id}/reconcile`, { method: 'POST', body: { reason } })
+            .then(result => done(`Conferido com a Stripe: o pedido está ${orderStatusLabel({ kind: order.kind, status: result.status }).toLowerCase()}.`))} />}
+      </div>
     </section>}
 
     <Section id="itens" title="Itens" count={detail.items.length}>
@@ -139,6 +143,11 @@ function OrderPage({ id }: { id: string }) {
           {typeof entry.details?.reason === 'string' && <span>: {entry.details.reason}</span>}{entry.by && <span className="timeline-by"> · {entry.by}</span>}
         </li>)}</ul>}
     </Section>
+    {order.refundable && <section className="danger-zone zone-danger" aria-labelledby="perigo-pedido">
+      <h2 id="perigo-pedido">Zona de perigo</h2>
+      <p>O reembolso devolve o valor pela Stripe, tira os jogos da conta e não tem volta.</p>
+      <Refund order={order} onDone={done} />
+    </section>}
 
   </>
 }
@@ -163,7 +172,7 @@ function Resend({ order, userId, onDone }: { order: OrderDetail['order']; userId
     }
   }
   return <>
-    <button className="text-button" type="button" disabled={state.busy} onClick={() => void resend()}>{state.busy ? 'Reenviando…' : `Reenviar o e-mail ${courtesy ? 'do presente' : 'de acesso'}`}</button>
+    <button className="button button-secondary button-small" type="button" disabled={state.busy} onClick={() => void resend()}>{state.busy ? 'Reenviando…' : `Reenviar o e-mail ${courtesy ? 'do presente' : 'de acesso'}`}</button>
     {state.error && <p className="field-error" role="alert">{state.error}</p>}
   </>
 }
