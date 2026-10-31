@@ -17,11 +17,13 @@ const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: 
 
 // Portal (a área da conta, antes "Minha área"): cabeçalho simplificado, sem estímulo comercial. No desktop
 // as abas do Portal já levam a Meus jogos, Pedidos e Minha conta, então o cabeçalho fica com logo, Portal e a
-// conta. O menu móvel mantém os três links. No desktop, quem entrou vê "Portal" e quem não entrou vê só
-// "Entrar"; a Ajuda fica no rodapé e no menu móvel (responsável, 2026-10-21).
+// conta. O menu móvel mantém os links do Portal e, desde 2026-10-31, a Loja (o atalho que o responsável pediu; no
+// desktop ele fica na saudação do Portal). No desktop, quem entrou vê "Portal" e quem não entrou vê só "Entrar"; a
+// Ajuda fica no rodapé e no menu móvel (responsável, 2026-10-21).
 const privateNavigation = [
   { label: 'Meus jogos', href: '/meus-jogos' },
   { label: 'Minha conta', href: '/conta' },
+  { label: 'Loja', href: '/loja' },
   { label: 'Ajuda', href: '/ajuda' },
 ] as const
 

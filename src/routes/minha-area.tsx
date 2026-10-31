@@ -1,5 +1,7 @@
+import { IconArrowRight } from '@tabler/icons-react'
 import { useEffect, useRef } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router'
+import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { Icon } from '../components/ui/Icon'
 import { useAuth } from '../lib/auth-context'
 
 export default function MinhaArea() {
@@ -16,7 +18,9 @@ export default function MinhaArea() {
     previousPath.current = pathname
   }, [pathname])
   return <main id="conteudo" tabIndex={-1} className="portal-page">
-    <div className="portal-welcome content-width"><img src="/media/experience/kito-hi-128.webp" width="64" height="64" alt="" /><div><p className="portal-greeting">Olá{name ? `, ${name}` : ''}!</p><p className="portal-area-name">Portal</p></div></div>
+    <div className="portal-welcome content-width"><img src="/media/experience/kito-hi-128.webp" width="64" height="64" alt="" /><div><p className="portal-greeting">Olá{name ? `, ${name}` : ''}!</p><p className="portal-area-name">Portal</p></div>
+      {/* Atalho para a Loja (responsável, 2026-10-31): discreto, à direita da saudação, em todas as abas. */}
+      <Link className="inline-link portal-store-link" to="/loja">Ver os jogos<Icon component={IconArrowRight} size={16} /></Link></div>
     <div className="portal-tabs-bar"><nav className="portal-tabs content-width" aria-label="Portal" ref={tabs}>
       <NavLink to="/meus-jogos">Meus jogos</NavLink><NavLink to="/pedidos">Pedidos</NavLink><NavLink to="/conta">Minha conta</NavLink>
     </nav></div>

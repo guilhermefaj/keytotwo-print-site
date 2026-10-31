@@ -48,6 +48,8 @@ test('portal sem a barrinha do cupom (o cabeçalho do Portal não tem estímulo 
     await page.goto(route)
     await expect(page.locator('.site-header-shell')).toHaveAttribute('data-private', 'true')
     await expect(page.locator('.promo-bar')).toHaveCount(0)
+    // O atalho discreto para a Loja, na saudação de todas as abas (responsável, 2026-10-31).
+    await expect(page.locator('.portal-welcome').getByRole('link', { name: 'Ver os jogos' })).toHaveAttribute('href', '/loja')
   }
 })
 
@@ -66,7 +68,7 @@ test('D1 touchups: zero badge hidden, portal link and the private mobile menu', 
   const trigger = page.getByRole('button', { name: 'Abrir menu' })
   await expect(trigger).toBeEnabled()
   await trigger.focus(); await page.keyboard.press('Enter')
-  await expect(page.locator('.sheet-nav .nav-link')).toHaveText(['Meus jogos', 'Minha conta', 'Ajuda'])
+  await expect(page.locator('.sheet-nav .nav-link')).toHaveText(['Meus jogos', 'Minha conta', 'Loja', 'Ajuda'])
   await expect(page.locator('.sheet-nav .nav-link > span')).toHaveCount(0)
   await expect(page.getByRole('dialog').locator('.button')).toHaveCount(0)
   const help = page.getByRole('dialog').getByRole('link', { name: 'Ajuda', exact: true })

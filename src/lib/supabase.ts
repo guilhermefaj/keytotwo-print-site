@@ -18,11 +18,14 @@ export function supabase() {
   return client
 }
 
+// Destino depois de entrar quando não há outro (a sacola, o pagamento, a página pedida): Meus jogos (responsável, 2026-10-31).
+const AFTER_LOGIN = '/meus-jogos'
+
 export function safeNext(value: string | null) {
-  if (!value || !value.startsWith('/') || value.startsWith('//') || /[\\\r\n]/.test(value)) return '/conta'
+  if (!value || !value.startsWith('/') || value.startsWith('//') || /[\\\r\n]/.test(value)) return AFTER_LOGIN
   const parsed = new URL(value, 'https://local.invalid')
   // /.//x e /a/..//x normalizam para //x, que o navegador leria como outro site (revisão de segurança, 2026-10-25).
-  if (parsed.origin !== 'https://local.invalid' || parsed.pathname === '/entrar' || parsed.pathname.startsWith('//')) return '/conta'
+  if (parsed.origin !== 'https://local.invalid' || parsed.pathname === '/entrar' || parsed.pathname.startsWith('//')) return AFTER_LOGIN
   return `${parsed.pathname}${parsed.search}${parsed.hash}`
 }
 
