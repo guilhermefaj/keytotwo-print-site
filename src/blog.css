@@ -25,7 +25,6 @@
 .blog-empty { max-width: 70ch; padding-block: 32px; border-top: var(--line-rule); }
 .blog-empty h2 { margin: 0 0 16px; }
 .blog-empty p { max-width: 56ch; margin: 0 0 16px; }
-.blog-rss { margin-top: 32px; }
 /* Compartilhar (2026-10-24): ícones em cada post da lista e sob o título do post; o aviso de copiado fica ao lado. */
 .blog-share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 20px; }
 .blog-share ul { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; }

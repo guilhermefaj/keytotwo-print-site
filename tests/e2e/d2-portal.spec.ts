@@ -48,9 +48,12 @@ test('portal sem a barrinha do cupom (o cabeçalho do Portal não tem estímulo 
     await page.goto(route)
     await expect(page.locator('.site-header-shell')).toHaveAttribute('data-private', 'true')
     await expect(page.locator('.promo-bar')).toHaveCount(0)
-    // O atalho discreto para a Loja, na saudação de todas as abas (responsável, 2026-10-31).
-    await expect(page.locator('.portal-welcome').getByRole('link', { name: 'Ver os jogos' })).toHaveAttribute('href', '/loja')
+    // A Loja à vista no cabeçalho do Portal (responsável, 2026-10-31), e o Kito da saudação num círculo.
+    await expect(page.locator('.desktop-action').getByRole('link', { name: 'Loja', exact: true })).toHaveAttribute('href', '/loja')
+    await expect(page.locator('.portal-avatar img')).toHaveAttribute('src', '/media/portal/kito-ola-100.webp')
   }
+  await page.setViewportSize({ width: 320, height: 800 })
+  await expect(page.locator('.mobile-navigation').getByRole('link', { name: 'Loja', exact: true })).toBeVisible()
 })
 
 test('D1 touchups: zero badge hidden, portal link and the private mobile menu', async ({ page }) => {

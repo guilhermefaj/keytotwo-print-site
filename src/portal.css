@@ -5,10 +5,9 @@
 .portal-welcome > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px 24px; min-width: 0; }
 .portal-greeting { font-family: var(--font-display); font-weight: 700; font-size: var(--text-title-lg); line-height: 1.25; letter-spacing: var(--tracking-title); margin: 0; }
 .portal-area-name { margin: 0; color: var(--color-ink-soft); font-size: var(--text-small); }
-.portal-welcome img { width: 56px; height: 56px; flex-shrink: 0; object-fit: contain; image-rendering: pixelated; }
-/* Atalho para a Loja: à direita da saudação (no celular, embaixo dela). */
-.portal-welcome { flex-wrap: wrap; }
-.portal-store-link { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: var(--text-small); white-space: nowrap; }
+/* O avatar: o Kito acenando (pixel art) num círculo Céu com o fio Turquesa; a imagem é reduzida com suavização. */
+.portal-avatar { display: grid; place-items: center; width: 64px; height: 64px; flex-shrink: 0; border-radius: 50%; background: var(--color-sky); border: 2px solid var(--color-line); overflow: hidden; }
+.portal-avatar img { width: 50px; height: auto; margin-top: 4px; }
 .portal-tabs-bar { position: sticky; top: var(--portal-tabs-offset); z-index: 25; background: var(--color-paper); border-bottom: var(--line-rule); }
 .portal-tabs { position: relative; display: flex; align-items: stretch; gap: 32px; overflow-x: auto; scrollbar-width: thin; scrollbar-color: var(--color-ink-soft) var(--color-paper); overscroll-behavior-x: contain; }
 .portal-tabs a { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; padding: 12px 8px; border-bottom: 3px solid transparent; color: var(--color-ink-soft); font-size: var(--text-small); line-height: 1.5; text-decoration: none; }
@@ -90,10 +89,8 @@
   .portal-welcome { padding-block: 24px 16px; }
   .portal-welcome > div { gap: 6px 16px; }
   .portal-greeting { font-size: var(--text-title-sm); }
-  .portal-welcome img { width: 48px; height: 48px; }
-  /* No celular o atalho desce para baixo da saudação, alinhado com o texto (48 px do Kito + 16 px de espaço). */
-  .portal-welcome { row-gap: 0; }
-  .portal-store-link { margin-left: 64px; }
+  .portal-avatar { width: 52px; height: 52px; }
+  .portal-avatar img { width: 40px; margin-top: 3px; }
   .portal-tabs { gap: 24px; }
   .portal-tabs a { min-height: 52px; }
   .portal-content { padding-block: 28px 56px; }

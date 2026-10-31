@@ -17,8 +17,8 @@ const CartDrawer = lazy(() => import('./CartDrawer').then(module => ({ default: 
 
 // Portal (a área da conta, antes "Minha área"): cabeçalho simplificado, sem estímulo comercial. No desktop
 // as abas do Portal já levam a Meus jogos, Pedidos e Minha conta, então o cabeçalho fica com logo, Portal e a
-// conta. O menu móvel mantém os links do Portal e, desde 2026-10-31, a Loja (o atalho que o responsável pediu; no
-// desktop ele fica na saudação do Portal). No desktop, quem entrou vê "Portal" e quem não entrou vê só "Entrar"; a
+// conta. Desde 2026-10-31 (responsável) a Loja fica à vista no cabeçalho do Portal, no desktop e no celular, e também
+// no menu móvel, junto dos links do Portal. No desktop, quem entrou vê "Portal" e quem não entrou vê só "Entrar"; a
 // Ajuda fica no rodapé e no menu móvel (responsável, 2026-10-21).
 const privateNavigation = [
   { label: 'Meus jogos', href: '/meus-jogos' },
@@ -102,11 +102,13 @@ export function SiteHeader({ onMenuOpenChange }: { onMenuOpenChange?: (open: boo
         {focusMode ? <><span className="checkout-secure"><Icon component={IconLock} size={16} />Compra segura</span><Link className="text-button checkout-back" to="/carrinho">Voltar à sacola</Link></> : <>
           {!privateArea && <nav className="desktop-nav" aria-label="Navegação principal">{visibleNavigation.map(item => <Link className="nav-link" aria-current={current(item.href)} key={item.href} to={item.href}>{item.label}</Link>)}</nav>}
           <div className="desktop-action">
+            {privateArea && <Link className="nav-link" to="/loja">Loja</Link>}
             {session && <Link className="nav-link" to="/meus-jogos" aria-current={pathname === '/meus-jogos' ? 'page' : privateArea ? 'true' : undefined}>Portal</Link>}
             {accountControl}
             {showCart && cartButton}
           </div>
           <div className="mobile-navigation">
+            {privateArea && <Link className="nav-link portal-store-link" to="/loja">Loja</Link>}
             {showCart && cartButton}
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild><button className="icon-button menu-trigger" disabled={!ready} aria-label="Abrir menu"><Icon component={IconMenu2} />Menu</button></SheetTrigger>

@@ -13,7 +13,7 @@ export default function Blog({ loaderData }: Route.ComponentProps) {
   return <main id="conteudo" tabIndex={-1} className="blog-page content-width">
     <header className="blog-intro">
       <h1>Blog</h1>
-      <p>Um espaço da KeyToTwo para acompanhar as próximas ideias.</p>
+      <p>Textos do Kito sobre a vida a dois: crônicas, conversas do dia a dia e passatempos para casais.</p>
     </header>
     {loaderData.posts.length ? <ul className="blog-list" aria-label="Artigos">
       {loaderData.posts.map(post => <li key={post.slug}>
@@ -37,6 +37,5 @@ export default function Blog({ loaderData }: Route.ComponentProps) {
       <p>Enquanto isso, os jogos já estão na Loja.</p>
       <Link className="inline-link" to="/loja">Ver os jogos</Link>
     </section>}
-    <a className="inline-link blog-rss" href="/blog/rss.xml">Acompanhar pelo RSS</a>
   </main>
 }

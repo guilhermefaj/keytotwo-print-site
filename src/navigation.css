@@ -53,6 +53,8 @@
 .site-header-shell[data-private="true"] .desktop-action { gap: 12px; }
 .site-header-shell[data-private="true"] .sheet-nav { margin-top: 24px; }
 .site-header .menu-trigger { gap: 6px; font-size: var(--text-label); font-weight: 600; }
+/* No Portal, a Loja à vista no celular, ao lado do Menu (responsável, 2026-10-31). */
+.site-header .portal-store-link { font-size: var(--text-label); font-weight: 600; }
 .account-menu { position: relative; }
 .account-trigger { display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 4px; border: 0; border-radius: var(--radius-sm); color: var(--color-ink); background: transparent; }
 .account-trigger:hover { background: var(--color-ink-wash); }
