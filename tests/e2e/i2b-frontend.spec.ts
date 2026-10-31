@@ -158,7 +158,8 @@ test('password is created only after verified email; password login and recovery
 test('next cannot redirect to an external origin', async ({ page }) => {
   await page.goto('/entrar?next=https%3A%2F%2Fevil.invalid')
   await loginWithCode(page, `qa-next-${randomUUID()}@example.test`)
-  await expect(page).toHaveURL(/127\.0\.0\.1:\d+\/conta$/)
+  // Cai no destino padrão depois de entrar: Meus jogos (responsável, 2026-10-31).
+  await expect(page).toHaveURL(/127\.0\.0\.1:\d+\/meus-jogos$/)
 })
 
 test('seed account has library by game and orders; full ownership prevents adding again', async ({ page }) => {

@@ -194,7 +194,7 @@ const privacidade: LegalContent = {
         'Saber se os e-mails chegam, são abertos e quais links são clicados, para garantir a entrega e melhorar as mensagens: legítimo interesse (art. 7º, IX).',
         'Saber de onde vêm as compras e calcular a comissão dos parceiros que divulgam a loja, ligando o pedido ao link ou ao cupom do parceiro: legítimo interesse (art. 7º, IX).',
         'Medir as visitas ao site com o Google Analytics, para saber o que funciona e de onde as pessoas chegam: consentimento (art. 7º, I), que você dá ou recusa no aviso de cookies e muda a qualquer momento em "Cookies", no rodapé.',
-        'Enviar novidades, ofertas, lembrete da sacola e dicas depois da compra: consentimento (art. 7º, I), que você dá e retira em Minha conta ou pelo link de cada e-mail.',
+        'Enviar novidades, ofertas, lembrete da sacola e dicas depois da compra: consentimento (art. 7º, I), que você dá e retira em Minha conta ou pelo link de cada e-mail. Para escolher o que enviar, usamos o que está na sua conta, como se você já comprou e quais jogos tem; assim não oferecemos um jogo que você já tem.',
       ],
       'Comprar não depende de aceitar e-mails de novidades. Retirar o consentimento não afeta os e-mails de acesso e de pedido. Não vendemos dados pessoais.',
       'Para saber se um e-mail foi aberto, ele leva uma imagem invisível; para saber dos cliques, os links passam pelo serviço de envio antes de chegar ao site.',
