@@ -49,6 +49,15 @@ main() {
   docker compose --project-directory "$base/teste" up -d --wait
   # O vigia do blog reconstrói este mesmo commit quando um post é publicado.
   echo "$full" > "$base/teste/commit"
+  # Limpeza (2026-10-31): ficam as três imagens do teste mais novas (as live- são da produção), a do ar e duas para
+  # voltar sem build. O docker não apaga imagem de contêiner, então a do ar nunca sai. O vigia refaz a mesma tag a cada
+  # post e a anterior fica sem nome; o cache do build guarda uma semana.
+  {
+    docker images keytotwo-site --format '{{.CreatedAt}}|{{.Tag}}' | sort -r | sed -n '/|live-/!s/^.*|//p' | tail -n +4 \
+      | while read -r tag; do docker image rm "keytotwo-site:$tag" >/dev/null 2>&1 || true; done
+    docker image prune -f >/dev/null
+    docker builder prune -f --filter until=168h >/dev/null
+  } || echo "Aviso: a limpeza das imagens falhou; o teste já está no ar" >&2
   echo "teste.keytotwo.com.br no commit $sha"
 }
 
