@@ -158,6 +158,14 @@ Desde 2026-10-31 o Plunk (código aberto, versão fixa no compose) roda na VPS e
 2. **A troca:** `EMAIL_MODE=plunk` nos segredos das funções. Vale na próxima chamada, sem deploy. Conferir no admin um e-mail enviado e, no Plunk, a entrega.
 3. **Voltar, se algo der errado:** `EMAIL_MODE=brevo`. A chave e o webhook da Brevo continuam até a fase de desligar a Brevo.
 
+**Marketing no Plunk** (desde 2026-10-31, fase 4; migração `20261031180000_marketing_plunk.sql`):
+
+- **O site é a fonte do consentimento.** Quem já deu opt-in alguma vez tem uma linha em `private.marketing_contacts`; as triggers marcam quem muda (consentimento, bounce, compra, jogos, e-mail) e o `email-dispatch`, na rodada da agenda, manda o estado atual ao Plunk: inscrito ou não e, nos campos do contato, `comprou`, `jogos` (códigos) e `boas_vindas_no_lancamento`. A primeira inscrição vai como o evento `inscricao`, que começa as boas-vindas. Só no `EMAIL_MODE=plunk`.
+- **Automações** (criadas por `deploy/plunk/automacoes.mjs`, que cria o que falta pelo nome; `--ligar` liga): "Boas-vindas" (Boas-vindas 1, 3 dias, 2, 4 dias, sai quem comprou, sai quem se inscreveu mais de 7 dias antes da abertura das vendas, 3) e "Descadastro no Plunk → site" (`contact.unsubscribed` → função `plunk-webhook`, com o segredo `PLUNK_WEBHOOK_SECRET` no header). Os modelos ficam no Plunk (Templates), editáveis lá.
+- **Campanha do lançamento:** "Lançamento: boas-vindas 3", em rascunho, para quem tem `boas_vindas_no_lancamento` e não comprou. Agendar para 09/11 às 19h no painel do Plunk.
+- **Publicar:** migração e funções (`api`, `email-dispatch`, `stripe-webhook`, a nova `plunk-webhook`), o segredo `PLUNK_WEBHOOK_SECRET` nas funções (o mesmo do arquivo de segredos) e só então `node --env-file=<segredos> deploy/plunk/automacoes.mjs --ligar`. Os contatos que já tinham opt-in vão ao Plunk na primeira rodada.
+- **Campanhas avulsas** (newsletter, jogo novo, data com cupom) saem do painel do Plunk com os modelos; para o jogo novo, tirar quem já tem o jogo pelo campo `jogos`. O reengajamento (90 dias sem clique) fica para quando houver quem se encaixe.
+
 ## Backup do banco
 
 O plano grátis do Supabase não guarda backup. Desde 2026-10-24 (decisões do responsável) a VPS tira uma cópia por noite:

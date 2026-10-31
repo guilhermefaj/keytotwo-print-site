@@ -114,6 +114,23 @@ contractTest('lembrete de carrinho: itens, botão do carrinho, rodapé e headers
   await unsubscribeTokenOf(mail)
 })
 
+contractTest('sacola, 2º toque: o cupom da primeira compra, os itens, o Kito do biscoito e o descadastro', async () => {
+  dispatchRpc([{ ...CART_ROW, kind: 'cart_reminder_2', payload: { cart_version: 3, items: [{ code: 'P001', name: 'Pacote <inicial>' }, { code: 'J002', name: null }] } }])
+  onExternal(() => ok({ ID: 'mp-3' }))
+  assertEquals((await dispatch()).sent, 1)
+  const mail = externalCalls[0].body as unknown as MailpitBody
+  assertEquals([mail.Subject, mail.Tags], ['10% na primeira compra de vocês', ['cart_reminder_2']])
+  assert(mail.HTML.includes('PRIMEIRA10') && mail.Text.includes('Cupom: PRIMEIRA10'))
+  assert(mail.HTML.includes('Pacote &lt;inicial&gt;') && mail.HTML.includes('J002') && mail.Text.includes('Os jogos ainda estão na sacola'))
+  assert(mail.HTML.includes(`${SITE}/carrinho`) && mail.HTML.includes(`${SITE}/media/email/kito-biscoito.png`))
+  // Sem preço: a fila não guarda o preço do item, e o desconto é calculado no pagamento.
+  assert(!mail.HTML.includes('R$'))
+  await unsubscribeTokenOf(mail)
+  dispatchRpc([{ ...CART_ROW, kind: 'cart_reminder_2', payload: { cart_version: 3, items: [] } }])
+  await captureErrors(dispatch)
+  assertEquals(rpcCalls[1].args.p_error, 'lembrete_sem_itens')
+})
+
 contractTest('pós-compra: jogos, Meus jogos, ajuda de impressão e descadastro', async () => {
   dispatchRpc([POST_ROW])
   onExternal(() => ok({ ID: 'mp-2' }))

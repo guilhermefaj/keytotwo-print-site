@@ -17,6 +17,7 @@ export const BREVO_WEBHOOK_SECRET = 'segredo-webhook-brevo-teste'
 // Plunk (envio pelo Amazon SES): os testes ligam PLUNK_API_URL e PLUNK_SECRET_KEY só quando precisam.
 export const PLUNK_URL = 'http://plunk.teste'
 export const SES_TOPIC_ARN = 'arn:aws:sns:us-east-2:111122223333:plunk-ses-events'
+export const PLUNK_WEBHOOK_SECRET = 'segredo-webhook-plunk-teste'
 
 const contractEnv: Record<string, string> = {
   SUPABASE_URL,
@@ -47,6 +48,8 @@ const contractEnv: Record<string, string> = {
   BREVO_WEBHOOK_SECRET,
   // ses-events: o tópico do SNS aceito.
   SES_EVENTS_TOPIC_ARN: SES_TOPIC_ARN,
+  // plunk-webhook: o token do passo de webhook da automação do Plunk.
+  PLUNK_WEBHOOK_SECRET,
 }
 if (!integrationMode) for (const [name, value] of Object.entries(contractEnv)) Deno.env.set(name, value)
 
@@ -295,7 +298,7 @@ export function request(path: string, options: { method?: string; token?: string
 
 // email-dispatch: o claim devolve estas linhas e cada mark_email_result é aceito.
 export function dispatchRpc(rows: unknown[]) {
-  onRpc((fn) => (fn === 'claim_email_batch' ? ok(rows) : row({ outcome: 'applied', status: 'sent', next_attempt_at: null })))
+  onRpc((fn) => (fn === 'claim_email_batch' ? ok(rows) : fn === 'claim_marketing_contacts' ? ok([]) : row({ outcome: 'applied', status: 'sent', next_attempt_at: null })))
 }
 
 // Rotas de admin: sessão com o segundo fator e a resposta já lida.

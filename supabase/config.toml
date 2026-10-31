@@ -452,6 +452,11 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/deno.json"
 
+[functions.plunk-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/deno.json"
+
 [analytics]
 # KeyToTwo: desligado no local; no Windows o contêiner vector reinicia em loop sem o daemon em tcp 2375.
 enabled = false

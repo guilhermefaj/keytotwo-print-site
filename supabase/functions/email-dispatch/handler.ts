@@ -1,10 +1,11 @@
 import { sameSecret } from '../_shared/compare.ts'
-import { dispatchEmails } from '../_shared/email.ts'
+import { dispatchEmails, syncMarketingContacts } from '../_shared/email.ts'
 import { env } from '../_shared/env.ts'
 import { errorResponse, HttpError, isUuid, json, postOnly, toErrorResponse } from '../_shared/http.ts'
 import { countCall } from '../_shared/usage.ts'
 
-// email-dispatch (interna): chamada pelo pg_cron/pg_net e em segundo plano pela api e pelo webhook.
+// email-dispatch (interna): chamada pelo pg_cron/pg_net e em segundo plano pela api e pelo webhook. Na rodada da agenda,
+// também manda ao Plunk os contatos de marketing que mudaram.
 export async function handleEmailDispatch(req: Request): Promise<Response> {
   countCall('schedule')
   if (req.method !== 'POST') return postOnly()
@@ -18,7 +19,10 @@ export async function handleEmailDispatch(req: Request): Promise<Response> {
     if (body.outbox_id !== undefined && !isUuid(body.outbox_id)) {
       throw new HttpError(400, 'INVALID_REQUEST', 'outbox_id inválido.')
     }
-    return json(await dispatchEmails({ limit, outboxId: body.outbox_id }))
+    const summary = await dispatchEmails({ limit, outboxId: body.outbox_id })
+    // na rodada da agenda (sem outbox_id), também os contatos de marketing no Plunk (só no modo plunk)
+    const contacts = body.outbox_id === undefined ? await syncMarketingContacts(limit) : null
+    return json(contacts ? { ...summary, contacts } : summary)
   } catch (error) {
     if (error instanceof SyntaxError) return errorResponse(400, 'INVALID_REQUEST', 'Corpo JSON inválido.')
     return toErrorResponse(error)
