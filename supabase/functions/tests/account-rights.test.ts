@@ -1,8 +1,9 @@
 // Testes de contrato dos direitos do titular (docs/api-contract.md 6.11): GET /account/export e POST /account/delete,
 // e o descadastro de conta já excluída. Sem rede e sem banco.
 import { assertEquals } from '@std/assert'
-import { authAdminCalls, captureErrors, contractTest, onAuthAdmin, onRpc, request, rpcCalls, sessionToken, userId } from './contract-helpers.ts'
+import { authAdminCalls, captureErrors, contractTest, externalCalls, onAuthAdmin, onExternal, onRpc, PLUNK_URL, request, rpcCalls, sessionToken, userId } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
+import { setBackgroundRunner } from '../_shared/background.ts'
 import { signUnsubscribeToken } from '../_shared/tokens.ts'
 
 const EXPORT = { generated_at: '2026-10-19T12:00:00Z', account: { email: 'teste@example.com' }, orders: [], library: [], consents: [] }
@@ -58,6 +59,48 @@ contractTest('POST /account/delete: anonimiza no banco e depois apaga o usuário
   onRpc(() => deleted)
   onAuthAdmin(() => ({ status: 404, body: {} }))
   assertEquals((await handleRequest(request('/account/delete', { method: 'POST', token, body: { confirmation: 'EXCLUIR' } }))).status, 200)
+})
+
+contractTest('POST /account/delete: com o Plunk configurado, apaga em segundo plano o contato do e-mail exato da conta', async () => {
+  const tasks: Promise<unknown>[] = []
+  setBackgroundRunner((task) => tasks.push(task))
+  const token = await sessionToken()
+  const remove = async () => {
+    onRpc(() => deleted)
+    onAuthAdmin(() => ({ status: 200, body: {} }))
+    const res = await handleRequest(request('/account/delete', { method: 'POST', token, body: { confirmation: 'EXCLUIR' } }))
+    await Promise.all(tasks.splice(0))
+    return res.status
+  }
+
+  // Sem o Plunk configurado (antes da troca no local, por exemplo), nada sai.
+  onExternal(() => ({ status: 500, body: {} }))
+  assertEquals(await remove(), 200)
+  assertEquals(externalCalls.length, 0)
+
+  Deno.env.set('PLUNK_API_URL', PLUNK_URL)
+  Deno.env.set('PLUNK_SECRET_KEY', 'sk_teste_ficticia')
+  // A busca do Plunk é por trecho: só o endereço exato (sem diferença de maiúsculas) é apagado.
+  onExternal((call) => call.method === 'GET'
+    ? { status: 200, body: { data: [{ id: 'c-outro', email: 'teste@example.com.br' }, { id: 'c-1', email: 'Teste@Example.com' }], hasMore: false } }
+    : { status: 200, body: { success: true } })
+  assertEquals(await remove(), 200)
+  assertEquals(externalCalls.map((c) => [c.method, c.url, c.headers.get('Authorization')]), [
+    ['GET', `${PLUNK_URL}/contacts?search=teste%40example.com&limit=100`, 'Bearer sk_teste_ficticia'],
+    ['DELETE', `${PLUNK_URL}/contacts/c-1`, 'Bearer sk_teste_ficticia'],
+  ])
+
+  // Sem contato com o e-mail exato, ou com o Plunk fora do ar: nada é apagado e a exclusão da conta não falha.
+  onExternal(() => ({ status: 200, body: { data: [{ id: 'c-outro', email: 'teste@example.com.br' }] } }))
+  assertEquals(await remove(), 200)
+  assertEquals(externalCalls.map((c) => c.method), ['GET'])
+  onExternal(() => ({ status: 503, body: {} }))
+  const { result } = await captureErrors(remove)
+  assertEquals([result, externalCalls.map((c) => c.method)], [200, ['GET']])
+
+  Deno.env.delete('PLUNK_API_URL')
+  Deno.env.delete('PLUNK_SECRET_KEY')
+  setBackgroundRunner(null)
 })
 
 contractTest('POST /account/delete recusado pelo banco: 409 com o motivo e o Auth intocado', async () => {

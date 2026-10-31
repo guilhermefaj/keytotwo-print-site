@@ -108,6 +108,25 @@ select pg_temp.assert('evento: descadastro ANTERIOR ao opt-in fica registrado ma
 select pg_temp.assert('evento: horário no futuro vira agora', (select occurred_at = now() from public.email_suppressions where email = 'rg@pgtap.test' and reason = 'hard_bounce'));
 -- reenvio do mesmo evento velho depois do opt-in: nada acontece
 select pg_temp.assert('evento: o reenvio do evento velho continua sem efeito (noop)', (select outcome = 'noop' from public.record_email_event('re@pgtap.test', 'unsubscribe', null, now() - interval '2 days')));
+
+-- origem do aviso (2026-10-31): brevo_webhook por padrão; ses_events quando vem da AWS (função ses-events)
+select pg_temp.expect('evento: origem desconhecida', $q$select * from public.record_email_event('x@pgtap.test', 'hard_bounce', null, now(), 'mailgun')$q$, 'KT001');
+select pg_temp.expect('evento: origem nula', $q$select * from public.record_email_event('x@pgtap.test', 'hard_bounce', null, now(), null)$q$, 'KT001');
+do $c$
+begin
+  perform pg_temp.mk_opt('rs'); perform pg_temp.mk_q('rs1', 'rs');
+  insert into fz select 'ses_hb', to_jsonb(r)::text from public.record_email_event('sesb@pgtap.test', 'hard_bounce', '0100-ses-1', now(), 'ses_events') r;
+  insert into fz select 'ses_cp', to_jsonb(r)::text from public.record_email_event('rs@pgtap.test', 'complaint', '0100-ses-2', now(), 'ses_events') r;
+end $c$;
+select pg_temp.assert('evento: bounce da AWS grava a supressão com a origem ses_events e a mensagem do SES',
+  (select (v::jsonb)->>'outcome' = 'applied' from fz where k = 'ses_hb')
+  and (select source = 'ses_events' and provider_message_id = '0100-ses-1' from public.email_suppressions where email = 'sesb@pgtap.test' and reason = 'hard_bounce'));
+select pg_temp.assert('evento: reclamação da AWS suprime, revoga o consentimento com a origem ses_events e cancela o marketing na fila',
+  (select (v::jsonb)->>'outcome' = 'applied' and (v::jsonb)->>'user_id' = pg_temp.uid('rs')::text from fz where k = 'ses_cp')
+  and (select source = 'ses_events' from public.email_suppressions where email = 'rs@pgtap.test' and reason = 'complaint')
+  and (select action = 'revoked' and source = 'ses_events' from public.marketing_consents where user_id = pg_temp.uid('rs') order by id desc limit 1)
+  and (select status = 'canceled' from public.email_outbox where dedupe_key = 'f:rs1'));
+select pg_temp.expect('suppression: origem ses_events não concede consentimento', $q$insert into public.marketing_consents (user_id, email, action, source) values (pg_temp.uid('rs'), 'rs@pgtap.test', 'granted', 'ses_events')$q$, '23514');
 -- opt-in de novo depois de um descadastro, e um NOVO descadastro: vale mesmo com a supressão antiga
 do $c$
 begin

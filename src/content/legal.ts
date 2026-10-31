@@ -161,8 +161,8 @@ const reembolso: LegalContent = {
 
 const privacidade: LegalContent = {
   title: 'Política de privacidade',
-  version: '2026-10-24',
-  versionLabel: 'Versão de 24 de outubro de 2026',
+  version: '2026-10-31',
+  versionLabel: 'Versão de 31 de outubro de 2026',
   intro: 'Esta política explica quais dados pessoais a KeyToTwo trata, para quê, com quem compartilha, por quanto tempo guarda e como você exerce seus direitos, conforme a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).',
   sections: [
     { title: 'Quem cuida dos seus dados', id: 'controladora', paragraphs: [
@@ -175,7 +175,7 @@ const privacidade: LegalContent = {
         'Compras: itens da sacola, pedidos, produtos, valores, cupom usado, datas, a versão dos termos aceita e o momento do aceite, e as referências do pagamento na Stripe.',
         'Acesso aos jogos: a sua biblioteca em Meus jogos e o registro de cada download, inclusive dos gratuitos (qual arquivo e quando).',
         'Preferência de e-mail: se você aceita receber novidades, com o histórico de quando aceitou ou retirou o aceite, por onde e qual versão do texto viu.',
-        'E-mails enviados: tipo da mensagem (entrega, lembrete ou novidade), endereço, situação do envio e, quando a Brevo avisa, devolução, reclamação de spam ou descadastro.',
+        'E-mails enviados: tipo da mensagem (entrega, lembrete ou novidade), endereço, situação do envio (entregue, devolvido, marcado como spam ou descadastrado), se a mensagem foi aberta e quais links foram clicados.',
         'Uso da loja: eventos como conta confirmada, item colocado ou tirado da sacola, pagamento iniciado e pedido pago, ligados à sua conta.',
         'Indicação: quando você chega pelo link de um parceiro ou de uma campanha e compra em até 30 dias, o pedido guarda qual foi o parceiro, a data da chegada, a página de entrada e as marcas de campanha do link (como utm_source).',
         'Registros de acesso: o serviço de login e a hospedagem registram endereço IP, data e hora dos acessos e dados do navegador.',
@@ -191,26 +191,29 @@ const privacidade: LegalContent = {
         'Guardar registros de acesso pelo prazo do Marco Civil da Internet: cumprimento de obrigação legal (art. 7º, II).',
         'Prevenir fraude e abuso, proteger a conta, os arquivos e o serviço, tratar contestações e defender direitos: legítimo interesse (art. 7º, IX) e exercício regular de direitos (art. 7º, VI).',
         'Entender o uso da loja para melhorar o site e os jogos, com eventos ligados à conta: legítimo interesse (art. 7º, IX).',
+        'Saber se os e-mails chegam, são abertos e quais links são clicados, para garantir a entrega e melhorar as mensagens: legítimo interesse (art. 7º, IX).',
         'Saber de onde vêm as compras e calcular a comissão dos parceiros que divulgam a loja, ligando o pedido ao link ou ao cupom do parceiro: legítimo interesse (art. 7º, IX).',
         'Medir as visitas ao site com o Google Analytics, para saber o que funciona e de onde as pessoas chegam: consentimento (art. 7º, I), que você dá ou recusa no aviso de cookies e muda a qualquer momento em "Cookies", no rodapé.',
         'Enviar novidades, ofertas, lembrete da sacola e dicas depois da compra: consentimento (art. 7º, I), que você dá e retira em Minha conta ou pelo link de cada e-mail.',
       ],
       'Comprar não depende de aceitar e-mails de novidades. Retirar o consentimento não afeta os e-mails de acesso e de pedido. Não vendemos dados pessoais.',
+      'Para saber se um e-mail foi aberto, ele leva uma imagem invisível; para saber dos cliques, os links passam pelo serviço de envio antes de chegar ao site.',
       'Os jogos gratuitos são a exceção: para baixá-los, é preciso ter conta e aceitar os e-mails de novidades (LGPD, art. 9º, § 3º). Quem retira o aceite depois continua baixando os gratuitos.',
     ] },
     { title: 'Com quem compartilhamos', id: 'compartilhamento', paragraphs: [
-      'Usamos fornecedores que tratam dados em nosso nome (operadores), só para as finalidades acima:',
+      'Usamos fornecedores que tratam dados em nosso nome (operadores), só para as finalidades acima. São eles, pelo que fazem:',
       [
-        'Supabase: banco de dados, login e funções do site. Os dados ficam em servidores em São Paulo.',
-        'Stripe: processamento dos pagamentos (Pix e cartão) e prevenção de fraude. A Stripe também trata dados de pagamento como controladora, para cumprir obrigações próprias, conforme a política dela.',
-        'Brevo: envio dos e-mails.',
-        'Backblaze B2: armazenamento dos arquivos dos jogos. O download sai direto do Backblaze, que registra o acesso técnico.',
+        'Banco de dados, login e funções do site: os dados ficam em servidores em São Paulo.',
+        'Pagamentos: a Stripe processa o Pix e o cartão e previne fraude. Ela também trata dados de pagamento como controladora, para cumprir obrigações próprias, conforme a política dela.',
+        'Envio dos e-mails: entrega as mensagens e avisa se cada uma chegou, voltou, foi aberta, teve um link clicado ou foi marcada como spam.',
+        'Armazenamento dos arquivos dos jogos: o download sai direto desse serviço, que registra o acesso técnico.',
         'Google: login com a conta Google, quando você escolhe essa opção, e o Google Analytics, que mede as visitas só se você aceitar os cookies.',
-        'Provedor de hospedagem: o servidor que publica o site.',
+        'Hospedagem: os servidores no Brasil que publicam o site e organizam o envio dos e-mails.',
       ],
+      `O nome de cada fornecedor é informado a quem pedir, por ${company.email}.`,
       'Os parceiros que divulgam a loja, com link ou cupom próprio, não recebem dados pessoais: só o total de visitas, de vendas e de valores do link e do cupom deles.',
       'Também podemos compartilhar dados quando a lei exigir, por ordem judicial ou de autoridade competente, ou para defender direitos.',
-      'Stripe, Brevo, Backblaze e Google podem tratar dados fora do Brasil, em países como os Estados Unidos e os da União Europeia. Essas transferências são necessárias para executar o contrato com você e seguem as garantias contratuais desses fornecedores (LGPD, art. 33, II e IX).',
+      'Os fornecedores de pagamento, de envio dos e-mails e de armazenamento dos arquivos e o Google podem tratar dados fora do Brasil, em países como os Estados Unidos e os da União Europeia. Essas transferências são necessárias para executar o contrato com você e seguem as garantias contratuais desses fornecedores (LGPD, art. 33, II e IX).',
     ] },
     { title: 'Por quanto tempo guardamos', id: 'retencao', paragraphs: [
       [

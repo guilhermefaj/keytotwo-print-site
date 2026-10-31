@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Versão | 0.3.19, 2026-10-29 (blog: o post leva `author_instagram`, o Instagram de quem escreveu, opcional, seção 6.13). 0.3.18, 2026-10-27 (prévia do lançamento: o `GET /catalog` leva `sales_open_at`, seção 6.1, e o `POST /checkout` recusa com `409 SALES_NOT_OPEN` antes da abertura das vendas, seção 6.5). 0.3.17, 2026-10-26 (aviso de site fora do ar: `POST /internal/uptime` e o alerta `site_down` com o e-mail de volta, seção 6.16; o CSP do site passa a valer, seção 6.19). 0.3.16, 2026-10-25 (uso da infraestrutura: `GET /admin/metrics` leva `usage`, e toda chamada das funções soma no contador do mês, seção 6.12). 0.3.15, 2026-10-25 (revisão de segurança: o admin exige o código do app autenticador confirmado nas últimas 12 horas, seção 6.12; `POST /referral/visit` devolve o comprovante assinado da visita e o `POST /checkout` só atribui a venda ao parceiro com ele, seção 6.18; a agenda do banco usa o segredo próprio `DISPATCH_SECRET`, seção 8.2; nova `POST /csp-report`, seção 6.19). 0.3.14, 2026-10-24 (o formulário de pagamento abre com a página, travado até o aceite: `POST /checkout` sem `terms_accepted` devolve também o `order_id`, e `POST /checkout/terms` grava o aceite, seção 6.5; sai o `TERMS_NOT_ACCEPTED`). 0.3.13, 2026-10-24 (cupons, parceiros e indicações em `/admin/discounts/*`, `/admin/partners/*` e `POST /referral/visit`; a faixa do topo no `/catalog`, a indicação no `POST /checkout` e o marketing nas métricas, seção 6.18). 0.3.12, 2026-10-24 (catálogo no admin em `/admin/catalog` e `/admin/products/*`, seção 6.17; o `/catalog` leva o preço riscado, seção 6.1). 0.3.11, 2026-10-24 (alertas do admin em `/admin/alerts/*`, seção 6.16; o e-mail dos admins e a contestação que abre o alerta, seções 8.2 e 9). 0.3.10, 2026-10-24 (Fase 3 do admin: pedidos e reembolsos em `/admin/orders/*`, seção 6.15; o aviso de reembolso por e-mail, seção 8). 0.3.9, 2026-10-24 (limpeza: saem `GET /health`, `POST /account/marketing/prompt`, a origem `cart` e o `Content-Disposition` das exportações; Customer apagado na Stripe é trocado: seção 11.7). 0.3.8, 2026-10-23 (usuários no admin). 0.3.7, 2026-10-23 (blog no admin). 0.3.6, 2026-10-22 (preços da Stripe guardados no banco: seção 6.1). 0.3.5, 2026-10-22 (sacola sem login e jogo repetido: seções 6.2, 6.2.1 e 6.5). 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
+| Versão | 0.3.20, 2026-10-31 (e-mail pelo Plunk e o Amazon SES: `EMAIL_MODE=plunk` e a função `ses-events`, seções 1, 8 e 10; a exclusão de conta, também a do admin, apaga o contato no Plunk, seção 6.11). 0.3.19, 2026-10-29 (blog: o post leva `author_instagram`, o Instagram de quem escreveu, opcional, seção 6.13). 0.3.18, 2026-10-27 (prévia do lançamento: o `GET /catalog` leva `sales_open_at`, seção 6.1, e o `POST /checkout` recusa com `409 SALES_NOT_OPEN` antes da abertura das vendas, seção 6.5). 0.3.17, 2026-10-26 (aviso de site fora do ar: `POST /internal/uptime` e o alerta `site_down` com o e-mail de volta, seção 6.16; o CSP do site passa a valer, seção 6.19). 0.3.16, 2026-10-25 (uso da infraestrutura: `GET /admin/metrics` leva `usage`, e toda chamada das funções soma no contador do mês, seção 6.12). 0.3.15, 2026-10-25 (revisão de segurança: o admin exige o código do app autenticador confirmado nas últimas 12 horas, seção 6.12; `POST /referral/visit` devolve o comprovante assinado da visita e o `POST /checkout` só atribui a venda ao parceiro com ele, seção 6.18; a agenda do banco usa o segredo próprio `DISPATCH_SECRET`, seção 8.2; nova `POST /csp-report`, seção 6.19). 0.3.14, 2026-10-24 (o formulário de pagamento abre com a página, travado até o aceite: `POST /checkout` sem `terms_accepted` devolve também o `order_id`, e `POST /checkout/terms` grava o aceite, seção 6.5; sai o `TERMS_NOT_ACCEPTED`). 0.3.13, 2026-10-24 (cupons, parceiros e indicações em `/admin/discounts/*`, `/admin/partners/*` e `POST /referral/visit`; a faixa do topo no `/catalog`, a indicação no `POST /checkout` e o marketing nas métricas, seção 6.18). 0.3.12, 2026-10-24 (catálogo no admin em `/admin/catalog` e `/admin/products/*`, seção 6.17; o `/catalog` leva o preço riscado, seção 6.1). 0.3.11, 2026-10-24 (alertas do admin em `/admin/alerts/*`, seção 6.16; o e-mail dos admins e a contestação que abre o alerta, seções 8.2 e 9). 0.3.10, 2026-10-24 (Fase 3 do admin: pedidos e reembolsos em `/admin/orders/*`, seção 6.15; o aviso de reembolso por e-mail, seção 8). 0.3.9, 2026-10-24 (limpeza: saem `GET /health`, `POST /account/marketing/prompt`, a origem `cart` e o `Content-Disposition` das exportações; Customer apagado na Stripe é trocado: seção 11.7). 0.3.8, 2026-10-23 (usuários no admin). 0.3.7, 2026-10-23 (blog no admin). 0.3.6, 2026-10-22 (preços da Stripe guardados no banco: seção 6.1). 0.3.5, 2026-10-22 (sacola sem login e jogo repetido: seções 6.2, 6.2.1 e 6.5). 0.3.4, 2026-10-21 (painel do administrador: seção 6.12). 0.3.3, 2026-10-19 (direitos do titular, LGPD: seção 6.11). 0.3.2, 2026-10-08. Modelo de vendas do Plano do site P2: carrinho, login obrigatório, entrega por e-mail, consentimento e contestações. Inclui o formulário de pagamento embutido configurado no Checkout Studio (nota "Stripe Checkout Studio"). Substitui a v0.2. O que mudou está na seção 11; a v0.3.1 registra o I4 (seção 11.1) e a v0.3.2, o I5 (seção 11.2). |
 | Dono | Ferrolho (Backend sênior). Banco, permissões e RPCs: `docs/data-contract.md` v0.3 (Lastro). |
 | Estado | I4: além do I3 (`POST /checkout`, `GET /order-status`, `stripe-webhook`), implementadas `POST /download-url`, `GET /d/{token}`, `GET /free-games`, `POST /free-download` e a função `email-dispatch` (entrega; modo log no local). I5: e-mails de marketing (`cart_reminder`, `post_purchase`) no `email-dispatch`, `GET`/`POST /email/unsubscribe`, a função `brevo-webhook` e a agenda (`pg_cron` + `pg_net`, migração do Lastro). Testes em `supabase/functions/tests`. Passos restantes da Stripe: `docs/stripe.md`. |
 | Fontes | Nota "Plano do site P2" (ajustes do orquestrador, seções 4 e 5) e decisões do responsável registradas nas notas P1 e P2. |
@@ -16,6 +16,7 @@
 | `api` | Site (navegador) e e-mails (links) | Sessão, token HMAC ou pública, por rota | `false` | Lista de origens | I0 em diante |
 | `stripe-webhook` | Stripe | Assinatura `Stripe-Signature` | `false` | Não | I3 |
 | `brevo-webhook` | Brevo | Segredo compartilhado (seção 8.1) | `false` | Não | I5 |
+| `ses-events` | Amazon SNS (avisos do Amazon SES) | Assinatura do SNS e tópico (seção 8.3) | `false` | Não | E-mail (2026-10-31) |
 | `email-dispatch` | `pg_cron` via `pg_net`, `api` e `stripe-webhook` | Chave secreta do projeto | `false` | Não | I4 |
 
 Base: `<SUPABASE_URL>/functions/v1/<função>`. Local: `http://127.0.0.1:54321/functions/v1/<função>`. Teste: projeto `keytotwo-print-db`. Deploy só com autorização da tarefa.
@@ -134,7 +135,7 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `PUT /account/marketing` | `set_marketing_consent(uid, granted, source, text_version)` → `get_account(uid)` | I2b |
 | `GET /library` | `get_library(uid)` | I2b |
 | `GET /account/export` | `export_account_data(uid)` | LGPD |
-| `POST /account/delete` | `delete_account_data(uid)` → Auth admin `DELETE /auth/v1/admin/users/{uid}` (só com `deleted`) | LGPD |
+| `POST /account/delete` | `delete_account_data(uid)` → Auth admin `DELETE /auth/v1/admin/users/{uid}` (só com `deleted`) → Plunk, em segundo plano, apaga o contato do e-mail (seção 6.11) | LGPD |
 | `POST /checkout` | `create_order_from_cart(uid, livemode, cart_version, terms_version, terms_accepted)` → Stripe Customer, se faltar ou se a Stripe disser que foi apagado → `set_stripe_customer(uid, customer_id[, replaces])` → Checkout Session do formulário embutido → `attach_checkout_session(order_id, session_id, expires_at)` | I3 |
 | `GET /order-status` | Stripe lê a sessão → `fulfill_order` ou `set_order_status`, se preciso → `get_order_status(order_id, uid)` | I3 |
 | `POST /download-url` | `resolve_download(uid, file_id)` → assina no B2 | I4 |
@@ -158,7 +159,8 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `POST /email/unsubscribe` | `unsubscribe(user_id, 'unsubscribe_link')` | I5 |
 | `stripe-webhook` | `fulfill_order` ou `set_order_status` (seção 9) | I3 |
 | `brevo-webhook` | `record_email_event(...)` | I5 |
-| `email-dispatch` | `claim_email_batch(limit, outbox_id)` → Brevo → `mark_email_result(id, sent \| failed \| rejected, ...)` | I4 |
+| `ses-events` | `record_email_event(..., ses_events)` | E-mail (2026-10-31) |
+| `email-dispatch` | `claim_email_batch(limit, outbox_id)` → Brevo ou Plunk → `mark_email_result(id, sent \| failed \| rejected, ...)` | I4 |
 | Agenda (`pg_cron`, só SQL) | `private.enqueue_followups()` e chamada ao `email-dispatch` | I5 |
 | Agenda diária (`pg_cron`, só SQL) | `private.purge_email_outbox()`: apaga da fila o que saiu há mais de 90 dias | LGPD |
 
@@ -548,6 +550,7 @@ LGPD, art. 18 (Política de privacidade › Seus direitos). Sessão obrigatória
 `POST /account/delete`, corpo `{ "confirmation": "EXCLUIR" }` (sem diferença de maiúsculas; o site pede que a pessoa digite a palavra) → `delete_account_data(uid)`:
 
 - `deleted` → a rota apaga o usuário no Auth (`DELETE /auth/v1/admin/users/{uid}`, chave secreta no `apikey`; `404` conta como feito) e responde `200 { "deleted": true }`. O site encerra a sessão local e volta ao início.
+- Com `PLUNK_API_URL` e `PLUNK_SECRET_KEY` (desde 2026-10-31), apaga também, em segundo plano, o contato do e-mail no Plunk, com o histórico de envios dele: `GET /contacts?search=<e-mail>` (a busca é por trecho; só o endereço exato conta) e `DELETE /contacts/{id}`. Falhou, a exclusão da conta não falha e a limpeza diária da VPS (`deploy/plunk/limpar.sh`) apaga em até 90 dias. A exclusão pelo admin (`POST /admin/users/{id}/delete`) faz o mesmo, com o e-mail confirmado.
 - `blocked` → `409 ACCOUNT_DELETION_BLOCKED`, `details: { "reason": "payment_pending" | "checkout_open" | "dispute_open" }`. Nada muda.
 - Confirmação ausente ou diferente → `400 INVALID_REQUEST`, sem tocar no banco. `KT009` → `403 EMAIL_NOT_CONFIRMED`.
 - Falha do Auth depois da RPC → `500 INTERNAL_ERROR` (log só com o status HTTP). Repetir é seguro: a RPC é idempotente e o Auth recebe a exclusão de novo.
@@ -701,12 +704,13 @@ Formato: `<payload>.<assinatura>`, ambos em base64url sem preenchimento.
 
 ## 8. Funções de e-mail
 
-Todo e-mail do app sai pela API v3 da Brevo (as Edge Functions não podem usar SMTP). No I4 o template da entrega está **no código** (`_shared/email.ts`, HTML e texto em pt-BR); mudar o texto exige deploy. Templates da Brevo continuam possíveis depois, sem mudar banco nem rotas. O remetente é `EMAIL_FROM` / `EMAIL_FROM_NAME` **[D7]**.
+Todo e-mail do app sai pela API v3 da Brevo ou, com `EMAIL_MODE=plunk` (desde 2026-10-31), pela API do Plunk na VPS, que envia pelo Amazon SES (as Edge Functions não podem usar SMTP). No I4 o template da entrega está **no código** (`_shared/email.ts`, HTML e texto em pt-BR); mudar o texto exige deploy. Templates da Brevo continuam possíveis depois, sem mudar banco nem rotas. O remetente é `EMAIL_FROM` / `EMAIL_FROM_NAME` **[D7]**.
 
 **Modo de envio (`EMAIL_MODE`):**
 
 - `log` (padrão, e o único usado no local): nada sai para fora. O console registra só o tipo e o id da linha, sem e-mail nem token. Com `EMAIL_LOG_MAILPIT_URL`, uma cópia vai para o Mailpit local, para conferir o e-mail.
 - `brevo`: envio real. Exige chave v3 (`xkeysib-`); outra chave → `rejected` com `brevo_chave_nao_v3`. Com `EMAIL_ALLOWED_RECIPIENTS` preenchida (ambientes de teste), destinatário fora da lista → `rejected` com `fora_da_lista_de_teste`. Na produção a lista fica vazia.
+- `plunk` (desde 2026-10-31): envio real pelo Plunk (`POST {PLUNK_API_URL}/v1/send`, `Authorization: Bearer <PLUNK_SECRET_KEY>`), com o mesmo HTML; o texto simples o Plunk tira do HTML. Não vai `subscribed`: contato novo entra no Plunk como não inscrito. Os headers da mensagem (o `List-Unsubscribe` do site) passam por cima dos do Plunk. O id guardado é o do e-mail no Plunk. `401`, `403`, `429` e `5xx` → `failed` (`plunk_http_<status>`); outro erro, ou resposta sem o id, → `rejected`. A mesma lista de teste do modo `brevo`.
 
 ### 8.1 `brevo-webhook`
 
@@ -748,6 +752,24 @@ Todo e-mail do app sai pela API v3 da Brevo (as Edge Functions não podem usar S
 - **Templates da Brevo** (opção futura): `BREVO_TEMPLATE_DELIVERY`, `BREVO_TEMPLATE_CART_REMINDER` e `BREVO_TEMPLATE_POST_PURCHASE` ficam reservadas e não são lidas no I4.
 - **Anexo [D4]:** opção futura do despachante, sem mudar banco nem rotas. Ligado por configuração, anexa os PDFs que couberem nos limites da Brevo (cerca de 4 MB por anexo e 20 MB por mensagem, a confirmar), além dos links. Arquivo acima do limite segue só por link. Hoje: só links.
 - **Risco [D8]:** se a Brevo não aceitar conteúdo promocional pela API transacional, só o envio dos tipos de marketing muda (evento `trackEvent` para uma automação mínima). O banco continua decidindo e registrando.
+
+### 8.3 `ses-events`
+
+Avisos do Amazon SES sobre os e-mails que o Plunk envia, pelo Amazon SNS (desde 2026-10-31; enquanto a Brevo enviar, os dela seguem pela 8.1).
+
+- **Origem:** o tópico SNS `plunk-ses-events` (us-east-2), em que os configuration sets do Plunk publicam. Esta função tem uma inscrição HTTPS própria, com política de filtro no corpo (`{"eventType": ["Bounce", "Complaint"]}`); o Plunk tem outra, sem filtro.
+- **Autenticação:** a assinatura do SNS (`SignatureVersion` `2`, RSA-SHA256), conferida com o certificado de `SigningCertURL`, que precisa ser `https://sns.<região do tópico>.amazonaws.com/….pem` (fica em memória), e `TopicArn` igual a `SES_EVENTS_TOPIC_ARN`. Falhou → `400 INVALID_SIGNATURE`, sem tocar no banco. Certificado fora do ar → `500`, para o SNS reenviar.
+- **Corpo:** o JSON do SNS, em `text/plain` (até 512 KB). JSON inválido → `400`; método diferente de `POST` → `405`.
+- **`SubscriptionConfirmation`:** abre o `SubscribeURL` (só no mesmo host do SNS) e responde `200 { "confirmed": true }`.
+- **`Notification`:** o `Message` é o evento do SES (`eventType`, ou `notificationType` no formato das notificações da identidade):
+
+  | Evento do SES | Chamada |
+  | --- | --- |
+  | `Bounce` com `bounceType` `Permanent` | `record_email_event(email, 'hard_bounce', mail.messageId, bounce.timestamp, 'ses_events')`, para cada `bouncedRecipients[].emailAddress` |
+  | `Complaint` | `record_email_event(..., 'complaint', ..., complaint.timestamp, 'ses_events')`, para cada `complainedRecipients[].emailAddress` |
+  | Os demais (`Bounce` temporário, `Delivery`, `Open`...) | `200` sem chamada |
+
+- Resposta `200 { "received", "recorded", "ignored" }`, como na 8.1: `KT001` conta como `ignored`; outra falha do banco → `500`, para o SNS reenviar. O e-mail nunca vai para o log.
 
 ## 9. `stripe-webhook`
 
@@ -792,9 +814,11 @@ Contestação e reembolso valem para o pedido inteiro.
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | `api`, `stripe-webhook` | Já no modelo |
 | **`VITE_STRIPE_PUBLISHABLE_KEY`** | site (build), não as funções | **Nova**, pública (`pk_test_...` no teste). Usada pelo formulário embutido |
 | `BREVO_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME` | `email-dispatch`, `api` e `stripe-webhook` (despacho em segundo plano) | Já no modelo. Chave v3 (`xkeysib-`) e, na Brevo, sem restrição de IP: as funções não têm IP fixo |
-| **`EMAIL_MODE`** | as mesmas | **Nova**, não secreta: `log` (padrão) ou `brevo` |
+| **`EMAIL_MODE`** | as mesmas | **Nova**, não secreta: `log` (padrão), `brevo` ou, desde 2026-10-31, `plunk` |
 | **`EMAIL_LOG_MAILPIT_URL`** | as mesmas | **Nova**, só local: Mailpit que recebe a cópia no modo `log` |
-| **`EMAIL_ALLOWED_RECIPIENTS`** | as mesmas | **Nova**, só teste: destinatários permitidos no modo `brevo` (vírgula); vazia na produção |
+| **`EMAIL_ALLOWED_RECIPIENTS`** | as mesmas | **Nova**, só teste: destinatários permitidos nos modos `brevo` e `plunk` (vírgula); vazia na produção |
+| **`PLUNK_API_URL`**, **`PLUNK_SECRET_KEY`** | as mesmas | **Novas** (2026-10-31): a API do Plunk (`https://api.email.keytotwo.com.br`) e a chave secreta do projeto (`sk_…`). Obrigatórias no modo `plunk`; com as duas, a exclusão de conta apaga o contato no Plunk, em qualquer modo |
+| **`SES_EVENTS_TOPIC_ARN`** | `ses-events` | **Nova** (2026-10-31), não secreta: o ARN do tópico SNS aceito (`arn:aws:sns:us-east-2:<conta>:plunk-ses-events`) |
 | **`API_PUBLIC_URL`** | as mesmas | **Nova**, não secreta: base pública da `api` nos links dos e-mails. Padrão `SUPABASE_URL/functions/v1/api`; no local é obrigatória (lá `SUPABASE_URL` é o endereço interno do gateway) |
 | `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET`, `B2_READ_KEY_ID`, `B2_READ_APPLICATION_KEY` | `api` | Já no modelo. Só a chave de leitura vai para as funções; a de escrita fica fora delas |
 | **`B2_BLOG_BUCKET`**, **`B2_BLOG_KEY_ID`**, **`B2_BLOG_APPLICATION_KEY`** | `api` | **Novas** (blog, 2026-10-23). O bucket PÚBLICO das imagens do blog (`keytotwo-print-blog`, mesma região do `B2_ENDPOINT`) e uma chave de escrita restrita a ele. Nada dos jogos passa por ela |

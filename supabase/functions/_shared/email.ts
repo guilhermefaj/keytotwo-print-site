@@ -65,9 +65,57 @@ async function sendBrevo(message: Message): Promise<string> {
   throw new PermanentEmailError(code)
 }
 
+// Modo plunk: API do Plunk na VPS (POST /v1/send), que envia pelo Amazon SES. Contato novo entra lá como não inscrito,
+// e os headers da mensagem (o List-Unsubscribe do site) passam por cima dos do Plunk. Fora da produção, só para a lista
+// de teste. O texto simples o Plunk tira do HTML.
+async function sendPlunk(message: Message): Promise<string> {
+  const allowed = env.emailAllowedRecipients()
+  if (allowed.length && !allowed.includes(message.to.toLowerCase())) throw new PermanentEmailError('fora_da_lista_de_teste')
+  const from = env.emailFrom()
+  const res = await fetch(`${env.plunkApiUrl()}/v1/send`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.plunkSecretKey()}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      to: message.to, subject: message.subject, body: message.html, from: { email: from.email, name: from.name },
+      ...(message.headers ? { headers: message.headers } : {}),
+    }),
+    signal: AbortSignal.timeout(10_000),
+  })
+  const body = await res.json().catch(() => ({}))
+  const id = body?.data?.emails?.[0]?.email
+  if (res.ok && body.success === true && typeof id === 'string') return id
+  const code = `plunk_http_${res.status}`
+  // 401/403 são configuração (chave, Plunk fora do ar atrás do proxy): a fila tenta de novo depois da correção.
+  if (res.status === 401 || res.status === 403 || res.status === 429 || res.status >= 500) throw new TransientEmailError(code)
+  throw new PermanentEmailError(code)
+}
+
 // Envia pelo modo configurado (EMAIL_MODE) e devolve o id do provedor.
 async function sendMessage(message: Message, rowId: string): Promise<string> {
-  return env.emailMode() === 'brevo' ? await sendBrevo(message) : await sendLog(message, rowId)
+  switch (env.emailMode()) {
+    case 'brevo': return await sendBrevo(message)
+    case 'plunk': return await sendPlunk(message)
+    default: return await sendLog(message, rowId)
+  }
+}
+
+// Exclusão de conta (LGPD): apaga no Plunk o contato do e-mail, com o histórico de envios dele. Em segundo plano e sem
+// falhar a exclusão; se não der, a limpeza diária do Plunk (deploy/plunk/limpar.sh) apaga em até 90 dias.
+// A busca do Plunk é por trecho do e-mail: só o endereço exato é apagado.
+export function forgetEmailContact(email: string | null | undefined): void {
+  const target = email?.trim().toLowerCase()
+  if (!target || !env.plunkConfigured()) return
+  runInBackground('plunk-contato', async () => {
+    const base = env.plunkApiUrl()
+    const headers = { Authorization: `Bearer ${env.plunkSecretKey()}`, Accept: 'application/json' }
+    const found = await fetch(`${base}/contacts?${new URLSearchParams({ search: target, limit: '100' })}`, { headers, signal: AbortSignal.timeout(10_000) })
+    if (!found.ok) throw new Error(`plunk_busca_http_${found.status}`)
+    const list = (await found.json().catch(() => ({})))?.data
+    const contact = Array.isArray(list) ? list.find((c) => typeof c?.email === 'string' && c.email.toLowerCase() === target) : undefined
+    if (!contact || typeof contact.id !== 'string') return
+    const res = await fetch(`${base}/contacts/${encodeURIComponent(contact.id)}`, { method: 'DELETE', headers, signal: AbortSignal.timeout(10_000) })
+    if (!res.ok && res.status !== 404) throw new Error(`plunk_exclusao_http_${res.status}`)
+  })
 }
 
 export async function dispatchEmails(options: { limit?: number; outboxId?: string } = {}): Promise<DispatchSummary> {

@@ -149,6 +149,14 @@ Desde 2026-10-31 o Plunk (código aberto, versão fixa no compose) roda na VPS e
 - **Contas:** o cadastro fica fechado. Para mais alguém: `DISABLE_SIGNUPS=false` no `.env`, `up -d`, a pessoa se cadastra, volta para `true` e `up -d` de novo.
 - **AWS (projeto da AWS em us-east-2):** identidade `keytotwo.com.br` com DKIM (3 CNAME `<token>._domainkey`) e MAIL FROM `plunk.keytotwo.com.br` (MX `feedback-smtp.us-east-2.amazonses.com` e TXT `v=spf1 include:amazonses.com ~all`); conta fora do sandbox. Configuration sets `plunk-tracking` e `plunk-no-tracking`, que publicam os eventos no tópico SNS `plunk-ses-events` (só o SES publica, assinatura v2), inscrito em `https://api.email.keytotwo.com.br/webhooks/sns`. O usuário IAM `plunk-ses` (política `plunk-ses-send`) só envia como `keytotwo.com.br` e só saindo do IP da VPS: se a VPS mudar de IP, atualize o `aws:SourceIp` da política antes.
 - **Chave da AWS:** trocar a cada 90 dias (criar a nova no IAM, pôr no `.env` da VPS e no arquivo de segredos, `up -d`, conferir um envio e só então apagar a antiga).
+- **Avisos para o site:** a função `ses-events` tem a sua própria inscrição HTTPS no tópico `plunk-ses-events`, com filtro no corpo (`{"eventType": ["Bounce", "Complaint"]}`): bounce definitivo e reclamação viram supressão no banco, com a origem `ses_events` (contrato da API, 8.3).
+- **Limpeza diária** (política de privacidade: o registro de cada e-mail some em 90 dias): `deploy/plunk/limpar.sh`, em `/opt/keytotwo-site/plunk/limpar.sh`, no cron do `deploy` às 03:50 de Brasília (`50 6 * * * sh /opt/keytotwo-site/plunk/limpar.sh >> /opt/keytotwo-site/plunk/limpar.log 2>&1`). Apaga do banco do Plunk os e-mails com mais de 90 dias (com os eventos, em cascata; os que ainda vão sair ficam) e os contatos sem inscrição e sem e-mail recente. A exclusão de conta no site já apaga o contato na hora.
+
+**Troca da Brevo pelo Plunk** (na hora que o responsável escolher; até lá, nada muda para quem usa o site):
+
+1. **Antes, com a Brevo enviando:** a migração `20261031120000_eventos_ses.sql` aplicada e as funções publicadas (`api`, `email-dispatch`, `stripe-webhook` e a nova `ses-events`). Nos segredos das funções: `PLUNK_API_URL=https://api.email.keytotwo.com.br`, `PLUNK_SECRET_KEY` (uma chave nova, gerada em *Settings → API Keys* do Plunk só para isso) e `SES_EVENTS_TOPIC_ARN`. Inscrever a `ses-events` no tópico (HTTPS, `https://<ref>.supabase.co/functions/v1/ses-events`, com o filtro acima): a função confirma sozinha. Conferir com um envio para `bounce@simulator.amazonses.com` pelo painel do Plunk: a supressão aparece com a origem `ses_events`.
+2. **A troca:** `EMAIL_MODE=plunk` nos segredos das funções. Vale na próxima chamada, sem deploy. Conferir no admin um e-mail enviado e, no Plunk, a entrega.
+3. **Voltar, se algo der errado:** `EMAIL_MODE=brevo`. A chave e o webhook da Brevo continuam até a fase de desligar a Brevo.
 
 ## Backup do banco
 

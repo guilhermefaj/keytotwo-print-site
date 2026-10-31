@@ -88,7 +88,7 @@ function UserPage({ id }: { id: string }) {
     </Section>
 
     <Section id="emails" title="E-mails">
-      {user.suppressions.map(entry => <p key={entry.reason} className="status-warning">A Brevo não entrega para este endereço: {suppressionLabel(entry.reason)} ({formatMoment(entry.occurred_at)}).</p>)}
+      {user.suppressions.map(entry => <p key={entry.reason} className="status-warning">Os e-mails não chegam a este endereço: {suppressionLabel(entry.reason)} ({formatMoment(entry.occurred_at)}).</p>)}
       {user.emails.length === 0 ? <p className="status">Nenhum e-mail ainda.</p>
         : <div className="table-scroll" tabIndex={0} role="region" aria-label="Últimos e-mails">
           <table className="data-table">

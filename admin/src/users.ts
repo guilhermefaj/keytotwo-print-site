@@ -106,7 +106,7 @@ export const suppressionLabel = (reason: string) => label(SUPPRESSIONS, reason)
 
 const CONSENT_SOURCES: Record<string, string> = {
   signup_prompt: 'no convite da conta nova', cart: 'na sacola', free_games: 'nos gratuitos', account: 'em Minha conta',
-  support: 'pela equipe', unsubscribe_link: 'pelo link do e-mail', brevo_webhook: 'pela Brevo',
+  support: 'pela equipe', unsubscribe_link: 'pelo link do e-mail', brevo_webhook: 'pela Brevo', ses_events: 'pelo aviso de spam da AWS',
 }
 export const consentLabel = (entry: { action: string; source: string }) => `${entry.action === 'granted' ? 'Aceitou' : 'Saiu'} ${label(CONSENT_SOURCES, entry.source)}`
 
