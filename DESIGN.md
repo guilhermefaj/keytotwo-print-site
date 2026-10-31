@@ -383,9 +383,17 @@ Central de ajuda em página de leitura. Logo abaixo do H1, quatro cards de tema 
 - **Guia de impressão** (`.print-guide`): dicas gerais (papel A4, tamanho real, uma face, recorte, guardar) em lista com ícone, num card de fio fino com réguas entre as dicas. Depois, "O que cada jogo pede": o nome do jogo e os itens de `needs`, com régua entre os jogos (sem miniatura desde 2026-10-24). Nenhuma página do PDF ilustra o guia, e nenhuma dica promete um resultado de impressão que não foi testado.
 - **Atendimento** (`.support-card`): o e-mail `contato@keytotwo.com.br` em Title Turquesa profundo, selecionável, com link `mailto:` e o botão secundário "Copiar e-mail" (o `mailto:` pode não abrir em todo aparelho). A confirmação da cópia sai em `role="status"`.
 
-### E-mails (Auth e transacionais)
+### E-mails (Auth, transacionais e marketing)
 
-O mesmo visual em `supabase/templates/*.html` (código de acesso, confirmação e senha) e em `supabase/functions/_shared/email.ts` (entrega, presente, lembrete de sacola, pós-compra): Papel, um card de 520 px com borda 2 px Turquesa J001 (os e-mails ficam com o visual de antes de 2026-10-24: são outra mídia, com estilo inline em tabela), faixa de Céu no topo com "KeyToTwo" e "jogos para casais", a linha de recorte tracejada logo abaixo, título em 24 px, botão em Turquesa profundo e um rodapé com a assinatura e o e-mail de atendimento. A assinatura é a frase do Kito ("Um pinguim numa tela pedindo para vocês saírem dela.", a mesma do rodapé do site) no lembrete de sacola e no pós-compra; nos e-mails de serviço é "KeyToTwo: jogos para casais imprimirem em casa.". O código de acesso aparece num recorte tracejado. Tudo em estilo inline e tabela, com Arial: fonte web e imagem de logo não são confiáveis em e-mail.
+"Bilhete de recorte" (aprovado pelo responsável em 2026-10-31), o mesmo em `supabase/templates/*.html` (código de acesso, confirmação e senha), em `supabase/functions/_shared/email-templates.ts` (entrega, presente, reembolso, alerta dos admins, lembrete de sacola e pós-compra) e nos modelos de marketing do Plunk:
+
+- **Folha:** 600 px, Papel, com a linha de recorte tracejada de 2 px em Turquesa J001 em cima e embaixo. Acima da folha, "KeyToTwo" em Bricolage 800 e, à direita, um marcador em IBM Plex Mono com um fato real ("PEDIDO A1B2C3D4", "BOAS-VINDAS · 1 DE 3"). Fundo de fora: Papel nos de serviço, Céu no marketing.
+- **Título:** Bricolage 800, 30 px (25 px no celular), com um traço de Marca-texto atrás de uma palavra ou expressão curta, que não quebra a linha. Texto em DM Sans 16 px; notas em 14 px Tinta suave.
+- **Botão:** Turquesa profundo, texto branco, `{rounded.sm}`, um só por e-mail. Listas de jogos com fio claro e, na entrega, o link "Baixar" na mesma linha.
+- **Kito:** só no marketing, uma vez, em três quartos virado para a esquerda (PNG 240 px exibido a 120, 88 no celular), à direita do título, olhando para o texto. Os de serviço não têm imagem: ajuda a cair na aba Principal do Gmail. As imagens ficam em `public/media/email/` (poses e capas em JPG; nunca páginas de PDF).
+- **Cupom e código:** num recorte tracejado de Tinta sobre a creme do Design System (`#fff8eb`), em IBM Plex Mono. No Auth, o código vem antes do botão (o teste de integração lê o primeiro número de 6 dígitos).
+- **Rodapé:** no serviço, "Dúvidas? É só responder este e-mail" (o remetente é contato@), a assinatura "KeyToTwo: jogos para casais imprimirem em casa." e a razão social com o CNPJ. No marketing, a frase do Kito ("Um pinguim numa tela pedindo para vocês saírem dela."), Instagram e TikTok, a razão social e, por último, em 11 px, o motivo do envio e "Sair da lista".
+- **Só o tema claro** (`color-scheme: light only`), por escolha do responsável. Fontes da marca pelo Google Fonts, com reserva Arial: clientes que não carregam fonte web mostram a reserva. Estilo inline em tabela.
 
 ### Como funciona (`.print-sheet`)
 
