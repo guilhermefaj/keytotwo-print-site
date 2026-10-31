@@ -60,6 +60,17 @@ main() {
   mkdir -p "$base/backup"
   cp "$base/repo/deploy/backup/backup.sh" "$base/backup/backup.sh.novo"
   mv -f "$base/backup/backup.sh.novo" "$base/backup/backup.sh"
+  # Limpeza (2026-10-31): ficam três imagens live, a do ar e as duas mais novas para voltar sem build; uma mais antiga se
+  # refaz rodando este script com o commit. A do ar sai da lista pelo nome, não pela data: um build igual a um antigo
+  # reaproveita a imagem e a data dela. O vigia refaz a mesma tag a cada post e a anterior fica sem nome; o cache do
+  # build guarda uma semana.
+  {
+    docker images keytotwo-site --format '{{.CreatedAt}}|{{.Tag}}' | sort -r | sed -n 's/^.*|\(live-.*\)$/\1/p' \
+      | grep -vx "live-$sha" | tail -n +3 \
+      | while read -r tag; do docker image rm "keytotwo-site:$tag" >/dev/null 2>&1 || true; done
+    docker image prune -f >/dev/null
+    docker builder prune -f --filter until=168h >/dev/null
+  } || echo "Aviso: a limpeza das imagens falhou; o site já está no ar" >&2
   echo "keytotwo.com.br no commit $sha"
 }
 
