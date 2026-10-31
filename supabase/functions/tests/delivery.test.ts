@@ -169,7 +169,9 @@ contractTest('email-dispatch modo log: um botão por jogo com link /d/{token} v�
 
   const mail = externalCalls[0].body as { To: { Email: string }[]; Subject: string; HTML: string; Text: string }
   assertEquals([mail.To[0].Email, mail.Subject], ['comprador@example.com', 'Seus jogos chegaram (pedido A1B2C3D4)'])
-  assert(mail.HTML.includes('Baixar Jogo &lt;Um&gt;') && mail.HTML.includes('Baixar TESTE-J02'), 'nomes escapados e código como reserva')
+  assert(mail.HTML.includes('Jogo &lt;Um&gt;') && !mail.HTML.includes('Jogo <Um>') && mail.Text.includes('Baixar TESTE-J02: '), 'nomes escapados e código como reserva')
+  // Transacional (2026-10-31): sem imagem e sem descadastro, para a aba Principal do Gmail.
+  assert(!mail.HTML.includes('<img') && !/sair da lista/i.test(mail.HTML), 'transacional sem imagem e sem descadastro')
   assert(mail.HTML.includes('http://127.0.0.1:5176/meus-jogos') && mail.Text.includes('Meus jogos: http://127.0.0.1:5176/meus-jogos'))
   const links = [...mail.Text.matchAll(/http:\/\/127\.0\.0\.1:54321\/functions\/v1\/api\/d\/([A-Za-z0-9_.-]+)/g)].map((m) => m[1])
   assertEquals(links.length, 2)
@@ -184,11 +186,19 @@ contractTest('email-dispatch: presente (gift, 2026-10-23) com os mesmos botões 
   const { result } = await captureErrors(async () => await (await dispatchRequest({ outbox_id: OUTBOX_ID })).json())
   assertEquals(result, { claimed: 1, sent: 1, failed: 0, rejected: 0 })
   const mail = externalCalls[0].body as { Subject: string; HTML: string; Text: string }
-  assertEquals(mail.Subject, 'Um jogo de presente para vocês')
-  assert(mail.Text.includes('A KeyToTwo deu Jogo <Um> e TESTE-J02 para vocês. Já são de vocês: é só baixar, imprimir e jogar.'))
-  assert(mail.HTML.includes('A KeyToTwo deu Jogo &lt;Um&gt; e TESTE-J02 para vocês.') && mail.HTML.includes('Baixar TESTE-J02'))
+  assertEquals(mail.Subject, 'Jogos de presente em Meus jogos')
+  assert(mail.Text.includes('A KeyToTwo deu Jogo <Um> e TESTE-J02 para vocês. É presente, sem nada a pagar: é só baixar, imprimir e jogar.'))
+  assert(mail.HTML.includes('A KeyToTwo deu Jogo &lt;Um&gt; e TESTE-J02 para vocês.') && mail.HTML.includes('Tem jogos '))
   assert(!/pedido|pagamento/i.test(mail.Text), 'presente não fala em pedido nem pagamento')
   assertEquals([...mail.Text.matchAll(/\/functions\/v1\/api\/d\/[A-Za-z0-9_.-]+/g)].length, 2)
+
+  // Um jogo só: o nome no assunto, para a pessoa reconhecer o presente.
+  dispatchRpc([{ ...DELIVERY_ROW, kind: 'gift', payload: { ...DELIVERY_ROW.payload, games: DELIVERY_ROW.payload.games.slice(0, 1) } }])
+  onExternal(() => ok({ ID: 'mailpit-3' }))
+  await captureErrors(() => dispatchRequest({ outbox_id: OUTBOX_ID }))
+  const one = externalCalls[0].body as { Subject: string; HTML: string }
+  assertEquals(one.Subject, 'Jogo <Um> foi liberado em Meus jogos')
+  assert(one.HTML.includes('Tem um jogo '))
 })
 
 contractTest('email-dispatch: aviso de reembolso (refund, 2026-10-24) com o pedido, os produtos e o valor, sem botão de baixar', async () => {
