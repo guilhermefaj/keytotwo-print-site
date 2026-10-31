@@ -92,7 +92,7 @@ export const orderStatusLabel = (order: Pick<UserOrder, 'kind' | 'status'>) => (
 const REVOKE_REASONS: Record<string, string> = { refund: 'reembolso', dispute: 'contestação do pagamento', manual: 'retirado pela equipe', account_deleted: 'conta excluída' }
 export const revokeReasonLabel = (reason: string | null) => label(REVOKE_REASONS, reason) || 'retirado'
 
-const EMAIL_KINDS: Record<string, string> = { delivery: 'Entrega', gift: 'Presente', refund: 'Aviso de reembolso', admin_alert: 'Alerta do admin', cart_reminder: 'Lembrete da sacola', post_purchase: 'Depois da compra' }
+const EMAIL_KINDS: Record<string, string> = { delivery: 'Entrega', gift: 'Presente', refund: 'Aviso de reembolso', admin_alert: 'Alerta do admin', cart_reminder: 'Lembrete da sacola', cart_reminder_2: 'Sacola, 2º toque', post_purchase: 'Depois da compra' }
 const EMAIL_STATUS: Record<string, string> = { queued: 'Na fila', sending: 'Enviando', sent: 'Enviado', failed: 'Falhou', skipped: 'Não enviado', canceled: 'Cancelado' }
 const SKIP_REASONS: Record<string, string> = {
   no_opt_in: 'sem aceite das novidades', suppressed: 'endereço bloqueado', already_purchased: 'já comprou', cart_changed: 'a sacola mudou',
@@ -106,7 +106,7 @@ export const suppressionLabel = (reason: string) => label(SUPPRESSIONS, reason)
 
 const CONSENT_SOURCES: Record<string, string> = {
   signup_prompt: 'no convite da conta nova', cart: 'na sacola', free_games: 'nos gratuitos', account: 'em Minha conta',
-  support: 'pela equipe', unsubscribe_link: 'pelo link do e-mail', brevo_webhook: 'pela Brevo', ses_events: 'pelo aviso de spam da AWS',
+  support: 'pela equipe', unsubscribe_link: 'pelo link do e-mail', brevo_webhook: 'pela Brevo', ses_events: 'pelo aviso de spam da AWS', plunk_webhook: 'pelo rodapé de um e-mail do Plunk',
 }
 export const consentLabel = (entry: { action: string; source: string }) => `${entry.action === 'granted' ? 'Aceitou' : 'Saiu'} ${label(CONSENT_SOURCES, entry.source)}`
 

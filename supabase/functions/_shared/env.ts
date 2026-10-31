@@ -79,6 +79,8 @@ export const env = {
   plunkSecretKey: () => required('PLUNK_SECRET_KEY'),
   // Com os dois, a exclusão de conta apaga o contato no Plunk (mesmo antes da troca, no modo brevo).
   plunkConfigured: () => Boolean(read('PLUNK_API_URL') && read('PLUNK_SECRET_KEY')),
+  // Token Bearer do passo de webhook da automação "Descadastro no Plunk" (a função plunk-webhook).
+  plunkWebhookSecret: () => required('PLUNK_WEBHOOK_SECRET'),
   // Tópico SNS dos eventos do SES: a ses-events só aceita mensagens assinadas dele.
   sesEventsTopicArn: () => required('SES_EVENTS_TOPIC_ARN'),
   emailLogMailpitUrl: () => read('EMAIL_LOG_MAILPIT_URL')?.replace(/\/+$/, ''),

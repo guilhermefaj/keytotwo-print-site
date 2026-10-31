@@ -99,23 +99,79 @@ async function sendMessage(message: Message, rowId: string): Promise<string> {
   }
 }
 
-// Exclusão de conta (LGPD): apaga no Plunk o contato do e-mail, com o histórico de envios dele. Em segundo plano e sem
-// falhar a exclusão; se não der, a limpeza diária do Plunk (deploy/plunk/limpar.sh) apaga em até 90 dias.
-// A busca do Plunk é por trecho do e-mail: só o endereço exato é apagado.
+const plunkHeaders = () => ({ Authorization: `Bearer ${env.plunkSecretKey()}`, Accept: 'application/json' })
+
+// Apaga no Plunk o contato do e-mail, com o histórico de envios dele. A busca do Plunk é por trecho do e-mail: só o
+// endereço exato é apagado.
+async function deletePlunkContact(email: string): Promise<void> {
+  const target = email.trim().toLowerCase()
+  const base = env.plunkApiUrl()
+  const found = await fetch(`${base}/contacts?${new URLSearchParams({ search: target, limit: '100' })}`, { headers: plunkHeaders(), signal: AbortSignal.timeout(10_000) })
+  if (!found.ok) throw new Error(`plunk_busca_http_${found.status}`)
+  const list = (await found.json().catch(() => ({})))?.data
+  const contact = Array.isArray(list) ? list.find((c) => typeof c?.email === 'string' && c.email.toLowerCase() === target) : undefined
+  if (!contact || typeof contact.id !== 'string') return
+  const res = await fetch(`${base}/contacts/${encodeURIComponent(contact.id)}`, { method: 'DELETE', headers: plunkHeaders(), signal: AbortSignal.timeout(10_000) })
+  if (!res.ok && res.status !== 404) throw new Error(`plunk_exclusao_http_${res.status}`)
+}
+
+// Exclusão de conta (LGPD): apaga o contato no Plunk em segundo plano e sem falhar a exclusão; se não der, a limpeza
+// diária do Plunk (deploy/plunk/limpar.sh) apaga em até 90 dias.
 export function forgetEmailContact(email: string | null | undefined): void {
   const target = email?.trim().toLowerCase()
   if (!target || !env.plunkConfigured()) return
-  runInBackground('plunk-contato', async () => {
-    const base = env.plunkApiUrl()
-    const headers = { Authorization: `Bearer ${env.plunkSecretKey()}`, Accept: 'application/json' }
-    const found = await fetch(`${base}/contacts?${new URLSearchParams({ search: target, limit: '100' })}`, { headers, signal: AbortSignal.timeout(10_000) })
-    if (!found.ok) throw new Error(`plunk_busca_http_${found.status}`)
-    const list = (await found.json().catch(() => ({})))?.data
-    const contact = Array.isArray(list) ? list.find((c) => typeof c?.email === 'string' && c.email.toLowerCase() === target) : undefined
-    if (!contact || typeof contact.id !== 'string') return
-    const res = await fetch(`${base}/contacts/${encodeURIComponent(contact.id)}`, { method: 'DELETE', headers, signal: AbortSignal.timeout(10_000) })
-    if (!res.ok && res.status !== 404) throw new Error(`plunk_exclusao_http_${res.status}`)
+  runInBackground('plunk-contato', () => deletePlunkContact(target))
+}
+
+// Contatos de marketing no Plunk (2026-10-31, fase 4): o banco marca quem mudou (private.marketing_contacts) e aqui vai o
+// estado atual de cada um. A primeira inscrição vai pelo evento "inscricao" (POST /v1/track), que começa as boas-vindas
+// no Plunk; o resto, pela atualização do contato (POST /contacts). Quando a pessoa trocou de e-mail, o contato antigo sai
+// de lá. Só no modo plunk (nos outros a marca fica esperando); fora da produção, só a lista de teste.
+export const WELCOME_EVENT = 'inscricao'
+
+interface ContactRow {
+  user_id: string
+  email: string
+  previous_email: string | null
+  subscribed: boolean
+  push_subscribed: boolean
+  welcome: boolean
+  data: Record<string, unknown>
+}
+
+async function plunkPost(path: string, body: unknown): Promise<void> {
+  const res = await fetch(`${env.plunkApiUrl()}${path}`, {
+    method: 'POST',
+    headers: { ...plunkHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(10_000),
   })
+  if (!res.ok) throw new Error(`plunk${path.replace(/\W+/g, '_')}_http_${res.status}`)
+}
+
+export async function syncMarketingContacts(limit = 20): Promise<{ claimed: number; synced: number; failed: number } | null> {
+  if (env.emailMode() !== 'plunk') return null
+  const rows = (await rpc<ContactRow[] | null>('claim_marketing_contacts', { p_limit: limit })) ?? []
+  const allowed = env.emailAllowedRecipients()
+  const summary = { claimed: rows.length, synced: 0, failed: 0 }
+  for (const row of rows) {
+    // a inscrição mandada: true nas boas-vindas; senão a do lote, ou nenhuma (o Plunk guarda a que tem)
+    const subscribed = row.welcome ? true : row.push_subscribed ? row.subscribed : null
+    try {
+      if (allowed.length && !allowed.includes(row.email)) throw new Error('fora_da_lista_de_teste')
+      if (row.previous_email) await deletePlunkContact(row.previous_email)
+      if (row.welcome) await plunkPost('/v1/track', { event: WELCOME_EVENT, email: row.email, subscribed: true, data: row.data })
+      else await plunkPost('/contacts', { email: row.email, data: row.data, ...(subscribed === null ? {} : { subscribed }) })
+      await rpc('mark_marketing_contact', { p_user_id: row.user_id, p_email: row.email, p_subscribed: subscribed, p_welcomed: row.welcome })
+      summary.synced++
+    } catch (e) {
+      const error = e instanceof Error ? e.message : 'erro'
+      console.error(`email-dispatch: contato ${row.user_id} não foi ao Plunk (${error})`)
+      await rpc('mark_marketing_contact', { p_user_id: row.user_id, p_error: error })
+      summary.failed++
+    }
+  }
+  return summary
 }
 
 export async function dispatchEmails(options: { limit?: number; outboxId?: string } = {}): Promise<DispatchSummary> {

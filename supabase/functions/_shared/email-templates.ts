@@ -58,6 +58,7 @@ const LINE = '#1bb8c4'
 const MARK = '#ffb866'
 const SKY = '#ecfaf7'
 const RULE = '#d1dbdb'
+const CREME = '#fff8eb'
 const DISPLAY = "'Bricolage Grotesque','Trebuchet MS',Arial,sans-serif"
 const FONT = "'DM Sans',Arial,Helvetica,sans-serif"
 const MONO = "'IBM Plex Mono','Courier New',monospace"
@@ -99,6 +100,14 @@ const tips = (list: [string, string][]) => `<table role="presentation" width="10
       ${list.map(([lead, rest], i) => `<tr><td valign="top" width="34" style="padding:0 0 14px;font-family:${MONO};font-size:14px;color:${ACTION};">${String(i + 1).padStart(2, '0')}</td>
         <td style="padding:0 0 14px;"><p style="margin:0;font-family:${FONT};font-size:16px;line-height:1.55;color:${INK};"><strong>${escapeHtml(lead)}</strong> ${escapeHtml(rest)}</p></td></tr>`).join('\n      ')}
     </table>`
+
+// Cupom de recortar: o código em mono, sobre a creme, com borda de recorte.
+const coupon = (code: string, note: string) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px;"><tr>
+      <td style="background:${CREME};border:2px dashed ${INK};border-radius:8px;padding:18px 20px;">
+        <p style="margin:0 0 6px;font-family:${MONO};font-size:12px;letter-spacing:1.4px;color:${INK_SOFT};">CUPOM</p>
+        <p style="margin:0 0 8px;font-family:${MONO};font-size:26px;font-weight:500;letter-spacing:3px;color:${INK};">${escapeHtml(code)}</p>
+        <p style="margin:0;font-family:${FONT};font-size:14px;line-height:1.5;color:${INK};">${escapeHtml(note)}</p>
+      </td></tr></table>`
 
 const ps = (html: string) => `<p style="margin:18px 0 0;font-family:${FONT};font-size:15px;line-height:1.6;color:${INK};"><strong>P.S.</strong> ${html}</p>`
 
@@ -298,6 +307,43 @@ async function cartReminder(row: OutboxRow): Promise<Message> {
   return { to: row.to_email, subject, html, text, tag: row.kind, headers: unsubscribe.headers }
 }
 
+// Sacola, 2º toque (marketing, 2026-10-31): 24 h depois do 1º lembrete, só para quem nunca comprou (o banco confere), com
+// o cupom da primeira compra. O cupom PRIMEIRA10 é o da loja (admin › Descontos): 10%, só na primeira compra.
+export const FIRST_PURCHASE_COUPON = 'PRIMEIRA10'
+async function cartReminderSecond(row: OutboxRow): Promise<Message> {
+  const items = row.payload.items ?? []
+  if (!items.length) throw new PermanentEmailError('lembrete_sem_itens')
+  const cart = `${env.siteUrl()}/carrinho`
+  const unsubscribe = await unsubscribeParts(row)
+  const names = items.map(displayName)
+  const subject = '10% na primeira compra de vocês'
+  const intro = `${items.length > 1 ? 'Os jogos ainda estão' : 'O jogo ainda está'} na sacola. Como esta seria a primeira compra de vocês na KeyToTwo, o cupom abaixo tira 10%.`
+  const note = 'Digitem o cupom no pagamento. Vale na primeira compra, para qualquer jogo da loja.'
+  const help = 'Dúvida sobre impressão ou pagamento? É só responder este e-mail.'
+  const html = layout({
+    subject, preheader: `O cupom ${FIRST_PURCHASE_COUPON} vale para qualquer jogo da loja.`, marker: 'SACOLA · PRIMEIRA COMPRA', unsubscribe,
+    body: [
+      kitoTitle(title('Para a primeira compra, ', '10% a menos', '.'), 'biscoito', 'Kito comendo um biscoito'),
+      paragraph(escapeHtml(intro)),
+      coupon(FIRST_PURCHASE_COUPON, note),
+      gameRows(names.map((name) => ({ name }))),
+      button(cart, 'Usar o cupom na sacola'),
+      paragraph(help, true, true),
+    ],
+  })
+  const text = [
+    'KeyToTwo', '', 'Para a primeira compra, 10% a menos.', '',
+    intro, '',
+    `Cupom: ${FIRST_PURCHASE_COUPON}`, note, '',
+    ...names.map((name) => `- ${name}`), '',
+    `Usar o cupom na sacola: ${cart}`, '',
+    help,
+    ...textSignature(true),
+    ...unsubscribe.text,
+  ].join('\n')
+  return { to: row.to_email, subject, html, text, tag: row.kind, headers: unsubscribe.headers }
+}
+
 // Pós-compra (marketing, D+3): os lembretes de impressão e o convite para contar como foi, respondendo o e-mail.
 async function postPurchase(row: OutboxRow): Promise<Message> {
   const games = row.payload.games ?? []
@@ -478,6 +524,7 @@ const templates: Record<string, (row: OutboxRow) => Promise<Message>> = {
   refund,
   admin_alert: adminAlert,
   cart_reminder: cartReminder,
+  cart_reminder_2: cartReminderSecond,
   post_purchase: postPurchase,
 }
 
