@@ -46,7 +46,7 @@ export function FollowUpPage() {
             <ResendButton userId={item.user_id} orderId={item.order_id!} orderRef={item.order_ref!} />
           </>
           : <>
-            <p className="follow-detail">A Brevo não entrega para este endereço: {suppressionLabel(item.reason ?? '')} ({formatMoment(item.at)}).</p>
+            <p className="follow-detail">Os e-mails não chegam a este endereço: {suppressionLabel(item.reason ?? '')} ({formatMoment(item.at)}).</p>
             <p className="follow-hint">Confirme o e-mail com a pessoa por outro canal. Os jogos continuam em Meus jogos.</p>
           </>}
       </>}</FollowSection>

@@ -1,5 +1,6 @@
 import { deleteAuthUser, rpc, rpcRow } from '../../_shared/admin.ts'
 import { requireSessionUser } from '../../_shared/auth.ts'
+import { forgetEmailContact } from '../../_shared/email.ts'
 import { HttpError, json, readJsonObject } from '../../_shared/http.ts'
 
 // Mesmo formato do CHECK de marketing_consents.text_version (data-contract 2.4).
@@ -76,7 +77,7 @@ export function deletionBlocked(reason: string | null): HttpError {
 }
 
 // POST /account/delete { confirmation: "EXCLUIR" }: anonimiza os pedidos e apaga o resto (delete_account_data);
-// depois apaga o usuário no Auth. Se o Auth falhar, repetir é seguro: a RPC é idempotente.
+// depois apaga o usuário no Auth e, no Plunk, o contato do e-mail. Se o Auth falhar, repetir é seguro: a RPC é idempotente.
 export async function deleteAccount(req: Request): Promise<Response> {
   const user = await requireSessionUser(req)
   const { confirmation } = await readJsonObject(req)
@@ -87,5 +88,6 @@ export async function deleteAccount(req: Request): Promise<Response> {
   if (result.outcome === 'blocked') throw deletionBlocked(result.reason)
   if (result.outcome !== 'deleted') throw new Error(`delete_account_data: outcome inesperado (${result.outcome})`)
   await deleteAuthUser(user.id)
+  forgetEmailContact(user.email)
   return json({ deleted: true })
 }

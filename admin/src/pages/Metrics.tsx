@@ -45,7 +45,7 @@ const AREAS: [UsageArea, string][] = [
   ['public', 'Loja, sem login'],
   ['account', 'Contas, com login'],
   ['admin', 'Admin'],
-  ['webhooks', 'Avisos da Stripe e da Brevo'],
+  ['webhooks', 'Avisos da Stripe e dos e-mails'],
   ['schedule', 'Agenda do banco'],
 ]
 const megabytes = (bytes: number) => new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(bytes / 1024 / 1024)

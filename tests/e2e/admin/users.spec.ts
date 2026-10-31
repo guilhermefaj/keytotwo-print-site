@@ -240,7 +240,7 @@ test('abas: Acompanhamento com as quatro listas e o reenvio; Equipe com remover 
   await expect(tabs.getByRole('link', { name: 'Acompanhamento' })).toHaveAttribute('aria-current', 'page')
   await expect(page.getByRole('list', { name: 'Resumo' }).getByRole('link')).toHaveText(['1Sacola esquecida', '1Comprou e não baixou', '1Entrega com problema', '0Conta sem confirmação'])
   await expect(page.getByRole('region', { name: /Sacola esquecida/ })).toContainText('O lembrete automático já saiu.')
-  await expect(page.getByRole('region', { name: /Entrega com problema/ })).toContainText('A Brevo não entrega para este endereço: o endereço não existe (devolução permanente)')
+  await expect(page.getByRole('region', { name: /Entrega com problema/ })).toContainText('Os e-mails não chegam a este endereço: o endereço não existe (devolução permanente)')
   await expect(page.getByRole('region', { name: /Conta sem confirmação/ })).toContainText('Ninguém aqui agora.')
   await axe(page)
   await page.getByRole('region', { name: /Comprou e não baixou/ }).getByRole('button', { name: 'Reenviar o e-mail de acesso do pedido F4F4F4F4' }).click()

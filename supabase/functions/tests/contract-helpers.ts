@@ -14,6 +14,9 @@ export const LINK_SECRET = 'segredo-dos-links-de-teste'
 const MAILPIT_URL = 'http://mailpit.teste'
 const SITE_URL = 'http://127.0.0.1:5176'
 export const BREVO_WEBHOOK_SECRET = 'segredo-webhook-brevo-teste'
+// Plunk (envio pelo Amazon SES): os testes ligam PLUNK_API_URL e PLUNK_SECRET_KEY só quando precisam.
+export const PLUNK_URL = 'http://plunk.teste'
+export const SES_TOPIC_ARN = 'arn:aws:sns:us-east-2:111122223333:plunk-ses-events'
 
 const contractEnv: Record<string, string> = {
   SUPABASE_URL,
@@ -42,6 +45,8 @@ const contractEnv: Record<string, string> = {
   EMAIL_LOG_MAILPIT_URL: MAILPIT_URL,
   // I5: webhook da Brevo.
   BREVO_WEBHOOK_SECRET,
+  // ses-events: o tópico do SNS aceito.
+  SES_EVENTS_TOPIC_ARN: SES_TOPIC_ARN,
 }
 if (!integrationMode) for (const [name, value] of Object.entries(contractEnv)) Deno.env.set(name, value)
 
@@ -154,9 +159,10 @@ export function onAuthAdmin(reply: (call: AuthAdminCall) => Reply) {
   authAdminReply = reply
 }
 
-// Outros serviços externos (Brevo, Mailpit): URL, corpo JSON e headers.
+// Outros serviços externos (Brevo, Plunk, Mailpit): URL, método, corpo JSON e headers.
 interface ExternalCall {
   url: string
+  method: string
   body: Record<string, unknown>
   headers: Headers
 }
@@ -186,6 +192,15 @@ let b2Reply: (call: B2Call) => Reply = () => ({ status: 200, body: {} })
 export function onB2(reply: (call: B2Call) => Reply) {
   b2Calls.length = 0
   b2Reply = reply
+}
+
+// O Amazon SNS (ses-events): o certificado (PEM) e a confirmação da inscrição, pela URL. Responde texto.
+export const snsCalls: string[] = []
+let snsReply: (url: string) => { status: number; body: string } = () => ({ status: 200, body: '' })
+
+export function onSns(reply: (url: string) => { status: number; body: string }) {
+  snsCalls.length = 0
+  snsReply = reply
 }
 
 // O site, que a checagem de fora do ar abre (2026-10-26): o corpo vem como HTML; a resposta pode lançar (sem conexão).
@@ -234,10 +249,15 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
     stripeCalls.push(call)
     return Promise.resolve(respond(stripeReply(call)))
   }
-  if (url.origin === 'https://api.brevo.com' || url.origin === MAILPIT_URL) {
-    const call = { url: url.href, body: JSON.parse(String(init?.body ?? '{}')), headers: new Headers(init?.headers) }
+  if (url.origin === 'https://api.brevo.com' || url.origin === MAILPIT_URL || url.origin === PLUNK_URL) {
+    const call = { url: url.href, method: (init?.method ?? 'GET').toUpperCase(), body: JSON.parse(String(init?.body ?? '{}')), headers: new Headers(init?.headers) }
     externalCalls.push(call)
     return Promise.resolve(respond(externalReply(call)))
+  }
+  if (/^sns\.[a-z0-9-]+\.amazonaws\.com$/.test(url.hostname)) {
+    snsCalls.push(url.href)
+    const reply = snsReply(url.href)
+    return Promise.resolve(new Response(reply.body, { status: reply.status, headers: { 'Content-Type': 'text/plain' } }))
   }
   if (url.hostname.endsWith('.backblazeb2.com')) {
     const body = init?.body

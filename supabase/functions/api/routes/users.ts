@@ -1,6 +1,6 @@
 import { deleteAuthUser, rpcRow, setAuthUserBan } from '../../_shared/admin.ts'
 import { requireAdminSession } from '../../_shared/auth.ts'
-import { dispatchSoon } from '../../_shared/email.ts'
+import { dispatchSoon, forgetEmailContact } from '../../_shared/email.ts'
 import { HttpError, isUuid, json, readJsonObject } from '../../_shared/http.ts'
 import { livemode } from '../../_shared/stripe.ts'
 import { deletionBlocked } from './account.ts'
@@ -173,7 +173,7 @@ export async function adminExportUser(req: Request, _url: URL, params: Record<st
 }
 
 // POST /admin/users/:id/delete { reason, confirm_email }: a exclusão a pedido (LGPD), a mesma da própria pessoa: o banco
-// anonimiza os pedidos e apaga o resto, e o Auth apaga a conta.
+// anonimiza os pedidos e apaga o resto, o Auth apaga a conta e o Plunk, o contato (o e-mail confirmado é o da conta).
 export async function adminDeleteUser(req: Request, _url: URL, params: Record<string, string>): Promise<Response> {
   const user = await requireAdminSession(req)
   const target = param(params, 'id')
@@ -191,5 +191,6 @@ export async function adminDeleteUser(req: Request, _url: URL, params: Record<st
     blocked: () => deletionBlocked(result.reason),
   })
   await deleteAuthUser(target)
+  forgetEmailContact(body.confirm_email)
   return json({ deleted: true, orders_anonymized: result.orders_anonymized ?? 0 })
 }

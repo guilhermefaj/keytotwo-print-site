@@ -2,7 +2,7 @@
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assert, assertEquals, assertMatch } from '@std/assert'
-import { captureErrors, externalCalls, LINK_SECRET, onExternal, onRpc, onStripe, request, rpcCalls, SECRET_KEY, sessionToken, tampered, userId, WEBHOOK_SECRET, contractTest, dispatchRpc, ok, row } from './contract-helpers.ts'
+import { captureErrors, externalCalls, LINK_SECRET, onExternal, onRpc, onStripe, PLUNK_URL, request, rpcCalls, SECRET_KEY, sessionToken, tampered, userId, WEBHOOK_SECRET, contractTest, dispatchRpc, ok, row } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
 import { attachment } from '../_shared/b2.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
@@ -311,6 +311,47 @@ contractTest('email-dispatch modo brevo: chave v3, lista de teste, recusa defini
   assertEquals([rpcCalls[1].args.p_status, rpcCalls[1].args.p_error], ['rejected', 'kind_desconhecido'])
 
   Deno.env.delete('EMAIL_ALLOWED_RECIPIENTS')
+  Deno.env.set('EMAIL_MODE', 'log')
+})
+
+contractTest('email-dispatch modo plunk: chave secreta, lista de teste, id do Plunk, recusa definitiva e falha transitória', async () => {
+  Deno.env.set('EMAIL_MODE', 'plunk')
+  Deno.env.set('PLUNK_API_URL', `${PLUNK_URL}/`)
+  Deno.env.set('PLUNK_SECRET_KEY', 'sk_teste_ficticia')
+  const run = async () => {
+    dispatchRpc([DELIVERY_ROW])
+    const { result } = await captureErrors(async () => await (await dispatchRequest({})).json())
+    return { summary: result, mark: rpcCalls[1].args }
+  }
+
+  Deno.env.set('EMAIL_ALLOWED_RECIPIENTS', 'responsavel@example.com')
+  onExternal(() => ({ status: 200, body: { success: true } }))
+  assertEquals((await run()).mark.p_error, 'fora_da_lista_de_teste')
+  assertEquals(externalCalls.length, 0)
+  Deno.env.delete('EMAIL_ALLOWED_RECIPIENTS')
+
+  onExternal(() => ({ status: 200, body: { success: true, data: { emails: [{ contact: { id: 'c-1', email: 'comprador@example.com' }, email: 'e-1' }] } } }))
+  const sent = await run()
+  assertEquals([sent.summary.sent, sent.mark.p_status, sent.mark.p_provider_message_id], [1, 'sent', 'e-1'])
+  const call = externalCalls[0]
+  assertEquals([call.url, call.method, call.headers.get('Authorization')], [`${PLUNK_URL}/v1/send`, 'POST', 'Bearer sk_teste_ficticia'])
+  // Sem "subscribed": contato novo entra no Plunk como não inscrito. O HTML vai inteiro; o texto o Plunk tira dele.
+  assertEquals(Object.keys(call.body).sort(), ['body', 'from', 'subject', 'to'])
+  assertEquals([call.body.to, call.body.from], ['comprador@example.com', { email: 'acesso@example.com', name: 'KeyToTwo' }])
+  assert(String(call.body.body).includes('<html'))
+
+  // 200 sem o id do e-mail (resposta fora do contrato) não conta como enviado.
+  onExternal(() => ({ status: 200, body: { success: false } }))
+  assertEquals((await run()).mark, { p_id: OUTBOX_ID, p_status: 'rejected', p_provider_message_id: null, p_error: 'plunk_http_200' })
+  onExternal(() => ({ status: 400, body: { success: false, error: 'invalid' } }))
+  assertEquals((await run()).mark, { p_id: OUTBOX_ID, p_status: 'rejected', p_provider_message_id: null, p_error: 'plunk_http_400' })
+  for (const status of [401, 403, 429, 502]) {
+    onExternal(() => ({ status, body: {} }))
+    assertEquals([(await run()).mark.p_status, rpcCalls[1].args.p_error], ['failed', `plunk_http_${status}`])
+  }
+
+  Deno.env.delete('PLUNK_API_URL')
+  Deno.env.delete('PLUNK_SECRET_KEY')
   Deno.env.set('EMAIL_MODE', 'log')
 })
 

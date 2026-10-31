@@ -446,6 +446,12 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/deno.json"
 
+# KeyToTwo: o Amazon SNS não manda JWT; a função confere a assinatura do SNS e o tópico (SES_EVENTS_TOPIC_ARN).
+[functions.ses-events]
+enabled = true
+verify_jwt = false
+import_map = "./functions/deno.json"
+
 [analytics]
 # KeyToTwo: desligado no local; no Windows o contêiner vector reinicia em loop sem o daemon em tcp 2375.
 enabled = false
