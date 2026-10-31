@@ -131,11 +131,11 @@ test('account menu and the simplified private header', async ({ page }) => {
   await expect(page.locator('.desktop-nav a')).toHaveText(['Início', 'Loja', 'Gratuitos', 'Blog'])
   await expect(page.locator('.desktop-nav a').first()).toHaveAttribute('href', '/')
   await page.goto('/conta')
-  // Portal no desktop: logo, Portal e a conta (as abas levam aos destinos); sem carrinho.
+  // Portal no desktop: logo, Loja (à vista desde 2026-10-31), Portal e a conta (as abas levam aos destinos); sem carrinho.
   await expect(page.locator('header')).toHaveAttribute('data-private', 'true')
   await expect(page.locator('.desktop-nav')).toHaveCount(0)
-  await expect(page.locator('.desktop-action > .nav-link')).toHaveText(['Portal'])
-  await expect(page.locator('.desktop-action > .nav-link')).toHaveAttribute('aria-current', 'true')
+  await expect(page.locator('.desktop-action > .nav-link')).toHaveText(['Loja', 'Portal'])
+  await expect(page.locator('.desktop-action > .nav-link').last()).toHaveAttribute('aria-current', 'true')
   await expect(page.getByRole('navigation', { name: 'Portal', exact: true }).getByRole('link', { name: 'Minha conta', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('.desktop-action > .button')).toHaveCount(0)
   await expect(page.locator('header .cart-trigger')).toHaveCount(0)

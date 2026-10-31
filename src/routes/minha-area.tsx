@@ -1,7 +1,5 @@
-import { IconArrowRight } from '@tabler/icons-react'
 import { useEffect, useRef } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router'
-import { Icon } from '../components/ui/Icon'
+import { NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../lib/auth-context'
 
 export default function MinhaArea() {
@@ -17,10 +15,13 @@ export default function MinhaArea() {
     if (previousPath.current !== pathname) document.getElementById('portal-title')?.focus({ preventScroll: true })
     previousPath.current = pathname
   }, [pathname])
+  // O Kito acenando (pixel art do PixelLab, k08 de frente) num círculo Céu com o fio Turquesa (responsável, 2026-10-31).
+  // Reduzido com suavização a partir do original de 256 px: 100, 150 e 200 px para cada densidade de tela.
   return <main id="conteudo" tabIndex={-1} className="portal-page">
-    <div className="portal-welcome content-width"><img src="/media/experience/kito-hi-128.webp" width="64" height="64" alt="" /><div><p className="portal-greeting">Olá{name ? `, ${name}` : ''}!</p><p className="portal-area-name">Portal</p></div>
-      {/* Atalho para a Loja (responsável, 2026-10-31): discreto, à direita da saudação, em todas as abas. */}
-      <Link className="inline-link portal-store-link" to="/loja">Ver os jogos<Icon component={IconArrowRight} size={16} /></Link></div>
+    <div className="portal-welcome content-width">
+      <span className="portal-avatar" aria-hidden="true"><img src="/media/portal/kito-ola-100.webp" srcSet="/media/portal/kito-ola-100.webp 100w, /media/portal/kito-ola-150.webp 150w, /media/portal/kito-ola-200.webp 200w" sizes="(max-width: 600px) 40px, 50px" width="50" height="49" alt="" /></span>
+      <div><p className="portal-greeting">Olá{name ? `, ${name}` : ''}!</p><p className="portal-area-name">Portal</p></div>
+    </div>
     <div className="portal-tabs-bar"><nav className="portal-tabs content-width" aria-label="Portal" ref={tabs}>
       <NavLink to="/meus-jogos">Meus jogos</NavLink><NavLink to="/pedidos">Pedidos</NavLink><NavLink to="/conta">Minha conta</NavLink>
     </nav></div>
