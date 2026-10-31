@@ -162,7 +162,7 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `brevo-webhook` | `record_email_event(...)` | I5 |
 | `ses-events` | `record_email_event(..., ses_events)` | E-mail (2026-10-31) |
 | `plunk-webhook` | `record_plunk_unsubscribe(email)` | Marketing no Plunk (2026-10-31) |
-| `email-dispatch` | `claim_email_batch(limit, outbox_id)` → Brevo ou Plunk → `mark_email_result(id, sent \| failed \| rejected, ...)`; na rodada da agenda (sem `outbox_id`) e no modo `plunk`, também `claim_marketing_contacts(limit)` → Plunk (`POST /v1/track` com o evento `inscricao` na primeira inscrição, `POST /contacts` no resto; o contato do e-mail antigo é apagado) → `mark_marketing_contact(...)`. A resposta ganha `contacts: { claimed, synced, failed }` | I4; contatos 2026-10-31 |
+| `email-dispatch` | `claim_email_batch(limit, outbox_id)` → Brevo ou Plunk → `mark_email_result(id, sent \| failed \| rejected, ...)`; na rodada da agenda (sem `outbox_id`) e no modo `plunk`, também `claim_marketing_contacts(limit)` → Plunk (`POST /contacts`; na primeira inscrição, também `POST /events/track` com o evento `inscricao` e o id do contato, pois o `/v1/track` só aceita a chave pública; o contato do e-mail antigo é apagado) → `mark_marketing_contact(...)`. A resposta ganha `contacts: { claimed, synced, failed }` | I4; contatos 2026-10-31 |
 | Agenda (`pg_cron`, só SQL) | `private.enqueue_followups()` e chamada ao `email-dispatch` | I5 |
 | Agenda diária (`pg_cron`, só SQL) | `private.purge_email_outbox()`: apaga da fila o que saiu há mais de 90 dias | LGPD |
 

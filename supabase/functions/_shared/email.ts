@@ -124,8 +124,9 @@ export function forgetEmailContact(email: string | null | undefined): void {
 }
 
 // Contatos de marketing no Plunk (2026-10-31, fase 4): o banco marca quem mudou (private.marketing_contacts) e aqui vai o
-// estado atual de cada um. A primeira inscrição vai pelo evento "inscricao" (POST /v1/track), que começa as boas-vindas
-// no Plunk; o resto, pela atualização do contato (POST /contacts). Quando a pessoa trocou de e-mail, o contato antigo sai
+// estado atual de cada um, pela atualização do contato (POST /contacts). Na primeira inscrição vai também o evento
+// "inscricao" (POST /events/track, com o id do contato), que começa as boas-vindas no Plunk. O /v1/track do Plunk não
+// serve: ele só aceita a chave pública. Quando a pessoa trocou de e-mail, o contato antigo sai
 // de lá. Só no modo plunk (nos outros a marca fica esperando); fora da produção, só a lista de teste.
 export const WELCOME_EVENT = 'inscricao'
 
@@ -139,7 +140,7 @@ interface ContactRow {
   data: Record<string, unknown>
 }
 
-async function plunkPost(path: string, body: unknown): Promise<void> {
+async function plunkPost(path: string, body: unknown): Promise<Record<string, unknown>> {
   const res = await fetch(`${env.plunkApiUrl()}${path}`, {
     method: 'POST',
     headers: { ...plunkHeaders(), 'Content-Type': 'application/json' },
@@ -147,6 +148,7 @@ async function plunkPost(path: string, body: unknown): Promise<void> {
     signal: AbortSignal.timeout(10_000),
   })
   if (!res.ok) throw new Error(`plunk${path.replace(/\W+/g, '_')}_http_${res.status}`)
+  return await res.json().catch(() => ({}))
 }
 
 export async function syncMarketingContacts(limit = 20): Promise<{ claimed: number; synced: number; failed: number } | null> {
@@ -160,8 +162,11 @@ export async function syncMarketingContacts(limit = 20): Promise<{ claimed: numb
     try {
       if (allowed.length && !allowed.includes(row.email)) throw new Error('fora_da_lista_de_teste')
       if (row.previous_email) await deletePlunkContact(row.previous_email)
-      if (row.welcome) await plunkPost('/v1/track', { event: WELCOME_EVENT, email: row.email, subscribed: true, data: row.data })
-      else await plunkPost('/contacts', { email: row.email, data: row.data, ...(subscribed === null ? {} : { subscribed }) })
+      const contact = await plunkPost('/contacts', { email: row.email, data: row.data, ...(subscribed === null ? {} : { subscribed }) })
+      if (row.welcome) {
+        if (typeof contact.id !== 'string') throw new Error('plunk_contato_sem_id')
+        await plunkPost('/events/track', { name: WELCOME_EVENT, contactId: contact.id })
+      }
       await rpc('mark_marketing_contact', { p_user_id: row.user_id, p_email: row.email, p_subscribed: subscribed, p_welcomed: row.welcome })
       summary.synced++
     } catch (e) {
