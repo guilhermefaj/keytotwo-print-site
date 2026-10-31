@@ -8,7 +8,7 @@
 import { assert, assertEquals, assertMatch } from '@std/assert'
 import { enabled, lastMail, mailCount, MAILPIT_URL, removeTestUsers, settle, sleep } from './integration-helpers.ts'
 import { buyer, call, deliver, pay, sessionObject, startCheckout } from './stripe-fake.ts'
-import { handleBrevoWebhook } from '../brevo-webhook/handler.ts'
+import { handlePlunkWebhook } from '../plunk-webhook/handler.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
 import { signUnsubscribeToken } from '../_shared/tokens.ts'
 
@@ -19,7 +19,7 @@ const REMINDER = 'ficou na sacola'
 const POST_PURCHASE = 'Já rolou a primeira partida?'
 
 if (enabled) {
-  const wanted = ['EMAIL_LINK_SECRET', 'API_PUBLIC_URL', 'EMAIL_FROM', 'EMAIL_FROM_NAME', 'BREVO_WEBHOOK_SECRET']
+  const wanted = ['EMAIL_LINK_SECRET', 'API_PUBLIC_URL', 'EMAIL_FROM', 'EMAIL_FROM_NAME', 'PLUNK_WEBHOOK_SECRET']
   for (const line of (await Deno.readTextFile(new URL('../.env', import.meta.url))).split(/\r?\n/)) {
     const m = /^([A-Z0-9_]+)=(.*)$/.exec(line)
     if (m && wanted.includes(m[1]) && m[2].trim()) Deno.env.set(m[1], m[2].trim().replace(/^["']|["']$/g, ''))
@@ -61,8 +61,12 @@ async function optedInBuyer(name: string) {
 
 const addToCart = async (token: string) => assertEquals((await call('/cart/items', token, 'POST', { product_code: 'P001' })).status, 200)
 
-const brevo = (body: unknown, secret = Deno.env.get('BREVO_WEBHOOK_SECRET')!) =>
-  handleBrevoWebhook(new Request('http://localhost/brevo-webhook', {
+// Aviso do Amazon SES como a ses-events grava (a assinatura do SNS tem os próprios testes de contrato).
+const sesEvent = async (email: string, event: 'hard_bounce' | 'complaint') =>
+  (await sql(`select outcome from public.record_email_event('${email.replace(/'/g, "''")}', '${event}', 'msg-integracao', now(), 'ses_events')`))[0]
+// Descadastro feito no rodapé de um e-mail do Plunk (a automação chama a plunk-webhook).
+const plunkUnsubscribe = (body: unknown, secret = Deno.env.get('PLUNK_WEBHOOK_SECRET')!) =>
+  handlePlunkWebhook(new Request('http://localhost/plunk-webhook', {
     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` }, body: JSON.stringify(body),
   }))
 
@@ -166,9 +170,9 @@ Deno.test({
         assertEquals((await call('/account', b.token)).body.marketing.opted_in, false)
       })
 
-      await t.step('bounce suprime antes de enfileirar; reclamação cancela o que estava na fila e revoga o opt-in', async () => {
+      await t.step('bounce suprime antes de enfileirar; reclamação e descadastro no Plunk cancelam a fila e revogam o opt-in', async () => {
         const bounced = await optedInBuyer('i5-bounce')
-        assertEquals(await (await brevo({ event: 'hard_bounce', email: bounced.email, 'message-id': '<b@relay>', ts_event: Math.floor(Date.now() / 1000) })).json(), { received: 1, recorded: 1, ignored: 0 })
+        assertEquals(await sesEvent(bounced.email, 'hard_bounce'), 'applied')
         await addToCart(bounced.token)
         await enqueue('4 hours')
         assertEquals(await outbox(bounced.id), [])
@@ -179,22 +183,35 @@ Deno.test({
         await enqueue('4 hours')
         const [row] = await outbox(complained.id)
         assertEquals(row.status, 'queued')
-        assertEquals((await (await brevo([{ event: 'spam', email: complained.email.toUpperCase() }, { event: 'delivered', email: complained.email }])).json()).recorded, 1)
+        assertEquals(await sesEvent(complained.email.toUpperCase(), 'complaint'), 'applied')
         assert(['canceled', 'skipped'].includes((await outbox(complained.id))[0].status))
         assertEquals((await call('/account', complained.token)).body.marketing.opted_in, false)
         assertEquals((await dispatchOne(row.id)).claimed, 0)
+
+        // Plunk: a pausa não muda nada; o descadastro revoga; o segundo aviso (ou o eco do site) é noop.
+        const left = await optedInBuyer('i5-plunk')
+        await addToCart(left.token)
+        await enqueue('4 hours')
+        const [queued] = await outbox(left.id)
+        assertEquals(await (await plunkUnsubscribe({ email: left.email, motivo: 'snooze' })).json(), { outcome: 'ignored' })
+        assertEquals((await call('/account', left.token)).body.marketing.opted_in, true)
+        assertEquals(await (await plunkUnsubscribe({ email: left.email, motivo: '' })).json(), { outcome: 'applied' })
+        assertEquals((await call('/account', left.token)).body.marketing.opted_in, false)
+        assert(['canceled', 'skipped'].includes((await outbox(left.id))[0].status))
+        assertEquals((await dispatchOne(queued.id)).claimed, 0)
+        assertEquals(await (await plunkUnsubscribe({ email: left.email })).json(), { outcome: 'noop' })
       })
 
-      await t.step('brevo-webhook servido: segredo inválido 401, correto 200', async () => {
-        const post = (secret: string) => fetch(`${FUNCTIONS_URL}/brevo-webhook`, {
+      await t.step('plunk-webhook servido: token inválido 401, correto 200 (e-mail sem conta = noop)', async () => {
+        const post = (secret: string) => fetch(`${FUNCTIONS_URL}/plunk-webhook`, {
           method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` },
-          body: JSON.stringify({ event: 'delivered', email: 'ninguem@example.com' }),
+          body: JSON.stringify({ email: 'ninguem@example.com', motivo: '' }),
         })
         const wrong = await post('segredo-errado')
         await wrong.body?.cancel()
         assertEquals(wrong.status, 401)
-        const right = await post(Deno.env.get('BREVO_WEBHOOK_SECRET')!)
-        assertEquals([right.status, await right.json()], [200, { received: 1, recorded: 0, ignored: 1 }])
+        const right = await post(Deno.env.get('PLUNK_WEBHOOK_SECRET')!)
+        assertEquals([right.status, await right.json()], [200, { outcome: 'noop' }])
       })
 
       await t.step('agenda: dispatch_tick chama o email-dispatch servido pelo pg_net e o lembrete chega', async () => {

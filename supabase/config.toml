@@ -242,7 +242,7 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 600
 
-# KeyToTwo: no local os e-mails vão para o Mailpit (porta 54324). No projeto de teste, o SMTP da Brevo é
+# KeyToTwo: no local os e-mails vão para o Mailpit (porta 54324). No hospedado, o SMTP do Amazon SES é
 # configurado no painel (docs/auth-setup.md); não habilitar aqui, para o local nunca enviar e-mail real.
 # Use a production-ready SMTP server
 # [auth.email.smtp]
@@ -436,12 +436,6 @@ import_map = "./functions/deno.json"
 
 # KeyToTwo: interna (pg_cron/pg_net, api e webhook); a função confere a chave secreta no header apikey.
 [functions.email-dispatch]
-enabled = true
-verify_jwt = false
-import_map = "./functions/deno.json"
-
-# KeyToTwo: a Brevo envia Authorization: Bearer <BREVO_WEBHOOK_SECRET> (não é JWT); a função confere o segredo.
-[functions.brevo-webhook]
 enabled = true
 verify_jwt = false
 import_map = "./functions/deno.json"

@@ -46,7 +46,7 @@ runs:
           echo "EMAIL_FROM=kito@keytotwo.test"
           echo "EMAIL_FROM_NAME=Kito"
           echo "API_PUBLIC_URL=$API_URL/functions/v1/api"
-          echo "BREVO_WEBHOOK_SECRET=$(openssl rand -hex 32)"
+          echo "PLUNK_WEBHOOK_SECRET=$(openssl rand -hex 32)"
         } > supabase/functions/.env
     - name: Servir as funções
       shell: bash

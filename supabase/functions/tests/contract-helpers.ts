@@ -13,7 +13,6 @@ export const TERMS_VERSION = 'termos-teste-1'
 export const LINK_SECRET = 'segredo-dos-links-de-teste'
 const MAILPIT_URL = 'http://mailpit.teste'
 const SITE_URL = 'http://127.0.0.1:5176'
-export const BREVO_WEBHOOK_SECRET = 'segredo-webhook-brevo-teste'
 // Plunk (envio pelo Amazon SES): os testes ligam PLUNK_API_URL e PLUNK_SECRET_KEY só quando precisam.
 export const PLUNK_URL = 'http://plunk.teste'
 export const SES_TOPIC_ARN = 'arn:aws:sns:us-east-2:111122223333:plunk-ses-events'
@@ -44,8 +43,6 @@ const contractEnv: Record<string, string> = {
   EMAIL_FROM: 'acesso@example.com',
   EMAIL_FROM_NAME: 'KeyToTwo',
   EMAIL_LOG_MAILPIT_URL: MAILPIT_URL,
-  // I5: webhook da Brevo.
-  BREVO_WEBHOOK_SECRET,
   // ses-events: o tópico do SNS aceito.
   SES_EVENTS_TOPIC_ARN: SES_TOPIC_ARN,
   // plunk-webhook: o token do passo de webhook da automação do Plunk.
@@ -162,7 +159,7 @@ export function onAuthAdmin(reply: (call: AuthAdminCall) => Reply) {
   authAdminReply = reply
 }
 
-// Outros serviços externos (Brevo, Plunk, Mailpit): URL, método, corpo JSON e headers.
+// Outros serviços externos (Plunk e Mailpit): URL, método, corpo JSON e headers.
 interface ExternalCall {
   url: string
   method: string
@@ -252,7 +249,7 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
     stripeCalls.push(call)
     return Promise.resolve(respond(stripeReply(call)))
   }
-  if (url.origin === 'https://api.brevo.com' || url.origin === MAILPIT_URL || url.origin === PLUNK_URL) {
+  if (url.origin === MAILPIT_URL || url.origin === PLUNK_URL) {
     const call = { url: url.href, method: (init?.method ?? 'GET').toUpperCase(), body: JSON.parse(String(init?.body ?? '{}')), headers: new Headers(init?.headers) }
     externalCalls.push(call)
     return Promise.resolve(respond(externalReply(call)))

@@ -3,11 +3,12 @@ import { env } from '../_shared/env.ts'
 import { HttpError, json, postOnly, readText, toErrorResponse } from '../_shared/http.ts'
 import { countCall } from '../_shared/usage.ts'
 
-// ses-events: avisos do Amazon SES (os e-mails que o Plunk envia) → record_email_event com origem ses_events
+// ses-events: avisos do Amazon SES (os e-mails que o Plunk envia e os do Auth do Supabase, pelo conjunto padrão da
+// identidade) → record_email_event com origem ses_events
 // (docs/api-contract.md 8.3). Chegam pelo Amazon SNS, que assina cada mensagem: a assinatura (SignatureVersion 2,
 // RSA-SHA256) é conferida com o certificado do próprio SNS, da região do tópico, e só vale o tópico configurado
 // (SES_EVENTS_TOPIC_ARN). A inscrição no SNS já filtra bounces e reclamações; aqui só o bounce definitivo e a
-// reclamação viram supressão, como no webhook da Brevo. O e-mail do payload nunca vai para o log.
+// reclamação viram supressão. O e-mail do payload nunca vai para o log.
 
 type Reason = 'hard_bounce' | 'complaint'
 

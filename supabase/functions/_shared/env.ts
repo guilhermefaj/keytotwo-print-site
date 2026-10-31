@@ -69,24 +69,18 @@ export const env = {
   // 2026-10-25, na nuvem, um segredo próprio (DISPATCH_SECRET), sem poder nenhum no banco; antes era uma chave secreta
   // do Supabase. Sem ele (local), a chave nomeada "dispatch" e, por fim, a "default".
   dispatchKey: () => read('DISPATCH_SECRET') ?? namedKey('SUPABASE_SECRET_KEYS', 'dispatch') ?? apiKey('SUPABASE_SECRET_KEYS', 'SUPABASE_SECRET_KEY'),
-  // log (padrão): nada sai para fora; brevo: envio real pela API v3 da Brevo; plunk: envio real pelo Plunk (Amazon SES).
-  emailMode: () => {
-    const mode = read('EMAIL_MODE')
-    return (mode === 'brevo' || mode === 'plunk' ? mode : 'log') as 'brevo' | 'plunk' | 'log'
-  },
+  // log (padrão): nada sai para fora; plunk: envio real pelo Plunk (Amazon SES). O modo brevo saiu em 2026-10-31.
+  emailMode: () => (read('EMAIL_MODE') === 'plunk' ? 'plunk' : 'log') as 'plunk' | 'log',
   // Plunk (na VPS): base da API (https://api.email.keytotwo.com.br) e a chave secreta do projeto (sk_…).
   plunkApiUrl: () => required('PLUNK_API_URL').replace(/\/+$/, ''),
   plunkSecretKey: () => required('PLUNK_SECRET_KEY'),
-  // Com os dois, a exclusão de conta apaga o contato no Plunk (mesmo antes da troca, no modo brevo).
+  // Com os dois, a exclusão de conta apaga o contato no Plunk (em qualquer modo).
   plunkConfigured: () => Boolean(read('PLUNK_API_URL') && read('PLUNK_SECRET_KEY')),
   // Token Bearer do passo de webhook da automação "Descadastro no Plunk" (a função plunk-webhook).
   plunkWebhookSecret: () => required('PLUNK_WEBHOOK_SECRET'),
   // Tópico SNS dos eventos do SES: a ses-events só aceita mensagens assinadas dele.
   sesEventsTopicArn: () => required('SES_EVENTS_TOPIC_ARN'),
   emailLogMailpitUrl: () => read('EMAIL_LOG_MAILPIT_URL')?.replace(/\/+$/, ''),
-  brevoApiKey: () => required('BREVO_API_KEY'),
-  // Token Bearer configurado no webhook da Brevo (auth.type = bearer).
-  brevoWebhookSecret: () => required('BREVO_WEBHOOK_SECRET'),
   emailFrom: () => ({ email: required('EMAIL_FROM'), name: read('EMAIL_FROM_NAME') ?? 'KeyToTwo' }),
   // Lista de destinatários permitidos fora da produção (vírgula); vazia = todos.
   emailAllowedRecipients: () => (read('EMAIL_ALLOWED_RECIPIENTS') ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),

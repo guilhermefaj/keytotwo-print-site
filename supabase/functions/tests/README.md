@@ -2,7 +2,7 @@
 
 Dois tipos de teste, na mesma pasta:
 
-- **Contrato** (`*.test.ts`): sem rede e sem banco. `contract-helpers.ts` grava um ambiente fictício e troca o `fetch` por respostas simuladas (JWKS, RPCs, Stripe, Brevo e Mailpit).
+- **Contrato** (`*.test.ts`): sem rede e sem banco. `contract-helpers.ts` grava um ambiente fictício e troca o `fetch` por respostas simuladas (JWKS, RPCs, Stripe, Plunk e Mailpit).
 - **Integração** (`*.integration.test.ts`): contra a stack local (`supabase start`), o Mailpit e o bucket de TESTE do B2. Ligados só com `KT_INTEGRATION=1`; a Stripe é simulada em `stripe-fake.ts`.
 
 Env, `fetch` e os singletons das funções valem para o processo inteiro. Por isso, com `KT_INTEGRATION=1` o `contract-helpers.ts` fica inerte e os testes de contrato são ignorados; sem ele, as integrações são ignoradas.
@@ -43,7 +43,7 @@ O teste de entrega lê o bucket de TESTE do B2 com os segredos do repositório `
 
 ## Requisitos da integração
 
-- `supabase/functions/.env` local com `B2_*` (chave só leitura), `EMAIL_LINK_SECRET`, `API_PUBLIC_URL`, `EMAIL_FROM*` e `BREVO_WEBHOOK_SECRET`. Os testes leem só esses nomes e não imprimem valores.
+- `supabase/functions/.env` local com `B2_*` (chave só leitura), `EMAIL_LINK_SECRET`, `API_PUBLIC_URL`, `EMAIL_FROM*` e `PLUNK_WEBHOOK_SECRET`. Os testes leem só esses nomes e não imprimem valores.
 - Depois de cada `db reset`: o passo do Vault (`node supabase/local/aplicar-dispatch-vault.mjs`). Os Prices do seed são `price_TESTE_*`: o `checkout.integration` com `KT_STRIPE=1` precisa de um Price de teste real gravado à mão em `products.stripe_price_id`.
 - `followups.integration.test.ts` usa o `psql` do contêiner do banco local (`--allow-run=docker`) para simular o tempo do enfileirador e pausa o job `email-dispatch-tick` durante o teste, religando no fim.
 - As chamadas ao B2 têm uma nova tentativa curta se a conexão falhar (`fetchRetry`, só nos testes).

@@ -1,10 +1,9 @@
-// Testes de contrato do I5 (descadastro, e-mails de marketing e brevo-webhook), sem rede.
+// Testes de contrato do I5 (descadastro e e-mails de marketing), sem rede. O webhook da Brevo saiu em 2026-10-31.
 // Rodar na raiz do repositório:
 //   npx deno@2.9.6 test --no-lock --config supabase/functions/deno.json --allow-env supabase/functions/tests/
 import { assert, assertEquals, assertMatch } from '@std/assert'
-import { BREVO_WEBHOOK_SECRET, captureErrors, externalCalls, onExternal, onRpc, request, rpcCalls, SECRET_KEY, contractTest, tampered, dispatchRpc, ok, row } from './contract-helpers.ts'
+import { captureErrors, externalCalls, onExternal, onRpc, PLUNK_URL, request, rpcCalls, SECRET_KEY, contractTest, tampered, dispatchRpc, ok, row } from './contract-helpers.ts'
 import { handleRequest } from '../api/router.ts'
-import { handleBrevoWebhook } from '../brevo-webhook/handler.ts'
 import { handleEmailDispatch } from '../email-dispatch/handler.ts'
 import { signDeliveryToken, signUnsubscribeToken, verifyUnsubscribeToken } from '../_shared/tokens.ts'
 
@@ -142,7 +141,7 @@ contractTest('pós-compra: jogos, Meus jogos, ajuda de impressão e descadastro'
   await unsubscribeTokenOf(mail)
 })
 
-contractTest('marketing sem usuário ou sem itens é recusado; entrega não leva descadastro; Brevo recebe os headers', async () => {
+contractTest('marketing sem usuário ou sem itens é recusado; entrega não leva descadastro; o Plunk recebe os headers', async () => {
   dispatchRpc([{ ...CART_ROW, user_id: null }])
   await captureErrors(dispatch)
   assertEquals([rpcCalls[1].args.p_status, rpcCalls[1].args.p_error], ['rejected', 'marketing_sem_usuario'])
@@ -150,84 +149,26 @@ contractTest('marketing sem usuário ou sem itens é recusado; entrega não leva
   await captureErrors(dispatch)
   assertEquals(rpcCalls[1].args.p_error, 'lembrete_sem_itens')
 
-  Deno.env.set('EMAIL_MODE', 'brevo')
-  Deno.env.set('BREVO_API_KEY', 'xkeysib-teste-ficticia')
-  onExternal(() => ({ status: 201, body: { messageId: '<m@brevo>' } }))
+  Deno.env.set('EMAIL_MODE', 'plunk')
+  Deno.env.set('PLUNK_API_URL', PLUNK_URL)
+  Deno.env.set('PLUNK_SECRET_KEY', 'sk_teste_ficticia')
+  const sent = { status: 200, body: { success: true, data: { emails: [{ email: 'e-1' }] } } }
+  onExternal(() => sent)
   dispatchRpc([CART_ROW])
   await dispatch()
   const headers = externalCalls[0].body.headers as Record<string, string>
   assertMatch(headers['List-Unsubscribe'], /^<http:\/\/127\.0\.0\.1:54321\/functions\/v1\/api\/email\/unsubscribe\?token=/)
   assertEquals(headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click')
 
-  onExternal(() => ({ status: 201, body: { messageId: '<d@brevo>' } }))
+  onExternal(() => sent)
   dispatchRpc([{
     ...CART_ROW, kind: 'delivery', category: 'transactional',
     payload: { order_ref: 'X', games: [{ entitlement_id: '33333333-3333-4333-8333-333333333333', game_id: 1, code: 'J1', name: 'Jogo' }] },
   }])
   await dispatch()
   assertEquals(externalCalls[0].body.headers, undefined)
-  assert(!String(externalCalls[0].body.htmlContent).toLowerCase().includes('descadastrar'))
+  assert(!String(externalCalls[0].body.body).toLowerCase().includes('sair da lista'))
+  Deno.env.delete('PLUNK_API_URL')
+  Deno.env.delete('PLUNK_SECRET_KEY')
   Deno.env.set('EMAIL_MODE', 'log')
-})
-
-// ---------- brevo-webhook ----------
-
-const webhook = (body: unknown, auth: string | null = `Bearer ${BREVO_WEBHOOK_SECRET}`, init: RequestInit = {}) =>
-  handleBrevoWebhook(new Request('http://localhost/brevo-webhook', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', ...(auth ? { Authorization: auth } : {}) }, body: JSON.stringify(body), ...init,
-  }))
-
-const EVENT = { event: 'hard_bounce', email: ' Casal@Example.com ', id: 1, 'message-id': '<abc@relay>', ts_event: 1_790_000_000, reason: 'mailbox' }
-
-contractTest('brevo-webhook: segredo ausente ou errado 401, método 405, corpo 415/400, sem tocar no banco', async () => {
-  onRpc(() => row({ outcome: 'applied', user_id: USER }))
-  assertEquals((await webhook(EVENT, null)).status, 401)
-  assertEquals((await webhook(EVENT, 'Bearer segredo-errado')).status, 401)
-  assertEquals((await webhook(EVENT, BREVO_WEBHOOK_SECRET)).status, 401)
-  assertEquals((await handleBrevoWebhook(new Request('http://localhost/brevo-webhook'))).status, 405)
-  assertEquals((await webhook(EVENT, undefined, { headers: { Authorization: `Bearer ${BREVO_WEBHOOK_SECRET}`, 'Content-Type': 'text/plain' } })).status, 415)
-  assertEquals((await webhook(EVENT, undefined, { body: '{' })).status, 400)
-  assertEquals((await webhook([])).status, 400)
-  assertEquals(rpcCalls.length, 0)
-})
-
-contractTest('brevo-webhook: evento único e lote mapeiam para record_email_event; outros eventos são ignorados', async () => {
-  onRpc(() => row({ outcome: 'applied', user_id: USER }))
-  const single = await webhook(EVENT)
-  assertEquals([single.status, await single.json()], [200, { received: 1, recorded: 1, ignored: 0 }])
-  assertEquals(rpcCalls[0], {
-    fn: 'record_email_event', secretKeyOk: true, hasAuthorization: false,
-    args: { p_email: 'casal@example.com', p_event: 'hard_bounce', p_provider_message_id: '<abc@relay>', p_occurred_at: new Date(1_790_000_000_000).toISOString() },
-  })
-
-  onRpc(() => row({ outcome: 'applied', user_id: null }))
-  const batch = await webhook([
-    { event: 'spam', email: 'a@example.com' },
-    { event: 'unsubscribed', email: 'b@example.com', ts: 1_790_000_100 },
-    { event: 'invalid_email', email: 'c@example.com' },
-    { event: 'blocked', email: 'd@example.com' },
-    { event: 'delivered', email: 'e@example.com' },
-    { event: 'soft_bounce', email: 'f@example.com' },
-    { event: 'spam' },
-  ])
-  assertEquals(await batch.json(), { received: 7, recorded: 4, ignored: 3 })
-  assertEquals(rpcCalls.map((c) => c.args.p_event), ['complaint', 'unsubscribe', 'hard_bounce', 'hard_bounce'])
-  assertEquals(rpcCalls[0].args.p_occurred_at, undefined)
-  assertEquals(rpcCalls[1].args.p_occurred_at, new Date(1_790_000_100_000).toISOString())
-
-  // Data fora do que o Date aceita: o evento entra sem data (o banco usa a hora do registro), sem 500 em loop.
-  onRpc(() => row({ outcome: 'applied', user_id: null }))
-  const absurd = await webhook({ ...EVENT, ts_event: 1e20 })
-  assertEquals([absurd.status, (await absurd.json()).recorded, rpcCalls[0].args.p_occurred_at], [200, 1, undefined])
-})
-
-contractTest('brevo-webhook: KT001 é ignorado; falha do banco vira 500 para a Brevo reenviar, sem e-mail no log', async () => {
-  onRpc(() => ({ status: 400, body: { code: 'KT001', message: 'e-mail inválido' } }))
-  const { result: invalid } = await captureErrors(() => webhook({ event: 'spam', email: 'sem-arroba' }))
-  assertEquals(await invalid.json(), { received: 1, recorded: 0, ignored: 1 })
-
-  onRpc(() => ({ status: 503, body: { message: 'indisponível' } }))
-  const { result: down, logs } = await captureErrors(() => webhook(EVENT))
-  assertEquals(down.status, 500)
-  assert(!logs.join('\n').includes('example.com'), 'o e-mail não pode ir para o log')
 })

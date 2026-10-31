@@ -142,7 +142,7 @@ App à parte (`admin/`), com imagem e contêiner próprios: mudar o admin não r
 
 ## E-mail: Plunk e Amazon SES (email.keytotwo.com.br)
 
-Desde 2026-10-31 o Plunk (código aberto, versão fixa no compose) roda na VPS e envia pelo Amazon SES. Ele vai substituir a Brevo; até a troca, os e-mails do site continuam saindo pela Brevo.
+Desde 2026-10-31 o Plunk (código aberto, versão fixa no compose) roda na VPS e envia pelo Amazon SES. Ele substituiu a Brevo no mesmo dia: os e-mails do site e os do Auth (pelo SMTP do SES, `docs/auth-setup.md`) saem por ele e pelo SES.
 
 - **Na VPS:** `/opt/keytotwo-site/plunk/compose.yaml` (cópia de `deploy/plunk/compose.yaml`) e o `.env` ao lado (600): `DB_PASSWORD`, `JWT_SECRET`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` (aleatórios, gerados na VPS), `AWS_SES_REGION`, `AWS_SES_ACCESS_KEY_ID`, `AWS_SES_SECRET_ACCESS_KEY` (as mesmas do arquivo de segredos) e `DISABLE_SIGNUPS=true`. Subir ou aplicar mudança: `docker compose --project-directory /opt/keytotwo-site/plunk up -d --wait`. Atualizar o Plunk: trocar a versão da imagem no compose depois de ler as notas da versão.
 - **Endereços** (DNS A para a VPS, só DNS): `email.` é o painel e as páginas de descadastro; `api.email.` é a API (o site e a AWS chamam); `arquivos.email.` serve só GET/HEAD em `/uploads/` (imagens dos e-mails, no MinIO). Nenhuma porta publicada: tudo passa pelo Traefik. O `POST /auth/login` tem limite de 10 pedidos por minuto por IP.
@@ -152,11 +152,12 @@ Desde 2026-10-31 o Plunk (código aberto, versão fixa no compose) roda na VPS e
 - **Avisos para o site:** a função `ses-events` tem a sua própria inscrição HTTPS no tópico `plunk-ses-events`, com filtro no corpo (`{"eventType": ["Bounce", "Complaint"]}`): bounce definitivo e reclamação viram supressão no banco, com a origem `ses_events` (contrato da API, 8.3).
 - **Limpeza diária** (política de privacidade: o registro de cada e-mail some em 90 dias): `deploy/plunk/limpar.sh`, em `/opt/keytotwo-site/plunk/limpar.sh`, no cron do `deploy` às 03:50 de Brasília (`50 6 * * * sh /opt/keytotwo-site/plunk/limpar.sh >> /opt/keytotwo-site/plunk/limpar.log 2>&1`). Apaga do banco do Plunk os e-mails com mais de 90 dias (com os eventos, em cascata; os que ainda vão sair ficam) e os contatos sem inscrição e sem e-mail recente. A exclusão de conta no site já apaga o contato na hora.
 
-**Troca da Brevo pelo Plunk** (na hora que o responsável escolher; até lá, nada muda para quem usa o site):
+**Brevo desligada** (2026-10-31, fase 5):
 
-1. **Antes, com a Brevo enviando:** a migração `20261031120000_eventos_ses.sql` aplicada e as funções publicadas (`api`, `email-dispatch`, `stripe-webhook` e a nova `ses-events`). Nos segredos das funções: `PLUNK_API_URL=https://api.email.keytotwo.com.br`, `PLUNK_SECRET_KEY` (uma chave nova, gerada em *Settings → API Keys* do Plunk só para isso) e `SES_EVENTS_TOPIC_ARN`. Inscrever a `ses-events` no tópico (HTTPS, `https://<ref>.supabase.co/functions/v1/ses-events`, com o filtro acima): a função confirma sozinha. Conferir com um envio para `bounce@simulator.amazonses.com` pelo painel do Plunk: a supressão aparece com a origem `ses_events`.
-2. **A troca:** `EMAIL_MODE=plunk` nos segredos das funções. Vale na próxima chamada, sem deploy. Conferir no admin um e-mail enviado e, no Plunk, a entrega.
-3. **Voltar, se algo der errado:** `EMAIL_MODE=brevo`. A chave e o webhook da Brevo continuam até a fase de desligar a Brevo.
+- O código não tem mais o modo `brevo` nem a função `brevo-webhook`; o hospedado não tem a função nem os segredos `BREVO_API_KEY` e `BREVO_WEBHOOK_SECRET`. Voltar para a Brevo não é mais uma troca de segredo: pediria código novo.
+- A conta da Brevo foi encerrada pelo responsável, com as chaves revogadas antes.
+- DNS (Cloudflare): saíram o TXT `brevo-code` da raiz e os CNAME `brevo1._domainkey` e `brevo2._domainkey`. O DMARC (`_dmarc`) manda os relatórios para o DMARC Management do Cloudflare, em vez da Brevo.
+- O banco mantém a origem `brevo_webhook` nas restrições: as linhas antigas continuam válidas.
 
 **Marketing no Plunk** (desde 2026-10-31, fase 4; migração `20261031180000_marketing_plunk.sql`):
 
