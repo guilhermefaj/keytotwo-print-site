@@ -5,7 +5,7 @@ import { api, ApiError, apiMessage, useResource } from '../api'
 import { count, formatMoment, money } from '../format'
 import {
   actionLabel, consentLabel, emailKindLabel, emailStatusLabel, orderStatusLabel, providersLabel, revokeReasonLabel, stripeCustomerUrl,
-  suppressionLabel, type LibraryEntry, type UserDetail, type UserOrder,
+  suppressionLabel, birthLabel, whatsappLabel, whatsappLink, type LibraryEntry, type UserDetail, type UserOrder,
 } from '../users'
 import { ReasonAction } from '../ReasonAction'
 import { LoadError } from '../LoadError'
@@ -70,6 +70,10 @@ function UserPage({ id }: { id: string }) {
 
     <Section id="conta" title="Conta">
       <dl className="facts">
+        <Fact label="WhatsApp">{account.whatsapp
+          ? <a className="text-link" href={whatsappLink(account.whatsapp)} target="_blank" rel="noopener">{whatsappLabel(account.whatsapp)}<IconExternalLink aria-hidden="true" size={14} stroke={1.75} /><span className="sr-only"> (abre o WhatsApp em nova aba)</span></a>
+          : 'Não informou'}</Fact>
+        <Fact label="Nascimento">{account.birth_date ? birthLabel(account.birth_date) : 'Não informou'}</Fact>
         <Fact label="E-mail confirmado">{account.confirmed_at ? formatMoment(account.confirmed_at) : 'Ainda não'}</Fact>
         <Fact label="Último acesso">{account.last_sign_in_at ? formatMoment(account.last_sign_in_at) : 'Nunca entrou'}</Fact>
         <Fact label="Downloads">{user.downloads.count ? `${count(user.downloads.count)}, o último em ${formatMoment(user.downloads.last_at!)}` : 'Nenhum'}</Fact>

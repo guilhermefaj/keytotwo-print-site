@@ -14,7 +14,12 @@ const exported = { generated_at: '2026-10-19T12:00:00Z', account: { email: user.
 async function fixture(page: Page) {
   test.skip(!readFileSync('build/client/index.html', 'utf8').includes('Ambiente de teste'), 'Requires configured stage=test build')
   const calls: { path: string; method: string; body: unknown; authorization: string | null }[] = []
-  const state = { deletion: { status: 200, json: { deleted: true } as unknown } }
+  // O perfil começa com o nome da conta Google, ainda sem salvar (2026-11-01).
+  const state = {
+    deletion: { status: 200, json: { deleted: true } as unknown },
+    profile: { name: 'Ana Souza', birth_date: null as string | null, whatsapp: null as string | null, saved: false } as { name: string | null; birth_date: string | null; whatsapp: string | null; saved: boolean },
+    optedIn: true,
+  }
   await page.addInitScript(([key, value]) => { if (!sessionStorage.getItem('lgpd-loaded')) { sessionStorage.setItem('lgpd-loaded', '1'); localStorage.setItem(key, JSON.stringify(value)) } }, [authStorageKey, session] as const)
   await page.route('**/auth/v1/**', route => route.fulfill({ json: user }))
   await page.route('**/functions/v1/api/**', route => {
@@ -23,7 +28,13 @@ async function fixture(page: Page) {
     calls.push({ path, method: request.method(), body: request.postDataJSON(), authorization: request.headers().authorization ?? null })
     if (path === '/account/export') return route.fulfill({ json: exported })
     if (path === '/account/delete') return route.fulfill({ status: state.deletion.status, json: state.deletion.json })
-    const json = path === '/account' ? { email: user.email, marketing: { opted_in: true, prompted_at: '2026-01-01', updated_at: '2026-01-01', text_version: 'mkt-2026-10-19' }, orders: [] }
+    if (path === '/account/profile') {
+      const body = request.postDataJSON()
+      state.profile = { name: body.name, birth_date: body.birth_date, whatsapp: body.whatsapp, saved: true }
+      return route.fulfill({ json: { profile: state.profile } })
+    }
+    if (path === '/account/marketing') { state.optedIn = request.postDataJSON().granted; return route.fulfill({ json: { marketing: { opted_in: state.optedIn } } }) }
+    const json = path === '/account' ? { email: user.email, profile: state.profile, marketing: { opted_in: state.optedIn, prompted_at: '2026-01-01', updated_at: '2026-01-01', text_version: 'mkt-2026-10-19' }, orders: [] }
       : path === '/library' ? { games: [], pending: [] } : path === '/catalog' ? { products: [] } : path === '/free-games' ? { games: [] } : { version: 0, items: [], subtotal: null, warnings: [] }
     return route.fulfill({ json })
   })
@@ -76,4 +87,91 @@ test('Excluir minha conta: confirmação digitada na página, recusa explicada e
   await expect(page).toHaveURL(/\/$/)
   await expect.poll(() => page.evaluate(key => localStorage.getItem(key), authStorageKey)).toBeNull()
   expect(calls.filter(call => call.path === '/account/delete').map(call => [call.method, call.body])).toEqual([['POST', { confirmation: 'EXCLUIR' }], ['POST', { confirmation: 'EXCLUIR' }]])
+})
+
+// Perfil, botão vermelho e despedida das novidades (responsável, 2026-11-01).
+const axe = async (page: Page) => {
+  const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
+  expect(result.violations.map(({ id, nodes }) => ({ id, targets: nodes.map(n => n.target) }))).toEqual([])
+}
+
+test('Sobre você: o nome do Google vem preenchido, os campos avisam antes de enviar e o WhatsApp vai no formato internacional', async ({ page }) => {
+  const { calls } = await fixture(page)
+  await page.goto('/conta')
+  const name = page.getByLabel('Nome', { exact: true })
+  const birth = page.getByLabel('Data de nascimento', { exact: true })
+  const phone = page.getByLabel('WhatsApp', { exact: true })
+  await expect(name).toHaveValue('Ana Souza')
+  await expect(page.getByText('Veio da sua conta Google. Pode trocar se quiser.', { exact: true })).toBeVisible()
+  await expect(page.locator('.portal-greeting')).toHaveText('Olá, Ana!')
+  await expect(birth).toHaveAttribute('autocomplete', 'bday')
+  await expect(phone).toHaveAttribute('autocomplete', 'tel')
+  await axe(page)
+
+  // Um dia depois do limite dos 18 anos e um número incompleto: o aviso fica no campo, e nada vai para a API.
+  const limit = (await birth.getAttribute('max'))!
+  const underage = new Date(Date.parse(`${limit}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
+  await birth.fill(underage)
+  await phone.fill('9123-45')
+  await page.getByRole('button', { name: 'Salvar', exact: true }).click()
+  await expect(birth).toBeFocused()
+  await expect(birth).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByText('A conta da KeyToTwo é só para maiores de 18 anos.', { exact: true })).toBeVisible()
+  await expect(phone).toHaveAttribute('aria-invalid', 'true')
+  await expect(phone).toHaveAccessibleDescription(/Confira o número/)
+  await axe(page)
+  expect(calls.some(call => call.path === '/account/profile')).toBe(false)
+
+  await name.fill('  Bia   Lima ')
+  await birth.fill(limit)
+  await phone.fill('11 91234 5678')
+  await page.getByRole('button', { name: 'Salvar', exact: true }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Pronto, seus dados foram salvos.' })).toBeVisible()
+  expect(calls.filter(call => call.path === '/account/profile').map(call => [call.method, call.body, call.authorization]))
+    .toEqual([['PUT', { name: 'Bia Lima', birth_date: limit, whatsapp: '+5511912345678' }, `Bearer ${session.access_token}`]])
+  await expect(name).toHaveValue('Bia Lima')
+  await expect(phone).toHaveValue('(11) 91234-5678')
+  await expect(page.getByText('Veio da sua conta Google.', { exact: false })).toHaveCount(0)
+  await expect(page.locator('.portal-greeting')).toHaveText('Olá, Bia!')
+})
+
+test('Excluir minha conta: os dois botões em vermelho (Erro), sem cor nova', async ({ page }) => {
+  await fixture(page)
+  await page.goto('/conta')
+  const opener = page.getByRole('button', { name: 'Excluir minha conta', exact: true })
+  await expect(opener).toHaveCSS('color', 'rgb(153, 53, 24)')
+  await expect(opener).toHaveCSS('border-top-color', 'rgb(153, 53, 24)')
+  await opener.click()
+  await page.getByLabel('Para confirmar, digite EXCLUIR').fill('EXCLUIR')
+  await expect(page.getByRole('button', { name: 'Excluir conta definitivamente', exact: true })).toHaveCSS('background-color', 'rgb(153, 53, 24)')
+})
+
+test('Parar de receber: a janela mostra o que a pessoa perde; continuar não grava, e sair fica a um clique', async ({ page }) => {
+  const { calls } = await fixture(page)
+  await page.goto('/conta')
+  const form = page.locator('.marketing-form')
+  await form.getByRole('button', { name: 'Parar de receber', exact: true }).click()
+  const leave = page.getByRole('dialog', { name: 'Vamos sentir sua falta' })
+  await expect(leave).toBeVisible()
+  await expect(leave).toHaveAccessibleDescription('Sem as novidades por e-mail, você deixa de receber:')
+  await expect(leave.getByRole('listitem')).toHaveCount(3)
+  await expect(leave.locator('img')).toHaveAttribute('src', '/media/portal/kito-coracao-96.webp')
+  await axe(page)
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 640 })
+    const box = (await leave.boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(width)
+  }
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await leave.getByRole('button', { name: 'Quero continuar recebendo', exact: true }).click()
+  await expect(leave).toBeHidden()
+  await expect(form).toContainText('Você recebe nossas ideias')
+  expect(calls.some(call => call.path === '/account/marketing')).toBe(false)
+
+  await form.getByRole('button', { name: 'Parar de receber', exact: true }).click()
+  await leave.getByRole('button', { name: 'Parar de receber', exact: true }).click()
+  await expect(form.getByRole('button', { name: 'Quero receber ideias', exact: true })).toBeVisible()
+  await expect(page.getByText('Combinado. Você não recebe mais ideias.', { exact: true })).toBeVisible()
+  expect(calls.filter(call => call.path === '/account/marketing').map(call => call.body)).toEqual([expect.objectContaining({ granted: false, source: 'account' })])
 })

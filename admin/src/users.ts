@@ -52,6 +52,9 @@ export interface UserDetail {
     last_sign_in_at: string | null
     providers: (string | null)[]
     name: string | null
+    // Perfil de Minha conta (2026-11-01), opcional: data ISO e WhatsApp em E.164.
+    birth_date?: string | null
+    whatsapp?: string | null
     blocked: boolean
     banned_until: string | null
     admin: boolean
@@ -120,3 +123,16 @@ export const actionLabel = (action: string) => label(ACTIONS, action)
 
 // Painel da Stripe do cliente, no modo dos pedidos da pessoa (teste ou produção).
 export const stripeCustomerUrl = (customer: string, livemode: boolean) => `https://dashboard.stripe.com/${livemode ? '' : 'test/'}customers/${encodeURIComponent(customer)}`
+
+// Perfil de Minha conta (2026-11-01): o WhatsApp vira o número legível e o link do WhatsApp; a data, com a idade de hoje.
+export function whatsappLabel(e164: string): string {
+  const br = /^\+55(\d{2})(\d{4,5})(\d{4})$/.exec(e164)
+  return br ? `(${br[1]}) ${br[2]}-${br[3]}` : e164
+}
+export const whatsappLink = (e164: string) => `https://wa.me/${e164.replace(/\D/g, '')}`
+export function birthLabel(date: string, now = new Date()): string {
+  const [year, month, day] = date.split('-').map(Number)
+  const birthdayPassed = now.getMonth() + 1 > month || (now.getMonth() + 1 === month && now.getDate() >= day)
+  const age = now.getFullYear() - year - (birthdayPassed ? 0 : 1)
+  return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year} (${age} anos)`
+}

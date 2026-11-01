@@ -7,7 +7,9 @@ export type CatalogProduct = { code: string; kind: 'bundle' | 'single'; name: st
 export type CartItem = CatalogProduct & { status: 'ok' | 'unavailable' | 'already_owned' | 'included'; available: boolean; owned_games: string[]; included_in: string[]; shared_with: string[]; charge: Price | null }
 export type Cart = { version: number; items: CartItem[]; subtotal: { amount: number; currency: string } | null; warnings: { code: string; product_code: string }[]; owned_products?: string[]; unknown?: string[] }
 export type Marketing = { opted_in: boolean; updated_at: string | null; text_version: string | null }
-export type Account = { email: string; marketing: Marketing; free_games_unlocked?: boolean; orders: { ref: string; kind?: 'purchase' | 'courtesy'; created_at: string; paid_at: string | null; status: string; amount_total: number; currency: string; items: { code: string; name: string; unit_amount: number; currency: string }[] }[] }
+// Perfil (2026-11-01): saved = a pessoa já salvou; antes disso, o nome é o da conta Google (sugestão).
+export type Profile = { name: string | null; birth_date: string | null; whatsapp: string | null; saved: boolean }
+export type Account = { email: string; profile?: Profile; marketing: Marketing; free_games_unlocked?: boolean; orders: { ref: string; kind?: 'purchase' | 'courtesy'; created_at: string; paid_at: string | null; status: string; amount_total: number; currency: string; items: { code: string; name: string; unit_amount: number; currency: string }[] }[] }
 export type Library = { games: { code: string; name: string; acquired_at: string; products: { code: string; name: string }[]; files: { id: string; kind: string; version: string; size_bytes: number }[] }[]; pending: { ref: string; created_at: string; products: { code: string; name: string }[] }[] }
 
 export type CatalogResponse = { products: CatalogProduct[]; banner?: { code: string; text: string } | null; sales_open_at?: string | null }

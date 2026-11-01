@@ -17,6 +17,7 @@ export const company = {
 
 // Validação jurídica dos Termos, da Política de reembolso e da Privacidade: aprovada em 2026-10-22, na versão
 // termos-2026-10-22 (responsável). Mudou o texto, muda a versão e o jurídico revê de novo.
+// Privacidade 2026-11-01: o perfil de Minha conta (nome, data de nascimento e WhatsApp, opcionais), para a revisão.
 
 // Revisão jurídica de 2026-10-22: atualizações, versões, licença x acesso, suspensão, responsabilidade, arrependimento,
 // gratuitos e fotos. Fatos conferidos no código: Pix (Stripe, reembolso em até 90 dias para a conta de origem),
@@ -161,8 +162,8 @@ const reembolso: LegalContent = {
 
 const privacidade: LegalContent = {
   title: 'Política de privacidade',
-  version: '2026-10-31',
-  versionLabel: 'Versão de 31 de outubro de 2026',
+  version: '2026-11-01',
+  versionLabel: 'Versão de 1º de novembro de 2026',
   intro: 'Esta política explica quais dados pessoais a KeyToTwo trata, para quê, com quem compartilha, por quanto tempo guarda e como você exerce seus direitos, conforme a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).',
   sections: [
     { title: 'Quem cuida dos seus dados', id: 'controladora', paragraphs: [
@@ -172,6 +173,7 @@ const privacidade: LegalContent = {
     { title: 'Quais dados tratamos', id: 'dados', paragraphs: [
       [
         'Conta: e-mail, data de criação, confirmação do e-mail e data do último acesso. Se você entra com o Google, também o nome e a foto do perfil que o Google compartilha. Se você cria uma senha, ela é guardada só de forma cifrada (hash).',
+        'Perfil, se você preencher em Minha conta: nome, data de nascimento e WhatsApp, todos opcionais. Se você entra com o Google, o nome vem preenchido com o do Google, e você pode trocar ou apagar.',
         'Compras: itens da sacola, pedidos, produtos, valores, cupom usado, datas, a versão dos termos aceita e o momento do aceite, e as referências do pagamento na Stripe.',
         'Acesso aos jogos: a sua biblioteca em Meus jogos e o registro de cada download, inclusive dos gratuitos (qual arquivo e quando).',
         'Preferência de e-mail: se você aceita receber novidades, com o histórico de quando aceitou ou retirou o aceite, por onde e qual versão do texto viu.',
@@ -187,6 +189,8 @@ const privacidade: LegalContent = {
     { title: 'Para que usamos e com qual base legal', id: 'finalidades', paragraphs: [
       [
         'Criar e manter a conta, processar compras, entregar os jogos, enviar os e-mails de acesso e de pedido e prestar atendimento: execução do contrato (LGPD, art. 7º, V).',
+        'Chamar você pelo nome no site e nos e-mails e, quando precisar, falar com você pelo WhatsApp sobre a conta ou um pedido: execução do contrato (art. 7º, V). Não mandamos propaganda pelo WhatsApp.',
+        'Usar a data de nascimento para conhecer a faixa de idade de quem joga e confirmar que a conta é de maior de idade: legítimo interesse (art. 7º, IX).',
         'Guardar pedidos e registros de pagamento e cumprir obrigações fiscais e contábeis: cumprimento de obrigação legal (art. 7º, II).',
         'Guardar registros de acesso pelo prazo do Marco Civil da Internet: cumprimento de obrigação legal (art. 7º, II).',
         'Prevenir fraude e abuso, proteger a conta, os arquivos e o serviço, tratar contestações e defender direitos: legítimo interesse (art. 7º, IX) e exercício regular de direitos (art. 7º, VI).',
@@ -208,6 +212,7 @@ const privacidade: LegalContent = {
         'Envio dos e-mails: entrega as mensagens e avisa se cada uma chegou, voltou, foi aberta, teve um link clicado ou foi marcada como spam.',
         'Armazenamento dos arquivos dos jogos: o download sai direto desse serviço, que registra o acesso técnico.',
         'Google: login com a conta Google, quando você escolhe essa opção, e o Google Analytics, que mede as visitas só se você aceitar os cookies.',
+        'WhatsApp: quando falamos com você por lá, a conversa passa pelo WhatsApp, da Meta, que segue a política dele.',
         'Hospedagem: os servidores no Brasil que publicam o site e organizam o envio dos e-mails.',
       ],
       `O nome de cada fornecedor é informado a quem pedir, por ${company.email}.`,
@@ -217,7 +222,7 @@ const privacidade: LegalContent = {
     ] },
     { title: 'Por quanto tempo guardamos', id: 'retencao', paragraphs: [
       [
-        'Conta, sacola, biblioteca, preferência de e-mail e histórico de consentimento: enquanto a conta existir.',
+        'Conta, perfil, sacola, biblioteca, preferência de e-mail e histórico de consentimento: enquanto a conta existir. O perfil sai na hora em que você apaga um campo ou exclui a conta.',
         'Pedidos e registros de pagamento: pelo prazo exigido pela legislação fiscal e para defesa em eventual processo (em regra, 5 anos). Se você excluir a conta, os pedidos ficam sem o seu e-mail e sem ligação com você, só com produtos, valores, datas e a referência do pagamento na Stripe.',
         'E-mails enviados: o registro de cada mensagem é apagado 90 dias depois do envio.',
         'Registros de acesso: 6 meses, como exige o Marco Civil da Internet (Lei nº 12.965/2014, art. 15).',
@@ -238,7 +243,7 @@ const privacidade: LegalContent = {
         'saber com quem compartilhamos seus dados e as consequências de não dar o consentimento;',
         'se opor a um tratamento feito em desacordo com a lei.',
       ],
-      'Sem precisar escrever, em Minha conta você baixa uma cópia dos seus dados (arquivo JSON com conta, pedidos, biblioteca, consentimentos, downloads e e-mails), muda a preferência de e-mail e exclui a conta. A exclusão é imediata e encerra o acesso à conta e aos downloads (a licença das cópias já baixadas continua valendo, como dizem os Termos de uso); os pedidos ficam guardados sem identificação, como explicado acima.',
+      'Sem precisar escrever, em Minha conta você corrige o nome, a data de nascimento e o WhatsApp, baixa uma cópia dos seus dados (arquivo JSON com conta, perfil, pedidos, biblioteca, consentimentos, downloads e e-mails), muda a preferência de e-mail e exclui a conta. A exclusão é imediata e encerra o acesso à conta e aos downloads (a licença das cópias já baixadas continua valendo, como dizem os Termos de uso); os pedidos ficam guardados sem identificação, como explicado acima.',
       `Para os demais pedidos, escreva para ${company.email} a partir do e-mail da conta. Podemos pedir uma confirmação de identidade antes de atender. Respondemos em até 15 dias.`,
       'Você também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD).',
     ] },

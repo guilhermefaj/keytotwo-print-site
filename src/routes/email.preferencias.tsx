@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
+import { LeaveNewsletterMessage } from '../components/account/LeaveNewsletter'
+import { leaveNewsletter } from '../content/account'
 import { ApiError } from '../lib/api'
 import { emailPreferencesMock, unsubscribeEmail } from '../lib/email-preferences'
 import { useShop } from '../lib/shop-context'
@@ -9,12 +11,13 @@ function PreferenceForm({ token, completed }: { token: string; completed: boolea
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [invalid, setInvalid] = useState(false)
+  const [stayed, setStayed] = useState(false)
   const request = useRef<AbortController | null>(null)
   const resultHeading = useRef<HTMLHeadingElement | null>(null)
   const navigate = useNavigate()
   const { account } = useShop()
   useEffect(() => () => request.current?.abort(), [])
-  useEffect(() => { if (completed) resultHeading.current?.focus() }, [completed])
+  useEffect(() => { if (completed || stayed) resultHeading.current?.focus() }, [completed, stayed])
 
   async function confirm() {
     if (!token || request.current || completed) return
@@ -43,12 +46,21 @@ function PreferenceForm({ token, completed }: { token: string; completed: boolea
       <h2 id="email-choice-title" ref={resultHeading} tabIndex={-1}>{emailPreferencesMock ? 'Prévia do descadastro' : 'Tudo certo por aqui.'}</h2>
       <p>{emailPreferencesMock ? 'Demonstração concluída. Nenhuma preferência foi alterada.' : 'Você está fora da lista de novidades. Se já estava, está tudo certo.'}</p>
       <p>Você continua recebendo os e-mails de acesso e dos seus pedidos.</p>
-    </div> : <>
-      <h2 id="email-choice-title">Seu e-mail, suas escolhas.</h2>
-      <p>{token ? 'Quer parar de receber nossas novidades? É só confirmar abaixo.' : 'Abra o link que veio no e-mail ou ajuste sua preferência em Minha conta.'}</p>
-      {token && <p>Os e-mails de acesso e dos seus pedidos continuam chegando.</p>}
-      {token && !invalid && <button className="button button-primary" disabled={busy} onClick={confirm}>{busy ? 'Confirmando…' : emailPreferencesMock ? 'Simular descadastro' : 'Parar de receber novidades'}</button>}
+    </div> : stayed ? <div role="status">
+      <h2 id="email-choice-title" ref={resultHeading} tabIndex={-1}>Que bom que você fica!</h2>
+      <p>Nada mudou: as novidades continuam chegando por e-mail.</p>
+      <Link className="button button-secondary" to="/loja">Ver os jogos</Link>
+    </div> : token ? <>
+      {/* Antes de sair (responsável, 2026-11-01): o que a pessoa deixa de receber; a saída continua a um clique. */}
+      <LeaveNewsletterMessage headingId="email-choice-title" />
+      {!invalid && <div className="leave-actions">
+        <button className="button button-primary" disabled={busy} onClick={() => setStayed(true)}>{leaveNewsletter.stay}</button>
+        <button className="button button-secondary" disabled={busy} onClick={confirm}>{busy ? 'Confirmando…' : emailPreferencesMock ? 'Simular descadastro' : 'Parar de receber novidades'}</button>
+      </div>}
       <p className="form-error" role="alert">{error}</p>
+    </> : <>
+      <h2 id="email-choice-title">Seu e-mail, suas escolhas.</h2>
+      <p>Abra o link que veio no e-mail ou ajuste sua preferência em Minha conta.</p>
     </>}
     <Link className="inline-link" to="/conta">Minha conta</Link>
   </section>

@@ -1,13 +1,17 @@
 import { useEffect, useRef } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../lib/auth-context'
+import { useShop } from '../lib/shop-context'
 
 export default function MinhaArea() {
   const { session } = useAuth()
   const { pathname } = useLocation()
   const tabs = useRef<HTMLElement>(null)
   const previousPath = useRef(pathname)
-  const givenName = session?.user.user_metadata?.full_name
+  const { account } = useShop()
+  // O nome salvo em Minha conta; enquanto a conta carrega, o do Google (o mesmo que o perfil sugere).
+  const profile = account.data?.profile
+  const givenName = profile ? profile.name : session?.user.user_metadata?.full_name
   const name = typeof givenName === 'string' ? givenName.trim().split(/\s+/)[0] : ''
   useEffect(() => {
     const current = tabs.current?.querySelector<HTMLElement>('[aria-current="page"]')

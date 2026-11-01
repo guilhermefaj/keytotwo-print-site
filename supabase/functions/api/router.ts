@@ -1,6 +1,6 @@
 import { allowedOrigin, preflight, withCors } from '../_shared/cors.ts'
 import { errorResponse, HttpError, toErrorResponse } from '../_shared/http.ts'
-import { deleteAccount, exportAccount, getAccount, putMarketing } from './routes/account.ts'
+import { deleteAccount, exportAccount, getAccount, putMarketing, putProfile } from './routes/account.ts'
 import { adminMetrics } from './routes/admin.ts'
 import { adminAlerts, adminResolveAlert } from './routes/alerts.ts'
 import { adminBlockUser, adminDeleteUser, adminExportUser, adminFollowUp, adminGiftProduct, adminNewsletterOff, adminResendDelivery, adminRevokeEntitlement, adminSetAdmin, adminUnblockUser, adminUser, adminUsers } from './routes/users.ts'
@@ -51,6 +51,7 @@ const routes: Route[] = [
   route('/cart/merge', { POST: mergeCart }),
   route('/account', { GET: getAccount }),
   route('/account/marketing', { PUT: putMarketing }),
+  route('/account/profile', { PUT: putProfile }),
   route('/account/export', { GET: exportAccount }),
   route('/account/delete', { POST: deleteAccount }),
   route('/library', { GET: library }),

@@ -88,7 +88,8 @@ test('textos jurídicos: versão no topo, índice das seções e identificação
   for (const [route, title] of [['/termos', 'Termos de uso'], ['/reembolsos', 'Política de reembolso'], ['/privacidade', 'Política de privacidade']]) {
     await page.goto(route)
     await expect(page.getByRole('heading', { level: 1, name: title, exact: true })).toBeVisible()
-    await expect(page.locator('main time')).toHaveText(/^Versão de \d+ de \w+ de \d{4}$/)
+    // O dia 1 se escreve "1º" (Privacidade de 1º de novembro de 2026).
+    await expect(page.locator('main time')).toHaveText(/^Versão de \d+º? de \w+ de \d{4}$/)
     const index = page.getByRole('navigation', { name: 'Nesta página' }).getByRole('link')
     expect(await index.count(), `índice de ${route}`).toBeGreaterThan(2)
     for (const href of await index.evaluateAll(links => links.map(link => link.getAttribute('href')))) await expect(page.locator(href!)).toHaveCount(1)
