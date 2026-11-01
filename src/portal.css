@@ -130,8 +130,9 @@
 .leave-message ul { display: grid; gap: 8px; margin: 4px 0; padding: 0; list-style: none; text-align: left; }
 .leave-message li { position: relative; padding-left: 26px; line-height: 1.5; }
 .leave-message li::before { content: "♥"; position: absolute; left: 4px; top: 0; color: var(--color-error); }
-/* O Kito com o coração no círculo Céu com o fio Turquesa, como o avatar do Portal. */
-.leave-kito { display: grid; place-items: end center; width: 96px; height: 96px; flex-shrink: 0; border-radius: 50%; background: var(--color-sky); border: 2px solid var(--color-line); overflow: hidden; }
+/* O Kito chorando no círculo Céu com o fio Turquesa, como o avatar do Portal; sentado, fica no meio (pela base, a curva
+   do círculo cortava os pés). */
+.leave-kito { display: grid; place-items: center; width: 96px; height: 96px; flex-shrink: 0; border-radius: 50%; background: var(--color-sky); border: 2px solid var(--color-line); overflow: hidden; }
 .leave-kito img { width: 72px; height: auto; }
 .leave-actions { display: grid; gap: 12px; margin-top: 24px; }
 .leave-actions .button { width: 100%; }

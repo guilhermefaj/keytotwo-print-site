@@ -155,7 +155,7 @@ test('Parar de receber: a janela mostra o que a pessoa perde; continuar não gra
   await expect(leave).toBeVisible()
   await expect(leave).toHaveAccessibleDescription('Sem as novidades por e-mail, você deixa de receber:')
   await expect(leave.getByRole('listitem')).toHaveCount(3)
-  await expect(leave.locator('img')).toHaveAttribute('src', '/media/portal/kito-coracao-96.webp')
+  await expect(leave.locator('img')).toHaveAttribute('src', '/media/portal/kito-chorando-96.webp')
   await axe(page)
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 640 })

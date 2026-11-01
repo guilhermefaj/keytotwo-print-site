@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { leaveNewsletter } from '../../content/account'
 
-// Antes de sair da lista de novidades (responsável, 2026-11-01): o Kito com o coração (pixel art do PixelLab, "In love",
-// de frente, reduzido com suavização) e o que a pessoa deixa de receber. A saída fica a um clique, com nome claro.
+// Antes de sair da lista de novidades (responsável, 2026-11-01): o Kito chorando (o sentado do PixelLab, de frente, com
+// uma lágrima em pixel art; reduzido com suavização) e o que a pessoa deixa de receber. A saída fica a um clique.
 
 /** O texto da despedida: em Minha conta, dentro da janela; no link do e-mail, na própria página. */
 export function LeaveNewsletterMessage({ headingId }: { headingId: string }) {
   return <div className="leave-message">
-    <span className="leave-kito" aria-hidden="true"><img src="/media/portal/kito-coracao-96.webp" srcSet="/media/portal/kito-coracao-96.webp 96w, /media/portal/kito-coracao-144.webp 144w, /media/portal/kito-coracao-192.webp 192w" sizes="72px" width="72" height="80" alt="" /></span>
+    <span className="leave-kito" aria-hidden="true"><img src="/media/portal/kito-chorando-96.webp" srcSet="/media/portal/kito-chorando-96.webp 96w, /media/portal/kito-chorando-144.webp 144w, /media/portal/kito-chorando-192.webp 192w" sizes="72px" width="72" height="67" alt="" /></span>
     <h2 id={headingId}>{leaveNewsletter.title}</h2>
     <p id={`${headingId}-lead`}>{leaveNewsletter.lead}</p>
     <ul>{leaveNewsletter.losses.map(item => <li key={item}>{item}</li>)}</ul>
