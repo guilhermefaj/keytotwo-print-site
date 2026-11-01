@@ -186,6 +186,17 @@ services:
       traefik.http.middlewares.plunk-login-limite.ratelimit.average: "10"
       traefik.http.middlewares.plunk-login-limite.ratelimit.period: 1m
       traefik.http.middlewares.plunk-login-limite.ratelimit.burst: "10"
+      # O link do rodapé dos e-mails de marketing (a página "Cancelar inscrição" do Plunk) vai para a página de
+      # preferências do site, com o Kito e o que a pessoa deixa de receber (responsável, 2026-11-01); lá o site tira o
+      # contato da lista no Plunk e revoga o aceite na hora. Leva o id do contato e o do e-mail (?e=), se houver.
+      # 302: desfazer é tirar estas linhas. Ao atualizar o Plunk, conferir se o link continua /unsubscribe/<id>?e=<id>.
+      traefik.http.routers.plunk-descadastro.rule: Host(`email.keytotwo.com.br`) && PathRegexp(`^/unsubscribe/[0-9a-fA-F-]{36}$$`)
+      traefik.http.routers.plunk-descadastro.entrypoints: websecure
+      traefik.http.routers.plunk-descadastro.tls.certresolver: letsencrypt
+      traefik.http.routers.plunk-descadastro.middlewares: plunk-descadastro,plunk-hsts
+      traefik.http.routers.plunk-descadastro.service: plunk
+      traefik.http.middlewares.plunk-descadastro.redirectregex.regex: '^https?://[^/]+/unsubscribe/([0-9a-fA-F-]{36})(?:\?(?:.*&)?e=([0-9a-fA-F-]{36}))?.*$$'
+      traefik.http.middlewares.plunk-descadastro.redirectregex.replacement: https://keytotwo.com.br/email/preferencias?contato=$${1}&e=$${2}
       traefik.http.middlewares.plunk-hsts.headers.stsSeconds: "31536000"
       traefik.http.services.plunk.loadbalancer.server.port: "80"
     <<: *logs

@@ -128,3 +128,32 @@ test('the email link shows what is lost; staying never unsubscribes and focuses 
   await expect(page.getByRole('link', { name: 'Ver os jogos', exact: true })).toHaveAttribute('href', '/loja')
   expect(calls).toBe(0)
 })
+
+// O rodapé dos e-mails do Plunk (2026-11-01): o Traefik leva a página de descadastro dele para cá com o id do contato e o
+// do e-mail. A mesma despedida, e a saída manda os dois ids, sem sessão, e some com eles do endereço.
+test('a Plunk footer link (?contato=&e=) shows the same goodbye and leaves with both ids', async ({ page }) => {
+  const contact = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const emailId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  const bodies: unknown[] = []
+  await page.route('**/api/email/unsubscribe', route => {
+    bodies.push(route.request().postDataJSON())
+    expect(route.request().headers().authorization).toBeUndefined()
+    return route.fulfill({ json: { status: 'unsubscribed' } })
+  })
+  await page.goto(`/email/preferencias?contato=${contact}&e=${emailId}`)
+  await page.waitForLoadState('networkidle')
+  test.skip(await page.getByText('Demonstração (mock)').count() > 0, 'Requires VITE_EMAIL_PREFERENCES_MODE=api build')
+  await expect(page.getByRole('heading', { level: 2, name: 'Vamos sentir sua falta' })).toBeVisible()
+  await expect(page.locator('.leave-kito img')).toHaveAttribute('src', '/media/portal/kito-chorando-96.webp')
+  expect(bodies).toEqual([])
+  await page.getByRole('button', { name: 'Parar de receber novidades' }).click()
+  await expect(page.getByRole('heading', { name: 'Tudo certo por aqui.' })).toBeFocused()
+  await expect(page).toHaveURL(/\/email\/preferencias$/)
+  expect(bodies).toEqual([{ contact, email_id: emailId }])
+
+  // Sem o e-mail de origem (link antigo ou editado), só o contato.
+  await page.goto(`/email/preferencias?contato=${contact}`)
+  await page.getByRole('button', { name: 'Parar de receber novidades' }).click()
+  await expect(page.getByRole('heading', { name: 'Tudo certo por aqui.' })).toBeVisible()
+  expect(bodies[1]).toEqual({ contact })
+})

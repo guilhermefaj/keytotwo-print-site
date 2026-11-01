@@ -98,6 +98,24 @@ export function forgetEmailContact(email: string | null | undefined): void {
   runInBackground('plunk-contato', () => deletePlunkContact(target))
 }
 
+// Saída pelo rodapé de um e-mail do Plunk (2026-11-01): a página de preferências do site manda o id do contato. Lê o
+// e-mail dele e chama o descadastro de 1 clique do Plunk, o mesmo do List-Unsubscribe: só age se o contato ainda está
+// inscrito (sem repetir o evento contact.unsubscribed) e atribui a saída ao e-mail de origem (?e=). As duas rotas são
+// públicas no Plunk; o id do contato é a credencial. Contato que não existe mais: null.
+export async function unsubscribePlunkContact(contactId: string, emailId?: string): Promise<string | null> {
+  const base = env.plunkApiUrl()
+  const id = encodeURIComponent(contactId)
+  const found = await fetch(`${base}/contacts/public/${id}`, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(10_000) })
+  if (found.status === 404) return null
+  if (!found.ok) throw new Error(`plunk_contato_http_${found.status}`)
+  const email = (await found.json().catch(() => ({})))?.email
+  if (typeof email !== 'string' || !email.includes('@')) throw new Error('plunk_contato_sem_email')
+  const query = emailId ? `?${new URLSearchParams({ e: emailId })}` : ''
+  const res = await fetch(`${base}/unsubscribe/${id}${query}`, { method: 'POST', signal: AbortSignal.timeout(10_000) })
+  if (!res.ok) throw new Error(`plunk_descadastro_http_${res.status}`)
+  return email
+}
+
 // Contatos de marketing no Plunk (2026-10-31, fase 4): o banco marca quem mudou (private.marketing_contacts) e aqui vai o
 // estado atual de cada um, pela atualização do contato (POST /contacts). Na primeira inscrição vai também o evento
 // "inscricao" (POST /events/track, com o id do contato), que começa as boas-vindas no Plunk. O /v1/track do Plunk não

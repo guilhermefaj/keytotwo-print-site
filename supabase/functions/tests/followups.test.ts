@@ -63,6 +63,56 @@ contractTest('POST /email/unsubscribe: 1 clique (query + formulário), JSON, ide
   assertEquals(rpcCalls.length, 0)
 })
 
+// O link do rodapé dos e-mails do Plunk (2026-11-01): o Traefik leva a página dele à de preferências do site, que manda
+// o id do contato. Sai no Plunk (1 clique, com o e-mail de origem) e, na hora, no site, pelo caminho do webhook dele.
+contractTest('POST /email/unsubscribe pelo link do Plunk: sai lá e no site; contato sumido é "pronto"; Plunk fora é erro', async () => {
+  const CONTACT = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const EMAIL_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  const send = (body: unknown) => handleRequest(request('/email/unsubscribe', { method: 'POST', body, headers: { Origin: 'http://127.0.0.1:5173' } }))
+  Deno.env.set('PLUNK_API_URL', PLUNK_URL)
+  try {
+    onExternal((call) => ok(call.method === 'GET' ? { id: CONTACT, email: 'casal@example.com', subscribed: true } : {}))
+    onRpc(() => row({ outcome: 'applied', user_id: USER }))
+    const res = await send({ contact: CONTACT.toUpperCase(), email_id: EMAIL_ID })
+    assertEquals([res.status, await res.json()], [200, { status: 'unsubscribed' }])
+    // As rotas públicas do Plunk, sem a chave secreta.
+    assertEquals(externalCalls.map((c) => [c.method, c.url, c.headers.get('Authorization')]), [
+      ['GET', `${PLUNK_URL}/contacts/public/${CONTACT}`, null],
+      ['POST', `${PLUNK_URL}/unsubscribe/${CONTACT}?e=${EMAIL_ID}`, null],
+    ])
+    assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['record_plunk_unsubscribe', { p_email: 'casal@example.com' }]])
+
+    // Sem o e-mail de origem (ou com um id que não é dele), o descadastro vai sem o ?e=.
+    onExternal((call) => ok(call.method === 'GET' ? { id: CONTACT, email: 'casal@example.com' } : {}))
+    onRpc(() => row({ outcome: 'noop', user_id: null }))
+    assertEquals((await send({ contact: CONTACT, email_id: 'x' })).status, 200)
+    assertEquals(externalCalls[1].url, `${PLUNK_URL}/unsubscribe/${CONTACT}`)
+
+    // Contato que o Plunk não conhece mais (conta excluída): nada a fazer, e a resposta não diz quais ids existem.
+    onExternal(() => ({ status: 404, body: {} }))
+    onRpc(() => row({ outcome: 'applied', user_id: USER }))
+    assertEquals([(await send({ contact: CONTACT })).status, externalCalls.length, rpcCalls.length], [200, 1, 0])
+
+    // Plunk fora do ar: erro (a página deixa tentar de novo), sem fingir sucesso nem mexer no site.
+    for (const failing of [{ GET: 502, POST: 200 }, { GET: 200, POST: 503 }]) {
+      onExternal((call) => ({ status: failing[call.method as 'GET' | 'POST'], body: { email: 'casal@example.com' } }))
+      onRpc(() => row({ outcome: 'applied', user_id: USER }))
+      const { result } = await captureErrors(() => send({ contact: CONTACT }))
+      assertEquals([result.status, rpcCalls.length], [500, 0])
+    }
+
+    // O que não é id de contato: 400, sem chamar ninguém.
+    onExternal(() => ok({}))
+    for (const bad of ['nao-e-uuid', 42, null, `${CONTACT}/../x`]) {
+      const res = await send({ contact: bad })
+      assertEquals([res.status, (await res.json()).error.code], [400, 'INVALID_TOKEN'])
+    }
+    assertEquals([externalCalls.length, rpcCalls.length], [0, 0])
+  } finally {
+    Deno.env.delete('PLUNK_API_URL')
+  }
+})
+
 // ---------- e-mails de marketing ----------
 
 const CART_ROW = {

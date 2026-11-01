@@ -3,11 +3,11 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { LeaveNewsletterMessage } from '../components/account/LeaveNewsletter'
 import { leaveNewsletter } from '../content/account'
 import { ApiError } from '../lib/api'
-import { emailPreferencesMock, unsubscribeEmail } from '../lib/email-preferences'
+import { emailPreferencesMock, unsubscribeEmail, type UnsubscribeLink } from '../lib/email-preferences'
 import { useShop } from '../lib/shop-context'
 import { useHydrated } from '../lib/use-hydrated'
 
-function PreferenceForm({ token, completed }: { token: string; completed: boolean }) {
+function PreferenceForm({ link, completed }: { link: UnsubscribeLink | null; completed: boolean }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [invalid, setInvalid] = useState(false)
@@ -20,12 +20,12 @@ function PreferenceForm({ token, completed }: { token: string; completed: boolea
   useEffect(() => { if (completed || stayed) resultHeading.current?.focus() }, [completed, stayed])
 
   async function confirm() {
-    if (!token || request.current || completed) return
+    if (!link || request.current || completed) return
     const controller = new AbortController()
     request.current = controller
     setBusy(true); setError('')
     try {
-      if (!emailPreferencesMock) await unsubscribeEmail(token, controller.signal)
+      if (!emailPreferencesMock) await unsubscribeEmail(link, controller.signal)
       if (controller.signal.aborted) return
       if (!emailPreferencesMock) account.reload()
       // Only a non-sensitive result remains in history; remove the link token.
@@ -50,7 +50,7 @@ function PreferenceForm({ token, completed }: { token: string; completed: boolea
       <h2 id="email-choice-title" ref={resultHeading} tabIndex={-1}>Que bom que você fica!</h2>
       <p>Nada mudou: as novidades continuam chegando por e-mail.</p>
       <Link className="button button-secondary" to="/loja">Ver os jogos</Link>
-    </div> : token ? <>
+    </div> : link ? <>
       {/* Antes de sair (responsável, 2026-11-01): o que a pessoa deixa de receber; a saída continua a um clique. */}
       <LeaveNewsletterMessage headingId="email-choice-title" />
       {!invalid && <div className="leave-actions">
@@ -81,10 +81,14 @@ export default function EmailPreferences() {
   const { state } = useLocation()
   const hydrated = useHydrated()
   const token = params.get('token') || ''
+  // O rodapé dos e-mails do Plunk chega como ?contato=<id>&e=<id do e-mail> (Traefik, deploy/plunk/compose.yaml).
+  const contact = params.get('contato') || ''
+  const emailId = params.get('e') || ''
+  const link: UnsubscribeLink | null = token ? { token } : contact ? (emailId ? { contact, email_id: emailId } : { contact }) : null
   const completed = state?.emailPreferenceResult === (emailPreferencesMock ? 'mock' : 'unsubscribed')
   return <main id="conteudo" tabIndex={-1} className="reading-page content-width">
     <h1>Preferências de e-mail</h1>
     {emailPreferencesMock && <p className="checkout-demo">Demonstração (mock): nenhuma preferência de e-mail será alterada.</p>}
-    {hydrated ? <PreferenceForm key={token} token={token} completed={completed} /> : <PreferenceSkeleton />}
+    {hydrated ? <PreferenceForm key={token || contact} link={link} completed={completed} /> : <PreferenceSkeleton />}
   </main>
 }
