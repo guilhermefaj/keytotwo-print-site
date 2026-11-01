@@ -115,3 +115,16 @@ test('explicit mock never changes server preference', async ({ page }) => {
   await expect(page).toHaveURL(/\/email\/preferencias$/)
   expect(calls).toBe(0)
 })
+
+// Antes de sair (responsável, 2026-11-01): o link do e-mail mostra o que a pessoa perde; ficar não chama a API.
+test('the email link shows what is lost; staying never unsubscribes and focuses the thank-you', async ({ page }) => {
+  let calls = 0
+  await page.route('**/api/email/unsubscribe', route => { calls++; return route.fulfill({ json: { status: 'unsubscribed' } }) })
+  await open(page)
+  await expect(page.getByRole('heading', { level: 2, name: 'Vamos sentir sua falta' })).toBeVisible()
+  await expect(page.locator('.leave-message li')).toHaveText(['o aviso quando sair um jogo novo', 'os cupons e as ofertas que mandamos por e-mail', 'ideias para a próxima noite a dois'])
+  await page.getByRole('button', { name: 'Quero continuar recebendo', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Que bom que você fica!' })).toBeFocused()
+  await expect(page.getByRole('link', { name: 'Ver os jogos', exact: true })).toHaveAttribute('href', '/loja')
+  expect(calls).toBe(0)
+})

@@ -105,3 +105,36 @@
   .portal-setting { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-block: 28px; }
   .portal-signout { padding: 24px 20px; }
 }
+
+/* Minha conta (responsável, 2026-11-01): o perfil (nome, nascimento e WhatsApp), os botões vermelhos da exclusão e a
+   despedida antes de sair das novidades (janela em Minha conta, a própria página no link do e-mail). O vermelho é o
+   Erro, sem cor nova; o hover mistura o Erro com a Tinta, como no admin. */
+.profile-form { gap: 20px; }
+.profile-field { display: grid; gap: 8px; min-width: 0; }
+.profile-field input[type="date"] { max-width: 16rem; }
+.profile-field input[type="tel"] { max-width: 20rem; }
+.profile-form .form-actions { margin-top: 4px; }
+.field-error, .portal-setting .field-error { margin: 0; color: var(--color-error); font-weight: 600; font-size: var(--text-caption); line-height: 1.5; }
+.button-danger { color: var(--color-paper); background: var(--color-error); }
+.button-danger:hover { background: color-mix(in srgb, var(--color-error) 85%, var(--color-ink)); }
+.button-danger-outline { color: var(--color-error); background: var(--color-paper); border-color: var(--color-error); }
+.button-danger-outline:hover { background: color-mix(in srgb, var(--color-error) 8%, var(--color-paper)); }
+.button-danger:disabled, .button-danger-outline:disabled { color: var(--color-ink-soft); background: var(--color-ink-wash); border-color: transparent; }
+.leave-dialog { inset: 0; margin: auto; width: min(440px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; border: 0; border-radius: var(--radius-lg); background: var(--color-paper); color: var(--color-ink); box-shadow: var(--shadow-menu); overflow: auto; }
+.portal-setting .marketing-form > .leave-dialog { margin: auto; }
+.leave-dialog::backdrop { background: rgb(18 58 61 / .45); }
+.leave-dialog-body { padding: 32px 28px 28px; }
+.leave-message { display: grid; justify-items: center; gap: 12px; text-align: center; }
+.leave-message h2 { margin: 4px 0 0; font-size: var(--text-title-lg); line-height: 1.2; }
+.leave-message p { margin: 0; max-width: 40ch; line-height: 1.6; }
+.leave-message ul { display: grid; gap: 8px; margin: 4px 0; padding: 0; list-style: none; text-align: left; }
+.leave-message li { position: relative; padding-left: 26px; line-height: 1.5; }
+.leave-message li::before { content: "♥"; position: absolute; left: 4px; top: 0; color: var(--color-error); }
+/* O Kito com o coração no círculo Céu com o fio Turquesa, como o avatar do Portal. */
+.leave-kito { display: grid; place-items: end center; width: 96px; height: 96px; flex-shrink: 0; border-radius: 50%; background: var(--color-sky); border: 2px solid var(--color-line); overflow: hidden; }
+.leave-kito img { width: 72px; height: auto; }
+.leave-actions { display: grid; gap: 12px; margin-top: 24px; }
+.leave-actions .button { width: 100%; }
+.account-card .leave-actions { display: flex; flex-wrap: wrap; justify-content: center; }
+.account-card .leave-actions .button { width: auto; }
+.account-card .leave-message + .leave-actions + .form-error:not(:empty) { text-align: center; }

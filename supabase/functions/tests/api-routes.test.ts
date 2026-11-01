@@ -4,6 +4,7 @@
 import { assertEquals, assertExists } from '@std/assert'
 import { captureErrors, onPrice, onRpc, onSalesOpening, request, rpcCalls, sessionToken, usageCalls, userId, contractTest } from './contract-helpers.ts'
 import { apiArea } from '../_shared/usage.ts'
+import { adultBirthLimit } from '../api/routes/account.ts'
 import { handleRequest } from '../api/router.ts'
 
 const GAME = { code: 'J001', name: 'Jogo [TESTE]' }
@@ -76,7 +77,7 @@ contractTest('rotas privadas recusam sem sessão, sessão vencida e papel errado
   onRpc(() => ({ status: 200, body: null }))
   const expired = await sessionToken({ exp: Math.floor(Date.now() / 1000) - 60 })
   const anon = await sessionToken({ role: 'anon' })
-  for (const [path, method] of [['/cart', 'GET'], ['/cart/items', 'POST'], ['/cart/items/P001', 'DELETE'], ['/cart/merge', 'POST'], ['/account', 'GET'], ['/account/marketing', 'PUT'], ['/library', 'GET'], ['/free-download', 'POST'], ['/admin/metrics', 'GET']]) {
+  for (const [path, method] of [['/cart', 'GET'], ['/cart/items', 'POST'], ['/cart/items/P001', 'DELETE'], ['/cart/merge', 'POST'], ['/account', 'GET'], ['/account/marketing', 'PUT'], ['/account/profile', 'PUT'], ['/library', 'GET'], ['/free-download', 'POST'], ['/admin/metrics', 'GET']]) {
     for (const token of [undefined, expired, anon, 'lixo.lixo.lixo']) {
       const res = await handleRequest(request(path, { method, token, body: method === 'GET' || method === 'DELETE' ? undefined : {} }))
       assertEquals(res.status, 401, `${method} ${path}`)
@@ -275,6 +276,52 @@ contractTest('PUT /account/marketing grava o consentimento e devolve a preferên
     assertEquals((await handleRequest(request('/account/marketing', { method: 'PUT', token, body }))).status, 400, JSON.stringify(body))
   }
   assertEquals(rpcCalls.length, 0)
+})
+
+contractTest('PUT /account/profile arruma o nome, grava os três de uma vez e recusa o que o banco recusaria', async () => {
+  const token = await sessionToken()
+  const saved = { name: 'Ana Souza', birth_date: '1990-05-10', whatsapp: '+5511987654321', saved: true }
+  onRpc(() => ({ status: 200, body: saved }))
+  const res = await handleRequest(request('/account/profile', { method: 'PUT', token, body: { name: '  Ana   Souza ', birth_date: '1990-05-10', whatsapp: '+5511987654321' } }))
+  assertEquals(res.status, 200)
+  assertEquals(await res.json(), { profile: saved })
+  assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['set_account_profile', { p_user_id: userId(token), p_full_name: 'Ana Souza', p_birth_date: '1990-05-10', p_whatsapp: '+5511987654321' }]])
+
+  // Vazio ou ausente apaga: o perfil vai inteiro, não campo a campo.
+  await handleRequest(request('/account/profile', { method: 'PUT', token, body: { name: '   ', birth_date: '' } }))
+  assertEquals(rpcCalls[1].args, { p_user_id: userId(token), p_full_name: null, p_birth_date: null, p_whatsapp: null })
+
+  // Quem faz 18 anos hoje (no dia de Brasília) passa; um dia depois, não.
+  const limit = adultBirthLimit()
+  onRpc(() => ({ status: 200, body: saved }))
+  assertEquals((await handleRequest(request('/account/profile', { method: 'PUT', token, body: { birth_date: limit } }))).status, 200)
+  const nextDay = new Date(Date.parse(`${limit}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
+  const minor = await handleRequest(request('/account/profile', { method: 'PUT', token, body: { birth_date: nextDay } }))
+  assertEquals(minor.status, 400)
+  assertEquals((await minor.json()).error.details, { field: 'birth_date' })
+
+  onRpc(() => ({ status: 200, body: saved }))
+  for (const body of [
+    { name: 'a'.repeat(81) },
+    { name: 'Ana\u0007' },
+    { name: 42 },
+    { birth_date: '1899-12-31' },
+    { birth_date: '2001-02-30' },
+    { birth_date: '10/05/1990' },
+    { whatsapp: '(11) 98765-4321' },
+    { whatsapp: '11987654321' },
+    { whatsapp: '+5511' },
+  ]) {
+    assertEquals((await handleRequest(request('/account/profile', { method: 'PUT', token, body }))).status, 400, JSON.stringify(body))
+  }
+  assertEquals(rpcCalls.length, 0)
+})
+
+contractTest('adultBirthLimit: 18 anos antes de hoje em Brasília; 29/02 vira 28/02', () => {
+  // 01/11/2026 01:30 UTC ainda é 31/10 em Brasília.
+  assertEquals(adultBirthLimit(new Date('2026-11-01T01:30:00Z')), '2008-10-31')
+  assertEquals(adultBirthLimit(new Date('2026-11-01T12:00:00Z')), '2008-11-01')
+  assertEquals(adultBirthLimit(new Date('2028-02-29T12:00:00Z')), '2010-02-28')
 })
 
 contractTest('KT009 vira 403 EMAIL_NOT_CONFIRMED; outra falha de RPC vira 500 sem dado pessoal no log', async () => {

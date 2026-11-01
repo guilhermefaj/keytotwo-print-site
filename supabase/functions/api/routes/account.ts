@@ -9,8 +9,16 @@ const TEXT_VERSION = /^[A-Za-z0-9._-]{1,40}$/
 const SOURCES = ['account', 'signup_prompt', 'free_games'] as const
 type Source = typeof SOURCES[number]
 
+interface Profile {
+  name: string | null
+  birth_date: string | null
+  whatsapp: string | null
+  saved: boolean
+}
+
 interface Account {
   email: string | null
+  profile: Profile
   marketing: { opted_in: boolean; updated_at: string | null; text_version: string | null; prompted_at: string | null }
   free_games_unlocked: boolean
   orders: unknown[]
@@ -20,16 +28,71 @@ async function loadAccount(userId: string): Promise<Account> {
   const account = await rpc<Account | null>('get_account', { p_user_id: userId })
   return account ?? {
     email: null,
+    profile: { name: null, birth_date: null, whatsapp: null, saved: false },
     marketing: { opted_in: false, updated_at: null, text_version: null, prompted_at: null },
     free_games_unlocked: false,
     orders: [],
   }
 }
 
-// GET /account: e-mail, preferência de marketing e pedidos com itens.
+// GET /account: e-mail, perfil, preferência de marketing e pedidos com itens.
 export async function getAccount(req: Request): Promise<Response> {
   const user = await requireSessionUser(req)
   return json(await loadAccount(user.id))
+}
+
+// Perfil (2026-11-01): as mesmas regras de set_account_profile (migração 20261101120000), que confere de novo.
+const NAME_MAX = 80
+const WHATSAPP = /^\+[1-9]\d{7,14}$/
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+function invalidField(field: string, message: string): HttpError {
+  return new HttpError(400, 'INVALID_REQUEST', message, { details: { field } })
+}
+
+function profileName(value: unknown): string | null {
+  if (value === null || value === undefined) return null
+  if (typeof value !== 'string') throw invalidField('name', 'Nome inválido.')
+  const name = value.trim().replace(/\s+/g, ' ')
+  if (!name) return null
+  if ([...name].length > NAME_MAX || /\p{Cc}/u.test(name)) throw invalidField('name', `Use até ${NAME_MAX} letras no nome.`)
+  return name
+}
+
+// A maior data aceita: 18 anos antes de hoje, no dia de Brasília (29/02 vira 28/02 num ano que não é bissexto).
+export function adultBirthLimit(now = new Date()): string {
+  const [year, month, day] = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now).split('-').map(Number)
+  const limit = new Date(Date.UTC(year - 18, month - 1, day))
+  if (limit.getUTCMonth() !== month - 1) limit.setUTCDate(0)
+  return limit.toISOString().slice(0, 10)
+}
+
+function birthDate(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null
+  const valid = typeof value === 'string' && ISO_DATE.test(value) && new Date(`${value}T00:00:00Z`).toISOString().startsWith(value)
+  if (!valid || value < '1900-01-01') throw invalidField('birth_date', 'Data de nascimento inválida.')
+  if (value > adultBirthLimit()) throw invalidField('birth_date', 'A conta é só para maiores de 18 anos.')
+  return value
+}
+
+function whatsapp(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null
+  if (typeof value !== 'string' || !WHATSAPP.test(value)) throw invalidField('whatsapp', 'WhatsApp no formato internacional, como +5511912345678.')
+  return value
+}
+
+// PUT /account/profile { name, birth_date, whatsapp }: grava os três de uma vez (nulo ou vazio apaga) e devolve o perfil.
+// O site manda o WhatsApp já no formato internacional (E.164).
+export async function putProfile(req: Request): Promise<Response> {
+  const user = await requireSessionUser(req)
+  const body = await readJsonObject(req)
+  const profile = await rpc<Profile>('set_account_profile', {
+    p_user_id: user.id,
+    p_full_name: profileName(body.name),
+    p_birth_date: birthDate(body.birth_date),
+    p_whatsapp: whatsapp(body.whatsapp),
+  })
+  return json({ profile })
 }
 
 // PUT /account/marketing { granted, source, text_version }

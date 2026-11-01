@@ -22,7 +22,7 @@ export function DataExport() {
   }
   return <div className="account-form" aria-busy={busy}>
     <button type="button" className="button button-secondary" disabled={busy} onClick={download}>{busy ? 'Preparando arquivo…' : 'Baixar meus dados'}</button>
-    <p className="field-help">Arquivo JSON com conta, pedidos, jogos, consentimentos, downloads e e-mails. <Link className="inline-link" to="/privacidade">Privacidade</Link></p>
+    <p className="field-help">Arquivo JSON com conta, perfil, pedidos, jogos, consentimentos, downloads e e-mails. <Link className="inline-link" to="/privacidade">Privacidade</Link></p>
     <p className="form-error" role="alert">{error}</p><p className="form-message" role="status">{message}</p>
   </div>
 }
@@ -64,7 +64,7 @@ export function AccountDeletion() {
     try { await supabase().auth.signOut({ scope: 'local' }) } catch { /* a sessão local some mesmo com erro de rede */ }
   }
 
-  if (!open) return <div className="account-form"><button ref={opener} type="button" className="button button-secondary" onClick={() => { setOpen(true); setTyped(''); setError('') }}>Excluir minha conta</button></div>
+  if (!open) return <div className="account-form"><button ref={opener} type="button" className="button button-danger-outline" onClick={() => { setOpen(true); setTyped(''); setError('') }}>Excluir minha conta</button></div>
   return <form className="account-form" onSubmit={remove} aria-busy={busy} aria-labelledby="delete-confirm-title">
     <h3 id="delete-confirm-title">Antes de confirmar</h3>
     <ul>
@@ -77,6 +77,6 @@ export function AccountDeletion() {
     <input ref={input} id="delete-confirmation" name="delete-confirmation" autoComplete="off" autoCapitalize="characters" spellCheck={false} value={typed} onChange={event => setTyped(event.target.value)} disabled={busy} required aria-describedby="delete-confirmation-help" />
     <p id="delete-confirmation-help" className="field-help">Digite a palavra {CONFIRMATION}, em letras maiúsculas ou minúsculas.</p>
     <p className="form-error" role="alert">{error}</p>
-    <div className="form-actions"><button className="button button-primary" disabled={!confirmed || busy}>{busy ? 'Excluindo…' : 'Excluir conta definitivamente'}</button> <button type="button" className="text-button" disabled={busy} onClick={() => setOpen(false)}>Cancelar</button></div>
+    <div className="form-actions"><button className="button button-danger" disabled={!confirmed || busy}>{busy ? 'Excluindo…' : 'Excluir conta definitivamente'}</button> <button type="button" className="text-button" disabled={busy} onClick={() => setOpen(false)}>Cancelar</button></div>
   </form>
 }
