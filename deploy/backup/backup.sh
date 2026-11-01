@@ -166,7 +166,13 @@ put() {
 }
 put "diario/plunk-$STAMP.dump.age"
 if [ "$(date -u +%d)" = 01 ]; then put "mensal/plunk-$STAMP.dump.age"; fi
-echo "diario/plunk-$STAMP.dump.age ($(wc -c < copia.dump.age) bytes)"
+# Registra no banco da loja, como a cópia do Supabase: sem cópia nova do Plunk em 26 horas, o admin abre "Backup do
+# Plunk atrasado" (2026-11-01). O nome começando por plunk- separa as duas. \047 é a aspa simples (estamos dentro de uma).
+bytes=$(wc -c < copia.dump.age)
+if [ -n "${BACKUP_DB_PASSWORD:-}" ]; then export PGPASSWORD="$BACKUP_DB_PASSWORD"; fi
+printf "select private.record_backup(\047%s\047, %s);\n" "diario/plunk-$STAMP.dump.age" "$bytes" \
+| psql "$BACKUP_DB_URL" --quiet --no-psqlrc -v ON_ERROR_STOP=1 >/dev/null
+echo "diario/plunk-$STAMP.dump.age ($bytes bytes)"
 ' < "$dump"; then ok=1; fi
   rm -f "$dump"
   [ "$ok" = 1 ]

@@ -103,3 +103,23 @@ test('atenção: sem alertas abertos, nada na barra lateral nem nas Métricas', 
   await expect(page.getByText('Nada precisa de atenção agora.')).toBeVisible()
   await axe(page)
 })
+
+test('atenção: os alertas do Plunk (2026-11-01) dizem o que parou e fecham sozinhos', async ({ page }) => {
+  const system = (id: number, kind: string, details: Record<string, unknown>) => alert(id, kind, { details, manual: false })
+  await alertsApi(page, [
+    system(11, 'site_down', { target: 'plunk', since: '2026-11-01T20:05:00Z', error: 'sem conexão' }),
+    system(12, 'marketing_sync_stuck', { count: 3, since: '2026-11-01T18:00:00Z', error: 'plunk_contacts_http_502' }),
+    system(13, 'plunk_backup_late', { last_finished_at: '2026-10-31T06:31:00Z' }),
+  ])
+  await page.goto('/atencao')
+  const open = page.getByRole('region', { name: 'Abertos 3' })
+  const item = (title: string) => open.getByRole('listitem').filter({ hasText: title })
+  await expect(item('Plunk fora do ar')).toContainText('(sem conexão): os e-mails de acesso aos jogos e as novidades não saem.')
+  await expect(item('Inscrições sem chegar ao Plunk')).toContainText('3 pessoas que aceitaram os e-mails estão há mais de 1 hora sem chegar ao Plunk (plunk_contacts_http_502)')
+  await expect(item('Backup do Plunk atrasado')).toContainText('Confira o backup.log na VPS.')
+  for (const title of ['Plunk fora do ar', 'Inscrições sem chegar ao Plunk', 'Backup do Plunk atrasado']) {
+    await expect(item(title)).toContainText('Fecha sozinho')
+    await expect(item(title).getByRole('button')).toHaveCount(0)
+  }
+  await axe(page)
+})
