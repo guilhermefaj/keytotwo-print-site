@@ -9,6 +9,7 @@ import { handleEmailDispatch } from '../email-dispatch/handler.ts'
 import { handleStripeWebhook } from '../stripe-webhook/handler.ts'
 import { presignUrl } from '../_shared/b2.ts'
 import { setBackgroundRunner } from '../_shared/background.ts'
+import { signRequest } from '../_shared/ses.ts'
 import { cryptoProvider, stripe } from '../_shared/stripe.ts'
 import { signDeliveryToken, verifyDeliveryToken } from '../_shared/tokens.ts'
 
@@ -285,6 +286,95 @@ contractTest('email-dispatch: fora do ar (site_down, 2026-10-26) avisa o que par
     '- A loja voltou a mostrar os produtos com preço em 26/10, 15:25, depois de cerca de 1 hora e 5 minutos.',
     '- A checagem automática do site voltou em 26/10, 14:40.',
   ]) assert(back.Text.includes(line), line)
+})
+
+contractTest('email-dispatch: alertas do Plunk (2026-11-01): fora do ar, backup atrasado e inscrições paradas', async () => {
+  Deno.env.set('EMAIL_MODE', 'log')
+  const send = async (payload: Record<string, unknown>) => {
+    dispatchRpc([{ ...DELIVERY_ROW, kind: 'admin_alert', order_id: null, to_email: 'admin@example.com', payload }])
+    onExternal(() => ok({ ID: 'mailpit-6' }))
+    await captureErrors(async () => await (await dispatchRequest({ outbox_id: OUTBOX_ID })).json())
+    return externalCalls[0].body as { Subject: string; Text: string }
+  }
+  const plunk = { kind: 'site_down', order_id: null, order_ref: null, livemode: null, details: { target: 'plunk', since: '2026-11-01T20:05:00Z', error: 'sem conexão' } }
+  const down = await send({ alerts: [plunk] })
+  assertEquals(down.Subject, 'Admin KeyToTwo: o Plunk está fora do ar')
+  for (const line of [
+    '- O Plunk não responde desde 01/11, 17:05 (sem conexão): os e-mails de acesso aos jogos e as novidades não saem. Confira a VPS no painel da Hostinger.',
+    '  Abrir o Plunk: https://email.keytotwo.com.br',
+    'Outro e-mail avisa quando voltar.',
+  ]) assert(down.Text.includes(line), line)
+  const back = await send({ back: true, alerts: [{ ...plunk, resolved_at: '2026-11-01T20:25:00Z' }] })
+  assert(back.Text.includes('- O Plunk voltou a responder em 01/11, 17:25, depois de cerca de 20 minutos fora do ar.'), back.Text)
+
+  const others = await send({ alerts: [
+    { kind: 'plunk_backup_late', order_id: null, order_ref: null, livemode: null, details: { last_finished_at: '2026-10-31T06:31:00Z' } },
+    { kind: 'marketing_sync_stuck', order_id: null, order_ref: null, livemode: null, details: { count: 3, since: '2026-11-01T18:00:00Z', error: 'plunk_contacts_http_502' } },
+  ] })
+  assertEquals(others.Subject, 'Admin KeyToTwo: 2 alertas novos')
+  for (const line of [
+    '- A cópia de segurança do Plunk (os contatos e o histórico dos e-mails) não roda há mais de 26 horas. Confira o backup.log na VPS.',
+    '- 3 pessoas que aceitaram os e-mails não chegaram ao Plunk há mais de 1 hora (plunk_contacts_http_502): elas ficam sem as boas-vindas. Confira se o Plunk está no ar.',
+  ]) assert(others.Text.includes(line), line)
+})
+
+contractTest('SES: assinatura SigV4 nos headers confere com o conjunto de testes oficial da AWS (get-vanilla, post-vanilla)', async () => {
+  const base = { host: 'example.amazonaws.com', path: '/', region: 'us-east-1', service: 'service', keyId: 'AKIDEXAMPLE', secret: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY', now: new Date('2015-08-30T12:36:00Z') }
+  const get = await signRequest({ ...base, method: 'GET' })
+  assertEquals(get, {
+    'x-amz-date': '20150830T123600Z',
+    Authorization: 'AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20150830/us-east-1/service/aws4_request, SignedHeaders=host;x-amz-date, Signature=5fa00fa31553b73ebf1942676e86291e8372ff2a2260956d9b8aae1d763fbf31',
+  })
+  assertMatch((await signRequest({ ...base, method: 'POST' })).Authorization, /Signature=5da7c1a2acd57cee7505fc6676e4e544621c30862966e37dddb68e92efbe5d6b$/)
+})
+
+contractTest('email-dispatch: alerta dos admins direto pelo SES (2026-11-01); se o SES falhar, vai pelo Plunk; os outros e-mails, não', async () => {
+  Deno.env.set('EMAIL_MODE', 'plunk')
+  Deno.env.set('PLUNK_API_URL', PLUNK_URL)
+  Deno.env.set('PLUNK_SECRET_KEY', 'sk_teste_ficticia')
+  const SES = { SES_ALERTS_REGION: 'us-east-2', SES_ALERTS_ACCESS_KEY_ID: 'AKIATESTE', SES_ALERTS_SECRET_ACCESS_KEY: 'segredo-ses-teste' }
+  for (const [name, value] of Object.entries(SES)) Deno.env.set(name, value)
+  const SES_URL = 'https://email.us-east-2.amazonaws.com/v2/email/outbound-emails'
+  const alert = { kind: 'backup_late', order_id: null, order_ref: null, livemode: null, details: {} }
+  const run = async (kind: string, ses: { status: number; body: unknown }) => {
+    dispatchRpc([{ ...DELIVERY_ROW, kind, ...(kind === 'admin_alert' ? { order_id: null, to_email: 'admin@example.com', payload: { alerts: [alert] } } : {}) }])
+    onExternal((call) => (call.url === SES_URL ? ses as { status: number; body: Record<string, unknown> } : ok({ success: true, data: { emails: [{ email: 'e-9' }] } })))
+    await captureErrors(async () => await (await dispatchRequest({ outbox_id: OUTBOX_ID })).json())
+    return { calls: externalCalls.map((c) => c.url), mark: rpcCalls[1].args }
+  }
+  try {
+    const sent = await run('admin_alert', { status: 200, body: { MessageId: 'ses-1' } })
+    assertEquals([sent.calls, sent.mark.p_status, sent.mark.p_provider_message_id], [[SES_URL], 'sent', 'ses-1'])
+    const call = externalCalls[0]
+    assertMatch(call.headers.get('Authorization') ?? '', /^AWS4-HMAC-SHA256 Credential=AKIATESTE\/\d{8}\/us-east-2\/ses\/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature=[0-9a-f]{64}$/)
+    assertEquals(call.body.FromEmailAddress, '"KeyToTwo" <acesso@example.com>')
+    assertEquals(call.body.Destination, { ToAddresses: ['admin@example.com'] })
+    const content = (call.body.Content as { Simple: { Subject: { Data: string }; Body: { Html: { Data: string }; Text: { Data: string } } } }).Simple
+    assertEquals(content.Subject.Data, 'Admin KeyToTwo: 1 alerta novo')
+    assert(content.Body.Html.Data.includes('<html') && content.Body.Text.Data.includes('Abrir Atenção no admin'))
+
+    // chave errada (403) ou envio pausado: o alerta sai pelo Plunk, como antes
+    const fallback = await run('admin_alert', { status: 403, body: { message: 'not authorized' } })
+    assertEquals([fallback.calls, fallback.mark.p_status, fallback.mark.p_provider_message_id], [[SES_URL, `${PLUNK_URL}/v1/send`], 'sent', 'e-9'])
+
+    // o e-mail do comprador continua pelo Plunk
+    assertEquals((await run('delivery', { status: 200, body: { MessageId: 'ses-2' } })).calls, [`${PLUNK_URL}/v1/send`])
+
+    // fora da lista de teste: recusado sem chamar ninguém
+    Deno.env.set('EMAIL_ALLOWED_RECIPIENTS', 'responsavel@example.com')
+    const refused = await run('admin_alert', { status: 200, body: { MessageId: 'ses-3' } })
+    assertEquals([refused.calls, refused.mark.p_error], [[], 'fora_da_lista_de_teste'])
+    Deno.env.delete('EMAIL_ALLOWED_RECIPIENTS')
+
+    // sem a chave do SES: pelo Plunk
+    Deno.env.delete('SES_ALERTS_SECRET_ACCESS_KEY')
+    assertEquals((await run('admin_alert', { status: 200, body: { MessageId: 'ses-4' } })).calls, [`${PLUNK_URL}/v1/send`])
+  } finally {
+    for (const name of Object.keys(SES)) Deno.env.delete(name)
+    Deno.env.delete('PLUNK_API_URL')
+    Deno.env.delete('PLUNK_SECRET_KEY')
+    Deno.env.set('EMAIL_MODE', 'log')
+  }
 })
 
 contractTest('email-dispatch modo plunk: chave secreta, lista de teste, id do Plunk, recusa definitiva e falha transitória', async () => {

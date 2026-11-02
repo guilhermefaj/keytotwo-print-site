@@ -80,6 +80,12 @@ export const env = {
   plunkWebhookSecret: () => required('PLUNK_WEBHOOK_SECRET'),
   // Tópico SNS dos eventos do SES: a ses-events só aceita mensagens assinadas dele.
   sesEventsTopicArn: () => required('SES_EVENTS_TOPIC_ARN'),
+  // Alertas dos admins direto pelo Amazon SES (2026-11-01), sem o Plunk: região e a chave do usuário IAM que só envia.
+  // Sem as três, os alertas saem pelo modo configurado, como os outros e-mails.
+  sesAlerts: () => {
+    const [region, keyId, secret] = [read('SES_ALERTS_REGION'), read('SES_ALERTS_ACCESS_KEY_ID'), read('SES_ALERTS_SECRET_ACCESS_KEY')]
+    return region && keyId && secret ? { region, keyId, secret } : null
+  },
   emailLogMailpitUrl: () => read('EMAIL_LOG_MAILPIT_URL')?.replace(/\/+$/, ''),
   emailFrom: () => ({ email: required('EMAIL_FROM'), name: read('EMAIL_FROM_NAME') ?? 'KeyToTwo' }),
   // Lista de destinatários permitidos fora da produção (vírgula); vazia = todos.

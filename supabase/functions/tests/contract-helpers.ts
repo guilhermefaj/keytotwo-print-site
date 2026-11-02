@@ -159,7 +159,7 @@ export function onAuthAdmin(reply: (call: AuthAdminCall) => Reply) {
   authAdminReply = reply
 }
 
-// Outros serviços externos (Plunk e Mailpit): URL, método, corpo JSON e headers.
+// Outros serviços externos (Plunk, Mailpit e o SES dos alertas): URL, método, corpo JSON e headers.
 interface ExternalCall {
   url: string
   method: string
@@ -249,7 +249,8 @@ const contractFetch = (input: string | URL | Request, init?: RequestInit): Promi
     stripeCalls.push(call)
     return Promise.resolve(respond(stripeReply(call)))
   }
-  if (url.origin === MAILPIT_URL || url.origin === PLUNK_URL) {
+  // o Amazon SES dos alertas dos admins (2026-11-01) entra junto com o Plunk e o Mailpit
+  if (url.origin === MAILPIT_URL || url.origin === PLUNK_URL || /^email\.[a-z0-9-]+\.amazonaws\.com$/.test(url.hostname)) {
     const call = { url: url.href, method: (init?.method ?? 'GET').toUpperCase(), body: JSON.parse(String(init?.body ?? '{}')), headers: new Headers(init?.headers) }
     externalCalls.push(call)
     return Promise.resolve(respond(externalReply(call)))

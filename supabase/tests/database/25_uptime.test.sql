@@ -46,7 +46,8 @@ select pg_temp.expect('record_uptime_checks: nulo', $q$select public.record_upti
 select pg_temp.expect('record_uptime_checks: lista vazia', $q$select public.record_uptime_checks('[]')$q$, 'KT001');
 select pg_temp.expect('record_uptime_checks: alvo fora da lista', $q$select public.record_uptime_checks('[{"target": "admin", "ok": true}]')$q$, 'KT001');
 select pg_temp.expect('record_uptime_checks: ok que não é booleano', $q$select public.record_uptime_checks('[{"target": "site", "ok": "sim"}]')$q$, 'KT001');
-select pg_temp.expect('record_uptime_checks: mais de dois alvos', $q$select public.record_uptime_checks('[{"target": "site", "ok": true}, {"target": "store", "ok": true}, {"target": "site", "ok": true}]')$q$, 'KT001');
+-- três desde 2026-11-01 (o Plunk entrou na checagem: 29_alertas_plunk)
+select pg_temp.expect('record_uptime_checks: mais de três alvos', $q$select public.record_uptime_checks('[{"target": "site", "ok": true}, {"target": "store", "ok": true}, {"target": "plunk", "ok": true}, {"target": "site", "ok": true}]')$q$, 'KT001');
 select pg_temp.expect_as('record_uptime_checks: anon não executa', 'anon', $q$select public.record_uptime_checks('[{"target": "site", "ok": true}]')$q$, '42501');
 select pg_temp.expect_as('record_uptime_checks: service_role grava', 'service_role',
   format($q$select public.record_uptime_checks(%L)$q$, jsonb_build_array(

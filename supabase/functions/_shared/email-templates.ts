@@ -439,6 +439,14 @@ function alertCopy(alert: Alert): { text: string; links: { href: string; label: 
       return { text: 'Os e-mails estão parados na fila há mais de 30 minutos.', links }
     case 'backup_late':
       return { text: 'A cópia de segurança do banco não roda há mais de 26 horas.', links }
+    case 'plunk_backup_late':
+      return { text: 'A cópia de segurança do Plunk (os contatos e o histórico dos e-mails) não roda há mais de 26 horas. Confira o backup.log na VPS.', links }
+    case 'marketing_sync_stuck': {
+      const count = typeof d.count === 'number' ? d.count : 1
+      const who = count === 1 ? '1 pessoa que aceitou os e-mails não chegou' : `${count} pessoas que aceitaram os e-mails não chegaram`
+      const problem = typeof d.error === 'string' && d.error ? ` (${d.error})` : ''
+      return { text: `${who} ao Plunk há mais de 1 hora${problem}: ${count === 1 ? 'ela fica' : 'elas ficam'} sem as boas-vindas. Confira se o Plunk está no ar.`, links: [PLUNK] }
+    }
     case 'terms_missing':
       return { text: `O pedido ${ref} foi pago sem o "Li e aceito" gravado: alguém destravou o formulário à mão. Guarde isto para um pedido de reembolso ou uma contestação.`, links }
     case 'site_down':
@@ -452,6 +460,8 @@ function alertCopy(alert: Alert): { text: string; links: { href: string; label: 
 // menos quanto durou (a checagem roda a cada 5 minutos).
 const STATUS_SUPABASE = { href: 'https://status.supabase.com', label: 'Status da Supabase' }
 const STATUS_STRIPE = { href: 'https://status.stripe.com', label: 'Status da Stripe' }
+const HOSTINGER = { href: 'https://hpanel.hostinger.com', label: 'Abrir a Hostinger' }
+const PLUNK = { href: 'https://email.keytotwo.com.br', label: 'Abrir o Plunk' }
 const moment = (value: unknown) =>
   new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(new Date(String(value)))
 
@@ -473,7 +483,11 @@ function siteDownCopy(alert: Alert, back: boolean): { text: string; links: { hre
     case 'site':
       return back
         ? { text: `O site voltou a abrir em ${at}${lasted} fora do ar.`, links: [] }
-        : { text: `O site não abre desde ${since}${problem}: ninguém consegue ver a loja. Confira a VPS no painel da Hostinger.`, links: [{ href: 'https://hpanel.hostinger.com', label: 'Abrir a Hostinger' }] }
+        : { text: `O site não abre desde ${since}${problem}: ninguém consegue ver a loja. Confira a VPS no painel da Hostinger.`, links: [HOSTINGER] }
+    case 'plunk':
+      return back
+        ? { text: `O Plunk voltou a responder em ${at}${lasted} fora do ar.`, links: [] }
+        : { text: `O Plunk não responde desde ${since}${problem}: os e-mails de acesso aos jogos e as novidades não saem. Confira a VPS no painel da Hostinger.`, links: [HOSTINGER, PLUNK] }
     case 'store':
       return back
         ? { text: `A loja voltou a mostrar os produtos com preço em ${at}${lasted}.`, links: [] }
@@ -494,8 +508,10 @@ async function adminAlert(row: OutboxRow): Promise<Message> {
   if (!alerts.length) throw new PermanentEmailError('alerta_sem_itens')
   const page = `${env.adminUrl()}/atencao`
   const count = alerts.length
-  const down = !back && list.some((alert) => alert.kind === 'site_down')
-  const subject = back ? 'Admin KeyToTwo: voltou a funcionar' : down ? 'Admin KeyToTwo: o site está fora do ar' : `Admin KeyToTwo: ${count} ${count > 1 ? 'alertas novos' : 'alerta novo'}`
+  const outages = back ? [] : list.filter((alert) => alert.kind === 'site_down')
+  const down = outages.length > 0
+  const what = outages.every((alert) => alert.details.target === 'plunk') ? 'o Plunk' : 'o site'
+  const subject = back ? 'Admin KeyToTwo: voltou a funcionar' : down ? `Admin KeyToTwo: ${what} está fora do ar` : `Admin KeyToTwo: ${count} ${count > 1 ? 'alertas novos' : 'alerta novo'}`
   const heading = back ? 'Voltou a funcionar' : 'Precisa de atenção'
   const intro = back ? 'O que estava fora do ar voltou a funcionar.' : count > 1 ? `Apareceram ${count} alertas novos no admin da KeyToTwo.` : 'Apareceu um alerta novo no admin da KeyToTwo.'
   const why = `Você recebe este aviso porque é admin da KeyToTwo.${back ? '' : down ? ' Outro e-mail avisa quando voltar.' : ' Cada alerta avisa uma vez só.'}`

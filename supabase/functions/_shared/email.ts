@@ -2,6 +2,7 @@ import { rpc, rpcRow } from './admin.ts'
 import { runInBackground } from './background.ts'
 import { type Message, type OutboxRow, PermanentEmailError, render } from './email-templates.ts'
 import { env } from './env.ts'
+import { sendSes } from './ses.ts'
 
 // Fila de e-mail por RPC (data-contract 6.7): claim → envio → mark_email_result. O banco decide novas tentativas
 // e confere de novo, no claim, o opt-in, a confirmação do e-mail e a supressão dos e-mails de marketing.
@@ -66,8 +67,28 @@ async function sendPlunk(message: Message): Promise<string> {
   throw new PermanentEmailError(code)
 }
 
+// Alertas dos admins pelo Amazon SES (2026-11-01): com a VPS fora, o Plunk também está, e o aviso de fora do ar não
+// sairia. Só no modo plunk (no log, nada sai para fora). Se o SES falhar (chave errada, envio pausado), o alerta vai
+// pelo Plunk, como antes.
+async function sendAlertSes(message: Message): Promise<string | null> {
+  const config = env.sesAlerts()
+  if (!config || message.tag !== 'admin_alert' || env.emailMode() !== 'plunk') return null
+  const allowed = env.emailAllowedRecipients()
+  if (allowed.length && !allowed.includes(message.to.toLowerCase())) throw new PermanentEmailError('fora_da_lista_de_teste')
+  try {
+    const result = await sendSes(config, { from: env.emailFrom(), to: message.to, subject: message.subject, html: message.html, text: message.text })
+    if (result.messageId) return result.messageId
+    console.error(`email-dispatch: alerta pelo SES falhou (ses_http_${result.status} ${result.error}); vai pelo Plunk`)
+  } catch (e) {
+    console.error(`email-dispatch: alerta pelo SES falhou (${e instanceof Error ? e.name : 'erro'}); vai pelo Plunk`)
+  }
+  return null
+}
+
 // Envia pelo modo configurado (EMAIL_MODE) e devolve o id do provedor.
 async function sendMessage(message: Message, rowId: string): Promise<string> {
+  const ses = await sendAlertSes(message)
+  if (ses) return ses
   switch (env.emailMode()) {
     case 'plunk': return await sendPlunk(message)
     default: return await sendLog(message, rowId)
