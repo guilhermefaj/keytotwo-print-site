@@ -15,7 +15,7 @@ async function firstVisit(page: Page) {
   return analytics
 }
 
-test('primeira visita: o Kito come o cookie dele, recusar vale depois do reload e o rodapé reabre', async ({ page }) => {
+test('primeira visita: o Kito come o cookie dele, o X recusa, vale depois do reload e o rodapé reabre com as duas opções', async ({ page }) => {
   const analytics = await firstVisit(page)
   await page.goto('/')
   const notice = page.getByRole('region', { name: 'O Kito já pegou o cookie dele.' })
@@ -32,14 +32,25 @@ test('primeira visita: o Kito come o cookie dele, recusar vale depois do reload 
   await page.evaluate(() => Promise.all(document.getAnimations().filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity).map(animation => animation.finished)))
   const result = await new AxeBuilder({ page }).include('.cookie-notice').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()
   expect(result.violations).toEqual([])
-  await notice.getByRole('button', { name: 'Recusar' }).click()
+  // Primeira visita: só "Aceitar" e o X no canto, que fecha sem aceitar (grava a recusa).
+  await expect(notice.getByRole('button', { name: 'Aceitar', exact: true })).toBeVisible()
+  await expect(notice.getByRole('button', { name: 'Recusar' })).toHaveCount(0)
+  await notice.getByRole('button', { name: 'Fechar sem aceitar' }).click()
   await expect(notice).toHaveCount(0)
   expect(JSON.parse(await page.evaluate(key => localStorage.getItem(key) ?? 'null', cookieChoiceKey)).value).toBe('denied')
   await page.reload()
   await expect(page.getByRole('region', { name: 'O Kito já pegou o cookie dele.' })).toHaveCount(0)
-  await page.locator('footer').getByRole('button', { name: 'Cookies' }).click()
+  // Reaberto pelo rodapé: "Aceitar" e "Recusar" lado a lado, para mudar a escolha (e retirar o aceite depois).
+  const reopen = () => page.locator('footer').getByRole('button', { name: 'Cookies' }).click()
+  await reopen()
   await expect(page.getByRole('heading', { name: 'O Kito já pegou o cookie dele.' })).toBeFocused()
-  await page.getByRole('button', { name: 'Aceitar' }).click()
+  await expect(page.getByRole('button', { name: 'Recusar' })).toBeVisible()
+  await page.getByRole('button', { name: 'Aceitar', exact: true }).click()
+  await expect(page.getByRole('region', { name: 'O Kito já pegou o cookie dele.' })).toHaveCount(0)
+  expect(JSON.parse(await page.evaluate(key => localStorage.getItem(key) ?? 'null', cookieChoiceKey)).value).toBe('granted')
+  // O X do aviso reaberto só fecha: a escolha que já existia continua.
+  await reopen()
+  await page.getByRole('button', { name: 'Fechar', exact: true }).click()
   await expect(page.getByRole('region', { name: 'O Kito já pegou o cookie dele.' })).toHaveCount(0)
   expect(JSON.parse(await page.evaluate(key => localStorage.getItem(key) ?? 'null', cookieChoiceKey)).value).toBe('granted')
   // Fora do domínio real (aqui, o stage test), aceitar não carrega o Google Analytics.
