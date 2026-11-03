@@ -29,10 +29,10 @@ export function CookieNotice() {
     <div className="cookie-notice-copy">
       <h2 id="cookie-notice-title" ref={title} tabIndex={-1}>O Kito já pegou o cookie dele.</h2>
       <p>Aceita os nossos? São do Google Analytics e só contam as visitas, sem anúncio. <Link className="inline-link" to="/privacidade#navegador">Política de privacidade</Link></p>
-      <div className="cookie-notice-actions">
-        <button type="button" className="button button-primary" onClick={() => choose('granted')}>Aceitar</button>
-        {reopened && <button type="button" className="button button-secondary" onClick={() => choose('denied')}>Recusar</button>}
-      </div>
+    </div>
+    <div className="cookie-notice-actions">
+      <button type="button" className="button button-primary" onClick={() => choose('granted')}>Aceitar</button>
+      {reopened && <button type="button" className="button button-secondary" onClick={() => choose('denied')}>Recusar</button>}
     </div>
     <button type="button" className="cookie-notice-close" aria-label={choice ? 'Fechar' : 'Fechar sem aceitar'} onClick={close}>
       <Icon component={IconX} size={20} />
