@@ -10,6 +10,8 @@ const user = { id: 'qa-d2', email: 'd2@example.test', email_confirmed_at: '2026-
 const session = { access_token: 'synthetic-d2-token', refresh_token: 'synthetic-d2-refresh', expires_at: 4102444800, expires_in: 3600, token_type: 'bearer', user }
 const product = { code: 'P001', name: 'Pacote de teste', unit_amount: 1990, currency: 'brl' }
 const games = ['TESTE-J01', 'TESTE-J02', 'TESTE-J03', 'TESTE-J04', 'TESTE-J05'].map((code, i) => ({ code, name: `Jogo de teste ${i + 1}`, acquired_at: '2026-10-01T12:00:00Z', products: [product], files: [{ id: `pdf-${i}`, kind: 'pdf', version: '1.0', size_bytes: 3600000 }] }))
+// Convite dos Fundadores: a api só manda o link a quem comprou (presente do admin e conta vazia recebem null).
+const community = 'https://chat.whatsapp.com/TesteFundadores'
 async function fixture(page: Page, { empty = false, failLibrary = false, gift = false } = {}) {
   test.skip(!readFileSync('build/client/index.html', 'utf8').includes('Ambiente de teste'), 'Requires configured stage=test build')
   let optedIn = false
@@ -23,7 +25,7 @@ async function fixture(page: Page, { empty = false, failLibrary = false, gift = 
     if (path === '/account/marketing') { const body = route.request().postDataJSON(); writes.push(body); optedIn = body.granted; return route.fulfill({ json: { opted_in: optedIn } }) }
     const courtesy = { ref: 'PRESENTE1', kind: 'courtesy', status: 'paid', created_at: '2026-10-23T12:00:00Z', paid_at: '2026-10-23T12:00:00Z', amount_total: 0, currency: 'brl', items: [{ ...product, unit_amount: 0 }] }
     const orders = empty ? [] : gift ? [courtesy] : ['paid', 'pending_payment'].map((status, i) => ({ ref: `synthetic-d2-${i}`, status, created_at: '2026-10-01T12:00:00Z', paid_at: status === 'paid' ? '2026-10-01T12:00:00Z' : null, amount_total: 1990, currency: 'brl', items: [product] }))
-    const json = path === '/library' ? { games: empty ? [] : games, pending: [] } : path === '/account' ? { email: user.email, marketing: { opted_in: optedIn, prompted_at: null, updated_at: null, text_version: null }, orders } : path === '/catalog' ? { products: [] } : path === '/free-games' ? { games: [] } : { version: 0, items: [], subtotal: null, warnings: [] }
+    const json = path === '/library' ? { games: empty ? [] : games, pending: [], community_url: empty || gift ? null : community } : path === '/account' ? { email: user.email, marketing: { opted_in: optedIn, prompted_at: null, updated_at: null, text_version: null }, orders } : path === '/catalog' ? { products: [] } : path === '/free-games' ? { games: [] } : { version: 0, items: [], subtotal: null, warnings: [] }
     return route.fulfill({ json })
   })
   return writes
@@ -210,6 +212,28 @@ for (const width of [390, 1440]) test(`axe across three tabs and empty states at
   await page.setViewportSize({ width: 320, height: 900 })
   await page.evaluate(() => { document.documentElement.style.fontSize = '32px' })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+})
+
+test('Fundadores: quem comprou vê o convite do WhatsApp no topo de Meus jogos; presente do admin não vê', async ({ page }) => {
+  await fixture(page)
+  await page.goto('/meus-jogos')
+  const card = page.locator('.portal-community')
+  await expect(card.getByRole('heading', { name: 'Vocês são membros fundadores' })).toBeVisible()
+  const invite = card.getByRole('link', { name: 'Entrar no grupo do WhatsApp (abre em nova aba)' })
+  await expect(invite).toHaveAttribute('href', community)
+  await expect(invite).toHaveAttribute('target', '_blank')
+  await expect(invite).toHaveAttribute('rel', 'noopener noreferrer')
+  await expect(card).toContainText('seu número de telefone fica visível')
+  expect(await page.evaluate(() => Boolean(document.querySelector('.portal-community')!.compareDocumentPosition(document.querySelector('.portal-library')!) & Node.DOCUMENT_POSITION_FOLLOWING)), 'o convite vem antes dos jogos').toBe(true)
+  for (const width of [320, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(await invite.evaluate(el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight }), `convite à vista sem rolar em ${width}`).toBe(true)
+    await capture(page, `fundadores-${width}`)
+  }
+  await page.route('**/api/library', route => route.fulfill({ json: { games, pending: [], community_url: null } }))
+  await page.goto('/meus-jogos')
+  await expect(page.locator('.portal-game').first()).toBeVisible()
+  await expect(page.locator('.portal-community')).toHaveCount(0)
 })
 
 test('gift order (courtesy from the admin) reads as a gift: no price, no payment', async ({ page }) => {

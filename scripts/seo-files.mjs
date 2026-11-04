@@ -1,7 +1,7 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { catalogEntry } from '../src/content/catalog.ts'
-import { freebies, needLabels } from '../src/content/games.ts'
+import { authorship, freebies, needLabels } from '../src/content/games.ts'
 import { instagram, tiktok } from '../src/content/gratuitos.ts'
 import { supportEmail } from '../src/content/help.ts'
 import { company } from '../src/content/legal.ts'
@@ -45,6 +45,7 @@ const price = code => {
   const list = entry.list_price && entry.list_price.amount > entry.price.unit_amount ? entry.list_price : null
   return list ? ` De ${text(list.amount)} por ${text(entry.price.unit_amount)} (${list.label}).` : ` ${text(entry.price.unit_amount)}.`
 }
+const credit = game => authorship(game) ? ` ${authorship(game)}.` : ''
 const needs = game => game.needs?.length ? ` Além do PDF: ${game.needs.map(need => needLabels[need].replace(/^./, letter => letter.toLowerCase())).join('; ')}.` : ''
 const llms = `# KeyToTwo
 
@@ -54,7 +55,7 @@ A KeyToTwo é uma marca da ${company.legalName}, CNPJ ${company.cnpj}.
 
 ## Jogos à venda
 
-${productPages.map(product => `- [${product.title}](${page(`/loja/${product.slug}`)}): ${product.seo.description}${product.kind === 'bundle' ? ` Traz ${product.games.map(game => game.name).join(', ').replace(/, ([^,]*)$/, ' e $1')}.` : needs(product.games[0])}${price(product.code)}`).join('\n')}
+${productPages.map(product => `- [${product.title}](${page(`/loja/${product.slug}`)}): ${product.seo.description}${product.kind === 'bundle' ? ` Traz ${product.games.map(game => game.name).join(', ').replace(/, ([^,]*)$/, ' e $1')}.` : credit(product.games[0])}${needs(product.games[0])}${price(product.code)}`).join('\n')}
 
 ## Jogos gratuitos
 

@@ -107,6 +107,8 @@ test('página de produto: ficha no topo, capa, como é jogar, o que vocês preci
   await catalog(page, [single, j003, j002])
   await page.goto('/loja/rabisque-e-adivinhe')
   await expect(page.locator('.product-facts dt')).toHaveText(['Pessoas', 'Jeito de jogar', 'Rodadas', 'Formato'])
+  // Autoria sob a chamada (responsável, 2026-11-04).
+  await expect(page.locator('.shop-heading .product-credit')).toHaveText('Um jogo de Luana Chiabi e Guilherme Junqueira')
   // Nenhuma página do PDF no site (responsável, 2026-10-16): o avulso mostra só a capa, e a URL antiga não serve imagem.
   await expect(page.locator('.product-gallery-main img')).toHaveAttribute('src', '/media/games/j001-capa-640.webp')
   await expect(page.locator('.product-gallery-thumbs')).toHaveCount(0)
@@ -117,8 +119,9 @@ test('página de produto: ficha no topo, capa, como é jogar, o que vocês preci
   await expect(page.locator('.product-package').getByRole('link', { name: 'Ver o pacote: Coleção KeyToTwo: Fundadores', exact: true })).toHaveAttribute('href', '/loja/colecao-fundadores')
   await expect(page.locator('.product-package')).not.toContainText('R$')
   // Tabuleiro e Rapadura também se vendem sozinhos (responsável, 2026-10-16); só a capa, como em todo avulso.
-  for (const [slug, code, price] of [['tabuleiro-da-sorte', 'j003', '9,90'], ['o-sumico-de-rapadura', 'j002', '12,90']]) {
+  for (const [slug, code, price, credit] of [['tabuleiro-da-sorte', 'j003', '9,90', 'Um jogo de Luana Chiabi'], ['o-sumico-de-rapadura', 'j002', '12,90', 'Um jogo de Guilherme Junqueira']]) {
     await page.goto(`/loja/${slug}`)
+    await expect(page.locator('.shop-heading .product-credit')).toHaveText(credit)
     if (stage !== 'preview') await expect(page.locator('.shop-purchase .shop-price')).toContainText(price)
     await expect(page.locator('.product-gallery-thumbs')).toHaveCount(0)
     await expect(page.locator('.product-gallery-main img')).toHaveAttribute('src', `/media/games/${code}-capa-640.webp`)
@@ -127,6 +130,7 @@ test('página de produto: ficha no topo, capa, como é jogar, o que vocês preci
   await page.goto('/loja/colecao-fundadores')
   await expect(page.getByRole('list', { name: 'Imagens do produto' }).getByRole('button')).toHaveCount(6)
   await expect(page.locator('.product-facts')).toHaveCount(0)
+  await expect(page.locator('.product-credit')).toHaveCount(0)
   await expect(page.locator('.needs-list li')).toHaveCount(13)
 })
 

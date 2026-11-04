@@ -354,14 +354,16 @@ Meus jogos, organizado **por jogo** → `get_library(uid)`:
       "files": [{ "id": "<uuid>", "kind": "pdf", "version": "1.0", "size_bytes": 0 }]
     }
   ],
-  "pending": [{ "ref": "A1B2C3D4", "created_at": "2026-10-08T12:00:00Z", "products": [{ "code": "P001", "name": "<nome>" }] }]
+  "pending": [{ "ref": "A1B2C3D4", "created_at": "2026-10-08T12:00:00Z", "products": [{ "code": "P001", "name": "<nome>" }] }],
+  "community_url": "https://chat.whatsapp.com/<código>"
 }
 ```
 
 - Só direitos ativos; o acesso não expira. `products` são os produtos de origem; um jogo aparece uma vez, mesmo vindo de mais de um produto.
 - `files: []` significa jogo temporariamente indisponível.
-- `pending` lista pedidos `pending_payment`. `{ "games": [], "pending": [] }` é o estado sem compras.
-- Nunca traz chave do B2 nem URL. O ZIP completo fica para depois.
+- `pending` lista pedidos `pending_payment`. `{ "games": [], "pending": [], "community_url": null }` é o estado sem compras.
+- `community_url` (2026-11-04): o convite do grupo dos Fundadores no WhatsApp, só quando `get_library` diz `founder` (algum direito ativo vindo de compra paga; cortesia e gratuitos não contam) e o segredo `WHATSAPP_COMMUNITY_URL` é um link `https://chat.whatsapp.com/…`. Nos outros casos, `null`. O `founder` do banco não sai na resposta.
+- Nunca traz chave do B2 nem URL de arquivo. O ZIP completo fica para depois.
 
 ### 6.5 `POST /checkout`
 

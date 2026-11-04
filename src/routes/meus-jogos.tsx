@@ -1,3 +1,5 @@
+import { IconBrandWhatsapp } from '@tabler/icons-react'
+import { foundersCommunity } from '../content/account'
 import { productName } from '../content/products'
 import { DataStatus } from '../components/account/AccountUi'
 import { type Library } from '../lib/api'
@@ -10,6 +12,7 @@ import { deliveryMock, fileSize, type FreeGames } from '../lib/downloads'
 import { useShop } from '../lib/shop-context'
 import { GameCover } from '../components/account/GameCover'
 import { KitoEmpty } from '../components/ui/KitoEmpty'
+import { Icon } from '../components/ui/Icon'
 
 export default function MeusJogos() {
   const library = useApiResource<Library>('/library')
@@ -32,6 +35,7 @@ export default function MeusJogos() {
     {deliveryMock && <p className="checkout-demo">Demonstração da entrega (mock): os botões ainda não baixam arquivos.</p>}
     <DataStatus {...library} retry={library.reload} />
     {library.data && <>
+      {library.data.community_url && <FoundersCommunity url={library.data.community_url} />}
       {library.data.pending.length > 0 && <section className="portal-pending"><h2>Aguardando confirmação</h2><p>Seus jogos aparecerão aqui quando o pagamento for confirmado.</p><Link className="inline-link" to="/pedidos">Acompanhar pedidos</Link></section>}
       {library.data.games.length === 0 && shownFree.length === 0 ? <div className="portal-empty"><KitoEmpty /><div><h2>Seus próximos jogos começam aqui</h2><p>Por enquanto, só o Kito mora aqui.</p><Link className="button button-primary" to="/loja">Ver os jogos</Link></div></div> : <ul className="library-grid portal-library">
         {library.data.games.map((game, index) => <LibraryGame key={game.code} code={game.code} name={game.name} order={index} collection={game.products.map(product => productName(product.code, product.name)).join(', ')}
@@ -40,6 +44,18 @@ export default function MeusJogos() {
       </ul>}
       {!unlocked && account.data && free.length > 0 && <p className="library-notice">Os jogos gratuitos também ficam aqui depois que você os libera. <Link className="inline-link" to="/gratuitos">Ver os gratuitos</Link></p>}
     </>}
+  </section>
+}
+
+// Comunidade dos Fundadores (2026-11-04): só para quem comprou um jogo pago (a api manda o link só nesse caso), no
+// topo da página e antes dos jogos, para ninguém deixar de ver. Botão primário da marca, sem o verde do WhatsApp.
+function FoundersCommunity({ url }: { url: string }) {
+  return <section className="portal-community" aria-labelledby="community-title">
+    <div><h2 id="community-title">{foundersCommunity.title}</h2><p>{foundersCommunity.text}</p></div>
+    <div className="portal-community-action">
+      <a className="button button-primary" href={url} target="_blank" rel="noopener noreferrer"><Icon component={IconBrandWhatsapp} />{foundersCommunity.action}<span className="sr-only"> (abre em nova aba)</span></a>
+      <p>{foundersCommunity.note}</p>
+    </div>
   </section>
 }
 

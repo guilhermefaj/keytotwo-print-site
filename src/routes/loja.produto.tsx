@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link, isRouteErrorResponse, useLoaderData, useRouteError, type ClientLoaderFunctionArgs, type LoaderFunctionArgs } from 'react-router'
 import { catalogEntry } from '../content/catalog'
 import { bundleFor, productPages, type Product } from '../content/products'
-import type { Game } from '../content/games'
+import { authorship, type Game } from '../content/games'
 import { ProductAvailability } from '../components/shop/ProductAvailability'
 import { GameGrid } from '../components/shop/GameGrid'
 import { ProductGallery, type GalleryImage } from '../components/shop/ProductGallery'
@@ -49,7 +49,7 @@ export default function ShopProduct() {
   }, [product])
   return <main id="conteudo" tabIndex={-1} className="shop-page shop-product-page content-width">
     <BackLink to="/loja">Loja</BackLink>
-    <header className="shop-heading"><h1>{product.title}</h1><p>{product.shopHeadline || product.tagline}</p></header>
+    <header className="shop-heading"><h1>{product.title}</h1><p>{product.shopHeadline || product.tagline}</p>{game && authorship(game) && <p className="product-credit">{authorship(game)}</p>}</header>
     {game && <ProductFacts game={game} />}
     <div className="shop-product-layout">
       <ProductGallery images={galleryOf(product, game)} />

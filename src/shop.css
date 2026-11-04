@@ -4,6 +4,8 @@
 .shop-heading { margin-bottom: var(--space-2xl); max-width: 65ch; }
 .shop-heading h1 { margin: 0 0 var(--space-md); }
 .shop-heading > p { font-size: var(--text-lead); color: var(--color-ink-soft); margin: 0; }
+/* Autoria (2026-11-04), como o crédito na caixa de um jogo: Label 600 em Tinta, logo abaixo da chamada. */
+.shop-heading > .product-credit { margin-top: var(--space-sm); font-size: var(--text-body); font-weight: 600; color: var(--color-ink); }
 .shop-product-page > .back-link { margin-bottom: var(--space-lg); }
 /* Banner do pacote (Loja e Início): a capa grande abre, ao lado o nome, os jogos, o que vem e a compra. */
 .shop-bundle { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--space-2xl); align-items: start; border: var(--line-card-quiet); border-radius: var(--radius-md); padding: var(--space-xl); background: var(--color-paper); }

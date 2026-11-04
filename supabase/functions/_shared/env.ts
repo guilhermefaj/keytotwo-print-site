@@ -86,6 +86,12 @@ export const env = {
     const [region, keyId, secret] = [read('SES_ALERTS_REGION'), read('SES_ALERTS_ACCESS_KEY_ID'), read('SES_ALERTS_SECRET_ACCESS_KEY')]
     return region && keyId && secret ? { region, keyId, secret } : null
   },
+  // Convite do grupo dos Fundadores (2026-11-04). Só um link de convite do WhatsApp vale; qualquer outro valor
+  // (ou nenhum) esconde o bloco em Meus jogos em vez de mandar o comprador a um endereço errado.
+  communityUrl: () => {
+    const value = read('WHATSAPP_COMMUNITY_URL')
+    return value && /^https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]+$/.test(value) ? value : null
+  },
   emailLogMailpitUrl: () => read('EMAIL_LOG_MAILPIT_URL')?.replace(/\/+$/, ''),
   emailFrom: () => ({ email: required('EMAIL_FROM'), name: read('EMAIL_FROM_NAME') ?? 'KeyToTwo' }),
   // Lista de destinatários permitidos fora da produção (vírgula); vazia = todos.

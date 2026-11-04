@@ -67,7 +67,7 @@ Deno.test({
 
       await t.step('GET /library de conta sem compras', async () => {
         const { status, body } = await call('/library', tokenA)
-        assertEquals([status, body], [200, { games: [], pending: [] }])
+        assertEquals([status, body], [200, { games: [], pending: [], community_url: null }])
       })
 
       await t.step('RPC com usuário sem e-mail confirmado: KT009 vira 403', async () => {
