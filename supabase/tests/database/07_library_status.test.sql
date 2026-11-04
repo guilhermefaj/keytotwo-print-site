@@ -36,7 +36,7 @@ begin
 end $fx$;
 
 -- ===== por jogo, sem repetir, com os produtos de origem ============================================
-select pg_temp.assert('sem compras e sem pendentes: {"games": [], "pending": []}', (select public.get_library(pg_temp.uid('lb')) = '{"games": [], "pending": []}'::jsonb));
+select pg_temp.assert('sem compras e sem pendentes: {"games": [], "pending": [], "founder": false}', (select public.get_library(pg_temp.uid('lb')) = '{"games": [], "pending": [], "founder": false}'::jsonb));
 select pg_temp.assert('os 3 jogos do PK1, sem repetir o jogo que o OV1 também entrega', (select jsonb_array_length(public.get_library(pg_temp.uid('la'))->'games') = 3));
 select pg_temp.assert('ordem: acquired_at, menor position, code', (select jsonb_agg(g->>'code') = '["GM-PK1-1","GM-PK1-2","GM-PK1-3"]'::jsonb from jsonb_array_elements(public.get_library(pg_temp.uid('la'))->'games') g));
 select pg_temp.assert('o jogo que vem por dois produtos lista os dois (por code)',
@@ -53,8 +53,13 @@ select pg_temp.assert('sem vazamento: chave do B2, bucket, e-mail, ids de pedido
   (select public.get_library(pg_temp.uid('la'))::text !~ '(object_key|bucket|@|cs_test|pi_PGTAP|cus_|https?:|order_id|entitlement)'));
 
 -- ===== só direitos ativos do usuário ================================================================
-select pg_temp.assert('direito revogado some', (select public.get_library(pg_temp.uid('lc')) = '{"games": [], "pending": []}'::jsonb));
+select pg_temp.assert('direito revogado some', (select public.get_library(pg_temp.uid('lc')) = '{"games": [], "pending": [], "founder": false}'::jsonb));
 select pg_temp.assert('outro usuário não vê os jogos de la', (select jsonb_array_length(public.get_library(pg_temp.uid('lb'))->'games') = 0));
+
+-- ===== Comunidade dos Fundadores: algum direito ativo de um pedido de compra (2026-11-04) =============
+select pg_temp.assert('founder: quem comprou e tem o direito ativo', (select (public.get_library(pg_temp.uid('la'))->>'founder')::boolean));
+select pg_temp.assert('founder: compra reembolsada (direito revogado) não conta', (select not (public.get_library(pg_temp.uid('lc'))->>'founder')::boolean));
+select pg_temp.assert('founder: pedido ainda em processamento não conta', (select not (public.get_library(pg_temp.uid('ld'))->>'founder')::boolean));
 
 -- ===== arquivos: só publicados; a compra é preservada ==============================================
 update public.files set status = 'retired' where filename = 'GM-PK1-2-v1.0.pdf';

@@ -244,11 +244,32 @@ contractTest('GET /account e GET /library repassam as RPCs', async () => {
   const token = await sessionToken()
   onRpc((fn) => ({ status: 200, body: fn === 'get_account' ? ACCOUNT : LIBRARY }))
   assertEquals(await (await handleRequest(request('/account', { token }))).json(), ACCOUNT)
-  assertEquals(await (await handleRequest(request('/library', { token }))).json(), LIBRARY)
+  assertEquals(await (await handleRequest(request('/library', { token }))).json(), { ...LIBRARY, community_url: null })
   assertEquals(rpcCalls.map((c) => [c.fn, c.args]), [['get_account', { p_user_id: userId(token) }], ['get_library', { p_user_id: userId(token) }]])
 
   onRpc(() => ({ status: 200, body: null }))
-  assertEquals(await (await handleRequest(request('/library', { token }))).json(), { games: [], pending: [] })
+  assertEquals(await (await handleRequest(request('/library', { token }))).json(), { games: [], pending: [], community_url: null })
+})
+
+// Comunidade dos Fundadores (2026-11-04): o link sai só para founder, só do segredo e só se for convite do WhatsApp.
+contractTest('GET /library entrega o convite dos Fundadores só a quem comprou', async () => {
+  const token = await sessionToken()
+  const invite = 'https://chat.whatsapp.com/AbC123xyz'
+  const library = async (founder: boolean) => {
+    onRpc(() => ({ status: 200, body: { ...LIBRARY, founder } }))
+    return await (await handleRequest(request('/library', { token }))).json()
+  }
+  try {
+    Deno.env.set('WHATSAPP_COMMUNITY_URL', invite)
+    assertEquals(await library(true), { ...LIBRARY, community_url: invite })
+    assertEquals(await library(false), { ...LIBRARY, community_url: null })
+    Deno.env.set('WHATSAPP_COMMUNITY_URL', 'https://example.com/grupo')
+    assertEquals((await library(true)).community_url, null)
+    Deno.env.delete('WHATSAPP_COMMUNITY_URL')
+    assertEquals((await library(true)).community_url, null)
+  } finally {
+    Deno.env.delete('WHATSAPP_COMMUNITY_URL')
+  }
 })
 
 contractTest('PUT /account/marketing grava o consentimento e devolve a preferência', async () => {

@@ -106,6 +106,8 @@ select pg_temp.assert('presente: um item a R$ 0 com o Price do produto e o direi
   exists (select 1 from public.order_items i where i.order_id = pg_temp.gift_order('ana') and i.unit_amount = 0 and i.stripe_price_id = 'price_PGTAP_USOLO')
   and exists (select 1 from public.entitlements e join public.entitlement_games eg on eg.entitlement_id = e.id
                where e.order_id = pg_temp.gift_order('ana') and e.user_id = pg_temp.uid('ana') and e.status = 'active'));
+select pg_temp.assert('presente: o jogo aparece em Meus jogos, mas cortesia não faz da pessoa fundadora (2026-11-04)',
+  (select jsonb_array_length(l->'games') > 0 and not (l->>'founder')::boolean from (select public.get_library(pg_temp.uid('ana')) l) x));
 select pg_temp.assert('presente: transições open e paid com origem admin',
   (select array_agg(e.to_status order by e.id) from public.order_events e where e.order_id = pg_temp.gift_order('ana')) = array['open', 'paid']
   and not exists (select 1 from public.order_events e where e.order_id = pg_temp.gift_order('ana') and e.source <> 'admin'));

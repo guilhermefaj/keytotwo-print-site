@@ -33,6 +33,12 @@
 .portal-game .download-action p { font-size: var(--text-label); line-height: 1.6; }
 .game-print-link { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; margin-top: 8px; font-size: var(--text-label); font-weight: 600; color: var(--color-deep-teal); text-decoration: underline; text-underline-offset: 4px; }
 .game-acquired { margin: 12px 0 0; text-align: center; color: var(--color-ink-soft); font-size: var(--text-caption); line-height: 1.5; }
+/* Comunidade dos Fundadores: lavado Céu com o fio do card, texto à esquerda e o convite à direita; empilha no celular. */
+.portal-community { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px 48px; padding: 32px; margin-bottom: 32px; background: var(--color-sky); border: var(--line-card); border-radius: var(--radius-md); }
+.portal-community h2 { margin: 0 0 12px; }
+.portal-community p { margin: 0; max-width: 60ch; line-height: 1.6; }
+.portal-community-action { display: flex; flex-direction: column; gap: 12px; max-width: 320px; }
+.portal-community-action p { font-size: var(--text-caption); color: var(--color-ink-soft); }
 .portal-pending { padding: 24px; margin-bottom: 32px; border: 1.5px solid var(--color-ink-soft); border-radius: var(--radius-md); }
 .portal-pending h2 { margin: 0 0 12px; }
 .portal-empty { display: flex; align-items: center; justify-content: center; gap: 48px; min-height: 360px; padding: 32px; border: var(--line-card); border-radius: var(--radius-md); }
@@ -84,6 +90,8 @@
 @media (max-width: 960px) {
   .portal-library { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
   .portal-setting { gap: 32px; }
+  .portal-community { grid-template-columns: minmax(0, 1fr); }
+  .portal-community-action { max-width: none; align-items: flex-start; }
 }
 @media (max-width: 600px) {
   .portal-welcome { padding-block: 24px 16px; }
@@ -95,6 +103,8 @@
   .portal-tabs a { min-height: 52px; }
   .portal-content { padding-block: 28px 56px; }
   .portal-heading { margin-bottom: 24px; }
+  .portal-community { padding: 24px 20px; margin-bottom: 24px; }
+  .portal-community-action { align-items: stretch; }
   .portal-library { grid-template-columns: minmax(0, 1fr); gap: 24px; }
   .portal-game-body { padding: 24px 20px; }
   .portal-empty { flex-direction: column; text-align: center; gap: 24px; padding: 28px 20px; }
