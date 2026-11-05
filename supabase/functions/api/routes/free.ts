@@ -1,6 +1,7 @@
 import { rpc, rpcRow } from '../../_shared/admin.ts'
 import { requireSessionUser } from '../../_shared/auth.ts'
-import { HttpError, json, readJsonObject } from '../../_shared/http.ts'
+import { env } from '../../_shared/env.ts'
+import { HttpError, json, readJsonObject, redirect } from '../../_shared/http.ts'
 import { fileId, type ResolvedFile, signedUrl } from './downloads.ts'
 
 interface FreeGame {
@@ -27,4 +28,21 @@ export async function freeDownload(req: Request): Promise<Response> {
   if (file.outcome !== 'ok') throw new HttpError(404, 'FILE_NOT_FOUND', 'Arquivo não encontrado.')
   const { url, expiresAt } = await signedUrl(file)
   return json({ url, expires_at: expiresAt })
+}
+
+// Robôs que abrem o link só para montar a prévia (WhatsApp, Instagram e Facebook, Telegram etc.). Só nomes de robô:
+// o navegador dentro do Instagram ou do Facebook (Instagram, FBAN) é gente e baixa normalmente.
+const PREVIEW_BOTS = /facebookexternalhit|facebookcatalog|meta-externalagent|WhatsApp|TelegramBot|Twitterbot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|Googlebot|bingbot|Applebot/i
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+// GET /free/:slug (pública, 2026-11-05): o link da marca, keytotwo.com.br/baixar/<slug>, passa pelo nginx do site e
+// chega aqui; vai direto para o PDF assinado (attachment), sem conta, e o download conta como 'free'. Robô de prévia e
+// slug que não é de gratuito publicado vão para /gratuitos: a prévia mostra o cartão da página e não conta download.
+export async function freeLink(req: Request, _url: URL, params: Record<string, string>): Promise<Response> {
+  const page = `${env.siteUrl()}/gratuitos`
+  const slug = params.slug ?? ''
+  if (!SLUG.test(slug) || PREVIEW_BOTS.test(req.headers.get('user-agent') ?? '')) return redirect(page)
+  const file = await rpcRow<ResolvedFile>('resolve_free_link', { p_slug: slug })
+  if (file.outcome !== 'ok') return redirect(page)
+  return redirect((await signedUrl(file)).url)
 }

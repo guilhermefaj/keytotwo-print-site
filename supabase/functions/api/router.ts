@@ -10,7 +10,7 @@ import { catalog } from './routes/catalog.ts'
 import { checkout, checkoutTerms } from './routes/checkout.ts'
 import { cspReport } from './routes/csp.ts'
 import { deliveryLink, downloadUrl } from './routes/downloads.ts'
-import { freeDownload, freeGames } from './routes/free.ts'
+import { freeDownload, freeGames, freeLink } from './routes/free.ts'
 import { orderStatus } from './routes/order-status.ts'
 import { unsubscribe, unsubscribePage } from './routes/unsubscribe.ts'
 import { internalUptime } from './routes/uptime.ts'
@@ -62,6 +62,7 @@ const routes: Route[] = [
   route('/d/:token', { GET: deliveryLink }),
   route('/free-games', { GET: freeGames }),
   route('/free-download', { POST: freeDownload }),
+  route('/free/:slug', { GET: freeLink }),
   route('/email/unsubscribe', { GET: unsubscribePage, POST: unsubscribe }),
   route('/referral/visit', { POST: referralVisit }),
   route('/csp-report', { POST: cspReport }),

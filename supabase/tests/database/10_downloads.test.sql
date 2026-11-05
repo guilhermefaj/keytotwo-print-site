@@ -1,4 +1,4 @@
--- 10_downloads: resolve_download, resolve_delivery, list_free_games e resolve_free_download (docs/data-contract.md, seção 6.8).
+-- 10_downloads: resolve_download, resolve_delivery, list_free_games, resolve_free_download e resolve_free_link (docs/data-contract.md, seção 6.8).
 -- Roda com `supabase test db` (pgTAP). Dados de teste só existem dentro da transação (rollback no fim).
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -228,8 +228,26 @@ select pg_temp.expect_as('grátis: service_role executa', 'service_role', $q$sel
 select pg_temp.expect_as('grátis: anon não executa list_free_games', 'anon', $q$select public.list_free_games()$q$, '42501');
 select pg_temp.expect_as('grátis: authenticated não executa resolve_free_download', 'authenticated',
   format($q$select * from public.resolve_free_download(%L, %L)$q$, pg_temp.uid('fc'), pg_temp.fid('FG-1-v0.1.pdf')), '42501');
+
+-- ===== link público dos gratuitos (2026-11-05): pelo slug do jogo, sem conta =====================
+select pg_temp.assert('link: gratuito publicado pelo slug = ok, com localização, tipo e tamanho',
+  (select outcome = 'ok' and bucket = 'bucket-pgtap-teste' and object_key = 'free/FG-1/0.1/FG-1-v0.1.pdf' and filename = 'FG-1-v0.1.pdf'
+          and content_type = 'application/pdf' and size_bytes = 2000 from public.resolve_free_link('fg-1')));
+select pg_temp.assert('link: o download conta como free, sem user_id',
+  (select d.user_id is null and d.kind = 'free' from public.download_events d where d.file_id = pg_temp.fid('FG-1-v0.1.pdf') order by d.id desc limit 1));
+select pg_temp.assert('link: jogo PAGO pelo slug = not_found, sem localização',
+  (select outcome = 'not_found' and object_key is null and bucket is null from public.resolve_free_link('gm-pk1-2')));
+select pg_temp.assert('link: slug inexistente = not_found', (select outcome = 'not_found' from public.resolve_free_link('nao-existe')));
+select pg_temp.assert('link: só o ok grava evento', pg_temp.free_events() = 3);
+select pg_temp.expect('link: slug nulo', $q$select * from public.resolve_free_link(null)$q$, 'KT001');
+select pg_temp.expect('link: slug em branco', $q$select * from public.resolve_free_link('  ')$q$, 'KT001');
+select pg_temp.expect_as('link: service_role executa', 'service_role', $q$select * from public.resolve_free_link('fg-2')$q$, 'OK');
+select pg_temp.expect_as('link: anon não executa', 'anon', $q$select * from public.resolve_free_link('fg-1')$q$, '42501');
+select pg_temp.expect_as('link: authenticated não executa', 'authenticated', $q$select * from public.resolve_free_link('fg-1')$q$, '42501');
+
 update public.games set status = 'draft' where code in ('FG-1', 'FG-2');
 select pg_temp.assert('grátis: voltando os jogos a rascunho, a lista fica vazia de novo', public.list_free_games() = '[]'::jsonb);
+select pg_temp.assert('link: jogo em rascunho = not_found', (select outcome = 'not_found' from public.resolve_free_link('fg-1')));
 
 select * from finish();
 rollback;

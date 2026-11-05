@@ -449,7 +449,7 @@ contractTest('POST /csp-report (pública): só a diretiva, a origem barrada e o 
 contractTest('uso: o tipo de cada rota da api, para o contador das Métricas', () => {
   const cases: [string, string][] = [
     ['/catalog', 'public'], ['/cart/quote', 'public'], ['/free-games', 'public'], ['/blog/posts', 'public'], ['/blog/version', 'public'],
-    ['/referral/visit', 'public'], ['/csp-report', 'public'], ['/email/unsubscribe', 'public'], ['/d/abc.def', 'public'], ['/nada', 'public'], ['/', 'public'],
+    ['/referral/visit', 'public'], ['/csp-report', 'public'], ['/email/unsubscribe', 'public'], ['/d/abc.def', 'public'], ['/free/hora-dos-artistas', 'public'], ['/nada', 'public'], ['/', 'public'],
     ['/cart', 'account'], ['/cart/items/P001', 'account'], ['/cart/merge', 'account'], ['/account', 'account'], ['/account/export', 'account'],
     ['/library', 'account'], ['/checkout', 'account'], ['/checkout/terms', 'account'], ['/order-status', 'account'], ['/download-url', 'account'], ['/free-download', 'account'],
     ['/admin/metrics', 'admin'], ['/admin/users/x/block', 'admin'], ['/internal/discounts/tick', 'schedule'], ['/internal/uptime', 'schedule'],
