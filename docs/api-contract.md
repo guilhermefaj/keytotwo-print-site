@@ -143,6 +143,7 @@ Logs registram só o tipo do erro e o código. Nunca registram e-mail, token, co
 | `GET /d/{token}` | `resolve_delivery(entitlement_id, game_id)` → assina no B2 | I4 |
 | `GET /free-games` | `list_free_games()` | Gratuitos (2026-10-20) |
 | `POST /free-download` | `resolve_free_download(user_id, file_id)` → assina no B2 | Gratuitos (2026-10-20) |
+| `GET /free/{slug}` | `resolve_free_link(slug)` → 302 para a URL assinada ou `/gratuitos` | Link direto dos gratuitos (2026-11-05) |
 | `GET /admin/metrics` | `get_admin_metrics(uid, days, livemode)` (e de novo com `days * 2`, para o `previous`), `admin_marketing_metrics`, `admin_usage_metrics(uid, days)` e `admin_product_sales(uid, days, livemode)` | Painel (2026-10-21); mais vendidos e período anterior (2026-10-31) |
 | `GET /admin/blog/posts` | `admin_list_blog_posts(uid)` | Blog (2026-10-23) |
 | `POST /admin/blog/posts` · `PUT /admin/blog/posts/{id}` | `admin_save_blog_post(uid, id, post, expected_updated_at)` | Blog (2026-10-23) |
@@ -183,6 +184,7 @@ Saem da v0.2: `claim_orders`, `create_order` e o vínculo por e-mail.
 | `GET /d/{token}` | Token HMAC | I4 | Planejada |
 | `GET /free-games` | Pública | Gratuitos | Implementada |
 | `POST /free-download` | Sessão + aceite de e-mails registrado alguma vez | Gratuitos | Implementada |
+| `GET /free/{slug}` | Pública (quem tem o link) | Link direto dos gratuitos | Implementada |
 | `GET /admin/metrics` | Sessão de admin (`app_metadata.admin`) com segundo fator (`aal2`) | Admin | Implementada |
 | `GET /admin/users` · `GET /admin/users/{id}` e as ações em `/admin/users/{id}/…` (6.14) | Sessão de admin com segundo fator (`aal2`) | Usuários | Implementada |
 | `GET` e `POST /admin/blog/posts` · `GET`, `PUT` e `DELETE /admin/blog/posts/{id}` · `GET`, `POST` e `DELETE /admin/blog/images` | Sessão de admin com segundo fator (`aal2`) | Blog | Implementada |
@@ -526,6 +528,7 @@ Gratuitos (responsável, 2026-10-20): mais de um jogo grátis publicado; para ba
 - `GET /free-games` (pública) → `list_free_games()`: `200 { "games": [] }` enquanto não houver gratuito publicado, ou `200 { "games": [{ "code": "F001", "name": "…", "file": { "id": "<uuid>", "version": "1.0", "size_bytes": 123 } }] }`, em ordem de código. Sem bucket, chave nem nome do arquivo.
 - `POST /free-download` (sessão) com `{ "file_id": "<uuid>" }` → `resolve_free_download(user_id, file_id)`: `ok` → `200 { "url", "expires_at" }` (300 s, anexo como em 6.7); `locked` (nunca aceitou os e-mails) → `403 FREE_GAMES_LOCKED`; `not_found`, inclusive id de arquivo pago, → `404 FILE_NOT_FOUND`. Sem sessão → `401`; e-mail não confirmado → como nas outras rotas de conta; corpo inválido → `400`.
 - O site libera pelo `PUT /account/marketing` com `source: "free_games"` (6.6) e lê `free_games_unlocked` em `GET /account`.
+- `GET /free/{slug}` (pública, responsável, 2026-11-05): o link da marca para quem chega com ele, `keytotwo.com.br/baixar/{slug}`, que o nginx do site manda para cá (302). Sem conta e sem aceite: `resolve_free_link(slug)` `ok` → `302` para a URL assinada (300 s, anexo como em 6.7), e o download conta como `free` sem `user_id`. Slug fora de `^[a-z0-9]+(-[a-z0-9]+)*$`, `not_found` (jogo pago, rascunho, inexistente) e robô de prévia de link (WhatsApp, Facebook e Instagram, Telegram, X, Slack, Discord, LinkedIn, Skype e os buscadores; o navegador dentro dos apps não é robô) → `302` para `SITE_URL/gratuitos`, sem consultar o banco no caso do slug inválido e do robô. A página `/gratuitos` continua com conta e aceite; o link não aparece em página nenhuma e o robots.txt bloqueia `/baixar/`.
 
  As condições do jogo gratuito e a eventual exigência de login estão pendentes **[D12]**. Rota pública que grava no banco: limite de abuso pendente (seção 12).
 

@@ -135,6 +135,38 @@ contractTest('jogos gratuitos: lista pública sem o nome do arquivo; free-downlo
   assertEquals(new URL((await free.json()).url).pathname, '/free/TESTE-GRATIS/0.1/TESTE-GRATIS-v0.1.pdf')
 })
 
+contractTest('link dos gratuitos: sem conta vai direto ao PDF; robô de prévia, jogo pago e slug estranho vão a /gratuitos', async () => {
+  const page = 'http://127.0.0.1:5176/gratuitos'
+  onRpc(() => row({ ...FILE_OK, object_key: 'free/TESTE-GRATIS/0.1/TESTE-GRATIS-v0.1.pdf', filename: 'Hora dos Artistas.pdf' }))
+  const res = await handleRequest(request('/free/hora-dos-artistas'))
+  assertEquals(res.status, 302)
+  const location = new URL(res.headers.get('Location')!)
+  assertEquals(location.pathname, '/free/TESTE-GRATIS/0.1/TESTE-GRATIS-v0.1.pdf')
+  assertEquals(location.searchParams.get('response-content-disposition'), attachment('Hora dos Artistas.pdf'))
+  assertEquals([res.headers.get('Cache-Control'), res.headers.get('Referrer-Policy')], ['no-store', 'no-referrer'])
+  assertEquals(rpcCalls[0], { fn: 'resolve_free_link', args: { p_slug: 'hora-dos-artistas' }, secretKeyOk: true, hasAuthorization: false })
+
+  // O navegador dentro do Instagram é gente: baixa.
+  const instagram = await handleRequest(request('/free/hora-dos-artistas', { headers: { 'User-Agent': 'Mozilla/5.0 (iPhone) Mobile/15E148 Instagram 300.0' } }))
+  assertMatch(instagram.headers.get('Location')!, /^https:\/\/bucket-de-teste\./)
+  const calls = rpcCalls.length
+  for (const agent of ['WhatsApp/2.23.20.0 A', 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)', 'TelegramBot (like TwitterBot)']) {
+    const bot = await handleRequest(request('/free/hora-dos-artistas', { headers: { 'User-Agent': agent } }))
+    assertEquals([bot.status, bot.headers.get('Location')], [302, page], agent)
+  }
+  assertEquals(rpcCalls.length, calls, 'robô de prévia não conta download')
+
+  onRpc(() => row(outcome('not_found')))
+  const paid = await handleRequest(request('/free/rabisque-e-adivinhe'))
+  assertEquals([paid.status, paid.headers.get('Location')], [302, page])
+  for (const slug of ['Hora', 'a..b', 'a%20b', 'x_y', '-x']) {
+    const odd = await handleRequest(request(`/free/${slug}`))
+    assertEquals([odd.status, odd.headers.get('Location')], [302, page], slug)
+  }
+  assertEquals(rpcCalls.length, 1, 'só o jogo pago foi ao banco; slug estranho nem chega lá')
+  assertEquals((await handleRequest(request('/free/hora-dos-artistas', { method: 'POST' }))).status, 405)
+})
+
 // ---------- email-dispatch ----------
 
 const DELIVERY_ROW = {

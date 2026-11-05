@@ -19,8 +19,9 @@ const xmlEscape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot
 const posts = await readBlogPosts({ stage: config.stage })
 const urls = config.stage === 'live' ? [...Object.keys(publicPages), ...posts.map(post => `/blog/${post.slug}`)] : []
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(route => `  <url><loc>${xmlEscape(new URL(route, config.origin).href)}</loc></url>`).join('\n')}\n</urlset>\n`
-// Fora da busca: entrada, compra, o Portal (privateRoutes), o link dos e-mails e os atalhos para o admin (nginx.conf).
-const blocked = ['/entrar', '/carrinho', '/pagamento', ...privateRoutes, '/pedido/', '/email/', '/admin', '/painel', '/404']
+// Fora da busca: entrada, compra, o Portal (privateRoutes), o link dos e-mails, os atalhos para o admin e o link direto
+// dos gratuitos (nginx.conf).
+const blocked = ['/entrar', '/carrinho', '/pagamento', ...privateRoutes, '/pedido/', '/email/', '/admin', '/painel', '/baixar/', '/404']
 const robots = config.stage === 'live'
   ? `User-agent: *\nAllow: /\n${blocked.map(route => `Disallow: ${route}\n`).join('')}Sitemap: ${config.origin}/sitemap.xml\n`
   : 'User-agent: *\nDisallow: /\n'
