@@ -272,8 +272,8 @@ test('compartilhamento e dados estruturados: imagem 1200×630, cartão grande e 
   const single = await readFile('build/client/loja/o-sumico-de-rapadura/index.html', 'utf8')
   expect(single).toMatch(/\/media\/og\/j002\.jpg/)
   expect(jsonLd(single)[0]['@graph'][0].offers.price).toBe('12.90')
-  expect(await readFile('build/client/gratuitos/index.html', 'utf8')).toMatch(/\/media\/og\/f001\.jpg/)
-  for (const code of ['p001', 'j001', 'j002', 'j003', 'f001']) expect((await readFile(`build/client/media/og/${code}.jpg`)).length).toBeGreaterThan(20_000)
+  expect(await readFile('build/client/gratuitos/index.html', 'utf8')).toMatch(/\/media\/og\/g001\.jpg/)
+  for (const code of ['p001', 'j001', 'j002', 'j003', 'g001']) expect((await readFile(`build/client/media/og/${code}.jpg`)).length).toBeGreaterThan(20_000)
 })
 
 for (const width of [375, 1280]) test(`loja e detalhes: axe e capturas em ${width}`, async ({ page }) => {

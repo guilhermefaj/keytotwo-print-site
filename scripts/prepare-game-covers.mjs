@@ -12,7 +12,7 @@ const sourceDir = process.env.KTT_COVERS_SOURCE || 'G:/Meu Drive/05-Projetos/Key
 const covers = {
   j001: '[CAPA - J001] Rabisque e Adivinhe.png', j002: '[CAPA - J002] O Sumico do Rapadura.png', j003: '[CAPA - J003] Tabuleiro da Sorte.png',
   j004: '[CAPA - J004] A Rota da Fornalha.png', j005: '[CAPA - J005] Retrospectiva a Dois.png',
-  f001: '[CAPA - F001] Hora dos Artistas.png', f002: '[CAPA - F002] Pote de Planos.png', p001: '[CAPA - P001] Coleção Keytotwo - Fundadores.png',
+  g001: '[CAPA - G001] Hora dos Artistas.png', g002: '[CAPA - G002] Pote de Planos.png', p001: '[CAPA - P001] Coleção Keytotwo - Fundadores.png',
 }
 const output = path.join(root, 'public/media/games')
 
