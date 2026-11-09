@@ -21,14 +21,20 @@ declare global {
 }
 
 let script: Promise<void> | undefined
-function loadScript() {
+function loadScript(attempt = 1): Promise<void> {
   script ??= new Promise<void>((resolve, reject) => {
     const element = document.createElement('script')
     element.src = SCRIPT
     element.async = true
     element.nonce = document.querySelector<HTMLScriptElement>('script[nonce]')?.nonce ?? ''
     element.onload = () => resolve()
-    element.onerror = () => { script = undefined; reject(new Error('turnstile')) }
+    // Queda momentânea de conexão: tenta de novo antes de desistir, porque sem o token a entrada por e-mail falha.
+    element.onerror = () => {
+      element.remove()
+      script = undefined
+      if (attempt >= 3) reject(new Error('turnstile'))
+      else window.setTimeout(() => loadScript(attempt + 1).then(resolve, reject), attempt * 1000)
+    }
     document.head.append(element)
   })
   return script
