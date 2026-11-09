@@ -10,6 +10,8 @@ const SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=exp
 const WAIT_MS = 8_000
 // Quando o Turnstile pede um clique, a pessoa precisa de tempo para ver e responder.
 const WAIT_INTERACTIVE_MS = 90_000
+// Algumas redes derrubam parte das conexões com a Cloudflare. A queda é rápida, então compensa insistir.
+const MAX_ATTEMPTS = 6
 
 type Turnstile = {
   render(container: HTMLElement, options: Record<string, unknown>): string
@@ -32,8 +34,8 @@ function loadScript(attempt = 1): Promise<void> {
     element.onerror = () => {
       element.remove()
       script = undefined
-      if (attempt >= 3) reject(new Error('turnstile'))
-      else window.setTimeout(() => loadScript(attempt + 1).then(resolve, reject), attempt * 1000)
+      if (attempt >= MAX_ATTEMPTS) reject(new Error('turnstile'))
+      else window.setTimeout(() => loadScript(attempt + 1).then(resolve, reject), attempt * 400)
     }
     document.head.append(element)
   })
