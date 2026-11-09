@@ -134,18 +134,18 @@ export const games: readonly Game[] = [
       { title: 'Fica para guardar.', text: 'No fim sai um pôster com os premiados e uma cápsula fechada, para abrir na próxima temporada.' },
     ],
   },
-  // Gratuitos (código F, fichas do segundo cérebro de 2026-10-20): liberados para quem tem conta e aceita os e-mails.
+  // Gratuitos (código G, fichas do segundo cérebro de 2026-10-20): liberados para quem tem conta e aceita os e-mails.
   {
-    id: 'hora-dos-artistas', code: 'F001', name: 'Hora dos Artistas', confirmed: true, freebie: true,
+    id: 'hora-dos-artistas', code: 'G001', name: 'Hora dos Artistas', confirmed: true, freebie: true,
     description: 'Os dois desenham o mesmo personagem de memória, contra o relógio, e decidem juntos quem chegou mais perto. No fim, cada um faz o retrato do outro.',
     summary: 'Desenho de memória contra o relógio. Quem chegou mais perto, a dupla decide junto.',
-    cover: cover('f001'), accent: '#c94050', needs: ['impressora', 'tesoura', 'caneta', 'cronometro'],
+    cover: cover('g001'), accent: '#c94050', needs: ['impressora', 'tesoura', 'caneta', 'cronometro'],
   },
   {
-    id: 'pote-de-planos', code: 'F002', name: 'Pote de Planos', confirmed: true, freebie: true,
+    id: 'pote-de-planos', code: 'G002', name: 'Pote de Planos', confirmed: true, freebie: true,
     description: 'Vocês recortam os planos, dobram, jogam num pote e sorteiam um quando bate o "o que a gente faz hoje?". Tem date fora, date em casa, gentileza secreta, papo sem celular e desafio valendo prenda.',
     summary: 'Um pote de planos para sortear quando bate o "o que a gente faz hoje?". O que sair, vale.',
-    cover: cover('f002'), accent: '#e39a2d', needs: ['impressora', 'tesoura', 'caneta'],
+    cover: cover('g002'), accent: '#e39a2d', needs: ['impressora', 'tesoura', 'caneta'],
   },
 ]
 

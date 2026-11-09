@@ -11,15 +11,15 @@ import path from 'node:path'
 // Precisa do pdftoppm (Poppler) no PATH. Grava public/media/experience/gratuitos-paginas-{560,780}.webp.
 const root = path.resolve(import.meta.dirname, '..')
 const sourceDir = process.env.KTT_PRINT_SOURCE || 'G:/Meu Drive/05-Projetos/KeyToTwo/Print'
-const pdfs = { f001: '[F001] Hora dos Artistas.pdf', f002: '[F002] Pote de Planos.pdf' }
+const pdfs = { g001: '[G001] Hora dos Artistas.pdf', g002: '[G002] Pote de Planos.pdf' }
 // Tela de 780 × 910; centro e giro de cada página, de trás para a frente. O arco do CSS vai de x 75 a 705 e de y 20 a
 // 830, com o topo em meia-volta (raio 315): a de trás fica sob a cúpula, com folga, e as duas da frente passam um pouco
 // das laterais e do pé. Mudou a tela ou o arco aqui, muda o calc() do CSS junto.
 const WIDTH = 780, HEIGHT = 910, PAGE = 330
 const pages = [
-  { game: 'f001', page: 14, x: 390, y: 355, angle: -3 }, // Superpoderes
-  { game: 'f001', page: 12, x: 560, y: 625, angle: 5 }, // Grande final
-  { game: 'f002', page: 1, x: 220, y: 625, angle: -4 }, // Pote de Planos: como jogar, com o Kito, na frente
+  { game: 'g001', page: 14, x: 390, y: 355, angle: -3 }, // Superpoderes
+  { game: 'g001', page: 12, x: 560, y: 625, angle: 5 }, // Grande final
+  { game: 'g002', page: 1, x: 220, y: 625, angle: -4 }, // Pote de Planos: como jogar, com o Kito, na frente
 ]
 const SHADOW = { pad: 48, offset: 12, blur: 14, alpha: 0.26 }
 const MARGIN = 120

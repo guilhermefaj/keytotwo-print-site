@@ -31,7 +31,7 @@ const PRODUCTS: Record<Code, { name: string; kind: 'bundle' | 'single'; slug: st
   J005: { name: 'Retrospectiva a Dois', kind: 'single', slug: 'retrospectiva-a-dois', price: 990 },
 }
 const PACK: Code[] = ['J001', 'J003', 'J002', 'J004', 'J005']
-const GAME_NAMES: Record<string, string> = { ...Object.fromEntries(PACK.map(code => [code, PRODUCTS[code].name])), F001: 'Hora dos Artistas', F002: 'Pote de Planos' }
+const GAME_NAMES: Record<string, string> = { ...Object.fromEntries(PACK.map(code => [code, PRODUCTS[code].name])), G001: 'Hora dos Artistas', G002: 'Pote de Planos' }
 const gamesOf = (code: Code) => (code === 'P001' ? PACK : [code]).map(game => ({ code: game, name: GAME_NAMES[game] }))
 
 // ---------------------------------------------------------------- pessoas
@@ -301,7 +301,7 @@ const CATALOG_HISTORY: Partial<Record<Code, History[]>> = {
 }
 const PDF: Record<string, [string, number, string]> = {
   J001: ['1.2', 8_400_000, '2026-10-23T23:30:00Z'], J002: ['1.1', 14_900_000, '2026-10-22T20:10:00Z'], J003: ['1.0', 11_200_000, '2026-10-16T19:00:00Z'],
-  J004: ['1.0', 15_300_000, '2026-10-19T21:45:00Z'], J005: ['1.1', 9_800_000, '2026-10-24T17:20:00Z'], F001: ['1.0', 3_100_000, '2026-10-12T12:00:00Z'], F002: ['1.0', 2_600_000, '2026-10-12T12:00:00Z'],
+  J004: ['1.0', 15_300_000, '2026-10-19T21:45:00Z'], J005: ['1.1', 9_800_000, '2026-10-24T17:20:00Z'], G001: ['1.0', 3_100_000, '2026-10-12T12:00:00Z'], G002: ['1.0', 2_600_000, '2026-10-12T12:00:00Z'],
 }
 function catalog() {
   const owners = (code: Code) => new Set(ORDERS.filter(item => item.items.includes(code) && entitlements(item).some(entry => entry.status === 'active')).map(item => item.person.id)).size
@@ -315,9 +315,9 @@ function catalog() {
       paid_orders: ORDERS.filter(item => paidPurchase(item) && item.items.includes(code)).length, owners: owners(code), history: CATALOG_HISTORY[code] ?? [],
     })),
     games: Object.entries(GAME_NAMES).map(([code, name]) => ({
-      code, name, access: code.startsWith('F') ? 'free' : 'paid', status: 'published',
+      code, name, access: code.startsWith('G') ? 'free' : 'paid', status: 'published',
       file: { version: PDF[code][0], filename: `${code}-v${PDF[code][0]}.pdf`, size_bytes: PDF[code][1], published_at: PDF[code][2] },
-      single: code.startsWith('F') ? null : code, packs: PACK.includes(code as Code) ? ['P001'] : [],
+      single: code.startsWith('G') ? null : code, packs: PACK.includes(code as Code) ? ['P001'] : [],
     })),
   }
 }

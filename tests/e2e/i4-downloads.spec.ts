@@ -116,7 +116,7 @@ test('no published PDF: preparation message, retained game and disabled download
   await expect(page.locator('.library-grid > li')).toHaveCount(1)
 })
 
-const freeGames = { games: [{ code: 'F001', name: 'Hora dos Artistas', file }, { code: 'F002', name: 'Pote de Planos', file: { ...file, id: newerFileId } }] }
+const freeGames = { games: [{ code: 'G001', name: 'Hora dos Artistas', file }, { code: 'G002', name: 'Pote de Planos', file: { ...file, id: newerFileId } }] }
 
 test('gratuitos sem sessão: passo a passo à vista, entrada que volta para a página e nenhum download', async ({ browser }) => {
   const page = await browser.newPage()
@@ -174,7 +174,7 @@ test('Meus jogos: gratuitos liberados entram na grade e baixam pela rota gratuit
   await page.reload()
   await expect(page.locator('.library-grid > li')).toHaveCount(3)
   await expect(page.getByRole('link', { name: 'Ver os gratuitos', exact: true })).toHaveCount(0)
-  const free = page.locator('#jogo-F002')
+  const free = page.locator('#jogo-G002')
   await expect(free).toContainText('Gratuito')
   await expect(free.locator('.game-acquired')).toHaveText('Liberado na sua conta.')
   const response = page.waitForResponse(result => result.url().endsWith('/api/free-download'))

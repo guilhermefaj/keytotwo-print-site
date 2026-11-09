@@ -1,5 +1,5 @@
 // Sobe os PDFs REAIS dos jogos ao bucket do B2 em {paid|free}/{código}-{nome}.pdf, ex. paid/J001-rabisque-e-adivinhe.pdf
-// (docs/data-contract.md). Código J é pago (paid/), código F é grátis (free/); o nome do jogo fica no caminho e a
+// (docs/data-contract.md). Código J é pago (paid/), código G é grátis (free/); o nome do jogo fica no caminho e a
 // versão não, porque os jogos não devem ser versionados (decisões do responsável, 2026-10-16).
 // Uso:
 //   npx deno@2.9.6 run --no-lock --config supabase/functions/deno.json --allow-read --allow-net \
@@ -37,10 +37,10 @@ async function put(key: string, body: ArrayBuffer, headers: Record<string, strin
 
 const result = []
 for (const path of files) {
-  const match = /^\[([JF]\d{3})\]\s*(.+)\.pdf$/i.exec(path.split(/[\\/]/).pop() ?? '')
+  const match = /^\[([JG]\d{3})\]\s*(.+)\.pdf$/i.exec(path.split(/[\\/]/).pop() ?? '')
   if (!match) throw new Error(`Nome fora do padrão "[J001] Nome do jogo.pdf": ${path}`)
   const [, code, name] = match
-  const access = code.startsWith('J') ? 'paid' : 'free'
+  const access = code.startsWith('G') ? 'free' : 'paid'
   const key = `${access}/${code}-${slug(name)}${version === '1.0' ? '' : `-v${version}`}.pdf`
   const filename = `${name.trim()}.pdf`
   const data = await Deno.readFile(path)

@@ -39,7 +39,7 @@ export function productForPath(pathname: string): Product | undefined {
 export function shareImage(pathname: string) {
   const path = pathname.replace(/\/+$/, '') || '/'
   const product = productForPath(path)
-  const code = product ? product.code.toLowerCase() : path === '/gratuitos' ? 'f001' : 'p001'
+  const code = product ? product.code.toLowerCase() : path === '/gratuitos' ? 'g001' : 'p001'
   return {
     url: new URL(`/media/og/${code}.jpg`, siteConfig.origin).href,
     alt: product ? `Capa de ${product.title}` : path === '/gratuitos' ? 'Capa de Hora dos Artistas, jogo gratuito da KeyToTwo' : 'Capa da Coleção KeyToTwo: Fundadores',
