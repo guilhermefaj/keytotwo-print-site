@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { CheckoutSteps } from '../components/checkout/CheckoutSteps'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useAuth } from '../lib/auth-context'
+import { useCaptcha } from '../lib/captcha'
 import { isProductCode } from '../lib/guest-cart'
 import { authConfigured, authErrorMessage, loginDestination, safeNext, supabase } from '../lib/supabase'
 import { useHydrated } from '../lib/use-hydrated'
@@ -13,6 +14,7 @@ export default function Entrar() {
   const hydrated = useHydrated()
   const navigate = useNavigate()
   const { session, ready, recovery, finishRecovery } = useAuth()
+  const { boxRef: captchaBox, getToken: getCaptchaToken, reset: resetCaptcha } = useCaptcha()
   const [method, setMethod] = useState<Method>(params.get('mode') === 'recover' ? 'recover' : 'code')
   const [step, setStep] = useState<'email' | 'verify' | 'set-password'>('email')
   const [email, setEmail] = useState('')
@@ -54,9 +56,11 @@ export default function Entrar() {
     return url.href
   }
   async function sendCode() {
+    const captchaToken = await getCaptchaToken()
     const result = method === 'recover'
-      ? await supabase().auth.resetPasswordForEmail(email.trim(), { redirectTo: callbackUrl(true) })
-      : await supabase().auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true, emailRedirectTo: callbackUrl() } })
+      ? await supabase().auth.resetPasswordForEmail(email.trim(), { redirectTo: callbackUrl(true), captchaToken })
+      : await supabase().auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true, emailRedirectTo: callbackUrl(), captchaToken } })
+    resetCaptcha()
     if (result.error) throw result.error
     setStep('verify'); setCooldown(60)
     setMessage('O código deve chegar em instantes e vale por 10 minutos. Se não aparecer, confira a pasta de spam.')
@@ -79,7 +83,9 @@ export default function Entrar() {
         if (method === 'create' || method === 'recover') { setStep('set-password'); setMessage('E-mail confirmado. Agora escolha sua senha.') }
         else navigate(destination, { replace: true })
       } else if (method === 'password') {
-        const { error } = await supabase().auth.signInWithPassword({ email: email.trim(), password })
+        const captchaToken = await getCaptchaToken()
+        const { error } = await supabase().auth.signInWithPassword({ email: email.trim(), password, options: { captchaToken } })
+        resetCaptcha()
         if (error) throw error
         setPassword(''); navigate(destination, { replace: true })
       } else await sendCode()
@@ -114,6 +120,7 @@ export default function Entrar() {
           </>}
           <p className="form-error" role="alert">{error}</p><p className="form-message" role="status">{message}</p>
           <button className="button button-primary" disabled={busy || !ready}>{busy ? 'Aguarde…' : settingPassword ? 'Salvar senha' : step === 'verify' ? 'Confirmar código' : method === 'password' ? 'Entrar com senha' : 'Enviar código'}</button>
+          <div ref={captchaBox} />
         </form>
         {step === 'verify' && !settingPassword && <div className="form-actions"><button className="text-button" disabled={busy || cooldown > 0} onClick={resend}>{cooldown ? `Reenviar em ${cooldown}s` : 'Reenviar código'}</button><button className="text-button" disabled={busy} onClick={() => selectMethod(method)}>Usar outro e-mail</button></div>}
         {step === 'email' && !settingPassword && <div className="auth-alternatives"><button className="google-sign-in" disabled={busy} onClick={google}><img src="/media/auth/google-g.png" width="20" height="20" alt="" /><span>Continuar com Google</span></button><button className="text-button" disabled={busy} onClick={() => selectMethod(method === 'create' ? 'code' : 'create')}>{method === 'create' ? 'Prefiro entrar com código' : 'Criar conta com senha'}</button></div>}

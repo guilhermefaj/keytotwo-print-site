@@ -40,6 +40,7 @@ export function mfaExpiresAt(session: Session): number | null {
 export function authMessage(error: unknown) {
   const code = error && typeof error === 'object' && 'code' in error ? error.code : ''
   if (code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit') return 'Aguarde um minuto antes de tentar de novo.'
+  if (code === 'captcha_failed') return 'Não conseguimos confirmar que você não é um robô. Recarregue a página ou entre com o Google.'
   if (code === 'otp_expired') return 'Código inválido ou expirado. Confira o e-mail ou peça outro.'
   if (code === 'otp_disabled' || code === 'signup_disabled' || code === 'user_not_found') return 'Este e-mail não tem conta na KeyToTwo.'
   if (code === 'mfa_verification_failed' || code === 'mfa_challenge_expired') return 'Código incorreto ou vencido. Use o código que está no app agora.'

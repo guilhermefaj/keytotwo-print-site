@@ -106,6 +106,7 @@ Headers enviados pelo site:
 | 409 | `ACCOUNT_DELETION_BLOCKED` | Exclusão de conta com pagamento em andamento, checkout aberto ou contestação aberta (`details.reason`) |
 | 413 | `PAYLOAD_TOO_LARGE` | Corpo acima de 16 KB |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | Corpo com tipo não aceito |
+| 429 | `RATE_LIMITED` | Muitos pedidos do mesmo endereço IP, com header `Retry-After` em segundos. Por minuto: 300 no geral, 40 em conta e formulários, 20 no checkout; 30 downloads a cada 10 minutos. Admin e `/internal` ficam de fora |
 | 500 | `INTERNAL_ERROR` | Falha inesperada ou de configuração |
 | 502 | `PAYMENT_PROVIDER_ERROR` | Falha ao falar com a Stripe |
 | 503 | `FILE_UNAVAILABLE` | Direito confirmado, arquivo temporariamente indisponível |

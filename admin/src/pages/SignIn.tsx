@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Screen } from '../Screen'
 import { authMessage, supabase } from '../supabase'
+import { useCaptcha } from '../../../src/lib/captcha'
 import googleG from '../../../public/media/auth/google-g.png'
 
 // Entrar no admin: Google ou código por e-mail, só de contas que já existem (não cria conta aqui).
@@ -10,6 +11,7 @@ export function SignIn() {
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const { boxRef: captchaBox, getToken: getCaptchaToken, reset: resetCaptcha } = useCaptcha()
 
   async function run(action: () => Promise<{ error: unknown }>, done?: () => void) {
     setBusy(true); setError('')
@@ -24,7 +26,12 @@ export function SignIn() {
   function requestCode(event: FormEvent) {
     event.preventDefault()
     const address = email.trim().toLowerCase()
-    void run(() => supabase!.auth.signInWithOtp({ email: address, options: { shouldCreateUser: false } }), () => { setSentTo(address); setCode('') })
+    void run(async () => {
+      const captchaToken = await getCaptchaToken()
+      const result = await supabase!.auth.signInWithOtp({ email: address, options: { shouldCreateUser: false, captchaToken } })
+      resetCaptcha()
+      return result
+    }, () => { setSentTo(address); setCode('') })
   }
   function verify(event: FormEvent) {
     event.preventDefault()
@@ -43,6 +50,7 @@ export function SignIn() {
       <button className="button button-primary" type="submit" disabled={busy}>{busy ? 'Conferindo…' : 'Entrar'}</button>
       <button className="text-button" type="button" disabled={busy} onClick={() => { setSentTo(''); setError('') }}>Usar outro e-mail</button>
     </form>}
+    <div ref={captchaBox} />
     <p className="form-error" role="alert">{error}</p>
   </Screen>
 }

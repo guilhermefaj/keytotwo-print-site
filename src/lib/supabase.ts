@@ -38,6 +38,7 @@ export function loginDestination(next: string, add?: string) {
 export function authErrorMessage(error: unknown) {
   const code = error && typeof error === 'object' && 'code' in error ? error.code : ''
   if (code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit') return 'Aguarde um minuto antes de tentar novamente.'
+  if (code === 'captcha_failed') return 'Não conseguimos confirmar que você não é um robô. Recarregue a página ou continue com o Google.'
   if (code === 'otp_expired') return 'Código inválido ou expirado. Confira o e-mail ou solicite outro código.'
   if (code === 'invalid_credentials') return 'E-mail ou senha inválidos. Você também pode entrar com um código.'
   if (code === 'weak_password') return 'Use uma senha com pelo menos 8 caracteres, incluindo letras e números.'

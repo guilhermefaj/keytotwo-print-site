@@ -18,6 +18,7 @@ export const company = {
 // Validação jurídica dos Termos, da Política de reembolso e da Privacidade: aprovada em 2026-10-22, na versão
 // termos-2026-10-22 (responsável). Mudou o texto, muda a versão e o jurídico revê de novo.
 // Privacidade 2026-11-01: o perfil de Minha conta (nome, data de nascimento e WhatsApp, opcionais), para a revisão.
+// Privacidade 2026-11-09: o serviço de segurança (Cloudflare: proteção do site e captcha na entrada), para a revisão.
 
 // Revisão jurídica de 2026-10-22: atualizações, versões, licença x acesso, suspensão, responsabilidade, arrependimento,
 // gratuitos e fotos. Fatos conferidos no código: Pix (Stripe, reembolso em até 90 dias para a conta de origem),
@@ -162,8 +163,8 @@ const reembolso: LegalContent = {
 
 const privacidade: LegalContent = {
   title: 'Política de privacidade',
-  version: '2026-11-01',
-  versionLabel: 'Versão de 1º de novembro de 2026',
+  version: '2026-11-09',
+  versionLabel: 'Versão de 9 de novembro de 2026',
   intro: 'Esta política explica quais dados pessoais a KeyToTwo trata, para quê, com quem compartilha, por quanto tempo guarda e como você exerce seus direitos, conforme a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).',
   sections: [
     { title: 'Quem cuida dos seus dados', id: 'controladora', paragraphs: [
@@ -214,11 +215,12 @@ const privacidade: LegalContent = {
         'Google: login com a conta Google, quando você escolhe essa opção, e o Google Analytics, que mede as visitas só se você aceitar os cookies.',
         'WhatsApp: quando falamos com você por lá, a conversa passa pelo WhatsApp, da Meta, que segue a política dele.',
         'Hospedagem: os servidores no Brasil que publicam o site e organizam o envio dos e-mails.',
+        'Segurança: um serviço que protege o site contra ataques e confere, na tela de entrada, se o acesso vem de uma pessoa ou de um robô. Ele trata o endereço IP e dados técnicos do navegador.',
       ],
       `O nome de cada fornecedor é informado a quem pedir, por ${company.email}.`,
       'Os parceiros que divulgam a loja, com link ou cupom próprio, não recebem dados pessoais: só o total de visitas, de vendas e de valores do link e do cupom deles.',
       'Também podemos compartilhar dados quando a lei exigir, por ordem judicial ou de autoridade competente, ou para defender direitos.',
-      'Os fornecedores de pagamento, de envio dos e-mails e de armazenamento dos arquivos e o Google podem tratar dados fora do Brasil, em países como os Estados Unidos e os da União Europeia. Essas transferências são necessárias para executar o contrato com você e seguem as garantias contratuais desses fornecedores (LGPD, art. 33, II e IX).',
+      'Os fornecedores de pagamento, de envio dos e-mails, de armazenamento dos arquivos e de segurança e o Google podem tratar dados fora do Brasil, em países como os Estados Unidos e os da União Europeia. Essas transferências são necessárias para executar o contrato com você e seguem as garantias contratuais desses fornecedores (LGPD, art. 33, II e IX).',
     ] },
     { title: 'Por quanto tempo guardamos', id: 'retencao', paragraphs: [
       [
