@@ -35,12 +35,14 @@ export const profileCopy = {
 
 // Comunidade dos Fundadores (responsável, 2026-11-04): o grupo do WhatsApp de quem comprou um jogo pago, no topo de
 // Meus jogos. Sem número de vagas (ainda não definido) e sem promessa de prazo; o link vem só da api (community_url).
-// O aviso do número segue o WhatsApp: num grupo, quem participa vê o telefone dos outros.
+// 2026-11-09: o aviso do número saiu a pedido do responsável; no lugar, o convite para mandar ao par pelo WhatsApp,
+// para os dois entrarem no grupo.
 export const foundersCommunity = {
   title: 'Vocês são membros fundadores',
   text: 'Quem comprou nossos primeiros jogos tem lugar no grupo da KeyToTwo no WhatsApp. Lá vocês falam direto com a gente, contam como foi a partida, apontam o que pode melhorar e opinam sobre os próximos jogos.',
   action: 'Entrar no grupo do WhatsApp',
-  note: 'No grupo, seu número de telefone fica visível para quem participa.',
+  share: 'Mandar o convite para o seu par',
+  shareMessage: (url: string) => `Entra comigo no grupo dos Fundadores da KeyToTwo no WhatsApp: ${url}`,
 }
 
 // Pedido de cortesia (presente dado pela equipe no admin, 2026-10-23).

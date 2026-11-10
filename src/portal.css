@@ -38,7 +38,6 @@
 .portal-community h2 { margin: 0 0 12px; }
 .portal-community p { margin: 0; max-width: 60ch; line-height: 1.6; }
 .portal-community-action { display: flex; flex-direction: column; gap: 12px; max-width: 320px; }
-.portal-community-action p { font-size: var(--text-caption); color: var(--color-ink-soft); }
 .portal-pending { padding: 24px; margin-bottom: 32px; border: 1.5px solid var(--color-ink-soft); border-radius: var(--radius-md); }
 .portal-pending h2 { margin: 0 0 12px; }
 .portal-empty { display: flex; align-items: center; justify-content: center; gap: 48px; min-height: 360px; padding: 32px; border: var(--line-card); border-radius: var(--radius-md); }
