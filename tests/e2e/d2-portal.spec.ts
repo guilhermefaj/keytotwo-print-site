@@ -223,7 +223,12 @@ test('Fundadores: quem comprou vê o convite do WhatsApp no topo de Meus jogos; 
   await expect(invite).toHaveAttribute('href', community)
   await expect(invite).toHaveAttribute('target', '_blank')
   await expect(invite).toHaveAttribute('rel', 'noopener noreferrer')
-  await expect(card).toContainText('seu número de telefone fica visível')
+  const share = card.getByRole('link', { name: 'Mandar o convite para o seu par pelo WhatsApp (abre em nova aba)' })
+  const shareUrl = new URL(await share.getAttribute('href') ?? '')
+  expect(shareUrl.origin + shareUrl.pathname, 'convite ao par pelo WhatsApp, sem número fixo').toBe('https://wa.me/')
+  expect(shareUrl.searchParams.get('text')).toContain(community)
+  await expect(share).toHaveAttribute('target', '_blank')
+  await expect(card).not.toContainText('número de telefone')
   expect(await page.evaluate(() => Boolean(document.querySelector('.portal-community')!.compareDocumentPosition(document.querySelector('.portal-library')!) & Node.DOCUMENT_POSITION_FOLLOWING)), 'o convite vem antes dos jogos').toBe(true)
   for (const width of [320, 1440]) {
     await page.setViewportSize({ width, height: 900 })
