@@ -2,12 +2,13 @@ import { IconBrandInstagram, IconBrandTiktok } from '@tabler/icons-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { DataStatus } from '../components/account/AccountUi'
+import { CommunityInvite } from '../components/account/CommunityInvite'
 import { DownloadButton } from '../components/account/DownloadButton'
 import { GameCard } from '../components/shop/GameGrid'
 import { marketingConsent } from '../content/account'
 import { freebies } from '../content/games'
 import { gratuitos, instagram, tiktok } from '../content/gratuitos'
-import { api, apiErrorMessage } from '../lib/api'
+import { api, apiErrorMessage, type Library } from '../lib/api'
 import { useAuth } from '../lib/auth-context'
 import { deliveryMock, fileSize, type FreeGames } from '../lib/downloads'
 import { siteConfig } from '../lib/site-config'
@@ -15,12 +16,15 @@ import { useShop } from '../lib/shop-context'
 import { useApiResource } from '../lib/use-api-resource'
 
 // Os gratuitos (DESIGN.md › Gratuitos): conta + aceite de e-mails libera os PDFs para sempre; a página também
-// convida para a comunidade (Instagram, TikTok e e-mails).
+// convida para a comunidade (Instagram, TikTok e e-mails). Depois da liberação, o convite do grupo do WhatsApp
+// (2026-11-15) entra logo abaixo dos jogos; o link vem do /library, que só é pedido com os jogos liberados, para o
+// grupo não competir com o aceite dos e-mails.
 export default function Gratuitos() {
   const { session } = useAuth()
   const { account } = useShop()
   const list = useApiResource<FreeGames>('/free-games', true, deliveryMock)
   const unlocked = deliveryMock || Boolean(session && account.data?.free_games_unlocked)
+  const library = useApiResource<Library>('/library', false, deliveryMock || !unlocked)
   const files = new Map(list.data?.games.map(game => [game.code, game.file]))
   const { title, lead, community } = gratuitos
   return <main id="conteudo" tabIndex={-1} className="free-page content-width">
@@ -37,6 +41,7 @@ export default function Gratuitos() {
           : !list.loading && !list.error && <p className="field-help">O PDF entra aqui em breve.</p>}
       </div></GameCard>
     })}</ul>
+    {unlocked && library.data?.community_url && <CommunityInvite url={library.data.community_url} className="free-group" />}
     <section className="free-community" aria-labelledby="comunidade-titulo">
       <div className="free-community-copy">
         <h2 id="comunidade-titulo">{community.title}</h2>

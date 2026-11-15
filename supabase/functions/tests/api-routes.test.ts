@@ -251,8 +251,9 @@ contractTest('GET /account e GET /library repassam as RPCs', async () => {
   assertEquals(await (await handleRequest(request('/library', { token }))).json(), { games: [], pending: [], community_url: null })
 })
 
-// Comunidade dos Fundadores (2026-11-04): o link sai só para founder, só do segredo e só se for convite do WhatsApp.
-contractTest('GET /library entrega o convite dos Fundadores só a quem comprou', async () => {
+// Grupo do WhatsApp: era só de founder (2026-11-04); desde 2026-11-15 sai para toda conta, comprando ou não. O link
+// vem só do segredo e só se for convite do WhatsApp; o founder do banco nunca sai na resposta.
+contractTest('GET /library entrega o convite do grupo a toda conta, comprando ou não', async () => {
   const token = await sessionToken()
   const invite = 'https://chat.whatsapp.com/AbC123xyz'
   const library = async (founder: boolean) => {
@@ -262,11 +263,13 @@ contractTest('GET /library entrega o convite dos Fundadores só a quem comprou',
   try {
     Deno.env.set('WHATSAPP_COMMUNITY_URL', invite)
     assertEquals(await library(true), { ...LIBRARY, community_url: invite })
-    assertEquals(await library(false), { ...LIBRARY, community_url: null })
+    assertEquals(await library(false), { ...LIBRARY, community_url: invite })
+    onRpc(() => ({ status: 200, body: { games: [], pending: [], founder: false } }))
+    assertEquals(await (await handleRequest(request('/library', { token }))).json(), { games: [], pending: [], community_url: invite })
     Deno.env.set('WHATSAPP_COMMUNITY_URL', 'https://example.com/grupo')
-    assertEquals((await library(true)).community_url, null)
+    assertEquals((await library(false)).community_url, null)
     Deno.env.delete('WHATSAPP_COMMUNITY_URL')
-    assertEquals((await library(true)).community_url, null)
+    assertEquals((await library(false)).community_url, null)
   } finally {
     Deno.env.delete('WHATSAPP_COMMUNITY_URL')
   }

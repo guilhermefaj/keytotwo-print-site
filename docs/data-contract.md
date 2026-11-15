@@ -1309,7 +1309,7 @@ Por **jogo**, com os produtos de origem, e os pedidos em processamento:
 ```
 - `games`: jogos das fotografias dos direitos `active` do usuário, sem repetir (mesmo jogo por dois produtos: um item com os dois em `products`). `acquired_at` = o menor `granted_at`. Ordem: `acquired_at`, menor `position`, `code`. `files` traz só `published` e `access='paid'` (jogo sem arquivo publicado aparece com `"files": []`: a compra é preservada).
 - `pending`: pedidos do usuário em `pending_payment`, do mais recente ao mais antigo.
-- `founder` (2026-11-04): existe direito `active` do usuário cujo pedido é `kind = 'purchase'`. Presente do admin (`courtesy`) e gratuitos não contam; reembolso e contestação revogam o direito e o `founder` cai junto. A api usa para liberar o grupo dos Fundadores; o link não passa pelo banco.
+- `founder` (2026-11-04): existe direito `active` do usuário cujo pedido é `kind = 'purchase'`. Presente do admin (`courtesy`) e gratuitos não contam; reembolso e contestação revogam o direito e o `founder` cai junto. Liberava o grupo do WhatsApp até 2026-11-15; desde então o grupo é de toda conta e a api ignora o campo (fica no banco para distinguir quem comprou, se voltar a ser preciso). O link não passa pelo banco.
 - Só PDFs de jogo: o ZIP do pacote saiu em 2026-10-24 (nenhuma RPC o entregava). Sem compras: `{"games": [], "pending": [], "founder": false}`. Nunca inclui chave do B2, URL nem e-mail.
 
 ```sql
