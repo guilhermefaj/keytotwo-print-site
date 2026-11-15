@@ -10,6 +10,7 @@ const file = { id: fileId, kind: 'pdf', version: '1.0', size_bytes: 3600000 }
 const game = { code: 'TESTE-J01', name: 'Jogo de TESTE', acquired_at: '2026-10-01T12:00:00Z', products: [{ code: 'P001', name: 'Pacote de TESTE' }], files: [file] }
 const fakeSession = { access_token: 'synthetic-token', refresh_token: 'synthetic-refresh', expires_at: 4102444800, token_type: 'bearer', user: { id: 'synthetic', email: 'synthetic@example.test', email_confirmed_at: '2026-01-01', is_anonymous: false, aud: 'authenticated', app_metadata: {}, user_metadata: {} } }
 const fileURL = 'https://qa.s3.us-east-005.backblazeb2.com/fixture.pdf'
+const groupInvite = 'https://chat.whatsapp.com/TesteGrupo'
 
 async function fixture(page: Page) {
   await page.addInitScript(([key, session]) => localStorage.setItem(key, JSON.stringify(session)), [authStorageKey, fakeSession] as const)
@@ -146,11 +147,19 @@ test('gratuitos com sessão: aceitar os e-mails libera os dois jogos e o downloa
   await page.route('**/functions/v1/api/account', route => route.fulfill({ json: { email: fakeSession.user.email, marketing: { opted_in: unlocked, prompted_at: '2026-01-01' }, free_games_unlocked: unlocked, orders: [] } }))
   await page.route('**/functions/v1/api/account/marketing', route => { consent = route.request().postDataJSON(); unlocked = true; return route.fulfill({ json: { marketing: { opted_in: true } } }) })
   await page.route('**/functions/v1/api/free-download', route => route.fulfill({ json: { url: fileURL, expires_at: new Date(Date.now() + 300_000).toISOString() } }))
+  let libraryCalls = 0
+  await page.route('**/functions/v1/api/library', route => { libraryCalls++; return route.fulfill({ json: { games: [], pending: [], community_url: groupInvite } }) })
   await page.goto('/gratuitos')
   test.skip(await page.getByText(/Prévia da entrega \(mock\)/).count() > 0, 'Requires VITE_DELIVERY_MODE=api build')
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(0)
+  // O grupo do WhatsApp (2026-11-15) só entra depois da liberação, para não competir com o aceite dos e-mails.
+  await expect(page.locator('.portal-community')).toHaveCount(0)
+  expect(libraryCalls).toBe(0)
   await page.getByRole('button', { name: 'Aceitar e liberar os jogos', exact: true }).click()
   await expect(page.getByText('Os jogos estão liberados na sua conta. É só baixar.')).toBeVisible()
+  const group = page.locator('.portal-community')
+  await expect(group.getByRole('link', { name: 'Entrar no grupo do WhatsApp (abre em nova aba)' })).toHaveAttribute('href', groupInvite)
+  expect(await page.evaluate(() => Boolean(document.querySelector('.free-games')!.compareDocumentPosition(document.querySelector('.portal-community')!) & Node.DOCUMENT_POSITION_FOLLOWING)), 'o convite vem depois dos jogos').toBe(true)
   expect(consent).toEqual({ granted: true, source: 'free_games', text_version: marketingConsent.version })
   await expect(page.getByRole('button', { name: 'Baixar PDF', exact: true })).toHaveCount(2)
   const response = page.waitForResponse(result => result.url().endsWith('/api/free-download'))

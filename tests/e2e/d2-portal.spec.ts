@@ -25,7 +25,7 @@ async function fixture(page: Page, { empty = false, failLibrary = false, gift = 
     if (path === '/account/marketing') { const body = route.request().postDataJSON(); writes.push(body); optedIn = body.granted; return route.fulfill({ json: { opted_in: optedIn } }) }
     const courtesy = { ref: 'PRESENTE1', kind: 'courtesy', status: 'paid', created_at: '2026-10-23T12:00:00Z', paid_at: '2026-10-23T12:00:00Z', amount_total: 0, currency: 'brl', items: [{ ...product, unit_amount: 0 }] }
     const orders = empty ? [] : gift ? [courtesy] : ['paid', 'pending_payment'].map((status, i) => ({ ref: `synthetic-d2-${i}`, status, created_at: '2026-10-01T12:00:00Z', paid_at: status === 'paid' ? '2026-10-01T12:00:00Z' : null, amount_total: 1990, currency: 'brl', items: [product] }))
-    const json = path === '/library' ? { games: empty ? [] : games, pending: [], community_url: empty || gift ? null : community } : path === '/account' ? { email: user.email, marketing: { opted_in: optedIn, prompted_at: null, updated_at: null, text_version: null }, orders } : path === '/catalog' ? { products: [] } : path === '/free-games' ? { games: [] } : { version: 0, items: [], subtotal: null, warnings: [] }
+    const json = path === '/library' ? { games: empty ? [] : games, pending: [], community_url: empty ? null : community } : path === '/account' ? { email: user.email, marketing: { opted_in: optedIn, prompted_at: null, updated_at: null, text_version: null }, orders } : path === '/catalog' ? { products: [] } : path === '/free-games' ? { games: [] } : { version: 0, items: [], subtotal: null, warnings: [] }
     return route.fulfill({ json })
   })
   return writes
@@ -214,7 +214,7 @@ for (const width of [390, 1440]) test(`axe across three tabs and empty states at
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
 })
 
-test('Fundadores: quem comprou vê o convite do WhatsApp no topo de Meus jogos; presente do admin não vê', async ({ page }) => {
+test('Grupo do WhatsApp: com o convite da api, o card fica no topo de Meus jogos, até sem jogos; sem convite, nada', async ({ page }) => {
   await fixture(page)
   await page.goto('/meus-jogos')
   const card = page.locator('.portal-community')
@@ -223,13 +223,25 @@ test('Fundadores: quem comprou vê o convite do WhatsApp no topo de Meus jogos; 
   await expect(invite).toHaveAttribute('href', community)
   await expect(invite).toHaveAttribute('target', '_blank')
   await expect(invite).toHaveAttribute('rel', 'noopener noreferrer')
-  await expect(card).toContainText('seu número de telefone fica visível')
+  const share = card.getByRole('link', { name: 'Mandar o convite para o seu par pelo WhatsApp (abre em nova aba)' })
+  const shareUrl = new URL(await share.getAttribute('href') ?? '')
+  expect(shareUrl.origin + shareUrl.pathname, 'convite ao par pelo WhatsApp, sem número fixo').toBe('https://wa.me/')
+  expect(shareUrl.searchParams.get('text')).toContain(community)
+  await expect(share).toHaveAttribute('target', '_blank')
+  await expect(card).not.toContainText('número de telefone')
   expect(await page.evaluate(() => Boolean(document.querySelector('.portal-community')!.compareDocumentPosition(document.querySelector('.portal-library')!) & Node.DOCUMENT_POSITION_FOLLOWING)), 'o convite vem antes dos jogos').toBe(true)
   for (const width of [320, 1440]) {
     await page.setViewportSize({ width, height: 900 })
     expect(await invite.evaluate(el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight }), `convite à vista sem rolar em ${width}`).toBe(true)
     await capture(page, `fundadores-${width}`)
   }
+  await expect(card).toContainText('Quem está com a gente desde o começo')
+  await expect(card).not.toContainText('comprou')
+  // Desde 2026-11-15 o grupo é de toda conta: quem ainda não tem jogo vê o convite acima do Kito da página vazia.
+  await page.route('**/api/library', route => route.fulfill({ json: { games: [], pending: [], community_url: community } }))
+  await page.goto('/meus-jogos')
+  await expect(page.locator('.portal-empty')).toBeVisible()
+  await expect(card.getByRole('link', { name: 'Entrar no grupo do WhatsApp (abre em nova aba)' })).toHaveAttribute('href', community)
   await page.route('**/api/library', route => route.fulfill({ json: { games, pending: [], community_url: null } }))
   await page.goto('/meus-jogos')
   await expect(page.locator('.portal-game').first()).toBeVisible()

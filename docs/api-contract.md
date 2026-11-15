@@ -364,8 +364,8 @@ Meus jogos, organizado **por jogo** → `get_library(uid)`:
 
 - Só direitos ativos; o acesso não expira. `products` são os produtos de origem; um jogo aparece uma vez, mesmo vindo de mais de um produto.
 - `files: []` significa jogo temporariamente indisponível.
-- `pending` lista pedidos `pending_payment`. `{ "games": [], "pending": [], "community_url": null }` é o estado sem compras.
-- `community_url` (2026-11-04): o convite do grupo dos Fundadores no WhatsApp, só quando `get_library` diz `founder` (algum direito ativo vindo de compra paga; cortesia e gratuitos não contam) e o segredo `WHATSAPP_COMMUNITY_URL` é um link `https://chat.whatsapp.com/…`. Nos outros casos, `null`. O `founder` do banco não sai na resposta.
+- `pending` lista pedidos `pending_payment`. Sem compras: `{ "games": [], "pending": [], "community_url": … }`.
+- `community_url`: o convite do grupo da KeyToTwo no WhatsApp. De 2026-11-04 a 2026-11-15 saía só quando `get_library` dizia `founder` (compra paga); desde 2026-11-15 sai para **toda conta** com e-mail confirmado (quem cria conta ou pega um gratuito também), sempre que o segredo `WHATSAPP_COMMUNITY_URL` é um link `https://chat.whatsapp.com/…`. Sem o segredo, ou com outro valor, `null`. O `founder` do banco não sai na resposta. O site mostra o convite no topo de Meus jogos e em Gratuitos depois da liberação.
 - Nunca traz chave do B2 nem URL de arquivo. O ZIP completo fica para depois.
 
 ### 6.5 `POST /checkout`

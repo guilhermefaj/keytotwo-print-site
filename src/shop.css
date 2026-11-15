@@ -191,6 +191,8 @@
 .free-community-follow { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-sm); }
 .social-button { gap: 10px; }
 .free-community-kito { width: 192px; height: auto; }
+.free-group { margin: var(--space-3xl) 0 0; }
+.free-group h2 { font-size: var(--text-headline-sm); }
 @media (max-width: 960px) {
   .free-top { grid-template-columns: minmax(0, 1fr); gap: var(--space-xl); }
 }
