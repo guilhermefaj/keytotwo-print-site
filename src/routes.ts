@@ -28,6 +28,9 @@ export default [
   // An empty live blog therefore resolves unknown slugs through the existing 404.
   ...(hasBlogPosts ? [route('blog/:slug', 'routes/blog.post.tsx')] : []),
   route('email/preferencias', 'routes/email.preferencias.tsx'),
+  // Páginas de conta do app KeyToTwo (2026-11-18): caminhos fixos, configurados no app e no Supabase dele.
+  route('auth/callback', 'routes/auth.callback.tsx'),
+  route('auth/recover', 'routes/auth.recover.tsx'),
   route('termos', 'routes/termos.tsx'),
   route('privacidade', 'routes/privacidade.tsx'),
   route('reembolsos', 'routes/reembolsos.tsx'),

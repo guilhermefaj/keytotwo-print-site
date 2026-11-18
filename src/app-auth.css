@@ -1,0 +1,18 @@
+/* Páginas de conta do app KeyToTwo (/auth/callback e /auth/recover, 2026-11-18): tela enxuta para quem usa o app, fundo
+   branco, logotipo, Kito, título e texto curto. Sem nada da loja. Pensada a partir de 360 px, inclusive no navegador
+   do Gmail. `.app-auth-actions` já guarda o lugar do botão "Abrir o app", quando o app tiver link direto. */
+.app-auth-header { display: flex; justify-content: center; padding: 28px 16px 0; }
+.app-auth { width: min(100% - 32px, 26rem); min-height: 72svh; margin: 0 auto; padding: 32px 0 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-md); text-align: center; }
+.app-auth-kito { width: 112px; height: auto; }
+/* A pose tranquila tem mais margem em volta no arquivo: um pouco maior, para o Kito ficar do mesmo tamanho. */
+.app-auth-kito-calm { width: 136px; }
+.app-auth h1 { margin: 0; font-size: clamp(1.75rem, 1.35rem + 1.8vw, 2.25rem); line-height: 1.1; outline: none; }
+.app-auth-text { margin: 0; max-width: 34ch; line-height: 1.6; }
+.app-auth-actions { display: grid; gap: 12px; width: 100%; margin-top: var(--space-sm); }
+.app-auth-form { width: 100%; margin-top: var(--space-sm); text-align: left; }
+.app-auth-form .field-help, .app-auth-form .form-error { margin: 0; }
+.app-auth-form .form-error:not(:empty) { margin: 0; }
+.app-auth-form .button { width: 100%; }
+.app-auth-password { display: flex; align-items: center; gap: 8px; }
+.app-auth-password input { flex: 1; }
+.app-auth-password .text-button { flex: 0 0 auto; min-width: 84px; }

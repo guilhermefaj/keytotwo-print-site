@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './fixtures/test'
 
-// The 15 routes pre-rendered into build/client/<route>/index.html.
+// The 17 routes pre-rendered into build/client/<route>/index.html.
 const routes = [
   '/',
   '/entrar',
@@ -10,6 +10,8 @@ const routes = [
   '/pedido/confirmacao',
   '/gratuitos',
   '/email/preferencias',
+  // Páginas de conta do app (2026-11-18), sem nada no fragmento.
+  '/auth/callback', '/auth/recover',
   '/ajuda',
   '/termos',
   '/reembolsos',
