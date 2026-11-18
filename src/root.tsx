@@ -16,12 +16,16 @@ import { api, ApiError } from './lib/api'
 import { captureReferral } from './lib/referral'
 import { authConfigured } from './lib/supabase'
 import NotFound from './routes/not-found'
+import { AppAuthShell } from './components/app/AppAuthShell'
+import { appSupabase } from './content/app-auth'
 // Fase 4 (desempenho): o título da hero é o LCP e espera a Bricolage; o preload a busca junto com o CSS.
 // As URLs são os mesmos arquivos (com hash) que o CSS do @fontsource referencia.
 import bricolage700 from '@fontsource/bricolage-grotesque/files/bricolage-grotesque-latin-700-normal.woff2?url'
 import dmSans400 from '@fontsource/dm-sans/files/dm-sans-latin-400-normal.woff2?url'
 
 const supabaseOrigin = (() => { try { return new URL(import.meta.env.VITE_SUPABASE_URL).origin } catch { return '' } })()
+// Páginas de conta do app (2026-11-18): moldura própria, sem nada da loja (components/app/AppAuthShell.tsx).
+const isAppAuthPath = (pathname: string) => /^\/auth\/(callback|recover)\/?$/.test(pathname)
 // Um só CSS para o site inteiro (app.css), com `precedence` para vir antes dos scripts no <head>.
 import appCss from './app.css?url'
 
@@ -47,7 +51,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta name="description" content={seo.description} />
         <link rel="canonical" href={seo.canonical} />
         <meta name="robots" content={seo.robots} />
-        {pathname === '/email/preferencias' && <meta name="referrer" content="no-referrer" />}
+        {(pathname === '/email/preferencias' || isAppAuthPath(pathname)) && <meta name="referrer" content="no-referrer" />}
         <meta property="og:title" content={seo.title} />
         <meta property="og:description" content={seo.description} />
         <meta property="og:url" content={seo.canonical} />
@@ -68,7 +72,8 @@ export function Layout({ children }: { children: ReactNode }) {
         <meta name="theme-color" content="#ECFAF7" />
         <link rel="stylesheet" href={appCss} precedence="default" />
         {/* A sessão e o catálogo vêm do Supabase em toda página: a conexão já começa aberta. */}
-        {supabaseOrigin && <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />}
+        {supabaseOrigin && !isAppAuthPath(pathname) && <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />}
+        {/^\/auth\/recover\/?$/.test(pathname) && <link rel="preconnect" href={appSupabase.url} crossOrigin="anonymous" />}
         <link rel="preload" href={bricolage700} as="font" type="font/woff2" crossOrigin="anonymous" />
         <link rel="preload" href={dmSans400} as="font" type="font/woff2" crossOrigin="anonymous" />
         <Links />
@@ -120,6 +125,8 @@ function Shell({ children }: { children: (menuOpen: boolean) => ReactNode }) {
 }
 
 export default function Root() {
+  const { pathname } = useLocation()
+  if (isAppAuthPath(pathname)) return <AppAuthShell><Outlet /></AppAuthShell>
   return <Shell>{menuOpen => <Outlet context={{ menuOpen }} />}</Shell>
 }
 
