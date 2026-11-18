@@ -184,7 +184,8 @@ test.describe('stage', () => {
     test.skip(!(await isPreview()), 'build test/live has an authenticated cart')
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 900 })
-      for (const route of routes.filter(r => r !== '/carrinho')) {
+      // As páginas de conta do app (/auth/*) não têm menu nem nada da loja: o app-auth.spec.ts confere isso lá.
+      for (const route of routes.filter(r => r !== '/carrinho' && !r.startsWith('/auth/'))) {
         await page.goto(route)
         await page.waitForLoadState('networkidle')
         if (width === 390) await page.getByRole('button', { name: 'Abrir menu' }).click()
