@@ -7,7 +7,7 @@
 // tests/unit/app-auth.test.mjs barra qualquer outro formato.
 export const appSupabase = {
   url: 'https://wbvzrfzexcptlusxehvi.supabase.co',
-  publishableKey: '',
+  publishableKey: 'sb_publishable_TnFqB2i-X2_DDXjDGQug6w_fCpzcjYW',
 }
 
 // Enquanto o navegador lê o link (o HTML pré-renderizado não conhece o fragmento).
